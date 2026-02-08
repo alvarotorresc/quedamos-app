@@ -9,19 +9,42 @@
   --ion-tab-bar-background: rgba(8, 14, 26, 0.92);
   --ion-safe-area-top: env(safe-area-inset-top);
   --ion-safe-area-bottom: env(safe-area-inset-bottom);
+
+  --app-bg: #080E1A;
+  --app-bg-light: #0F1729;
+  --app-text: #E2E8F0;
+  --app-text-muted: #94A3B8;
+  --app-text-dark: #4B5C75;
+  --app-border: rgba(255, 255, 255, 0.05);
+  --app-tab-bar: rgba(8, 14, 26, 0.92);
+}
+
+.light {
+  --ion-background-color: #F8FAFC;
+  --ion-text-color: #1E293B;
+  --ion-toolbar-background: #F8FAFC;
+  --ion-tab-bar-background: rgba(248, 250, 252, 0.92);
+
+  --app-bg: #F8FAFC;
+  --app-bg-light: #F1F5F9;
+  --app-text: #1E293B;
+  --app-text-muted: #64748B;
+  --app-text-dark: #94A3B8;
+  --app-border: rgba(0, 0, 0, 0.08);
+  --app-tab-bar: rgba(248, 250, 252, 0.92);
 }
 
 body {
   font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
-  background-color: #080E1A;
-  color: #E2E8F0;
+  background-color: var(--app-bg);
+  color: var(--app-text);
 }
 
 ion-content {
-  --background: #080E1A;
+  --background: var(--app-bg);
 }
 
 ion-tab-bar {
-  --background: rgba(8, 14, 26, 0.92);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  --background: var(--app-tab-bar);
+  border-top: 1px solid var(--app-border);
 }

@@ -4,14 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#080E1A',
-        'bg-light': '#0F1729',
+        bg: 'var(--app-bg)',
+        'bg-light': 'var(--app-bg-light)',
         'bg-card': 'rgba(255,255,255,0.025)',
         primary: '#60A5FA',
         'primary-dark': '#2563EB',
-        text: '#E2E8F0',
-        'text-muted': '#94A3B8',
-        'text-dark': '#4B5C75',
+        text: 'var(--app-text)',
+        'text-muted': 'var(--app-text-muted)',
+        'text-dark': 'var(--app-text-dark)',
         success: '#34D399',
         warning: '#F59E0B',
         danger: '#FB7185',

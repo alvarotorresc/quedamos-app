@@ -5,7 +5,10 @@ interface AvatarProps {
 }
 
 export function Avatar({ name, color, size = 32 }: AvatarProps) {
-  const initial = name.charAt(0).toUpperCase();
+  const parts = name.trim().split(/\s+/);
+  const initials = parts.length >= 2
+    ? (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase()
+    : name.slice(0, 2).toUpperCase();
 
   return (
     <div
@@ -16,11 +19,11 @@ export function Avatar({ name, color, size = 32 }: AvatarProps) {
         borderRadius: size * 0.35,
         background: `${color}18`,
         border: `1.5px solid ${color}35`,
-        fontSize: size * 0.35,
+        fontSize: size * 0.3,
         color,
       }}
     >
-      {initial}
+      {initials}
     </div>
   );
 }
