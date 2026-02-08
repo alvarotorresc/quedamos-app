@@ -34,6 +34,27 @@
   --app-tab-bar: rgba(248, 250, 252, 0.92);
 }
 
+.light ion-alert .alert-wrapper {
+  background: #FFFFFF !important;
+  border: 1px solid var(--app-border);
+}
+
+.light ion-alert .alert-title {
+  color: #1E293B !important;
+}
+
+.light ion-alert .alert-message {
+  color: #64748B !important;
+}
+
+.light ion-alert .alert-button {
+  color: #2563EB !important;
+}
+
+.light ion-alert .alert-button[role="destructive"] {
+  color: #E11D48 !important;
+}
+
 body {
   font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
   background-color: var(--app-bg);
@@ -47,4 +68,38 @@ ion-content {
 ion-tab-bar {
   --background: var(--app-tab-bar);
   border-top: 1px solid var(--app-border);
+}
+
+ion-alert {
+  --background: var(--app-bg-light);
+  --backdrop-opacity: 0.6;
+}
+
+ion-alert .alert-wrapper {
+  background: var(--app-bg-light) !important;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+}
+
+ion-alert .alert-head {
+  padding-bottom: 8px;
+}
+
+ion-alert .alert-title {
+  color: var(--app-text) !important;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+ion-alert .alert-message {
+  color: var(--app-text-muted) !important;
+  font-size: 14px;
+}
+
+ion-alert .alert-button {
+  color: #60A5FA !important;
+}
+
+ion-alert .alert-button[role="destructive"] {
+  color: #FB7185 !important;
 }

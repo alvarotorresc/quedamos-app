@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
-import { useHistory, Link } from 'react-router-dom';
+import { useHistory, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '../ui/Button';
@@ -12,7 +12,9 @@ const HCAPTCHA_SITEKEY = 'c7aee17a-5df0-43a6-ba90-397e25d83410';
 export default function LoginPage() {
   const { t } = useTranslation();
   const history = useHistory();
+  const location = useLocation();
   const signIn = useAuthStore((s) => s.signIn);
+  const redirectTo = new URLSearchParams(location.search).get('redirect') || '/tabs';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -34,7 +36,7 @@ export default function LoginPage() {
       }
 
       await signIn(email, password, token);
-      history.replace('/tabs');
+      history.replace(redirectTo);
     } catch (err) {
       setError(translateAuthError(err));
       captchaRef.current?.resetCaptcha();
