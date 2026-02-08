@@ -11,7 +11,7 @@ export default function SplashPage() {
   return (
     <IonPage>
       <IonContent className="ion-padding">
-        <div className="flex flex-col items-center justify-center h-full text-center px-10">
+        <div className="flex flex-col items-center justify-center h-full text-center px-10 overflow-hidden relative">
           <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] rounded-full bg-gradient-radial from-primary-dark/10 to-transparent" />
           <div className="absolute bottom-[-80px] left-[-80px] w-[250px] h-[250px] rounded-full bg-gradient-radial from-primary/5 to-transparent" />
 
