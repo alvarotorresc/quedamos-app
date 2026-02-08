@@ -48,3 +48,22 @@ export function useLeaveGroup() {
     },
   });
 }
+
+export function useGroupInvite(groupId: string) {
+  return useQuery({
+    queryKey: ['groups', groupId, 'invite'],
+    queryFn: () => groupsService.getInvite(groupId),
+    enabled: !!groupId,
+  });
+}
+
+export function useRefreshInvite() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: groupsService.refreshInvite,
+    onSuccess: (_data, groupId) => {
+      queryClient.invalidateQueries({ queryKey: ['groups', groupId, 'invite'] });
+    },
+  });
+}

@@ -1,7 +1,7 @@
-import { IsString, Length } from 'class-validator';
+import { IsString, Matches } from 'class-validator';
 
 export class JoinGroupDto {
   @IsString()
-  @Length(6, 6)
+  @Matches(/^\d{8}$/)
   inviteCode: string;
 }

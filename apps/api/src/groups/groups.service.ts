@@ -7,10 +7,9 @@ export class GroupsService {
   constructor(private prisma: PrismaService) {}
 
   private generateInviteCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    for (let i = 0; i < 8; i++) {
+      code += Math.floor(Math.random() * 10).toString();
     }
     return code;
   }
@@ -79,7 +78,7 @@ export class GroupsService {
 
   async joinByCode(userId: string, inviteCode: string) {
     const group = await this.prisma.group.findUnique({
-      where: { inviteCode: inviteCode.toUpperCase() },
+      where: { inviteCode },
     });
 
     if (!group) {
