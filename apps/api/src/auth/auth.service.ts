@@ -27,12 +27,19 @@ export class AuthService {
       throw new UnauthorizedException('Invalid token');
     }
 
-    const dbUser = await this.prisma.user.findUnique({
+    let dbUser = await this.prisma.user.findUnique({
       where: { id: user.id },
     });
 
     if (!dbUser) {
-      throw new UnauthorizedException('User not found');
+      dbUser = await this.prisma.user.create({
+        data: {
+          id: user.id,
+          email: user.email ?? '',
+          name: user.user_metadata?.name ?? 'Usuario',
+          avatarEmoji: user.user_metadata?.avatarEmoji ?? '😊',
+        },
+      });
     }
 
     return dbUser;

@@ -13,30 +13,37 @@ interface AuthState {
   isLoading: boolean;
   setUser: (user: User | null) => void;
   setLoading: (loading: boolean) => void;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signIn: (email: string, password: string, captchaToken: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string, captchaToken: string) => Promise<void>;
   signOut: () => Promise<void>;
   initialize: () => Promise<void>;
+  resetPassword: (email: string, captchaToken: string) => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  isLoading: false,
+  isLoading: true,
 
   setUser: (user) => set({ user }),
   setLoading: (isLoading) => set({ isLoading }),
 
-  signIn: async (email, password) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+  signIn: async (email, password, captchaToken) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: { captchaToken },
+    });
     if (error) throw error;
   },
 
-  signUp: async (email, password, name) => {
+  signUp: async (email, password, name, captchaToken) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name },
+        captchaToken,
       },
     });
     if (error) throw error;
@@ -78,5 +85,18 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null });
       }
     });
+  },
+
+  resetPassword: async (email, captchaToken) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+      captchaToken,
+    });
+    if (error) throw error;
+  },
+
+  updatePassword: async (password) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
   },
 }));

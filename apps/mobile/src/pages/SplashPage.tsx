@@ -1,6 +1,7 @@
 import { IonPage, IonContent } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { Button } from '../ui/Button';
+import logo from '../assets/logo.svg';
 
 export default function SplashPage() {
   const history = useHistory();
@@ -12,8 +13,8 @@ export default function SplashPage() {
           <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] rounded-full bg-gradient-radial from-primary-dark/10 to-transparent" />
           <div className="absolute bottom-[-80px] left-[-80px] w-[250px] h-[250px] rounded-full bg-gradient-radial from-primary/5 to-transparent" />
 
-          <div className="text-5xl mb-2">📅</div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-100">Quedamos</h1>
+          <img src={logo} alt="¿Quedamos?" className="w-16 h-16 mb-3" />
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-100">¿Quedamos?</h1>
           <p className="text-text-dark text-sm mt-2 mb-7 max-w-[240px] leading-relaxed">
             El momento perfecto para quedar con tu grupo.
           </p>

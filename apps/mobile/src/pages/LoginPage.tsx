@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { IonPage, IonContent } from '@ionic/react';
+import { useHistory, Link } from 'react-router-dom';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
+import { translateAuthError } from '../lib/auth-errors';
+
+const HCAPTCHA_SITEKEY = 'c7aee17a-5df0-43a6-ba90-397e25d83410';
 
 export default function LoginPage() {
   const history = useHistory();
@@ -11,6 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<HCaptcha>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,10 +23,19 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      const captchaResult = await captchaRef.current?.execute({ async: true });
+      const token = captchaResult?.response;
+      if (!token) {
+        setError('No se pudo verificar el captcha. Inténtalo de nuevo.');
+        setLoading(false);
+        return;
+      }
+
+      await signIn(email, password, token);
       history.replace('/tabs');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
+      setError(translateAuthError(err));
+      captchaRef.current?.resetCaptcha();
     } finally {
       setLoading(false);
     }
@@ -29,16 +43,15 @@ export default function LoginPage() {
 
   return (
     <IonPage>
-      <IonHeader className="ion-no-border">
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/" text="" />
-          </IonButtons>
-          <IonTitle>Iniciar sesión</IonTitle>
-        </IonToolbar>
-      </IonHeader>
       <IonContent className="ion-padding">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-8">
+        <div className="flex items-center justify-center min-h-full px-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md w-full">
+          <button type="button" onClick={() => history.goBack()} className="self-start text-text-muted text-sm flex items-center gap-1 mb-2">
+            <span className="text-lg leading-none">&larr;</span> Volver
+          </button>
+
+          <h1 className="text-2xl font-bold text-text mb-2">Iniciar sesión</h1>
+
           {error && (
             <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
               {error}
@@ -69,10 +82,19 @@ export default function LoginPage() {
             />
           </div>
 
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-xs text-primary">
+              ¿Olvidaste tu contraseña?
+            </Link>
+          </div>
+
+          <HCaptcha ref={captchaRef} sitekey={HCAPTCHA_SITEKEY} size="invisible" />
+
           <Button type="submit" disabled={loading} className="mt-2">
             {loading ? 'Entrando...' : 'Entrar'}
           </Button>
         </form>
+        </div>
       </IonContent>
     </IonPage>
   );
