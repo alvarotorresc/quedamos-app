@@ -82,7 +82,52 @@
   },
   "calendar": {
     "title": "Calendar",
-    "noGroup": "Select a group to see the shared calendar"
+    "noGroup": "Select a group to see the shared calendar",
+    "noGroups": "You don't belong to any group",
+    "noGroupsSubtitle": "Create or join a group to see the shared calendar",
+    "goToGroups": "Go to groups",
+    "week": "Week",
+    "month": "Month",
+    "list": "List",
+    "daysWithAvailability": "Days with availability",
+    "recommended": "Recommended",
+    "bestDay": "Best day",
+    "noAvailability": "Nobody available",
+    "you": "You",
+    "allDay": "All day",
+    "markAvailable": "I'm available",
+    "editAvailability": "Edit availability",
+    "available": "Available",
+    "weekdays": ["M", "T", "W", "T", "F", "S", "S"],
+    "monthStats": {
+      "activeDays": "Active days",
+      "bestMatch": "Best match",
+      "activeMembers": "Members",
+      "info": {
+        "days": "Future days this month where at least one person marked availability.",
+        "match": "Percentage of the group available on the best day of the month.",
+        "members": "Number of group members who marked availability this month."
+      }
+    },
+    "availability": {
+      "title": "Availability",
+      "typeDay": "Full day",
+      "typeSlots": "Time slot",
+      "typeRange": "Hour range",
+      "morning": "Morning",
+      "morningHours": "8:00 – 14:00",
+      "afternoon": "Afternoon",
+      "afternoonHours": "14:00 – 20:00",
+      "night": "Night",
+      "nightHours": "20:00 – 00:00",
+      "from": "From",
+      "to": "To",
+      "save": "Save",
+      "saving": "Saving...",
+      "delete": "Delete",
+      "deleting": "Deleting...",
+      "selectSlot": "Select at least one time slot"
+    }
   },
   "plans": {
     "title": "Plans",

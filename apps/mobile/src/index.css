@@ -103,3 +103,16 @@ ion-alert .alert-button {
 ion-alert .alert-button[role="destructive"] {
   color: #FB7185 !important;
 }
+
+ion-modal.availability-modal {
+  --background: var(--app-bg-light);
+  --border-radius: 20px 20px 0 0;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
