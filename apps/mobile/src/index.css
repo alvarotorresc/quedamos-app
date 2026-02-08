@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ion-background-color: #080E1A;
+  --ion-text-color: #E2E8F0;
+  --ion-toolbar-background: #080E1A;
+  --ion-tab-bar-background: rgba(8, 14, 26, 0.92);
+  --ion-safe-area-top: env(safe-area-inset-top);
+  --ion-safe-area-bottom: env(safe-area-inset-bottom);
+}
+
+body {
+  font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+  background-color: #080E1A;
+  color: #E2E8F0;
+}
+
+ion-content {
+  --background: #080E1A;
+}
+
+ion-tab-bar {
+  --background: rgba(8, 14, 26, 0.92);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}

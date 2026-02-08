@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  email       String   @unique
+  name        String
+  avatarEmoji String   @default("😊") @map("avatar_emoji")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  createdGroups  Group[]         @relation("CreatedGroups")
+  memberships    GroupMember[]
+  availability   Availability[]
+  createdEvents  Event[]         @relation("CreatedEvents")
+  eventResponses EventAttendee[]
+  pushTokens     PushToken[]
+
+  @@map("users")
+}
+
+model Group {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  emoji      String   @default("👥")
+  inviteCode String   @unique @map("invite_code")
+  createdById String  @map("created_by") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  createdBy    User           @relation("CreatedGroups", fields: [createdById], references: [id])
+  members      GroupMember[]
+  availability Availability[]
+  events       Event[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  groupId  String   @map("group_id") @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+
+  // Relations
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+  @@map("group_members")
+}
+
+model Availability {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  groupId   String   @map("group_id") @db.Uuid
+  date      DateTime @db.Date
+  type      String   // 'day' | 'slots' | 'range'
+  slots     String[] @default([])
+  startTime String?  @map("start_time")
+  endTime   String?  @map("end_time")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId, date])
+  @@map("availability")
+}
+
+model Event {
+  id          String   @id @default(uuid()) @db.Uuid
+  groupId     String   @map("group_id") @db.Uuid
+  title       String
+  description String?
+  location    String?
+  date        DateTime @db.Date
+  time        String?
+  status      String   @default("pending") // 'pending' | 'confirmed' | 'cancelled'
+  createdById String   @map("created_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User            @relation("CreatedEvents", fields: [createdById], references: [id])
+  attendees EventAttendee[]
+
+  @@map("events")
+}
+
+model EventAttendee {
+  eventId     String    @map("event_id") @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  status      String    @default("pending") // 'pending' | 'confirmed' | 'declined'
+  respondedAt DateTime? @map("responded_at") @db.Timestamptz
+
+  // Relations
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@map("event_attendees")
+}
+
+model PushToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String
+  platform  String   // 'web' | 'android'
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@map("push_tokens")
+}
