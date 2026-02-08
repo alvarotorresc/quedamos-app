@@ -1,0 +1,118 @@
+{
+  "common": {
+    "back": "Back",
+    "email": "Email",
+    "password": "Password",
+    "emailPlaceholder": "you@email.com",
+    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+    "captchaError": "Could not verify captcha. Please try again.",
+    "unexpectedError": "An unexpected error occurred"
+  },
+  "splash": {
+    "title": "\u00bfQuedamos?",
+    "tagline": "The perfect moment to meet up with your group.",
+    "login": "Sign in",
+    "register": "Create account"
+  },
+  "login": {
+    "title": "Sign in",
+    "forgotPassword": "Forgot your password?",
+    "submit": "Sign in",
+    "submitting": "Signing in..."
+  },
+  "register": {
+    "title": "Create account",
+    "nameLabel": "Name",
+    "namePlaceholder": "Your name",
+    "confirmPasswordLabel": "Confirm password",
+    "submit": "Create account",
+    "submitting": "Creating...",
+    "passwordRequirementsError": "Password does not meet all requirements",
+    "passwordsMismatch": "Passwords do not match",
+    "checks": {
+      "minLength": "At least 8 characters",
+      "uppercase": "One uppercase letter",
+      "number": "One number",
+      "special": "One special character (!@#$...)"
+    },
+    "strength": {
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    },
+    "success": {
+      "title": "Check your email",
+      "message": "We sent a confirmation email to <1>{{email}}</1>. Click the link to activate your account.",
+      "spam": "If you don't see it, check your spam folder."
+    }
+  },
+  "forgotPassword": {
+    "title": "Reset password",
+    "description": "Enter your email and we'll send you a link to reset your password.",
+    "submit": "Send link",
+    "submitting": "Sending...",
+    "success": {
+      "title": "Email sent",
+      "message": "We sent you an email with instructions to reset your password. Check your inbox.",
+      "resend": "Send again"
+    }
+  },
+  "resetPassword": {
+    "title": "New password",
+    "description": "Enter your new password.",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm password",
+    "submit": "Change password",
+    "submitting": "Saving...",
+    "verifying": "Verifying link...",
+    "passwordsMismatch": "Passwords do not match",
+    "minLengthError": "Password must be at least 6 characters",
+    "genericError": "Error changing password",
+    "success": {
+      "title": "Password updated",
+      "redirecting": "Redirecting..."
+    }
+  },
+  "tabs": {
+    "calendar": "Calendar",
+    "plans": "Plans",
+    "group": "Group"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "noGroup": "Select a group to see the shared calendar"
+  },
+  "plans": {
+    "title": "Plans",
+    "empty": "No plans scheduled"
+  },
+  "group": {
+    "title": "Group",
+    "noGroup": "You don't belong to any group",
+    "createGroup": "Create group",
+    "joinWithCode": "Join with code",
+    "logout": "Sign out"
+  },
+  "joinGroup": {
+    "joining": "Joining group..."
+  },
+  "settings": {
+    "language": "Language"
+  },
+  "auth": {
+    "defaultName": "User"
+  },
+  "authErrors": {
+    "invalidCredentials": "Invalid email or password",
+    "emailNotConfirmed": "You must confirm your email before signing in",
+    "userAlreadyRegistered": "This email is already registered",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "invalidEmailFormat": "Invalid email format",
+    "passwordRequired": "You must enter a password",
+    "emailRequired": "You must enter an email",
+    "userNotFound": "No account found with that email",
+    "rateLimitSeconds": "For security, you can only do this once every 60 seconds",
+    "rateLimitExceeded": "Too many attempts. Please wait a few minutes"
+  }
+}

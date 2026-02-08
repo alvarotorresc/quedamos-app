@@ -3,6 +3,7 @@ import { IonApp, IonRouterOutlet, IonTabs, IonTabBar, IonTabButton, IonIcon, Ion
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Redirect } from 'react-router-dom';
 import { calendarOutline, listOutline, peopleOutline } from 'ionicons/icons';
+import { useTranslation } from 'react-i18next';
 
 import CalendarPage from './pages/CalendarPage';
 import PlansPage from './pages/PlansPage';
@@ -17,6 +18,8 @@ import JoinGroupPage from './pages/JoinGroupPage';
 import { useAuthStore } from './stores/auth';
 
 function AppTabs() {
+  const { t } = useTranslation();
+
   return (
     <IonTabs>
       <IonRouterOutlet>
@@ -30,15 +33,15 @@ function AppTabs() {
       <IonTabBar slot="bottom" className="backdrop-blur-xl">
         <IonTabButton tab="calendar" href="/tabs/calendar">
           <IonIcon icon={calendarOutline} />
-          <IonLabel>Calendario</IonLabel>
+          <IonLabel>{t('tabs.calendar')}</IonLabel>
         </IonTabButton>
         <IonTabButton tab="plans" href="/tabs/plans">
           <IonIcon icon={listOutline} />
-          <IonLabel>Quedadas</IonLabel>
+          <IonLabel>{t('tabs.plans')}</IonLabel>
         </IonTabButton>
         <IonTabButton tab="group" href="/tabs/group">
           <IonIcon icon={peopleOutline} />
-          <IonLabel>Grupo</IonLabel>
+          <IonLabel>{t('tabs.group')}</IonLabel>
         </IonTabButton>
       </IonTabBar>
     </IonTabs>

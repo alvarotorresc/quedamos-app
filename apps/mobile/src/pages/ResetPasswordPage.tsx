@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
 import { supabase } from '../lib/supabase';
 
 export default function ResetPasswordPage() {
+  const { t } = useTranslation();
   const history = useHistory();
   const updatePassword = useAuthStore((s) => s.updatePassword);
   const [password, setPassword] = useState('');
@@ -38,12 +40,12 @@ export default function ResetPasswordPage() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('resetPassword.passwordsMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError(t('resetPassword.minLengthError'));
       return;
     }
 
@@ -54,7 +56,7 @@ export default function ResetPasswordPage() {
       setSuccess(true);
       setTimeout(() => history.replace('/tabs'), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al cambiar la contraseña');
+      setError(err instanceof Error ? err.message : t('resetPassword.genericError'));
     } finally {
       setLoading(false);
     }
@@ -67,21 +69,21 @@ export default function ResetPasswordPage() {
         {success ? (
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="text-4xl">✅</div>
-            <h2 className="text-lg font-semibold text-text">Contraseña actualizada</h2>
+            <h2 className="text-lg font-semibold text-text">{t('resetPassword.success.title')}</h2>
             <p className="text-text-muted text-sm">
-              Redirigiendo...
+              {t('resetPassword.success.redirecting')}
             </p>
           </div>
         ) : !ready ? (
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="text-text-muted text-sm">Verificando enlace...</div>
+            <div className="text-text-muted text-sm">{t('resetPassword.verifying')}</div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md w-full">
-            <h1 className="text-2xl font-bold text-text mb-2">Nueva contraseña</h1>
+            <h1 className="text-2xl font-bold text-text mb-2">{t('resetPassword.title')}</h1>
 
             <p className="text-text-muted text-sm">
-              Introduce tu nueva contraseña.
+              {t('resetPassword.description')}
             </p>
 
             {error && (
@@ -91,33 +93,33 @@ export default function ResetPasswordPage() {
             )}
 
             <div>
-              <label className="text-xs text-text-dark block mb-1">Nueva contraseña</label>
+              <label className="text-xs text-text-dark block mb-1">{t('resetPassword.newPasswordLabel')}</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
-                placeholder="••••••••"
+                placeholder={t('common.passwordPlaceholder')}
                 minLength={6}
                 required
               />
             </div>
 
             <div>
-              <label className="text-xs text-text-dark block mb-1">Confirmar contraseña</label>
+              <label className="text-xs text-text-dark block mb-1">{t('resetPassword.confirmPasswordLabel')}</label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
-                placeholder="••••••••"
+                placeholder={t('common.passwordPlaceholder')}
                 minLength={6}
                 required
               />
             </div>
 
             <Button type="submit" disabled={loading} className="mt-2">
-              {loading ? 'Guardando...' : 'Cambiar contraseña'}
+              {loading ? t('resetPassword.submitting') : t('resetPassword.submit')}
             </Button>
           </form>
         )}

@@ -1,18 +1,20 @@
-const ERROR_MAP: Record<string, string> = {
-  'Invalid login credentials': 'Email o contraseña incorrectos',
-  'Email not confirmed': 'Debes confirmar tu email antes de iniciar sesión',
-  'User already registered': 'Este email ya está registrado',
-  'Password should be at least 6 characters': 'La contraseña debe tener al menos 6 caracteres',
-  'Unable to validate email address: invalid format': 'El formato del email no es válido',
-  'Signup requires a valid password': 'Debes introducir una contraseña',
-  'To signup, please provide your email': 'Debes introducir un email',
-  'User not found': 'No se encontró ninguna cuenta con ese email',
-  'For security purposes, you can only request this once every 60 seconds': 'Por seguridad, solo puedes hacer esto una vez cada 60 segundos',
-  'Email rate limit exceeded': 'Demasiados intentos. Espera unos minutos',
+import i18n from '../i18n';
+
+const ERROR_KEY_MAP: Record<string, string> = {
+  'Invalid login credentials': 'authErrors.invalidCredentials',
+  'Email not confirmed': 'authErrors.emailNotConfirmed',
+  'User already registered': 'authErrors.userAlreadyRegistered',
+  'Password should be at least 6 characters': 'authErrors.passwordTooShort',
+  'Unable to validate email address: invalid format': 'authErrors.invalidEmailFormat',
+  'Signup requires a valid password': 'authErrors.passwordRequired',
+  'To signup, please provide your email': 'authErrors.emailRequired',
+  'User not found': 'authErrors.userNotFound',
+  'For security purposes, you can only request this once every 60 seconds': 'authErrors.rateLimitSeconds',
+  'Email rate limit exceeded': 'authErrors.rateLimitExceeded',
 };
 
 export function translateAuthError(error: unknown): string {
-  if (!(error instanceof Error)) return 'Ha ocurrido un error inesperado';
-  const msg = error.message;
-  return ERROR_MAP[msg] ?? msg;
+  if (!(error instanceof Error)) return i18n.t('common.unexpectedError');
+  const key = ERROR_KEY_MAP[error.message];
+  return key ? i18n.t(key) : error.message;
 }

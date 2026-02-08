@@ -1,0 +1,118 @@
+{
+  "common": {
+    "back": "Volver",
+    "email": "Email",
+    "password": "Contrase\u00f1a",
+    "emailPlaceholder": "tu@email.com",
+    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+    "captchaError": "No se pudo verificar el captcha. Int\u00e9ntalo de nuevo.",
+    "unexpectedError": "Ha ocurrido un error inesperado"
+  },
+  "splash": {
+    "title": "\u00bfQuedamos?",
+    "tagline": "El momento perfecto para quedar con tu grupo.",
+    "login": "Iniciar sesi\u00f3n",
+    "register": "Crear cuenta"
+  },
+  "login": {
+    "title": "Iniciar sesi\u00f3n",
+    "forgotPassword": "\u00bfOlvidaste tu contrase\u00f1a?",
+    "submit": "Entrar",
+    "submitting": "Entrando..."
+  },
+  "register": {
+    "title": "Crear cuenta",
+    "nameLabel": "Nombre",
+    "namePlaceholder": "Tu nombre",
+    "confirmPasswordLabel": "Repetir contrase\u00f1a",
+    "submit": "Crear cuenta",
+    "submitting": "Creando...",
+    "passwordRequirementsError": "La contrase\u00f1a no cumple todos los requisitos",
+    "passwordsMismatch": "Las contrase\u00f1as no coinciden",
+    "checks": {
+      "minLength": "Al menos 8 caracteres",
+      "uppercase": "Una letra may\u00fascula",
+      "number": "Un n\u00famero",
+      "special": "Un car\u00e1cter especial (!@#$...)"
+    },
+    "strength": {
+      "weak": "D\u00e9bil",
+      "fair": "Regular",
+      "good": "Buena",
+      "strong": "Fuerte"
+    },
+    "success": {
+      "title": "Revisa tu email",
+      "message": "Te hemos enviado un email de confirmaci\u00f3n a <1>{{email}}</1>. Haz click en el enlace para activar tu cuenta.",
+      "spam": "Si no lo ves, revisa la carpeta de spam."
+    }
+  },
+  "forgotPassword": {
+    "title": "Recuperar contrase\u00f1a",
+    "description": "Introduce tu email y te enviaremos un enlace para restablecer tu contrase\u00f1a.",
+    "submit": "Enviar enlace",
+    "submitting": "Enviando...",
+    "success": {
+      "title": "Email enviado",
+      "message": "Te hemos enviado un email con instrucciones para restablecer tu contrase\u00f1a. Revisa tu bandeja de entrada.",
+      "resend": "Enviar de nuevo"
+    }
+  },
+  "resetPassword": {
+    "title": "Nueva contrase\u00f1a",
+    "description": "Introduce tu nueva contrase\u00f1a.",
+    "newPasswordLabel": "Nueva contrase\u00f1a",
+    "confirmPasswordLabel": "Confirmar contrase\u00f1a",
+    "submit": "Cambiar contrase\u00f1a",
+    "submitting": "Guardando...",
+    "verifying": "Verificando enlace...",
+    "passwordsMismatch": "Las contrase\u00f1as no coinciden",
+    "minLengthError": "La contrase\u00f1a debe tener al menos 6 caracteres",
+    "genericError": "Error al cambiar la contrase\u00f1a",
+    "success": {
+      "title": "Contrase\u00f1a actualizada",
+      "redirecting": "Redirigiendo..."
+    }
+  },
+  "tabs": {
+    "calendar": "Calendario",
+    "plans": "Quedadas",
+    "group": "Grupo"
+  },
+  "calendar": {
+    "title": "Calendario",
+    "noGroup": "Selecciona un grupo para ver el calendario compartido"
+  },
+  "plans": {
+    "title": "Quedadas",
+    "empty": "No hay quedadas programadas"
+  },
+  "group": {
+    "title": "Grupo",
+    "noGroup": "No perteneces a ning\u00fan grupo",
+    "createGroup": "Crear grupo",
+    "joinWithCode": "Unirme con c\u00f3digo",
+    "logout": "Cerrar sesi\u00f3n"
+  },
+  "joinGroup": {
+    "joining": "Uni\u00e9ndose al grupo..."
+  },
+  "settings": {
+    "language": "Idioma"
+  },
+  "auth": {
+    "defaultName": "Usuario"
+  },
+  "authErrors": {
+    "invalidCredentials": "Email o contrase\u00f1a incorrectos",
+    "emailNotConfirmed": "Debes confirmar tu email antes de iniciar sesi\u00f3n",
+    "userAlreadyRegistered": "Este email ya est\u00e1 registrado",
+    "passwordTooShort": "La contrase\u00f1a debe tener al menos 6 caracteres",
+    "invalidEmailFormat": "El formato del email no es v\u00e1lido",
+    "passwordRequired": "Debes introducir una contrase\u00f1a",
+    "emailRequired": "Debes introducir un email",
+    "userNotFound": "No se encontr\u00f3 ninguna cuenta con ese email",
+    "rateLimitSeconds": "Por seguridad, solo puedes hacer esto una vez cada 60 segundos",
+    "rateLimitExceeded": "Demasiados intentos. Espera unos minutos"
+  }
+}

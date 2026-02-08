@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import i18n from '../i18n';
 
 interface User {
   id: string;
@@ -62,7 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         user: {
           id: session.user.id,
           email: session.user.email ?? '',
-          name: session.user.user_metadata?.name ?? 'Usuario',
+          name: session.user.user_metadata?.name ?? i18n.t('auth.defaultName'),
           avatarEmoji: session.user.user_metadata?.avatarEmoji ?? '😊',
         },
         isLoading: false,
@@ -77,7 +78,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           user: {
             id: session.user.id,
             email: session.user.email ?? '',
-            name: session.user.user_metadata?.name ?? 'Usuario',
+            name: session.user.user_metadata?.name ?? i18n.t('auth.defaultName'),
             avatarEmoji: session.user.user_metadata?.avatarEmoji ?? '😊',
           },
         });
