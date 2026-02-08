@@ -3,6 +3,7 @@ import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/rea
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
+import { useMyColor } from '../hooks/useMyColor';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { LanguageSelector } from '../ui/LanguageSelector';
@@ -17,6 +18,7 @@ export default function ProfilePage() {
   const updateName = useAuthStore((s) => s.updateName);
   const updateEmail = useAuthStore((s) => s.updateEmail);
   const updatePassword = useAuthStore((s) => s.updatePassword);
+  const myColor = useMyColor();
   const darkMode = useThemeStore((s) => s.darkMode);
   const toggleTheme = useThemeStore((s) => s.toggle);
 
@@ -111,15 +113,15 @@ export default function ProfilePage() {
   return (
     <IonPage>
       <IonHeader className="ion-no-border">
-        <IonToolbar>
+        <IonToolbar className="py-2">
           <IonTitle>{t('profile.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <div className="max-w-md mx-auto px-4">
+        <div className="max-w-md mx-auto px-4 pt-2">
           {/* Avatar + User Info */}
           <div className="flex flex-col items-center py-6">
-            <Avatar name={user?.name ?? '?'} color="#60A5FA" size={72} />
+            <Avatar name={user?.name ?? '?'} color={myColor} size={72} />
             <h2 className="text-lg font-bold text-text mt-3">{user?.name}</h2>
             <p className="text-sm text-text-muted">{user?.email}</p>
           </div>

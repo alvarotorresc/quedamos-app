@@ -6,6 +6,7 @@ import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups';
 import { useAuthStore } from '../stores/auth';
+import { useMyColor } from '../hooks/useMyColor';
 import { Avatar } from '../ui/Avatar';
 import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
@@ -18,6 +19,7 @@ export default function GroupPage() {
   const { t } = useTranslation();
   const history = useHistory();
   const user = useAuthStore((s) => s.user);
+  const myColor = useMyColor();
   const { data: groups, isLoading } = useGroups();
   const createGroup = useCreateGroup();
   const joinGroup = useJoinGroup();
@@ -90,15 +92,15 @@ export default function GroupPage() {
   return (
     <IonPage>
       <IonHeader className="ion-no-border">
-        <IonToolbar>
+        <IonToolbar className="py-2">
           <IonTitle>{t('group.title')}</IonTitle>
           <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color="#60A5FA" size={32} />
+            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} />
           </div>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <div className="max-w-md mx-auto px-4">
+        <div className="max-w-md mx-auto px-4 pt-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-20">
               <IonSpinner name="crescent" className="text-primary w-8 h-8" />

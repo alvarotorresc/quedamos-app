@@ -82,7 +82,52 @@
   },
   "calendar": {
     "title": "Calendario",
-    "noGroup": "Selecciona un grupo para ver el calendario compartido"
+    "noGroup": "Selecciona un grupo para ver el calendario compartido",
+    "noGroups": "No perteneces a ningún grupo",
+    "noGroupsSubtitle": "Crea o únete a un grupo para ver el calendario compartido",
+    "goToGroups": "Ir a grupos",
+    "week": "Semana",
+    "month": "Mes",
+    "list": "Lista",
+    "daysWithAvailability": "Días con disponibilidad",
+    "recommended": "Recomendado",
+    "bestDay": "Mejor día",
+    "noAvailability": "Nadie disponible",
+    "you": "Tú",
+    "allDay": "Todo el día",
+    "markAvailable": "Estoy disponible",
+    "editAvailability": "Editar disponibilidad",
+    "available": "Disponible",
+    "weekdays": ["L", "M", "X", "J", "V", "S", "D"],
+    "monthStats": {
+      "activeDays": "Días activos",
+      "bestMatch": "Mejor match",
+      "activeMembers": "Miembros",
+      "info": {
+        "days": "Días futuros de este mes en los que al menos una persona ha marcado disponibilidad.",
+        "match": "Porcentaje del grupo disponible en el mejor día del mes.",
+        "members": "Número de miembros del grupo que han marcado disponibilidad este mes."
+      }
+    },
+    "availability": {
+      "title": "Disponibilidad",
+      "typeDay": "Día completo",
+      "typeSlots": "Franja",
+      "typeRange": "De hora a hora",
+      "morning": "Mañana",
+      "morningHours": "8:00 – 14:00",
+      "afternoon": "Tarde",
+      "afternoonHours": "14:00 – 20:00",
+      "night": "Noche",
+      "nightHours": "20:00 – 00:00",
+      "from": "Desde",
+      "to": "Hasta",
+      "save": "Guardar",
+      "saving": "Guardando...",
+      "delete": "Eliminar",
+      "deleting": "Eliminando...",
+      "selectSlot": "Selecciona al menos una franja"
+    }
   },
   "plans": {
     "title": "Quedadas",
