@@ -16,7 +16,7 @@ export default function SplashPage() {
           <div className="absolute bottom-[-80px] left-[-80px] w-[250px] h-[250px] rounded-full bg-gradient-radial from-primary/5 to-transparent" />
 
           <img src={logo} alt="¿Quedamos?" className="w-16 h-16 mb-3" />
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-100">{t('splash.title')}</h1>
+          <h1 className="text-4xl font-extrabold tracking-tight text-text">{t('splash.title')}</h1>
           <p className="text-text-dark text-sm mt-2 mb-7 max-w-[240px] leading-relaxed">
             {t('splash.tagline')}
           </p>

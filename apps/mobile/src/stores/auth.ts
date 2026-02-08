@@ -20,6 +20,8 @@ interface AuthState {
   initialize: () => Promise<void>;
   resetPassword: (email: string, captchaToken: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  updateName: (name: string) => Promise<void>;
+  updateEmail: (email: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -98,6 +100,19 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   updatePassword: async (password) => {
     const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  },
+
+  updateName: async (name) => {
+    const { error } = await supabase.auth.updateUser({ data: { name } });
+    if (error) throw error;
+    set((state) => ({
+      user: state.user ? { ...state.user, name } : null,
+    }));
+  },
+
+  updateEmail: async (email) => {
+    const { error } = await supabase.auth.updateUser({ email });
     if (error) throw error;
   },
 }));

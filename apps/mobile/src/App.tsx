@@ -2,12 +2,13 @@ import { useEffect } from 'react';
 import { IonApp, IonRouterOutlet, IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonSpinner } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import { Route, Redirect } from 'react-router-dom';
-import { calendarOutline, listOutline, peopleOutline } from 'ionicons/icons';
+import { calendarOutline, listOutline, peopleOutline, personOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 
 import CalendarPage from './pages/CalendarPage';
 import PlansPage from './pages/PlansPage';
 import GroupPage from './pages/GroupPage';
+import ProfilePage from './pages/ProfilePage';
 import SplashPage from './pages/SplashPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -16,6 +17,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import JoinGroupPage from './pages/JoinGroupPage';
 
 import { useAuthStore } from './stores/auth';
+import { useThemeStore } from './stores/theme';
 
 function AppTabs() {
   const { t } = useTranslation();
@@ -26,6 +28,7 @@ function AppTabs() {
         <Route exact path="/tabs/calendar" component={CalendarPage} />
         <Route exact path="/tabs/plans" component={PlansPage} />
         <Route exact path="/tabs/group" component={GroupPage} />
+        <Route exact path="/tabs/profile" component={ProfilePage} />
         <Route exact path="/tabs">
           <Redirect to="/tabs/calendar" />
         </Route>
@@ -42,6 +45,10 @@ function AppTabs() {
         <IonTabButton tab="group" href="/tabs/group">
           <IonIcon icon={peopleOutline} />
           <IonLabel>{t('tabs.group')}</IonLabel>
+        </IonTabButton>
+        <IonTabButton tab="profile" href="/tabs/profile">
+          <IonIcon icon={personOutline} />
+          <IonLabel>{t('tabs.profile')}</IonLabel>
         </IonTabButton>
       </IonTabBar>
     </IonTabs>
@@ -71,10 +78,12 @@ function GuestRoute({ component: Component, ...rest }: { component: React.Compon
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const initializeTheme = useThemeStore((s) => s.initialize);
 
   useEffect(() => {
     initialize();
-  }, [initialize]);
+    initializeTheme();
+  }, [initialize, initializeTheme]);
 
   if (isLoading) {
     return (

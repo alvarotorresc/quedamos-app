@@ -77,7 +77,8 @@
   "tabs": {
     "calendar": "Calendar",
     "plans": "Plans",
-    "group": "Group"
+    "group": "Group",
+    "profile": "Profile"
   },
   "calendar": {
     "title": "Calendar",
@@ -96,6 +97,27 @@
   },
   "joinGroup": {
     "joining": "Joining group..."
+  },
+  "profile": {
+    "title": "Profile",
+    "editName": "Edit name",
+    "changeEmail": "Change email",
+    "changePassword": "Change password",
+    "newName": "New name",
+    "newEmail": "New email",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "save": "Save",
+    "saving": "Saving...",
+    "sendConfirmation": "Send confirmation",
+    "sending": "Sending...",
+    "emailSent": "Check your email to confirm the change",
+    "nameUpdated": "Name updated",
+    "passwordUpdated": "Password updated",
+    "passwordsMismatch": "Passwords do not match",
+    "minLengthError": "Password must be at least 6 characters",
+    "theme": "Dark theme",
+    "logout": "Sign out"
   },
   "settings": {
     "language": "Language"

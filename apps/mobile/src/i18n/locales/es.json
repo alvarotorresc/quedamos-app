@@ -77,7 +77,8 @@
   "tabs": {
     "calendar": "Calendario",
     "plans": "Quedadas",
-    "group": "Grupo"
+    "group": "Grupo",
+    "profile": "Perfil"
   },
   "calendar": {
     "title": "Calendario",
@@ -96,6 +97,27 @@
   },
   "joinGroup": {
     "joining": "Uni\u00e9ndose al grupo..."
+  },
+  "profile": {
+    "title": "Perfil",
+    "editName": "Editar nombre",
+    "changeEmail": "Cambiar email",
+    "changePassword": "Cambiar contrase\u00f1a",
+    "newName": "Nuevo nombre",
+    "newEmail": "Nuevo email",
+    "newPassword": "Nueva contrase\u00f1a",
+    "confirmPassword": "Confirmar contrase\u00f1a",
+    "save": "Guardar",
+    "saving": "Guardando...",
+    "sendConfirmation": "Enviar confirmaci\u00f3n",
+    "sending": "Enviando...",
+    "emailSent": "Revisa tu email para confirmar el cambio",
+    "nameUpdated": "Nombre actualizado",
+    "passwordUpdated": "Contrase\u00f1a actualizada",
+    "passwordsMismatch": "Las contrase\u00f1as no coinciden",
+    "minLengthError": "La contrase\u00f1a debe tener al menos 6 caracteres",
+    "theme": "Tema oscuro",
+    "logout": "Cerrar sesi\u00f3n"
   },
   "settings": {
     "language": "Idioma"
