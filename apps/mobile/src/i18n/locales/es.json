@@ -98,6 +98,7 @@
     "markAvailable": "Estoy disponible",
     "editAvailability": "Editar disponibilidad",
     "available": "Disponible",
+    "createEvent": "Crear quedada",
     "weekdays": ["L", "M", "X", "J", "V", "S", "D"],
     "monthStats": {
       "activeDays": "Días activos",
@@ -131,7 +132,35 @@
   },
   "plans": {
     "title": "Quedadas",
-    "empty": "No hay quedadas programadas"
+    "empty": "No hay quedadas programadas",
+    "emptySubtitle": "Ve al calendario y crea una quedada desde un día con gente disponible",
+    "noGroups": "No perteneces a ningún grupo",
+    "noGroupsSubtitle": "Crea o únete a un grupo para organizar quedadas",
+    "goToGroups": "Ir a grupos",
+    "goToCalendar": "Ir al calendario",
+    "upcoming": "Próximas",
+    "past": "Pasadas",
+    "confirmed": "confirmados",
+    "confirm": "Confirmar",
+    "decline": "Rechazar",
+    "status": {
+      "pending": "Pendiente",
+      "confirmed": "Confirmada",
+      "cancelled": "Cancelada"
+    },
+    "create": {
+      "title": "Nueva quedada",
+      "name": "Título",
+      "namePlaceholder": "Ruta, cena, cine...",
+      "time": "Hora",
+      "location": "Lugar",
+      "locationPlaceholder": "Monachil, centro...",
+      "submit": "Crear quedada",
+      "creating": "Creando...",
+      "available": "disponibles",
+      "attendees": "Asistentes",
+      "suggested": "Sugerido"
+    }
   },
   "group": {
     "title": "Grupo",

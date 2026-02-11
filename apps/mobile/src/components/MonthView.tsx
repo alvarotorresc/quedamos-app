@@ -18,6 +18,7 @@ interface MonthViewProps {
   memberColorMap: Map<string, string>;
   totalMembers: number;
   onMarkAvailability: () => void;
+  onCreateEvent: (day: Date) => void;
 }
 
 export function MonthView({
@@ -30,6 +31,7 @@ export function MonthView({
   memberColorMap,
   totalMembers,
   onMarkAvailability,
+  onCreateEvent,
 }: MonthViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -182,6 +184,19 @@ export function MonthView({
                 ? t('calendar.editAvailability')
                 : t('calendar.available')}
             </button>
+            {selMembers.length >= 2 && selectedDay && (
+              <button
+                onClick={() => onCreateEvent(selectedDay)}
+                className="flex-1 py-[7px] text-xs font-semibold rounded-btn border-none"
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#7B8CA8',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
+              >
+                {t('calendar.createEvent')}
+              </button>
+            )}
           </div>
         </div>
       )}

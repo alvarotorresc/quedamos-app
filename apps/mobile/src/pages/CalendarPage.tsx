@@ -8,21 +8,63 @@ import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
 import { useAvailability, useMyAvailability } from '../hooks/useAvailability';
 import { useMyColor } from '../hooks/useMyColor';
-import { formatDateKey, apiDateToKey } from '../lib/date-utils';
+import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
 import { WeekView } from '../components/WeekView';
 import { MonthView } from '../components/MonthView';
 import { ListView } from '../components/ListView';
 import { BestDayBanner } from '../components/BestDayBanner';
 import { MonthSummary } from '../components/MonthSummary';
 import { AvailabilityModal } from '../components/AvailabilityModal';
+import { CreateEventModal } from '../components/CreateEventModal';
+import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
+
+function suggestBestTime(availabilities: Availability[]): { time: string; slot: string } | null {
+  if (availabilities.length === 0) return null;
+
+  const votes = { morning: 0, afternoon: 0, night: 0 };
+
+  for (const a of availabilities) {
+    if (a.type === 'day') {
+      votes.morning++;
+      votes.afternoon++;
+      votes.night++;
+    } else if (a.type === 'slots' && a.slots) {
+      for (const slot of a.slots) {
+        if (slot === 'Mañana') votes.morning++;
+        else if (slot === 'Tarde') votes.afternoon++;
+        else if (slot === 'Noche') votes.night++;
+      }
+    } else if (a.type === 'range' && a.startTime && a.endTime) {
+      const start = parseInt(a.startTime.split(':')[0]);
+      const end = parseInt(a.endTime.split(':')[0]);
+      if (start <= 13 && end >= 8) votes.morning++;
+      if (start <= 19 && end >= 14) votes.afternoon++;
+      if (end >= 20 || start >= 20) votes.night++;
+    }
+  }
+
+  const entries = Object.entries(votes).sort(([, a], [, b]) => b - a);
+  if (entries[0][1] === 0) return null;
+
+  switch (entries[0][0]) {
+    case 'morning':
+      return { time: '10:00', slot: 'morning' };
+    case 'afternoon':
+      return { time: '17:00', slot: 'afternoon' };
+    case 'night':
+      return { time: '21:00', slot: 'night' };
+    default:
+      return null;
+  }
+}
 
 const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 
 type CalView = 'week' | 'month' | 'list';
 
 export default function CalendarPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const history = useHistory();
   const user = useAuthStore((s) => s.user);
   const myColor = useMyColor();
@@ -57,6 +99,8 @@ export default function CalendarPage() {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showAvailModal, setShowAvailModal] = useState(false);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [createEventPrefill, setCreateEventPrefill] = useState<EventPrefill | null>(null);
 
   // Member color map (userId -> color)
   const memberColorMap = useMemo(() => {
@@ -113,6 +157,35 @@ export default function CalendarPage() {
 
   const handleMarkAvailability = () => {
     setShowAvailModal(true);
+  };
+
+  const handleCreateEvent = (day: Date) => {
+    const dateKey = formatDateKey(day);
+    const dayAvail = availabilityByDate.get(dateKey) ?? [];
+
+    const availMembers = dayAvail.map((a) => ({
+      name: a.user?.name ?? '?',
+      color: memberColorMap.get(a.userId) ?? '#60A5FA',
+    }));
+
+    const suggestion = suggestBestTime(dayAvail);
+
+    const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
+    const dateLabel = day.toLocaleDateString(locale, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+
+    setCreateEventPrefill({
+      date: dateKey,
+      dateLabel,
+      suggestedTime: suggestion?.time ?? null,
+      suggestedSlot: suggestion?.slot ?? null,
+      availableMembers: availMembers,
+      availableCount: dayAvail.length,
+    });
+    setShowCreateEvent(true);
   };
 
   // Loading state
@@ -249,6 +322,7 @@ export default function CalendarPage() {
                   memberColorMap={memberColorMap}
                   totalMembers={members.length}
                   onMarkAvailability={handleMarkAvailability}
+                  onCreateEvent={handleCreateEvent}
                 />
               )}
               {calView === 'month' && (
@@ -262,6 +336,7 @@ export default function CalendarPage() {
                   memberColorMap={memberColorMap}
                   totalMembers={members.length}
                   onMarkAvailability={handleMarkAvailability}
+                  onCreateEvent={handleCreateEvent}
                 />
               )}
               {calView === 'list' && (
@@ -284,6 +359,7 @@ export default function CalendarPage() {
                     dateKey={bestDay.dateKey}
                     availableCount={bestDay.count}
                     totalMembers={members.length}
+                    onClick={() => handleCreateEvent(parseDateKey(bestDay.dateKey))}
                   />
                 </div>
               )}
@@ -305,6 +381,14 @@ export default function CalendarPage() {
           selectedDay={selectedDay}
           groupId={groupId}
           existingAvailability={existingAvail}
+        />
+
+        {/* Create event modal */}
+        <CreateEventModal
+          isOpen={showCreateEvent}
+          onClose={() => setShowCreateEvent(false)}
+          groupId={groupId}
+          prefill={createEventPrefill}
         />
       </IonContent>
     </IonPage>

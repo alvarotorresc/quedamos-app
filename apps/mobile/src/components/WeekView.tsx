@@ -18,6 +18,7 @@ interface WeekViewProps {
   memberColorMap: Map<string, string>;
   totalMembers: number;
   onMarkAvailability: () => void;
+  onCreateEvent: (day: Date) => void;
 }
 
 export function WeekView({
@@ -30,6 +31,7 @@ export function WeekView({
   memberColorMap,
   totalMembers,
   onMarkAvailability,
+  onCreateEvent,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -158,6 +160,22 @@ export function WeekView({
                     ? t('calendar.editAvailability')
                     : t('calendar.markAvailable')}
                 </button>
+                {availMembers.length >= 2 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCreateEvent(day);
+                    }}
+                    className="flex-1 py-2 text-xs font-semibold rounded-btn border-none"
+                    style={{
+                      background: 'rgba(255,255,255,0.04)',
+                      color: '#7B8CA8',
+                      border: '1px solid rgba(255,255,255,0.07)',
+                    }}
+                  >
+                    {t('calendar.createEvent')}
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -116,3 +116,138 @@ ion-modal.availability-modal {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ===== Desktop Phone Frame ===== */
+
+/* Mobile: all frame containers are invisible to layout */
+.desktop-frame-root,
+.desktop-frame-phone,
+.desktop-frame-screen {
+  display: contents;
+}
+.desktop-frame-branding {
+  display: none;
+}
+
+/* Desktop (≥768px): show phone frame */
+@media (min-width: 768px) {
+  .desktop-frame-root {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(135deg, #050a14 0%, #0a1628 40%, #0d1a30 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Subtle gradient orbs in background */
+  .desktop-frame-root::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .desktop-frame-root::after {
+    content: '';
+    position: absolute;
+    bottom: -15%;
+    left: -5%;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(96, 165, 250, 0.03) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* Light theme background */
+  .light .desktop-frame-root {
+    background: linear-gradient(135deg, #e2e8f0 0%, #f1f5f9 40%, #f8fafc 100%);
+  }
+
+  .light .desktop-frame-root::before {
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.06) 0%, transparent 70%);
+  }
+
+  .light .desktop-frame-root::after {
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.03) 0%, transparent 70%);
+  }
+
+  /* Phone frame */
+  .desktop-frame-phone {
+    display: block;
+    width: 390px;
+    height: 844px;
+    border-radius: 44px;
+    border: 3px solid rgba(255, 255, 255, 0.08);
+    background: var(--app-bg);
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.3),
+      0 25px 80px rgba(0, 0, 0, 0.4),
+      0 10px 30px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0;
+    /* Creates a containing block for position:fixed elements (Ionic modals/alerts) */
+    transform: translateZ(0);
+  }
+
+  .light .desktop-frame-phone {
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.05),
+      0 25px 80px rgba(0, 0, 0, 0.12),
+      0 10px 30px rgba(0, 0, 0, 0.08);
+  }
+
+  .desktop-frame-screen {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* IonApp needs to fill the phone frame */
+  .desktop-frame-screen ion-app {
+    height: 100%;
+    position: relative;
+  }
+
+  /* Override Ionic's desktop media queries that set modals to 600px wide */
+  .desktop-frame-phone ion-modal {
+    --width: 100%;
+    --max-width: 100%;
+    --height: 100%;
+    --max-height: 100%;
+  }
+
+  .desktop-frame-phone ion-modal.modal-sheet {
+    --height: calc(100% - 10px);
+  }
+
+  .desktop-frame-phone ion-alert {
+    --max-width: 100%;
+  }
+}
+
+/* Wide desktop (≥1024px): show branding */
+@media (min-width: 1024px) {
+  .desktop-frame-root {
+    gap: 80px;
+  }
+
+  .desktop-frame-branding {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    z-index: 1;
+  }
+}
