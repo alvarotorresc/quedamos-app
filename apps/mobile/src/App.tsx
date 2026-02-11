@@ -19,6 +19,7 @@ import JoinGroupPage from './pages/JoinGroupPage';
 
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
+import DesktopFrame from './components/DesktopFrame';
 
 function AppTabs() {
   const { t } = useTranslation();
@@ -89,27 +90,31 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <IonApp>
-        <div className="flex items-center justify-center h-screen bg-bg">
-          <IonSpinner name="crescent" className="text-primary w-8 h-8" />
-        </div>
-      </IonApp>
+      <DesktopFrame>
+        <IonApp>
+          <div className="flex items-center justify-center h-screen bg-bg">
+            <IonSpinner name="crescent" className="text-primary w-8 h-8" />
+          </div>
+        </IonApp>
+      </DesktopFrame>
     );
   }
 
   return (
-    <IonApp>
-      <IonReactRouter>
-        <IonRouterOutlet>
-          <GuestRoute exact path="/" component={SplashPage} />
-          <GuestRoute exact path="/login" component={LoginPage} />
-          <GuestRoute exact path="/register" component={RegisterPage} />
-          <GuestRoute exact path="/forgot-password" component={ForgotPasswordPage} />
-          <Route exact path="/reset-password" component={ResetPasswordPage} />
-          <ProtectedRoute path="/tabs" component={AppTabs} />
-          <Route exact path="/join/:code" component={JoinGroupPage} />
-        </IonRouterOutlet>
-      </IonReactRouter>
-    </IonApp>
+    <DesktopFrame>
+      <IonApp>
+        <IonReactRouter>
+          <IonRouterOutlet>
+            <GuestRoute exact path="/" component={SplashPage} />
+            <GuestRoute exact path="/login" component={LoginPage} />
+            <GuestRoute exact path="/register" component={RegisterPage} />
+            <GuestRoute exact path="/forgot-password" component={ForgotPasswordPage} />
+            <Route exact path="/reset-password" component={ResetPasswordPage} />
+            <ProtectedRoute path="/tabs" component={AppTabs} />
+            <Route exact path="/join/:code" component={JoinGroupPage} />
+          </IonRouterOutlet>
+        </IonReactRouter>
+      </IonApp>
+    </DesktopFrame>
   );
 }

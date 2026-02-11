@@ -98,6 +98,7 @@
     "markAvailable": "I'm available",
     "editAvailability": "Edit availability",
     "available": "Available",
+    "createEvent": "Create plan",
     "weekdays": ["M", "T", "W", "T", "F", "S", "S"],
     "monthStats": {
       "activeDays": "Active days",
@@ -131,7 +132,35 @@
   },
   "plans": {
     "title": "Plans",
-    "empty": "No plans scheduled"
+    "empty": "No plans scheduled",
+    "emptySubtitle": "Go to the calendar and create a plan from a day with available people",
+    "noGroups": "You don't belong to any group",
+    "noGroupsSubtitle": "Create or join a group to organize plans",
+    "goToGroups": "Go to groups",
+    "goToCalendar": "Go to calendar",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "confirmed": "confirmed",
+    "confirm": "Confirm",
+    "decline": "Decline",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
+    },
+    "create": {
+      "title": "New plan",
+      "name": "Title",
+      "namePlaceholder": "Hike, dinner, movies...",
+      "time": "Time",
+      "location": "Place",
+      "locationPlaceholder": "Downtown, park...",
+      "submit": "Create plan",
+      "creating": "Creating...",
+      "available": "available",
+      "attendees": "Attendees",
+      "suggested": "Suggested"
+    }
   },
   "group": {
     "title": "Group",
