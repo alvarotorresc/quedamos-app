@@ -16,6 +16,7 @@ import { ListView } from '../components/ListView';
 import { BestDayBanner } from '../components/BestDayBanner';
 import { MonthSummary } from '../components/MonthSummary';
 import { AvailabilityModal } from '../components/AvailabilityModal';
+import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
 import { CreateEventModal } from '../components/CreateEventModal';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
@@ -101,6 +102,7 @@ export default function CalendarPage() {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [showAvailModal, setShowAvailModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventPrefill, setCreateEventPrefill] = useState<EventPrefill | null>(null);
 
@@ -216,21 +218,22 @@ export default function CalendarPage() {
           <IonToolbar className="py-2">
             <IonTitle>{t('calendar.title')}</IonTitle>
             <div slot="end" className="pr-4">
-              <Avatar name={user?.name ?? 'U'} color={myColor} size={32} />
+              <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
             </div>
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
-          <div className="text-center py-20 px-4">
-            <p className="text-text-muted text-base font-semibold">
+          <div className="text-center py-16 px-4">
+            <div className="text-5xl mb-4">📆</div>
+            <h2 className="text-lg font-bold text-text mb-1">
               {t('calendar.noGroups')}
-            </p>
-            <p className="text-text-dark text-sm mt-1">
+            </h2>
+            <p className="text-sm text-text-muted mb-8">
               {t('calendar.noGroupsSubtitle')}
             </p>
             <button
               onClick={() => history.push('/tabs/group')}
-              className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
+              className="px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
             >
               {t('calendar.goToGroups')}
             </button>
@@ -246,7 +249,7 @@ export default function CalendarPage() {
         <IonToolbar className="py-2">
           <IonTitle>{t('calendar.title')}</IonTitle>
           <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} />
+            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
           </div>
         </IonToolbar>
       </IonHeader>
@@ -325,6 +328,7 @@ export default function CalendarPage() {
                   totalMembers={members.length}
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
+                  onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
                 />
               )}
               {calView === 'month' && (
@@ -339,6 +343,7 @@ export default function CalendarPage() {
                   totalMembers={members.length}
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
+                  onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
                 />
               )}
               {calView === 'list' && (
@@ -375,6 +380,16 @@ export default function CalendarPage() {
             </>
           )}
         </div>
+
+        {/* Availability detail modal */}
+        <AvailabilityDetailModal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          selectedDay={selectedDay}
+          availabilities={selectedDay ? availabilityByDate.get(formatDateKey(selectedDay)) ?? [] : []}
+          memberColorMap={memberColorMap}
+          onMarkAvailability={handleMarkAvailability}
+        />
 
         {/* Availability modal */}
         <AvailabilityModal

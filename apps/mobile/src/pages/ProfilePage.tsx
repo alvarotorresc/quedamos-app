@@ -4,10 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
 import { useMyColor } from '../hooks/useMyColor';
+import { useNotificationPreferences, useUpdateNotificationPreference } from '../hooks/useNotificationPreferences';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { LanguageSelector } from '../ui/LanguageSelector';
 import { translateAuthError } from '../lib/auth-errors';
+import type { NotificationType } from '../services/notification-preferences';
 
 type ExpandedSection = 'name' | 'email' | 'password' | null;
 
@@ -21,6 +23,16 @@ export default function ProfilePage() {
   const myColor = useMyColor();
   const darkMode = useThemeStore((s) => s.darkMode);
   const toggleTheme = useThemeStore((s) => s.toggle);
+  const { data: notifPrefs } = useNotificationPreferences();
+  const updatePref = useUpdateNotificationPreference();
+
+  const NOTIF_TYPES: { type: NotificationType; labelKey: string }[] = [
+    { type: 'new_event', labelKey: 'profile.notifications.newEvent' },
+    { type: 'event_confirmed', labelKey: 'profile.notifications.eventConfirmed' },
+    { type: 'event_declined', labelKey: 'profile.notifications.eventDeclined' },
+    { type: 'member_joined', labelKey: 'profile.notifications.memberJoined' },
+    { type: 'member_left', labelKey: 'profile.notifications.memberLeft' },
+  ];
 
   const [expanded, setExpanded] = useState<ExpandedSection>(null);
   const [loading, setLoading] = useState(false);
@@ -245,6 +257,30 @@ export default function ProfilePage() {
               <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${darkMode ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`} />
             </div>
           </button>
+
+          {/* Notification preferences */}
+          <div className="mt-6">
+            <p className="text-xs text-text-dark mb-2">{t('profile.notifications.title')}</p>
+            <div className="flex flex-col gap-1">
+              {NOTIF_TYPES.map(({ type, labelKey }) => {
+                const pref = notifPrefs?.find((p) => p.type === type);
+                const enabled = pref?.enabled ?? true;
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => updatePref.mutate({ type, enabled: !enabled })}
+                    className="w-full bg-white/[0.025] border border-white/5 rounded-btn px-4 py-3 flex items-center justify-between"
+                  >
+                    <span className="text-sm text-text">{t(labelKey)}</span>
+                    <div className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary/30' : 'bg-white/10'}`}>
+                      <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${enabled ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Sign out */}
           <div className="mt-8 mb-8">

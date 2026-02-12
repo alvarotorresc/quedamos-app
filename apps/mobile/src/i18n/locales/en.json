@@ -128,6 +128,9 @@
       "delete": "Delete",
       "deleting": "Deleting...",
       "selectSlot": "Select at least one time slot"
+    },
+    "availabilityDetail": {
+      "title": "Day availability"
     }
   },
   "plans": {
@@ -231,6 +234,14 @@
     "passwordsMismatch": "Passwords do not match",
     "minLengthError": "Password must be at least 6 characters",
     "theme": "Dark theme",
+    "notifications": {
+      "title": "Notifications",
+      "newEvent": "New plan created",
+      "eventConfirmed": "Plan confirmed by all",
+      "eventDeclined": "Someone declined a plan",
+      "memberJoined": "New member in group",
+      "memberLeft": "Member left group"
+    },
     "logout": "Sign out"
   },
   "settings": {

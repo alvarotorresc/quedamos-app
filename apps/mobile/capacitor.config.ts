@@ -16,6 +16,9 @@ const config: CapacitorConfig = {
       backgroundColor: '#080E1A',
     },
   },
+  android: {
+    appendUrlToDeepLinkPaths: true,
+  },
 };
 
 export default config;

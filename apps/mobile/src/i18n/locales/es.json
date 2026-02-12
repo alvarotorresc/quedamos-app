@@ -128,6 +128,9 @@
       "delete": "Eliminar",
       "deleting": "Eliminando...",
       "selectSlot": "Selecciona al menos una franja"
+    },
+    "availabilityDetail": {
+      "title": "Disponibilidad del día"
     }
   },
   "plans": {
@@ -231,7 +234,15 @@
     "passwordsMismatch": "Las contrase\u00f1as no coinciden",
     "minLengthError": "La contrase\u00f1a debe tener al menos 6 caracteres",
     "theme": "Tema oscuro",
-    "logout": "Cerrar sesi\u00f3n"
+    "notifications": {
+      "title": "Notificaciones",
+      "newEvent": "Nueva quedada creada",
+      "eventConfirmed": "Quedada confirmada por todos",
+      "eventDeclined": "Alguien rechazó una quedada",
+      "memberJoined": "Nuevo miembro en grupo",
+      "memberLeft": "Miembro salió del grupo"
+    },
+    "logout": "Cerrar sesión"
   },
   "settings": {
     "language": "Idioma"

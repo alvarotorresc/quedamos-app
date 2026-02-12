@@ -19,6 +19,7 @@ interface MonthViewProps {
   totalMembers: number;
   onMarkAvailability: () => void;
   onCreateEvent: (day: Date) => void;
+  onViewDetail: (day: Date) => void;
 }
 
 export function MonthView({
@@ -32,6 +33,7 @@ export function MonthView({
   totalMembers,
   onMarkAvailability,
   onCreateEvent,
+  onViewDetail,
 }: MonthViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -163,12 +165,15 @@ export function MonthView({
           </div>
 
           {selMembers.length > 0 ? (
-            <>
+            <div
+              onClick={() => selectedDay && onViewDetail(selectedDay)}
+              className="cursor-pointer"
+            >
               <AvatarStack members={selMembers} />
               <div className="text-[10px] text-text-dark mt-1">
                 {selMembers.map((m) => m.name).join(', ')}
               </div>
-            </>
+            </div>
           ) : (
             <div className="text-[11px] text-text-dark">
               {t('calendar.noAvailability')}

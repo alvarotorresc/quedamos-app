@@ -16,12 +16,13 @@ model User {
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  createdGroups  Group[]         @relation("CreatedGroups")
-  memberships    GroupMember[]
-  availability   Availability[]
-  createdEvents  Event[]         @relation("CreatedEvents")
-  eventResponses EventAttendee[]
-  pushTokens     PushToken[]
+  createdGroups           Group[]                  @relation("CreatedGroups")
+  memberships             GroupMember[]
+  availability            Availability[]
+  createdEvents           Event[]                  @relation("CreatedEvents")
+  eventResponses          EventAttendee[]
+  pushTokens              PushToken[]
+  notificationPreferences NotificationPreference[]
 
   @@map("users")
 }
@@ -123,4 +124,16 @@ model PushToken {
 
   @@unique([userId, token])
   @@map("push_tokens")
+}
+
+model NotificationPreference {
+  userId  String  @map("user_id") @db.Uuid
+  type    String  // 'new_event' | 'event_confirmed' | 'event_declined' | 'member_joined' | 'member_left'
+  enabled Boolean @default(true)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, type])
+  @@map("notification_preferences")
 }

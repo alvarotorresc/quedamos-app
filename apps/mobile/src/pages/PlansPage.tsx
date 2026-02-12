@@ -106,21 +106,22 @@ export default function PlansPage() {
           <IonToolbar className="py-2">
             <IonTitle>{t('plans.title')}</IonTitle>
             <div slot="end" className="pr-4">
-              <Avatar name={user?.name ?? 'U'} color={myColor} size={32} />
+              <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
             </div>
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
-          <div className="text-center py-20 px-4">
-            <p className="text-text-muted text-base font-semibold">
+          <div className="text-center py-16 px-4">
+            <div className="text-5xl mb-4">📋</div>
+            <h2 className="text-lg font-bold text-text mb-1">
               {t('plans.noGroups')}
-            </p>
-            <p className="text-text-dark text-sm mt-1">
+            </h2>
+            <p className="text-sm text-text-muted mb-8">
               {t('plans.noGroupsSubtitle')}
             </p>
             <button
               onClick={() => history.push('/tabs/group')}
-              className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
+              className="px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
             >
               {t('plans.goToGroups')}
             </button>
@@ -138,7 +139,7 @@ export default function PlansPage() {
         <IonToolbar className="py-2">
           <IonTitle>{t('plans.title')}</IonTitle>
           <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} />
+            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
           </div>
         </IonToolbar>
       </IonHeader>

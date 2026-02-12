@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonSpinner, IonAlert } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useHistory } from 'react-router-dom';
+import { Share } from '@capacitor/share';
 import { useGroup, useGroupInvite, useRefreshInvite, useLeaveGroup } from '../hooks/useGroups';
 import { useAuthStore } from '../stores/auth';
 import { Avatar } from '../ui/Avatar';
@@ -39,13 +40,25 @@ export default function GroupDetailPage() {
   const handleShare = async () => {
     if (!invite?.inviteUrl || !group) return;
     try {
-      await navigator.share({
+      await Share.share({
         title: group.name,
         text: t('group.shareMessage'),
         url: invite.inviteUrl,
+        dialogTitle: t('group.shareMessage'),
       });
     } catch {
-      // User cancelled or not supported — fall through to copy
+      // Capacitor Share failed or user cancelled — try Web Share API
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: group.name,
+            text: t('group.shareMessage'),
+            url: invite.inviteUrl,
+          });
+          return;
+        } catch { /* user cancelled */ }
+      }
+      // Final fallback: copy to clipboard
       handleCopy();
     }
   };

@@ -4,6 +4,7 @@ import { IonReactRouter } from '@ionic/react-router';
 import { Route, Redirect } from 'react-router-dom';
 import { calendarOutline, listOutline, peopleOutline, personOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
+import { App as CapApp } from '@capacitor/app';
 
 import CalendarPage from './pages/CalendarPage';
 import PlansPage from './pages/PlansPage';
@@ -89,6 +90,24 @@ export default function App() {
     initialize();
     initializeTheme();
   }, [initialize, initializeTheme]);
+
+  // Deep link handler for native app (reset password, join group)
+  useEffect(() => {
+    const listener = CapApp.addListener('appUrlOpen', (event) => {
+      try {
+        const url = new URL(event.url);
+        const path = url.pathname + url.search + url.hash;
+        if (path) {
+          window.location.href = path;
+        }
+      } catch {
+        // Invalid URL — ignore
+      }
+    });
+    return () => {
+      listener.then((l) => l.remove());
+    };
+  }, []);
 
   if (isLoading) {
     return (

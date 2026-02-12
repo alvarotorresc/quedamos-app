@@ -19,6 +19,7 @@ interface WeekViewProps {
   totalMembers: number;
   onMarkAvailability: () => void;
   onCreateEvent: (day: Date) => void;
+  onViewDetail: (day: Date) => void;
 }
 
 export function WeekView({
@@ -32,6 +33,7 @@ export function WeekView({
   totalMembers,
   onMarkAvailability,
   onCreateEvent,
+  onViewDetail,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -119,7 +121,15 @@ export function WeekView({
 
                 {/* Members info */}
                 <div>
-                  <div className="flex gap-1 items-center">
+                  <div
+                    className="flex gap-1 items-center"
+                    onClick={(e) => {
+                      if (availMembers.length > 0) {
+                        e.stopPropagation();
+                        onViewDetail(day);
+                      }
+                    }}
+                  >
                     {availMembers.length > 0 && (
                       <AvatarStack members={availMembers} size={18} />
                     )}

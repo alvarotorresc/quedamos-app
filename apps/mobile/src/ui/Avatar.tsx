@@ -2,9 +2,11 @@ interface AvatarProps {
   name: string;
   color: string;
   size?: number;
+  onClick?: () => void;
+  className?: string;
 }
 
-export function Avatar({ name, color, size = 32 }: AvatarProps) {
+export function Avatar({ name, color, size = 32, onClick, className }: AvatarProps) {
   const parts = name.trim().split(/\s+/);
   const initials = parts.length >= 2
     ? (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase()
@@ -12,7 +14,10 @@ export function Avatar({ name, color, size = 32 }: AvatarProps) {
 
   return (
     <div
-      className="flex items-center justify-center font-bold shrink-0"
+      className={`flex items-center justify-center font-bold shrink-0 ${className ?? ''}`}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       style={{
         width: size,
         height: size,

@@ -3,6 +3,7 @@ import { IonPage, IonContent } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { HiOutlineEye, HiOutlineEyeSlash } from 'react-icons/hi2';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
@@ -40,7 +41,9 @@ export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
@@ -149,14 +152,24 @@ export default function RegisterPage() {
 
           <div>
             <label className="text-xs text-text-dark block mb-1">{t('common.password')}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
-              placeholder={t('common.passwordPlaceholder')}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                placeholder={t('common.passwordPlaceholder')}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <HiOutlineEyeSlash size={20} /> : <HiOutlineEye size={20} />}
+              </button>
+            </div>
 
             {password.length > 0 && (
               <div className="mt-3 space-y-2">
@@ -188,18 +201,28 @@ export default function RegisterPage() {
 
           <div>
             <label className="text-xs text-text-dark block mb-1">{t('register.confirmPasswordLabel')}</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className={`w-full bg-white/5 border rounded-btn px-4 py-3 text-text outline-none focus:border-primary ${
-                confirmPassword.length > 0 && password !== confirmPassword
-                  ? 'border-danger/50'
-                  : 'border-white/10'
-              }`}
-              placeholder={t('common.passwordPlaceholder')}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`w-full bg-white/5 border rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
+                  confirmPassword.length > 0 && password !== confirmPassword
+                    ? 'border-danger/50'
+                    : 'border-white/10'
+                }`}
+                placeholder={t('common.passwordPlaceholder')}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <HiOutlineEyeSlash size={20} /> : <HiOutlineEye size={20} />}
+              </button>
+            </div>
             {confirmPassword.length > 0 && password !== confirmPassword && (
               <p className="text-danger text-xs mt-1">{t('register.passwordsMismatch')}</p>
             )}

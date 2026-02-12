@@ -3,6 +3,15 @@ import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
+import { UpdatePreferenceDto, NotificationType } from './dto/update-preference.dto';
+
+const ALL_NOTIFICATION_TYPES: NotificationType[] = [
+  'new_event',
+  'event_confirmed',
+  'event_declined',
+  'member_joined',
+  'member_left',
+];
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
@@ -66,6 +75,40 @@ export class NotificationsService implements OnModuleInit {
     });
 
     return { success: true };
+  }
+
+  async getPreferences(userId: string) {
+    const saved = await this.prisma.notificationPreference.findMany({
+      where: { userId },
+    });
+    const savedMap = new Map(saved.map((p) => [p.type, p.enabled]));
+
+    return ALL_NOTIFICATION_TYPES.map((type) => ({
+      type,
+      enabled: savedMap.get(type) ?? true,
+    }));
+  }
+
+  async updatePreference(userId: string, dto: UpdatePreferenceDto) {
+    return this.prisma.notificationPreference.upsert({
+      where: {
+        userId_type: { userId, type: dto.type },
+      },
+      update: { enabled: dto.enabled },
+      create: { userId, type: dto.type, enabled: dto.enabled },
+    });
+  }
+
+  async isNotificationEnabled(
+    userId: string,
+    type: NotificationType,
+  ): Promise<boolean> {
+    const pref = await this.prisma.notificationPreference.findUnique({
+      where: {
+        userId_type: { userId, type },
+      },
+    });
+    return pref?.enabled ?? true;
   }
 
   async sendToUser(

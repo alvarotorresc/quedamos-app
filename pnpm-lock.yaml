@@ -141,6 +141,9 @@ importers:
       '@capacitor/push-notifications':
         specifier: ^7.0.0
         version: 7.0.4(@capacitor/core@7.4.5)
+      '@capacitor/share':
+        specifier: ^7.0.4
+        version: 7.0.4(@capacitor/core@7.4.5)
       '@capacitor/status-bar':
         specifier: ^7.0.0
         version: 7.0.4(@capacitor/core@7.4.5)
@@ -495,6 +498,11 @@ packages:
 
   '@capacitor/push-notifications@7.0.4':
     resolution: {integrity: sha512-ygTRlA9OiTNfwMZwk7/AUhtVb0/AoCDedsg5RLZUFs5g9abW0ePPzhLl4rSIYwp+4njNjXyIUsQvhnh344/HZA==}
+    peerDependencies:
+      '@capacitor/core': '>=7.0.0'
+
+  '@capacitor/share@7.0.4':
+    resolution: {integrity: sha512-wNXxmXUcChrtbZ5jQv8scFIbIGKo3rk6B7qpWySxfUhYJP5NANgAqQ9Z69m0k/zYsucdh66SBU7XW1ykd9aUug==}
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
@@ -5306,6 +5314,10 @@ snapshots:
       '@capacitor/core': 7.4.5
 
   '@capacitor/push-notifications@7.0.4(@capacitor/core@7.4.5)':
+    dependencies:
+      '@capacitor/core': 7.4.5
+
+  '@capacitor/share@7.0.4(@capacitor/core@7.4.5)':
     dependencies:
       '@capacitor/core': 7.4.5
 

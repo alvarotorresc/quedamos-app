@@ -95,7 +95,7 @@ export default function GroupPage() {
         <IonToolbar className="py-2">
           <IonTitle>{t('group.title')}</IonTitle>
           <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} />
+            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
           </div>
         </IonToolbar>
       </IonHeader>
