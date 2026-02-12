@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.quedamos",
+      "sha256_cert_fingerprints": [
+        "23:A3:3D:23:55:09:E2:C4:5A:1E:82:9E:E0:82:B4:75:9F:4D:3F:22:5D:AD:81:4A:A5:CA:50:32:FA:4B:87:19"
+      ]
+    }
+  }
+]
