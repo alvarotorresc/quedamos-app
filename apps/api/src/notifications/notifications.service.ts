@@ -31,7 +31,7 @@ export class NotificationsService implements OnModuleInit {
         credential: admin.credential.cert({
           projectId,
           clientEmail,
-          privateKey: privateKey.replace(/\\n/g, '\n'),
+          privateKey: Buffer.from(privateKey, 'base64').toString('utf-8'),
         }),
       });
       this.firebaseInitialized = true;
