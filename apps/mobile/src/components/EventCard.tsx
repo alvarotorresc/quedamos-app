@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { AvatarStack } from '../ui/AvatarStack';
+import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
-import { HiOutlineMapPin, HiOutlineClock } from 'react-icons/hi2';
+import { HiOutlineMapPin, HiOutlineClock, HiCheck, HiXMark, HiMinus } from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
 import { useAuthStore } from '../stores/auth';
 import { apiDateToKey } from '../lib/date-utils';
@@ -49,13 +49,8 @@ export function EventCard({ event, groupId, memberColorMap }: EventCardProps) {
 
   // Current user's attendee status
   const myAttendee = event.attendees.find((a) => a.userId === user?.id);
-  const isPending = myAttendee?.status === 'pending';
-
-  // Avatar stack data
-  const avatarMembers = confirmedAttendees.map((a) => ({
-    name: a.user.name,
-    color: memberColorMap.get(a.userId) ?? MEMBER_COLORS[0],
-  }));
+  const myStatus = myAttendee?.status ?? 'pending';
+  const isPending = myStatus === 'pending';
 
   const handleRespond = (status: 'confirmed' | 'declined') => {
     respondEvent.mutate({ eventId: event.id, status });
@@ -99,14 +94,26 @@ export function EventCard({ event, groupId, memberColorMap }: EventCardProps) {
         </p>
       )}
 
-      {/* Attendees */}
-      <div className="flex items-center justify-between mt-2">
-        <div className="flex items-center gap-2">
-          {avatarMembers.length > 0 && <AvatarStack members={avatarMembers} size={22} />}
-          <span className="text-[11px] text-text-muted">
-            {confirmedAttendees.length}/{totalAttendees} {t('plans.confirmed')}
-          </span>
-        </div>
+      {/* Attendees list */}
+      <div className="mt-2.5 space-y-1.5">
+        <span className="text-[11px] text-text-dark font-semibold uppercase tracking-wider">
+          {confirmedAttendees.length}/{totalAttendees} {t('plans.confirmed')}
+        </span>
+        {event.attendees.map((a) => {
+          const color = memberColorMap.get(a.userId) ?? MEMBER_COLORS[0];
+          const statusIcon = a.status === 'confirmed'
+            ? <HiCheck className="w-3.5 h-3.5 text-success" />
+            : a.status === 'declined'
+            ? <HiXMark className="w-3.5 h-3.5 text-danger" />
+            : <HiMinus className="w-3.5 h-3.5 text-text-dark" />;
+          return (
+            <div key={a.userId} className="flex items-center gap-2">
+              <Avatar name={a.user.name} color={color} size={22} />
+              <span className="text-xs text-text flex-1">{a.user.name}</span>
+              {statusIcon}
+            </div>
+          );
+        })}
       </div>
 
       {/* Respond buttons */}
@@ -131,6 +138,20 @@ export function EventCard({ event, groupId, memberColorMap }: EventCardProps) {
           >
             {t('plans.decline')}
           </button>
+        </div>
+      )}
+
+      {/* User response status */}
+      {!isPending && myAttendee && event.status !== 'cancelled' && (
+        <div
+          className="mt-3 py-2 rounded-btn text-xs font-semibold text-center"
+          style={{
+            background: myStatus === 'confirmed' ? 'rgba(52,211,153,0.1)' : 'rgba(251,113,133,0.1)',
+            color: myStatus === 'confirmed' ? '#34D399' : '#FB7185',
+            border: `1px solid ${myStatus === 'confirmed' ? 'rgba(52,211,153,0.15)' : 'rgba(251,113,133,0.15)'}`,
+          }}
+        >
+          {myStatus === 'confirmed' ? t('plans.youConfirmed') : t('plans.youDeclined')}
         </div>
       )}
     </Card>

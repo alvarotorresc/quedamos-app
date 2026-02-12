@@ -143,6 +143,8 @@
     "confirmed": "confirmed",
     "confirm": "Confirm",
     "decline": "Decline",
+    "youConfirmed": "You confirmed attendance",
+    "youDeclined": "You declined this event",
     "status": {
       "pending": "Pending",
       "confirmed": "Confirmed",

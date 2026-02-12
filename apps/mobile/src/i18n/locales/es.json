@@ -143,6 +143,8 @@
     "confirmed": "confirmados",
     "confirm": "Confirmar",
     "decline": "Rechazar",
+    "youConfirmed": "Has confirmado asistencia",
+    "youDeclined": "Has rechazado esta quedada",
     "status": {
       "pending": "Pendiente",
       "confirmed": "Confirmada",

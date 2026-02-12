@@ -1,10 +1,11 @@
 import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
-import { getToken } from 'firebase/messaging';
+import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from './firebase';
 import { api } from './api';
 
 let currentToken: string | null = null;
+let webForegroundSetup = false;
 
 export function getCurrentToken(): string | null {
   return currentToken;
@@ -31,7 +32,8 @@ async function registerNative(): Promise<string | null> {
       resolve(token.value);
     });
 
-    PushNotifications.addListener('registrationError', () => {
+    PushNotifications.addListener('registrationError', (error) => {
+      console.error('[Push] Native registration error:', error);
       resolve(null);
     });
 
@@ -87,14 +89,42 @@ export function setupPushListeners(): void {
   PushNotifications.addListener(
     'pushNotificationReceived',
     (notification) => {
-      console.log('Push received in foreground:', notification);
+      console.log('[Push] Received in foreground:', notification);
+      // On Android, foreground notifications are not shown automatically.
+      // The notification object contains title/body but needs a local notification
+      // plugin to display as a system notification. For now, we log it.
     },
   );
 
   PushNotifications.addListener(
     'pushNotificationActionPerformed',
     (action) => {
-      console.log('Push action performed:', action);
+      console.log('[Push] Action performed:', action);
     },
   );
+}
+
+/**
+ * Set up web foreground message handler.
+ * When the browser tab is in the foreground, the service worker's
+ * onBackgroundMessage does NOT fire - we need onMessage instead.
+ */
+export function setupWebForegroundHandler(): void {
+  if (Capacitor.isNativePlatform() || webForegroundSetup) return;
+  webForegroundSetup = true;
+
+  getFirebaseMessaging().then((messaging) => {
+    if (!messaging) return;
+
+    onMessage(messaging, (payload) => {
+      console.log('[Push] Web foreground message:', payload);
+      const { title, body } = payload.notification ?? {};
+      if (title && 'Notification' in window && Notification.permission === 'granted') {
+        new Notification(title, {
+          body: body ?? '',
+          icon: '/logo.png',
+        });
+      }
+    });
+  });
 }
