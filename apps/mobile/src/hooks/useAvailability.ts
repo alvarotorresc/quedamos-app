@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { availabilityService, CreateAvailabilityDto } from '../services/availability';
+import { broadcastSync } from '../lib/group-sync';
 
 export function useAvailability(groupId: string) {
   return useQuery({
@@ -25,6 +26,7 @@ export function useCreateAvailability(groupId: string) {
       availabilityService.create(groupId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
+      broadcastSync(groupId, 'availability');
     },
   });
 }
@@ -36,6 +38,7 @@ export function useDeleteAvailability(groupId: string) {
     mutationFn: (date: string) => availabilityService.delete(groupId, date),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
+      broadcastSync(groupId, 'availability');
     },
   });
 }

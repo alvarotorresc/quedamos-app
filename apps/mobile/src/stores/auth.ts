@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { unregisterFromBackend } from '../lib/push-notifications';
 import i18n from '../i18n';
 
 interface User {
@@ -53,6 +54,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signOut: async () => {
+    await unregisterFromBackend().catch(() => {});
     await supabase.auth.signOut();
     set({ user: null });
   },

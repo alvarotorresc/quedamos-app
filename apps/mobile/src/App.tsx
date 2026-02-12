@@ -20,9 +20,11 @@ import JoinGroupPage from './pages/JoinGroupPage';
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import DesktopFrame from './components/DesktopFrame';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 function AppTabs() {
   const { t } = useTranslation();
+  usePushNotifications();
 
   return (
     <IonTabs>

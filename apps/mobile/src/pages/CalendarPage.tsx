@@ -8,6 +8,7 @@ import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
 import { useAvailability, useMyAvailability } from '../hooks/useAvailability';
 import { useMyColor } from '../hooks/useMyColor';
+import { useGroupSync } from '../hooks/useGroupSync';
 import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
 import { WeekView } from '../components/WeekView';
 import { MonthView } from '../components/MonthView';
@@ -84,6 +85,7 @@ export default function CalendarPage() {
   }, [groups, currentGroup, setCurrentGroup, getPersistedGroupId]);
 
   const groupId = currentGroup?.id ?? '';
+  useGroupSync(groupId || undefined);
 
   // Group detail (for members)
   const { data: groupDetail } = useGroup(groupId);

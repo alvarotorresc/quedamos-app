@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsService, CreateEventDto } from '../services/events';
+import { broadcastSync } from '../lib/group-sync';
 
 export function useEvents(groupId: string) {
   return useQuery({
@@ -24,6 +25,7 @@ export function useCreateEvent(groupId: string) {
     mutationFn: (data: CreateEventDto) => eventsService.create(groupId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', groupId] });
+      broadcastSync(groupId, 'events');
     },
   });
 }
@@ -36,6 +38,7 @@ export function useRespondEvent(groupId: string) {
       eventsService.respond(groupId, eventId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', groupId] });
+      broadcastSync(groupId, 'events');
     },
   });
 }

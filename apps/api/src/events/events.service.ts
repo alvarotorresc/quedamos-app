@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { GroupsService } from '../groups/groups.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { RespondEventDto } from './dto/respond-event.dto';
 
@@ -9,6 +10,7 @@ export class EventsService {
   constructor(
     private prisma: PrismaService,
     private groupsService: GroupsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async findAllForGroup(groupId: string, userId: string) {
@@ -51,7 +53,7 @@ export class EventsService {
 
     const members = await this.groupsService.getMembers(groupId, userId);
 
-    return this.prisma.event.create({
+    const event = await this.prisma.event.create({
       data: {
         groupId,
         createdById: userId,
@@ -75,6 +77,19 @@ export class EventsService {
         createdBy: true,
       },
     });
+
+    // Fire-and-forget push notification
+    this.notificationsService
+      .sendToGroup(
+        groupId,
+        'Nueva quedada',
+        `${event.createdBy.name} ha creado "${event.title}"`,
+        userId,
+        { type: 'new_event', eventId: event.id, groupId },
+      )
+      .catch(() => {});
+
+    return event;
   }
 
   async respond(
@@ -115,6 +130,22 @@ export class EventsService {
         where: { id: eventId },
         data: { status: 'confirmed' },
       });
+
+      // Fire-and-forget push notification
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+      });
+      if (event) {
+        this.notificationsService
+          .sendToGroup(
+            groupId,
+            'Quedada confirmada',
+            `Todos han confirmado "${event.title}"`,
+            undefined,
+            { type: 'event_confirmed', eventId, groupId },
+          )
+          .catch(() => {});
+      }
     } else if (anyDeclined) {
       await this.prisma.event.update({
         where: { id: eventId },

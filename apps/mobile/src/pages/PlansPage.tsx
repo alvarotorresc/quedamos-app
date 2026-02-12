@@ -8,6 +8,7 @@ import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
 import { useEvents } from '../hooks/useEvents';
 import { useMyColor } from '../hooks/useMyColor';
+import { useGroupSync } from '../hooks/useGroupSync';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
 import { EventCard } from '../components/EventCard';
 import type { Event } from '../services/events';
@@ -35,6 +36,7 @@ export default function PlansPage() {
   }, [groups, currentGroup, setCurrentGroup, getPersistedGroupId]);
 
   const groupId = currentGroup?.id ?? '';
+  useGroupSync(groupId || undefined);
 
   // Group detail (for members)
   const { data: groupDetail } = useGroup(groupId);
