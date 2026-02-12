@@ -99,9 +99,12 @@ export class NotificationsService implements OnModuleInit {
       where: { groupId },
     });
 
-    const userIds = members
-      .map((m) => m.userId)
-      .filter((id) => id !== excludeUserId);
+    const allUserIds = members.map((m) => m.userId);
+    const userIds = allUserIds.filter((id) => id !== excludeUserId);
+
+    this.logger.debug(
+      `sendToGroup: group=${groupId}, members=${allUserIds.length}, exclude=${excludeUserId}, remaining=${userIds.length}`,
+    );
 
     if (userIds.length === 0) return { sent: 0 };
 

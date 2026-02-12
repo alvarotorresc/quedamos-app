@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { Avatar } from '../ui/Avatar';
+import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
-import { HiOutlineMapPin, HiOutlineClock, HiCheck, HiXMark, HiMinus } from 'react-icons/hi2';
+import { HiOutlineMapPin, HiOutlineClock } from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
 import { useAuthStore } from '../stores/auth';
 import { apiDateToKey } from '../lib/date-utils';
@@ -45,6 +45,7 @@ export function EventCard({ event, groupId, memberColorMap }: EventCardProps) {
 
   // Attendees
   const confirmedAttendees = event.attendees.filter((a) => a.status === 'confirmed');
+  const declinedAttendees = event.attendees.filter((a) => a.status === 'declined');
   const totalAttendees = event.attendees.length;
 
   // Current user's attendee status
@@ -94,26 +95,37 @@ export function EventCard({ event, groupId, memberColorMap }: EventCardProps) {
         </p>
       )}
 
-      {/* Attendees list */}
-      <div className="mt-2.5 space-y-1.5">
-        <span className="text-[11px] text-text-dark font-semibold uppercase tracking-wider">
-          {confirmedAttendees.length}/{totalAttendees} {t('plans.confirmed')}
-        </span>
-        {event.attendees.map((a) => {
-          const color = memberColorMap.get(a.userId) ?? MEMBER_COLORS[0];
-          const statusIcon = a.status === 'confirmed'
-            ? <HiCheck className="w-3.5 h-3.5 text-success" />
-            : a.status === 'declined'
-            ? <HiXMark className="w-3.5 h-3.5 text-danger" />
-            : <HiMinus className="w-3.5 h-3.5 text-text-dark" />;
-          return (
-            <div key={a.userId} className="flex items-center gap-2">
-              <Avatar name={a.user.name} color={color} size={22} />
-              <span className="text-xs text-text flex-1">{a.user.name}</span>
-              {statusIcon}
-            </div>
-          );
-        })}
+      {/* Attendees summary */}
+      <div className="mt-2.5 space-y-2">
+        {/* Confirmed */}
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-success font-semibold">
+            {confirmedAttendees.length}/{totalAttendees}
+          </span>
+          <AvatarStack
+            size={22}
+            members={confirmedAttendees.map((a) => ({
+              name: a.user.name,
+              color: memberColorMap.get(a.userId) ?? MEMBER_COLORS[0],
+            }))}
+          />
+        </div>
+
+        {/* Declined */}
+        {declinedAttendees.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-danger font-semibold">
+              {declinedAttendees.length}/{totalAttendees}
+            </span>
+            <AvatarStack
+              size={22}
+              members={declinedAttendees.map((a) => ({
+                name: a.user.name,
+                color: memberColorMap.get(a.userId) ?? MEMBER_COLORS[0],
+              }))}
+            />
+          </div>
+        )}
       </div>
 
       {/* Respond buttons */}
