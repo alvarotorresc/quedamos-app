@@ -1,7 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma/prisma.service';
 import * as jwt from 'jsonwebtoken';
+import { JwksClient } from 'jwks-rsa';
 
 interface SupabaseJwtPayload {
   sub: string;
@@ -15,23 +16,51 @@ interface SupabaseJwtPayload {
 
 @Injectable()
 export class AuthService {
-  private jwtSecret: string;
+  private readonly logger = new Logger(AuthService.name);
+  private jwks: JwksClient;
 
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
   ) {
-    this.jwtSecret = this.configService.getOrThrow('SUPABASE_JWT_SECRET');
+    const supabaseUrl = this.configService.getOrThrow('SUPABASE_URL');
+    this.jwks = new JwksClient({
+      jwksUri: `${supabaseUrl}/auth/v1/.well-known/jwks.json`,
+      cache: true,
+      cacheMaxAge: 600000, // 10 min
+    });
+  }
+
+  private getKey(
+    header: jwt.JwtHeader,
+    callback: (err: Error | null, key?: string) => void,
+  ) {
+    this.jwks.getSigningKey(header.kid, (err, key) => {
+      if (err) {
+        callback(err);
+        return;
+      }
+      callback(null, key?.getPublicKey());
+    });
   }
 
   async validateToken(token: string) {
     let payload: SupabaseJwtPayload;
 
     try {
-      payload = jwt.verify(token, this.jwtSecret, {
-        algorithms: ['HS256'],
-      }) as SupabaseJwtPayload;
-    } catch {
+      payload = await new Promise((resolve, reject) => {
+        jwt.verify(
+          token,
+          (header, cb) => this.getKey(header, cb),
+          { algorithms: ['ES256', 'HS256'] },
+          (err, decoded) => {
+            if (err) reject(err);
+            else resolve(decoded as SupabaseJwtPayload);
+          },
+        );
+      });
+    } catch (err) {
+      this.logger.debug(`Token validation failed: ${err}`);
       throw new UnauthorizedException('Invalid token');
     }
 

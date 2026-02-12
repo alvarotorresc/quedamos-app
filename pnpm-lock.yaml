@@ -47,6 +47,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
+      jwks-rsa:
+        specifier: ^3.2.2
+        version: 3.2.2
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
