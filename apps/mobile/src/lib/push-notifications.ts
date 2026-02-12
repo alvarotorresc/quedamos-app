@@ -53,9 +53,8 @@ async function registerWeb(): Promise<string | null> {
   const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
   if (!vapidKey) return null;
 
-  const registration = await navigator.serviceWorker.register(
-    '/firebase-messaging-sw.js',
-  );
+  await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  const registration = await navigator.serviceWorker.ready;
 
   const token = await getToken(messaging, {
     vapidKey,

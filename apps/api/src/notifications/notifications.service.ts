@@ -157,6 +157,11 @@ export class NotificationsService implements OnModuleInit {
       if (response.failureCount > 0) {
         const invalidTokens: string[] = [];
         response.responses.forEach((resp, idx) => {
+          if (resp.error) {
+            this.logger.warn(
+              `FCM error for token ${tokens[idx].slice(0, 20)}...: ${resp.error.code} — ${resp.error.message}`,
+            );
+          }
           if (
             resp.error &&
             (resp.error.code === 'messaging/registration-token-not-registered' ||
