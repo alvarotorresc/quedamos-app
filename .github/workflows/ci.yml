@@ -34,5 +34,8 @@ jobs:
       - name: Frontend tests
         run: pnpm --filter @quedamos/mobile test
 
-      - name: Build
-        run: pnpm build
+      - name: Build API
+        run: pnpm --filter @quedamos/api exec nest build
+
+      - name: Build Mobile
+        run: pnpm --filter @quedamos/mobile build
