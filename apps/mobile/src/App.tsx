@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { IonApp, IonRouterOutlet, IonTabs, IonTabBar, IonTabButton, IonIcon, IonLabel, IonSpinner } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { Route, Redirect } from 'react-router-dom';
+import { Route, Redirect, useLocation, useHistory } from 'react-router-dom';
 import { calendarOutline, listOutline, peopleOutline, personOutline } from 'ionicons/icons';
 import { useTranslation } from 'react-i18next';
 import { App as CapApp } from '@capacitor/app';
@@ -17,11 +17,27 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import JoinGroupPage from './pages/JoinGroupPage';
+import LandingPage from './pages/LandingPage';
 
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import DesktopFrame from './components/DesktopFrame';
 import { usePushNotifications } from './hooks/usePushNotifications';
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches,
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
+  return isDesktop;
+}
 
 function AppTabs() {
   const { t } = useTranslation();
@@ -81,6 +97,45 @@ function GuestRoute({ component: Component, ...rest }: { component: React.Compon
   );
 }
 
+/**
+ * Inner component rendered inside IonReactRouter.
+ * On desktop + guest + path "/" → renders LandingPage full-viewport (no DesktopFrame).
+ * Otherwise → renders the normal app inside DesktopFrame + IonApp.
+ */
+function AppContent() {
+  const user = useAuthStore((s) => s.user);
+  const location = useLocation();
+  const history = useHistory();
+  const isDesktop = useIsDesktop();
+
+  // Desktop + guest + root path → show full-viewport landing page
+  if (!user && isDesktop && location.pathname === '/') {
+    return (
+      <LandingPage
+        onLogin={() => history.push('/login')}
+        onRegister={() => history.push('/register')}
+      />
+    );
+  }
+
+  // Normal app flow — identical to the original structure
+  return (
+    <DesktopFrame>
+      <IonApp>
+        <IonRouterOutlet>
+          <GuestRoute exact path="/" component={SplashPage} />
+          <GuestRoute exact path="/login" component={LoginPage} />
+          <GuestRoute exact path="/register" component={RegisterPage} />
+          <GuestRoute exact path="/forgot-password" component={ForgotPasswordPage} />
+          <Route exact path="/reset-password" component={ResetPasswordPage} />
+          <ProtectedRoute path="/tabs" component={AppTabs} />
+          <Route exact path="/join/:code" component={JoinGroupPage} />
+        </IonRouterOutlet>
+      </IonApp>
+    </DesktopFrame>
+  );
+}
+
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
   const isLoading = useAuthStore((s) => s.isLoading);
@@ -122,20 +177,8 @@ export default function App() {
   }
 
   return (
-    <DesktopFrame>
-      <IonApp>
-        <IonReactRouter>
-          <IonRouterOutlet>
-            <GuestRoute exact path="/" component={SplashPage} />
-            <GuestRoute exact path="/login" component={LoginPage} />
-            <GuestRoute exact path="/register" component={RegisterPage} />
-            <GuestRoute exact path="/forgot-password" component={ForgotPasswordPage} />
-            <Route exact path="/reset-password" component={ResetPasswordPage} />
-            <ProtectedRoute path="/tabs" component={AppTabs} />
-            <Route exact path="/join/:code" component={JoinGroupPage} />
-          </IonRouterOutlet>
-        </IonReactRouter>
-      </IonApp>
-    </DesktopFrame>
+    <IonReactRouter>
+      <AppContent />
+    </IonReactRouter>
   );
 }

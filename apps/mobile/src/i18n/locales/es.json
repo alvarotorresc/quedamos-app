@@ -250,6 +250,115 @@
   "auth": {
     "defaultName": "Usuario"
   },
+  "landing": {
+    "brand": "¿Quedamos?",
+    "header": {
+      "login": "Iniciar sesión",
+      "register": "Empezar"
+    },
+    "hero": {
+      "title": "¿Quedamos?",
+      "tagline": "Coordina quedadas con tu grupo de amigos. Marca cuándo puedes, encuentra el mejor día y crea planes.",
+      "cta": "Empieza gratis",
+      "login": "Ya tengo cuenta"
+    },
+    "features": {
+      "title": "Todo lo que necesitas",
+      "subtitle": "Organizar planes con amigos nunca fue tan fácil.",
+      "calendar": {
+        "title": "Calendario compartido",
+        "description": "Cada miembro marca cuándo puede. Ve la disponibilidad de todos de un vistazo."
+      },
+      "groups": {
+        "title": "Grupos de amigos",
+        "description": "Crea un grupo e invita a tus amigos con un código o un enlace."
+      },
+      "plans": {
+        "title": "Crea quedadas",
+        "description": "Cuando coincidáis, crea una quedada. Todos reciben una notificación."
+      },
+      "notifications": {
+        "title": "Notificaciones",
+        "description": "Recibe avisos de nuevas quedadas, confirmaciones y recordatorios."
+      }
+    },
+    "mockup": {
+      "title": "Encuentra el mejor día",
+      "description": "Ve de un vistazo cuándo puede quedar cada persona. El calendario resalta los días con más disponibilidad.",
+      "weekLabel": "Semana",
+      "monthLabel": "Febrero 2026",
+      "bestDay": "Mejor día",
+      "bestDayDate": "Viernes 14 — 4 disponibles"
+    },
+    "cta": {
+      "title": "¿A qué esperas?",
+      "subtitle": "Crea tu grupo y empieza a coordinar quedadas con tus amigos.",
+      "button": "Crear cuenta gratis",
+      "hasAccount": "¿Ya tienes cuenta?",
+      "login": "Inicia sesión"
+    },
+    "screenshots": {
+      "title": "Conoce la app por dentro",
+      "subtitle": "Así se ve",
+      "calendar": {
+        "label": "Calendario",
+        "header": "Semana"
+      },
+      "events": {
+        "label": "Quedadas",
+        "title": "Próximas quedadas",
+        "upcoming": "Próximas",
+        "past": "Pasadas",
+        "event1": "Ruta por Monachil",
+        "location1": "Monachil",
+        "event2": "Brunch dominguero",
+        "location2": "Centro",
+        "confirmed": "Confirmada",
+        "pending": "Pendiente"
+      },
+      "group": {
+        "label": "Grupo",
+        "name": "Amigos Granada",
+        "memberCount": "{{count}} miembros",
+        "inviteCode": "Código de invitación"
+      }
+    },
+    "roadmap": {
+      "title": "Hecho para crecer",
+      "subtitle": "Roadmap",
+      "available": {
+        "title": "Disponible ahora",
+        "subtitle": "Funcionalidades que ya puedes usar",
+        "features": {
+          "sharedCalendar": "Calendario compartido",
+          "groups": "Grupos de amigos",
+          "events": "Crear y gestionar quedadas",
+          "pushNotifications": "Notificaciones push",
+          "realtimeSync": "Sincronización en tiempo real",
+          "darkLightTheme": "Tema claro y oscuro",
+          "multiLanguage": "Español e inglés",
+          "androidWeb": "Android y Web"
+        }
+      },
+      "upcoming": {
+        "title": "Próximamente",
+        "subtitle": "Lo que viene en las próximas versiones",
+        "badge": "Pronto",
+        "features": {
+          "ios": "App para iOS",
+          "aiSuggestions": "Sugerencias con IA",
+          "weather": "Integración con el clima",
+          "voting": "Votaciones en grupo",
+          "editEvents": "Editar quedadas",
+          "multiAdmin": "Múltiples administradores"
+        }
+      }
+    },
+    "footer": {
+      "madeWith": "Hecho con",
+      "by": "por"
+    }
+  },
   "authErrors": {
     "invalidCredentials": "Email o contrase\u00f1a incorrectos",
     "emailNotConfirmed": "Debes confirmar tu email antes de iniciar sesi\u00f3n",

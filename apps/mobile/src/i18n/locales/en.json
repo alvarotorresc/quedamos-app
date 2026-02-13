@@ -250,6 +250,115 @@
   "auth": {
     "defaultName": "User"
   },
+  "landing": {
+    "brand": "¿Quedamos?",
+    "header": {
+      "login": "Sign in",
+      "register": "Get started"
+    },
+    "hero": {
+      "title": "¿Quedamos?",
+      "tagline": "Coordinate meetups with your friend group. Mark when you're free, find the best day, and make plans.",
+      "cta": "Get started free",
+      "login": "I have an account"
+    },
+    "features": {
+      "title": "Everything you need",
+      "subtitle": "Organizing plans with friends has never been easier.",
+      "calendar": {
+        "title": "Shared calendar",
+        "description": "Each member marks when they're available. See everyone's availability at a glance."
+      },
+      "groups": {
+        "title": "Friend groups",
+        "description": "Create a group and invite your friends with a code or a link."
+      },
+      "plans": {
+        "title": "Create plans",
+        "description": "When schedules align, create a plan. Everyone gets notified."
+      },
+      "notifications": {
+        "title": "Notifications",
+        "description": "Get alerts for new plans, confirmations, and reminders."
+      }
+    },
+    "mockup": {
+      "title": "Find the best day",
+      "description": "See at a glance when each person is available. The calendar highlights days with the most availability.",
+      "weekLabel": "Week",
+      "monthLabel": "February 2026",
+      "bestDay": "Best day",
+      "bestDayDate": "Friday 14 — 4 available"
+    },
+    "cta": {
+      "title": "What are you waiting for?",
+      "subtitle": "Create your group and start coordinating plans with your friends.",
+      "button": "Create free account",
+      "hasAccount": "Already have an account?",
+      "login": "Sign in"
+    },
+    "screenshots": {
+      "title": "See the app in action",
+      "subtitle": "A closer look",
+      "calendar": {
+        "label": "Calendar",
+        "header": "Week"
+      },
+      "events": {
+        "label": "Plans",
+        "title": "Upcoming plans",
+        "upcoming": "Upcoming",
+        "past": "Past",
+        "event1": "Hike in Monachil",
+        "location1": "Monachil",
+        "event2": "Sunday brunch",
+        "location2": "Downtown",
+        "confirmed": "Confirmed",
+        "pending": "Pending"
+      },
+      "group": {
+        "label": "Group",
+        "name": "Granada Friends",
+        "memberCount": "{{count}} members",
+        "inviteCode": "Invite code"
+      }
+    },
+    "roadmap": {
+      "title": "Built to grow",
+      "subtitle": "Roadmap",
+      "available": {
+        "title": "Available now",
+        "subtitle": "Features you can use today",
+        "features": {
+          "sharedCalendar": "Shared calendar",
+          "groups": "Friend groups",
+          "events": "Create and manage plans",
+          "pushNotifications": "Push notifications",
+          "realtimeSync": "Real-time sync",
+          "darkLightTheme": "Dark and light theme",
+          "multiLanguage": "English and Spanish",
+          "androidWeb": "Android and Web"
+        }
+      },
+      "upcoming": {
+        "title": "Coming soon",
+        "subtitle": "What's coming in future versions",
+        "badge": "Soon",
+        "features": {
+          "ios": "iOS app",
+          "aiSuggestions": "AI-powered suggestions",
+          "weather": "Weather integration",
+          "voting": "Group voting",
+          "editEvents": "Edit plans",
+          "multiAdmin": "Multiple admins"
+        }
+      }
+    },
+    "footer": {
+      "madeWith": "Made with",
+      "by": "by"
+    }
+  },
   "authErrors": {
     "invalidCredentials": "Invalid email or password",
     "emailNotConfirmed": "You must confirm your email before signing in",
