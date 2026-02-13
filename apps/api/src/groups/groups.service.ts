@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 
 @Injectable()
 export class GroupsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   private generateInviteCode(): string {
     let code = '';
@@ -105,6 +109,19 @@ export class GroupsService {
       },
     });
 
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user) {
+      this.notificationsService
+        .sendToGroup(
+          group.id,
+          'Nuevo miembro',
+          `${user.name} se ha unido a "${group.name}"`,
+          userId,
+          { type: 'member_joined', groupId: group.id },
+        )
+        .catch(() => {});
+    }
+
     return this.findById(group.id, userId);
   }
 
@@ -119,11 +136,28 @@ export class GroupsService {
       throw new NotFoundException('Not a member of this group');
     }
 
+    const [user, group] = await Promise.all([
+      this.prisma.user.findUnique({ where: { id: userId } }),
+      this.prisma.group.findUnique({ where: { id: groupId } }),
+    ]);
+
     await this.prisma.groupMember.delete({
       where: {
         groupId_userId: { groupId, userId },
       },
     });
+
+    if (user && group) {
+      this.notificationsService
+        .sendToGroup(
+          groupId,
+          'Miembro salió',
+          `${user.name} ha salido de "${group.name}"`,
+          userId,
+          { type: 'member_left', groupId },
+        )
+        .catch(() => {});
+    }
 
     return { success: true };
   }

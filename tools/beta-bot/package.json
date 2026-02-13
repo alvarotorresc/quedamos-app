@@ -1,0 +1,21 @@
+{
+  "name": "quedamos-beta-bot",
+  "version": "1.0.0",
+  "description": "Bot de Telegram para distribución privada de beta",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.2",
+    "dotenv": "^17.3.1",
+    "telegraf": "^4.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

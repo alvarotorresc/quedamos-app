@@ -153,6 +153,25 @@ export class EventsService {
       });
     }
 
+    // Notify group when someone declines
+    if (dto.status === 'declined') {
+      const [user, event] = await Promise.all([
+        this.prisma.user.findUnique({ where: { id: userId } }),
+        this.prisma.event.findUnique({ where: { id: eventId } }),
+      ]);
+      if (user && event) {
+        this.notificationsService
+          .sendToGroup(
+            groupId,
+            'Asistencia rechazada',
+            `${user.name} ha rechazado "${event.title}"`,
+            userId,
+            { type: 'event_declined', eventId, groupId },
+          )
+          .catch(() => {});
+      }
+    }
+
     return this.findById(groupId, eventId, userId);
   }
 }

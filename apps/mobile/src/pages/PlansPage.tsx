@@ -1,7 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
@@ -18,8 +18,11 @@ const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#
 export default function PlansPage() {
   const { t } = useTranslation();
   const history = useHistory();
+  const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const myColor = useMyColor();
+  const [highlightEventId, setHighlightEventId] = useState<string | null>(null);
+  const scrolledRef = useRef(false);
 
   // Group selection
   const { data: groups, isLoading: groupsLoading } = useGroups();
@@ -34,6 +37,10 @@ export default function PlansPage() {
     const match = persistedId ? groups.find((g) => g.id === persistedId) : null;
     setCurrentGroup(match ?? groups[0]);
   }, [groups, currentGroup, setCurrentGroup, getPersistedGroupId]);
+
+  // Read eventId from push notification deep link
+  const searchParams = new URLSearchParams(location.search);
+  const targetEventId = searchParams.get('eventId');
 
   const groupId = currentGroup?.id ?? '';
   useGroupSync(groupId || undefined);
@@ -79,6 +86,27 @@ export default function PlansPage() {
 
     return { upcoming: up, past: pa };
   }, [events]);
+
+  // Scroll to event when navigated from push notification
+  useEffect(() => {
+    if (!targetEventId || scrolledRef.current || eventsLoading) return;
+
+    // If the event is in past, expand past section first
+    if (past.some((ev) => ev.id === targetEventId) && !showPast) {
+      setShowPast(true);
+    }
+
+    // Wait for DOM to update then scroll
+    setTimeout(() => {
+      const el = document.getElementById(`event-${targetEventId}`);
+      if (el) {
+        scrolledRef.current = true;
+        setHighlightEventId(targetEventId);
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => setHighlightEventId(null), 2500);
+      }
+    }, 300);
+  }, [targetEventId, eventsLoading, past, showPast]);
 
   // Loading state
   if (groupsLoading) {
@@ -202,12 +230,17 @@ export default function PlansPage() {
                   </h3>
                   <div className="space-y-2">
                     {upcoming.map((ev) => (
-                      <EventCard
+                      <div
                         key={ev.id}
-                        event={ev}
-                        groupId={groupId}
-                        memberColorMap={memberColorMap}
-                      />
+                        id={`event-${ev.id}`}
+                        className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
+                      >
+                        <EventCard
+                          event={ev}
+                          groupId={groupId}
+                          memberColorMap={memberColorMap}
+                        />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -231,12 +264,17 @@ export default function PlansPage() {
                   {showPast && (
                     <div className="space-y-2 opacity-70">
                       {past.map((ev) => (
-                        <EventCard
+                        <div
                           key={ev.id}
-                          event={ev}
-                          groupId={groupId}
-                          memberColorMap={memberColorMap}
-                        />
+                          id={`event-${ev.id}`}
+                          className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
+                        >
+                          <EventCard
+                            event={ev}
+                            groupId={groupId}
+                            memberColorMap={memberColorMap}
+                          />
+                        </div>
                       ))}
                     </div>
                   )}

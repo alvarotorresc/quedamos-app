@@ -44,6 +44,9 @@ apps/mobile/ios/*.xcworkspace
 apps/mobile/android/app/src/main/assets/public
 apps/mobile/ios/App/App/public
 
+# Beta bot
+tools/beta-bot/.apk-file-id
+
 #Claude
 CLAUDE.md
 progress.md

@@ -99,8 +99,30 @@ export function setupPushListeners(): void {
     'pushNotificationActionPerformed',
     (action) => {
       console.log('[Push] Action performed:', action);
+      const data = action.notification.data;
+      if (!data?.type) return;
+
+      navigateFromPush(data);
     },
   );
+}
+
+const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
+
+function navigateFromPush(data: Record<string, string>): void {
+  const { type, groupId, eventId } = data;
+
+  if (groupId) {
+    localStorage.setItem(GROUP_STORAGE_KEY, groupId);
+  }
+
+  if (type === 'member_joined' || type === 'member_left') {
+    window.location.href = groupId ? `/tabs/group/${groupId}` : '/tabs/group';
+  } else if (eventId) {
+    window.location.href = `/tabs/plans?eventId=${eventId}`;
+  } else {
+    window.location.href = '/tabs/plans';
+  }
 }
 
 /**
@@ -118,11 +140,20 @@ export function setupWebForegroundHandler(): void {
     onMessage(messaging, (payload) => {
       console.log('[Push] Web foreground message:', payload);
       const { title, body } = payload.notification ?? {};
+      const data = payload.data as Record<string, string> | undefined;
       if (title && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, {
+        const notification = new Notification(title, {
           body: body ?? '',
           icon: '/logo.png',
+          data,
         });
+        notification.onclick = () => {
+          window.focus();
+          if (data?.type) {
+            navigateFromPush(data);
+          }
+          notification.close();
+        };
       }
     });
   });

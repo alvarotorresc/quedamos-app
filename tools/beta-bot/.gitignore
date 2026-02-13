@@ -1,0 +1,15 @@
+# Environment
+.env
+
+# APK file_id persistence
+.apk-file-id
+
+# Dependencies
+node_modules
+
+# Build
+dist
+*.tsbuildinfo
+
+# Logs
+*.log

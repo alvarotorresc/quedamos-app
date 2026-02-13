@@ -1,11 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { HiOutlineEye, HiOutlineEyeSlash } from 'react-icons/hi2';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
 import { supabase } from '../lib/supabase';
+
+interface PasswordCheck {
+  key: string;
+  label: string;
+  ok: boolean;
+}
+
+function getPasswordChecks(password: string, t: TFunction): PasswordCheck[] {
+  return [
+    { key: 'minLength', label: t('register.checks.minLength'), ok: password.length >= 8 },
+    { key: 'uppercase', label: t('register.checks.uppercase'), ok: /[A-Z]/.test(password) },
+    { key: 'number', label: t('register.checks.number'), ok: /\d/.test(password) },
+    { key: 'special', label: t('register.checks.special'), ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+}
+
+function getStrength(checks: PasswordCheck[], t: TFunction): { level: number; label: string; color: string } {
+  const passed = checks.filter((c) => c.ok).length;
+  if (passed <= 1) return { level: 1, label: t('register.strength.weak'), color: 'bg-danger' };
+  if (passed <= 2) return { level: 2, label: t('register.strength.fair'), color: 'bg-warning' };
+  if (passed <= 3) return { level: 3, label: t('register.strength.good'), color: 'bg-primary' };
+  return { level: 4, label: t('register.strength.strong'), color: 'bg-success' };
+}
 
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
@@ -19,6 +43,10 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const checks = useMemo(() => getPasswordChecks(password, t), [password, t]);
+  const strength = useMemo(() => getStrength(checks, t), [checks, t]);
+  const allChecksPassed = checks.every((c) => c.ok);
 
   useEffect(() => {
     // Check if recovery session already exists (event fired before mount)
@@ -42,13 +70,13 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError('');
 
-    if (password !== confirmPassword) {
-      setError(t('resetPassword.passwordsMismatch'));
+    if (!allChecksPassed) {
+      setError(t('register.passwordRequirementsError'));
       return;
     }
 
-    if (password.length < 6) {
-      setError(t('resetPassword.minLengthError'));
+    if (password !== confirmPassword) {
+      setError(t('resetPassword.passwordsMismatch'));
       return;
     }
 
@@ -104,7 +132,6 @@ export default function ResetPasswordPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
                   placeholder={t('common.passwordPlaceholder')}
-                  minLength={6}
                   required
                 />
                 <button
@@ -116,6 +143,33 @@ export default function ResetPasswordPage() {
                   {showPassword ? <HiOutlineEyeSlash size={20} /> : <HiOutlineEye size={20} />}
                 </button>
               </div>
+
+              {password.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1 flex-1">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            i <= strength.level ? strength.color : 'bg-white/10'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-text-muted">{strength.label}</span>
+                  </div>
+
+                  <ul className="space-y-1">
+                    {checks.map((check) => (
+                      <li key={check.key} className={`text-xs flex items-center gap-1.5 ${check.ok ? 'text-success' : 'text-text-dark'}`}>
+                        <span>{check.ok ? '\u2713' : '\u2022'}</span>
+                        {check.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div>
@@ -141,7 +195,7 @@ export default function ResetPasswordPage() {
               </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="mt-2">
+            <Button type="submit" disabled={loading || !allChecksPassed || password !== confirmPassword} className="mt-2">
               {loading ? t('resetPassword.submitting') : t('resetPassword.submit')}
             </Button>
           </form>
