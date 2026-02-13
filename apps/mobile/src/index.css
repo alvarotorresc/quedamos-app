@@ -117,6 +117,151 @@ ion-modal.availability-modal {
   scrollbar-width: none;
 }
 
+/* ===== Landing Page ===== */
+
+.landing-animate {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Staggered children animation */
+.landing-visible > *:nth-child(1) { transition-delay: 0ms; }
+.landing-visible > *:nth-child(2) { transition-delay: 80ms; }
+.landing-visible > *:nth-child(3) { transition-delay: 160ms; }
+.landing-visible > *:nth-child(4) { transition-delay: 240ms; }
+
+/* Animated gradient text */
+.landing-gradient-text {
+  background: linear-gradient(135deg, #60A5FA 0%, #A78BFA 50%, #F472B6 100%);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: landing-gradient-shift 6s ease-in-out infinite;
+}
+
+@keyframes landing-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Subtle dot grid background */
+.landing-grid {
+  background-image: radial-gradient(rgba(96, 165, 250, 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.light .landing-grid {
+  background-image: radial-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+}
+
+/* Floating animation for mockup */
+@keyframes landing-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
+}
+
+.landing-float {
+  animation: landing-float 5s ease-in-out infinite;
+}
+
+/* Glow effect */
+.landing-glow {
+  box-shadow:
+    0 0 60px rgba(96, 165, 250, 0.08),
+    0 0 120px rgba(96, 165, 250, 0.04);
+}
+
+.light .landing-glow {
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.08),
+    0 2px 12px rgba(0, 0, 0, 0.04);
+}
+
+/* Glass card */
+.landing-glass {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+}
+
+.light .landing-glass {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* Pulse glow on feature icons */
+@keyframes landing-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0); }
+  50% { box-shadow: 0 0 20px 2px rgba(96, 165, 250, 0.12); }
+}
+
+.landing-glass:hover .landing-icon-glow {
+  animation: landing-pulse-glow 2s ease-in-out infinite;
+}
+
+/* Screenshot cards */
+.landing-screenshot-card {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 20px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+}
+
+.landing-screenshot-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(96, 165, 250, 0.06);
+}
+
+.light .landing-screenshot-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.light .landing-screenshot-card:hover {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
+}
+
+/* Screenshot wrapper with staggered entrance */
+.landing-visible .landing-screenshot-wrapper {
+  animation: landing-screenshot-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes landing-screenshot-enter {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Roadmap items staggered entrance */
+.landing-visible .landing-roadmap-item {
+  animation: landing-roadmap-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes landing-roadmap-enter {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* ===== Desktop Phone Frame ===== */
 
 /* Mobile: all frame containers are invisible to layout */

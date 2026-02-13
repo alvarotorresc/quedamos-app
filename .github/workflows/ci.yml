@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @quedamos/api exec prisma generate
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Backend tests
+        run: pnpm --filter @quedamos/api test
+
+      - name: Frontend tests
+        run: pnpm --filter @quedamos/mobile test
+
+      - name: Build API
+        run: pnpm --filter @quedamos/api exec nest build
+
+      - name: Build Mobile
+        run: pnpm --filter @quedamos/mobile build
