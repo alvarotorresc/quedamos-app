@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { GroupsService } from '../groups/groups.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -50,6 +50,13 @@ export class EventsService {
 
   async create(groupId: string, userId: string, dto: CreateEventDto) {
     await this.groupsService.findById(groupId, userId);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDate = new Date(dto.date + 'T00:00:00');
+    if (eventDate < today) {
+      throw new BadRequestException('No se pueden crear quedadas en fechas pasadas');
+    }
 
     const members = await this.groupsService.getMembers(groupId, userId);
 

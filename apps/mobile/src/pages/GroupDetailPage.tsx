@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useHistory } from 'react-router-dom';
 import { Share } from '@capacitor/share';
 import { useGroup, useGroupInvite, useRefreshInvite, useLeaveGroup } from '../hooks/useGroups';
+import { useGroupSync } from '../hooks/useGroupSync';
 import { useAuthStore } from '../stores/auth';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
@@ -21,6 +22,7 @@ export default function GroupDetailPage() {
   const currentUserId = useAuthStore((s) => s.user?.id);
 
   const { data: group, isLoading } = useGroup(id);
+  useGroupSync(id);
   const { data: invite } = useGroupInvite(id);
   const refreshInvite = useRefreshInvite();
   const leaveGroup = useLeaveGroup();

@@ -164,6 +164,10 @@ export default function CalendarPage() {
   };
 
   const handleCreateEvent = (day: Date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (day < today) return;
+
     const dateKey = formatDateKey(day);
     const dayAvail = availabilityByDate.get(dateKey) ?? [];
 

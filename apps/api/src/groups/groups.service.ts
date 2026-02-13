@@ -175,7 +175,7 @@ export class GroupsService {
     const group = await this.findById(groupId, userId);
     return {
       inviteCode: group.inviteCode,
-      inviteUrl: `https://quedamos.app/join/${group.inviteCode}`,
+      inviteUrl: `${process.env.APP_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${group.inviteCode}`,
     };
   }
 
@@ -191,7 +191,7 @@ export class GroupsService {
 
     return {
       inviteCode: newCode,
-      inviteUrl: `https://quedamos.app/join/${newCode}`,
+      inviteUrl: `${process.env.APP_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${newCode}`,
     };
   }
 }
