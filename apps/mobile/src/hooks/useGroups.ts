@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupsService } from '../services/groups';
+import { broadcastSync } from '../lib/group-sync';
 
 export function useGroups() {
   return useQuery({
@@ -32,8 +33,9 @@ export function useJoinGroup() {
 
   return useMutation({
     mutationFn: groupsService.join,
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
+      broadcastSync(data.id, 'groups');
     },
   });
 }
@@ -43,8 +45,9 @@ export function useLeaveGroup() {
 
   return useMutation({
     mutationFn: groupsService.leave,
-    onSuccess: () => {
+    onSuccess: (_data, groupId) => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
+      broadcastSync(groupId, 'groups');
     },
   });
 }
