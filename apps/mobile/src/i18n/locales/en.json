@@ -242,6 +242,7 @@
       "memberJoined": "New member in group",
       "memberLeft": "Member left group"
     },
+    "reportBug": "Report bug",
     "logout": "Sign out"
   },
   "settings": {

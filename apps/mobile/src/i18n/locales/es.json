@@ -242,6 +242,7 @@
       "memberJoined": "Nuevo miembro en grupo",
       "memberLeft": "Miembro salió del grupo"
     },
+    "reportBug": "Reportar error",
     "logout": "Cerrar sesión"
   },
   "settings": {
