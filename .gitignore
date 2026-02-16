@@ -47,6 +47,9 @@ apps/mobile/ios/App/App/public
 # Beta bot
 tools/beta-bot/.apk-file-id
 
+# APK builds
+*.apk
+
 #Claude
 CLAUDE.md
 progress.md
