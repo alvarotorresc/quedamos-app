@@ -282,8 +282,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-<<<<<<< Updated upstream
-=======
           {/* Report bug */}
           <div className="mt-6">
             <a
@@ -299,7 +297,6 @@ export default function ProfilePage() {
             </a>
           </div>
 
->>>>>>> Stashed changes
           {/* Sign out */}
           <div className="mt-8 mb-8">
             <Button variant="secondary" onClick={handleSignOut} className="w-full text-danger border-danger/20">
