@@ -57,7 +57,7 @@ export function AvailabilityDetailModal({
     >
       <div className="px-5 pt-5 pb-9 bg-bg-light">
         {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-white/10 mx-auto mb-3.5" />
+        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
         <h3 className="text-[17px] font-bold text-text mb-0.5">
           {t('calendar.availabilityDetail.title')}
@@ -77,8 +77,8 @@ export function AvailabilityDetailModal({
                   key={a.id}
                   className="flex items-center gap-3 rounded-btn px-3.5 py-3"
                   style={{
-                    background: 'rgba(255,255,255,0.025)',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    background: 'var(--app-bg-card)',
+                    border: '1px solid var(--app-border)',
                   }}
                 >
                   <Avatar name={a.user?.name ?? '?'} color={color} size={34} />

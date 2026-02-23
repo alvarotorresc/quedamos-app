@@ -229,6 +229,7 @@
     "sendConfirmation": "Enviar confirmaci\u00f3n",
     "sending": "Enviando...",
     "emailSent": "Revisa tu email para confirmar el cambio",
+    "sameEmailError": "El nuevo email debe ser diferente al actual",
     "nameUpdated": "Nombre actualizado",
     "passwordUpdated": "Contrase\u00f1a actualizada",
     "passwordsMismatch": "Las contrase\u00f1as no coinciden",

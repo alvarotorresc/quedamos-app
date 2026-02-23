@@ -151,8 +151,8 @@ export function MonthView({
         <div
           className="rounded-card mt-3"
           style={{
-            background: 'rgba(255,255,255,0.025)',
-            border: '1px solid rgba(255,255,255,0.05)',
+            background: 'var(--app-bg-card)',
+            border: '1px solid var(--app-border)',
             padding: '12px 14px',
           }}
         >
@@ -194,9 +194,9 @@ export function MonthView({
                 onClick={() => onCreateEvent(selectedDay)}
                 className="flex-1 py-[7px] text-xs font-semibold rounded-btn border-none"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
+                  background: 'var(--app-bg-hover)',
                   color: '#7B8CA8',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  border: '1px solid var(--app-border-strong)',
                 }}
               >
                 {t('calendar.createEvent')}

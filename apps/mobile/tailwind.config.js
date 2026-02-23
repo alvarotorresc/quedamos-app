@@ -6,7 +6,10 @@ export default {
       colors: {
         bg: 'var(--app-bg)',
         'bg-light': 'var(--app-bg-light)',
-        'bg-card': 'rgba(255,255,255,0.025)',
+        'bg-card': 'var(--app-bg-card)',
+        'bg-input': 'var(--app-bg-input)',
+        'bg-hover': 'var(--app-bg-hover)',
+        'toggle-off': 'var(--app-toggle-off)',
         primary: '#60A5FA',
         'primary-dark': '#2563EB',
         text: 'var(--app-text)',
@@ -23,6 +26,10 @@ export default {
           purple: '#A78BFA',
           red: '#FB7185',
         },
+      },
+      borderColor: {
+        subtle: 'var(--app-border)',
+        strong: 'var(--app-border-strong)',
       },
       borderRadius: {
         card: '14px',

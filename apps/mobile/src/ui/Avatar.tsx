@@ -21,6 +21,7 @@ export function Avatar({ name, color, size = 32, onClick, className }: AvatarPro
       style={{
         width: size,
         height: size,
+        boxSizing: 'border-box',
         borderRadius: size * 0.35,
         background: `${color}18`,
         border: `1.5px solid ${color}35`,

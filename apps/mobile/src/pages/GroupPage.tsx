@@ -132,7 +132,7 @@ export default function GroupPage() {
                         key={group.id}
                         type="button"
                         onClick={() => history.push(`/tabs/group/${group.id}`)}
-                        className="w-full bg-white/[0.025] border border-white/5 rounded-btn p-4 flex items-center gap-3 text-left transition-all active:scale-[0.98]"
+                        className="w-full bg-bg-card border border-subtle rounded-btn p-4 flex items-center gap-3 text-left transition-all active:scale-[0.98]"
                       >
                         <span className="text-2xl">{group.emoji}</span>
                         <div className="flex-1 min-w-0">
@@ -175,7 +175,7 @@ export default function GroupPage() {
 
               {/* Create form */}
               {formMode === 'create' && (
-                <div className="bg-white/[0.025] border border-white/5 rounded-btn p-4 flex flex-col gap-3">
+                <div className="bg-bg-card border border-subtle rounded-btn p-4 flex flex-col gap-3">
                   <div>
                     <label className="text-xs text-text-muted mb-1 block">{t('group.groupName')}</label>
                     <input
@@ -183,7 +183,7 @@ export default function GroupPage() {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       placeholder={t('group.groupNamePlaceholder')}
-                      className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40"
                       autoFocus
                     />
                   </div>
@@ -192,7 +192,7 @@ export default function GroupPage() {
                     <button
                       type="button"
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="w-16 h-12 bg-white/5 border border-white/10 rounded-btn text-2xl flex items-center justify-center hover:border-primary/40 transition-colors"
+                      className="w-16 h-12 bg-bg-input border border-strong rounded-btn text-2xl flex items-center justify-center hover:border-primary/40 transition-colors"
                     >
                       {emoji || '👥'}
                     </button>
@@ -215,12 +215,19 @@ export default function GroupPage() {
                   <Button onClick={handleCreate} disabled={createGroup.isPending || !groupName.trim()}>
                     {createGroup.isPending ? t('group.creating') : t('group.createGroup')}
                   </Button>
+                  <button
+                    type="button"
+                    onClick={() => toggleForm(null)}
+                    className="w-full py-2.5 text-xs font-semibold text-text-muted transition-colors"
+                  >
+                    {t('common.cancel')}
+                  </button>
                 </div>
               )}
 
               {/* Join form */}
               {formMode === 'join' && (
-                <div className="bg-white/[0.025] border border-white/5 rounded-btn p-4 flex flex-col gap-3">
+                <div className="bg-bg-card border border-subtle rounded-btn p-4 flex flex-col gap-3">
                   <div>
                     <label className="text-xs text-text-muted mb-1 block">{t('group.inviteCode')}</label>
                     <input
@@ -229,7 +236,7 @@ export default function GroupPage() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
                       placeholder={t('group.inviteCodePlaceholder')}
-                      className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40 text-center font-mono tracking-widest"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40 text-center font-mono tracking-widest"
                       maxLength={8}
                       autoFocus
                     />
@@ -237,6 +244,13 @@ export default function GroupPage() {
                   <Button onClick={handleJoin} disabled={joinGroup.isPending || inviteCode.replace(/\D/g, '').length !== 8}>
                     {joinGroup.isPending ? t('group.joining') : t('group.joinWithCode')}
                   </Button>
+                  <button
+                    type="button"
+                    onClick={() => toggleForm(null)}
+                    className="w-full py-2.5 text-xs font-semibold text-text-muted transition-colors"
+                  >
+                    {t('common.cancel')}
+                  </button>
                 </div>
               )}
             </>

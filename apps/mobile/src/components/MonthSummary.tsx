@@ -130,8 +130,8 @@ export function MonthSummary({ monthOffset, availabilityByDate, totalMembers }: 
         <div
           className="rounded-lg px-3 py-2 text-[11px] text-text-muted"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--app-bg-hover)',
+            border: '1px solid var(--app-border-strong)',
           }}
         >
           {t(`calendar.monthStats.info.${tooltip}`)}

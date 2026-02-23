@@ -14,7 +14,7 @@ export function Button({
 
   const variants = {
     primary: 'bg-primary-dark text-white shadow-lg shadow-primary-dark/25',
-    secondary: 'bg-white/5 text-text-muted border border-white/10',
+    secondary: 'bg-bg-input text-text-muted border border-strong',
   };
 
   return (

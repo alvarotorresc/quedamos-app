@@ -98,10 +98,10 @@ export function WeekView({
             className="rounded-card mb-1 cursor-pointer"
             style={{
               padding: '12px 14px',
-              border: `1px solid ${isSel ? 'rgba(96,165,250,0.25)' : 'rgba(255,255,255,0.035)'}`,
+              border: `1px solid ${isSel ? 'rgba(96,165,250,0.25)' : 'var(--app-border)'}`,
               background: isSel
                 ? 'rgba(37,99,235,0.06)'
-                : 'rgba(255,255,255,0.015)',
+                : 'var(--app-bg-card)',
             }}
           >
             <div className="flex justify-between items-center">
@@ -157,7 +157,7 @@ export function WeekView({
             {isSel && (
               <div
                 className="mt-2.5 pt-2 flex gap-1.5"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
+                style={{ borderTop: '1px solid var(--app-border)' }}
               >
                 <button
                   onClick={(e) => {
@@ -178,9 +178,9 @@ export function WeekView({
                     }}
                     className="flex-1 py-2 text-xs font-semibold rounded-btn border-none"
                     style={{
-                      background: 'rgba(255,255,255,0.04)',
+                      background: 'var(--app-bg-hover)',
                       color: '#7B8CA8',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      border: '1px solid var(--app-border-strong)',
                     }}
                   >
                     {t('calendar.createEvent')}

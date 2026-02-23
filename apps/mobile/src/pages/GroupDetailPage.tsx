@@ -111,7 +111,7 @@ export default function GroupDetailPage() {
               {group.members.map((member, index) => (
                 <div
                   key={member.userId}
-                  className="flex items-center gap-3 bg-white/[0.025] border border-white/5 rounded-btn px-4 py-3"
+                  className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3"
                 >
                   <Avatar
                     name={member.user.name}
@@ -132,7 +132,7 @@ export default function GroupDetailPage() {
             <h3 className="text-xs font-semibold text-text-dark uppercase tracking-wider mb-3">
               {t('group.inviteFriends')}
             </h3>
-            <div className="bg-white/[0.025] border border-white/5 rounded-btn p-4">
+            <div className="bg-bg-card border border-subtle rounded-btn p-4">
               <p className="text-xs text-text-muted mb-2">{t('group.inviteCode')}</p>
               <p className="text-2xl font-mono font-bold text-text tracking-widest mb-4">
                 {invite ? formatCode(invite.inviteCode) : '····-····'}

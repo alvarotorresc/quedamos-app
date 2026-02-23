@@ -62,8 +62,8 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
   };
 
   const inputStyle = {
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.07)',
+    background: 'var(--app-bg-hover)',
+    border: '1px solid var(--app-border-strong)',
   };
 
   return (
@@ -76,7 +76,7 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
     >
       <div className="px-5 pt-5 pb-9 bg-bg-light">
         {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-white/10 mx-auto mb-3.5" />
+        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
         <h3 className="text-[17px] font-bold text-text mb-0.5">
           {t('plans.create.title')}
@@ -146,8 +146,8 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
                   key={`${m.name}-${i}`}
                   className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5"
                   style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    background: 'var(--app-bg-card)',
+                    border: '1px solid var(--app-border)',
                   }}
                 >
                   <Avatar name={m.name} color={m.color} size={20} />

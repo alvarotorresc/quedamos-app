@@ -229,6 +229,7 @@
     "sendConfirmation": "Send confirmation",
     "sending": "Sending...",
     "emailSent": "Check your email to confirm the change",
+    "sameEmailError": "New email must be different from current email",
     "nameUpdated": "Name updated",
     "passwordUpdated": "Password updated",
     "passwordsMismatch": "Passwords do not match",

@@ -6,6 +6,12 @@ vi.mock('../lib/push-notifications', () => ({
   unregisterFromBackend: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../lib/api', () => ({
+  api: {
+    patch: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 describe('useAuthStore', () => {
   beforeEach(() => {
     useAuthStore.setState({ user: null, isLoading: true });

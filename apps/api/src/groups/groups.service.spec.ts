@@ -5,6 +5,7 @@ import {
   createMockNotificationsService,
   createTestUser,
   createTestGroup,
+  createTestEvent,
 } from '../common/test-utils';
 
 describe('GroupsService', () => {
@@ -96,6 +97,7 @@ describe('GroupsService', () => {
       prisma.groupMember.findUnique.mockResolvedValue(null);
       prisma.groupMember.create.mockResolvedValue({ groupId: 'group-1', userId: 'user-1' });
       prisma.user.findUnique.mockResolvedValue(user);
+      prisma.event.findMany.mockResolvedValue([]);
       prisma.group.findFirst.mockResolvedValue({ ...group, members: [{ userId: 'user-1', user }] });
 
       const result = await service.joinByCode('user-1', '12345678');
@@ -121,6 +123,55 @@ describe('GroupsService', () => {
       );
     });
 
+    it('should add new member as attendee to active future events', async () => {
+      const group = createTestGroup();
+      const user = createTestUser({ id: 'user-3', name: 'New User' });
+      const futureEvents = [
+        createTestEvent({ id: 'event-1', status: 'pending', date: new Date('2026-12-01') }),
+        createTestEvent({ id: 'event-2', status: 'confirmed', date: new Date('2026-12-15') }),
+      ];
+
+      prisma.group.findUnique.mockResolvedValue(group);
+      prisma.groupMember.findUnique.mockResolvedValue(null);
+      prisma.groupMember.create.mockResolvedValue({ groupId: 'group-1', userId: 'user-3' });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.event.findMany.mockResolvedValue(futureEvents);
+      prisma.eventAttendee.createMany.mockResolvedValue({ count: 2 });
+      prisma.group.findFirst.mockResolvedValue({ ...group, members: [{ userId: 'user-3', user }] });
+
+      await service.joinByCode('user-3', '12345678');
+
+      expect(prisma.event.findMany).toHaveBeenCalledWith({
+        where: {
+          groupId: group.id,
+          status: { not: 'cancelled' },
+          date: { gte: expect.any(Date) },
+        },
+      });
+      expect(prisma.eventAttendee.createMany).toHaveBeenCalledWith({
+        data: [
+          { eventId: 'event-1', userId: 'user-3', status: 'pending' },
+          { eventId: 'event-2', userId: 'user-3', status: 'pending' },
+        ],
+        skipDuplicates: true,
+      });
+    });
+
+    it('should not call createMany when no active events exist', async () => {
+      const group = createTestGroup();
+      const user = createTestUser();
+      prisma.group.findUnique.mockResolvedValue(group);
+      prisma.groupMember.findUnique.mockResolvedValue(null);
+      prisma.groupMember.create.mockResolvedValue({ groupId: 'group-1', userId: 'user-1' });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.event.findMany.mockResolvedValue([]);
+      prisma.group.findFirst.mockResolvedValue({ ...group, members: [{ userId: 'user-1', user }] });
+
+      await service.joinByCode('user-1', '12345678');
+
+      expect(prisma.eventAttendee.createMany).not.toHaveBeenCalled();
+    });
+
     it('should send notification to group when joining', async () => {
       const group = createTestGroup();
       const user = createTestUser();
@@ -128,6 +179,7 @@ describe('GroupsService', () => {
       prisma.groupMember.findUnique.mockResolvedValue(null);
       prisma.groupMember.create.mockResolvedValue({});
       prisma.user.findUnique.mockResolvedValue(user);
+      prisma.event.findMany.mockResolvedValue([]);
       prisma.group.findFirst.mockResolvedValue(group);
 
       await service.joinByCode('user-1', '12345678');

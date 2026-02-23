@@ -362,13 +362,13 @@ describe('push-notifications', () => {
 
       callback({
         notification: {
-          data: { type: 'new_event', groupId: 'g5', eventId: 'e1' },
+          data: { type: 'new_event', groupId: '00000000-0000-0000-0000-000000000005', eventId: '00000000-0000-0000-0000-000000000001' },
         },
       });
 
       expect(localStorage.setItem).toHaveBeenCalledWith(
         'quedamos_current_group_id',
-        'g5',
+        '00000000-0000-0000-0000-000000000005',
       );
     });
   });

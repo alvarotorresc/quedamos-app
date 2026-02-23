@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
 import { useMyColor } from '../hooks/useMyColor';
@@ -15,6 +16,7 @@ type ExpandedSection = 'name' | 'email' | 'password' | null;
 
 export default function ProfilePage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
   const signOut = useAuthStore((s) => s.signOut);
   const updateName = useAuthStore((s) => s.updateName);
@@ -67,6 +69,7 @@ export default function ProfilePage() {
     setError('');
     try {
       await updateName(newName.trim());
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
       setSuccessMessage(t('profile.nameUpdated'));
       setExpanded(null);
     } catch (e) {
@@ -78,6 +81,10 @@ export default function ProfilePage() {
 
   const handleUpdateEmail = async () => {
     if (!newEmail.trim()) return;
+    if (newEmail.trim().toLowerCase() === user?.email?.toLowerCase()) {
+      setError(t('profile.sameEmailError'));
+      return;
+    }
     setLoading(true);
     setError('');
     try {
@@ -120,7 +127,7 @@ export default function ProfilePage() {
     window.location.replace('/');
   };
 
-  const inputClass = 'w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40';
+  const inputClass = 'w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40';
 
   return (
     <IonPage>
@@ -155,7 +162,7 @@ export default function ProfilePage() {
           {/* Edit sections */}
           <div className="flex flex-col gap-2">
             {/* Edit Name */}
-            <div className="bg-white/[0.025] border border-white/5 rounded-btn overflow-hidden">
+            <div className="bg-bg-card border border-subtle rounded-btn overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('name')}
@@ -181,7 +188,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Change Email */}
-            <div className="bg-white/[0.025] border border-white/5 rounded-btn overflow-hidden">
+            <div className="bg-bg-card border border-subtle rounded-btn overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('email')}
@@ -207,7 +214,7 @@ export default function ProfilePage() {
             </div>
 
             {/* Change Password */}
-            <div className="bg-white/[0.025] border border-white/5 rounded-btn overflow-hidden">
+            <div className="bg-bg-card border border-subtle rounded-btn overflow-hidden">
               <button
                 type="button"
                 onClick={() => toggleSection('password')}
@@ -250,10 +257,10 @@ export default function ProfilePage() {
           <button
             type="button"
             onClick={toggleTheme}
-            className="mt-6 w-full bg-white/[0.025] border border-white/5 rounded-btn px-4 py-3.5 flex items-center justify-between"
+            className="mt-6 w-full bg-bg-card border border-subtle rounded-btn px-4 py-3.5 flex items-center justify-between"
           >
             <span className="text-sm text-text">{t('profile.theme')}</span>
-            <div className={`w-10 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary/30' : 'bg-white/10'}`}>
+            <div className={`w-10 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary/30' : 'bg-toggle-off'}`}>
               <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${darkMode ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`} />
             </div>
           </button>
@@ -270,10 +277,10 @@ export default function ProfilePage() {
                     key={type}
                     type="button"
                     onClick={() => updatePref.mutate({ type, enabled: !enabled })}
-                    className="w-full bg-white/[0.025] border border-white/5 rounded-btn px-4 py-3 flex items-center justify-between"
+                    className="w-full bg-bg-card border border-subtle rounded-btn px-4 py-3 flex items-center justify-between"
                   >
                     <span className="text-sm text-text">{t(labelKey)}</span>
-                    <div className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary/30' : 'bg-white/10'}`}>
+                    <div className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary/30' : 'bg-toggle-off'}`}>
                       <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${enabled ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`} />
                     </div>
                   </button>
@@ -288,7 +295,7 @@ export default function ProfilePage() {
               href="https://forms.gle/4n8mdUksbHRo8wvH6"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-white/[0.025] border border-white/5 rounded-btn px-4 py-3.5 flex items-center justify-between"
+              className="w-full bg-bg-card border border-subtle rounded-btn px-4 py-3.5 flex items-center justify-between"
             >
               <span className="text-sm text-text">{t('profile.reportBug')}</span>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-text-dark">

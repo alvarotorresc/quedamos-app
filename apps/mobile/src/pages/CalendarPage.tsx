@@ -277,9 +277,9 @@ export default function CalendarPage() {
                     style={{
                       background: isActive
                         ? 'rgba(37,99,235,0.12)'
-                        : 'rgba(255,255,255,0.025)',
+                        : 'var(--app-bg-card)',
                       color: isActive ? '#60A5FA' : '#4B5C75',
-                      border: `1px solid ${isActive ? 'rgba(96,165,250,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                      border: `1px solid ${isActive ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
                     }}
                   >
                     {g.emoji} {g.name}
@@ -303,7 +303,7 @@ export default function CalendarPage() {
                   background:
                     calView === view
                       ? 'rgba(37,99,235,0.12)'
-                      : 'rgba(255,255,255,0.025)',
+                      : 'var(--app-bg-card)',
                   color: calView === view ? '#60A5FA' : '#4B5C75',
                 }}
               >

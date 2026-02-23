@@ -30,24 +30,24 @@ export function AvailabilityModal({
 
   const [type, setType] = useState<AvailabilityType>('day');
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
-  const [fromHour, setFromHour] = useState('16');
-  const [toHour, setToHour] = useState('22');
+  const [fromTime, setFromTime] = useState('16:00');
+  const [toTime, setToTime] = useState('22:00');
 
   useEffect(() => {
     if (existingAvailability) {
       setType(existingAvailability.type);
       setSelectedSlots(existingAvailability.slots ?? []);
       if (existingAvailability.startTime) {
-        setFromHour(existingAvailability.startTime.slice(0, 2).replace(/^0/, ''));
+        setFromTime(existingAvailability.startTime.slice(0, 5));
       }
       if (existingAvailability.endTime) {
-        setToHour(existingAvailability.endTime.slice(0, 2).replace(/^0/, ''));
+        setToTime(existingAvailability.endTime.slice(0, 5));
       }
     } else {
       setType('day');
       setSelectedSlots([]);
-      setFromHour('16');
-      setToHour('22');
+      setFromTime('16:00');
+      setToTime('22:00');
     }
   }, [existingAvailability, isOpen]);
 
@@ -60,7 +60,7 @@ export function AvailabilityModal({
   const handleSave = async () => {
     if (!selectedDay) return;
     if (type === 'slots' && selectedSlots.length === 0) return;
-    if (type === 'range' && parseInt(fromHour) >= parseInt(toHour)) return;
+    if (type === 'range' && fromTime >= toTime) return;
 
     const date = formatDateKey(selectedDay);
     await createAvailability.mutateAsync({
@@ -68,8 +68,8 @@ export function AvailabilityModal({
       type,
       ...(type === 'slots' && { slots: selectedSlots }),
       ...(type === 'range' && {
-        startTime: `${fromHour.padStart(2, '0')}:00`,
-        endTime: `${toHour.padStart(2, '0')}:00`,
+        startTime: fromTime,
+        endTime: toTime,
       }),
     });
     onClose();
@@ -105,7 +105,7 @@ export function AvailabilityModal({
     >
       <div className="px-5 pt-5 pb-9 bg-bg-light">
         {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-white/10 mx-auto mb-3.5" />
+        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
         <h3 className="text-[17px] font-bold text-text mb-0.5">
           {t('calendar.availability.title')}
@@ -120,9 +120,9 @@ export function AvailabilityModal({
               onClick={() => setType(key)}
               className="flex-1 py-2 rounded-[9px] text-xs font-semibold transition-colors"
               style={{
-                background: type === key ? 'rgba(37,99,235,0.12)' : 'rgba(255,255,255,0.025)',
+                background: type === key ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
                 color: type === key ? '#60A5FA' : '#4B5C75',
-                border: `1px solid ${type === key ? 'rgba(96,165,250,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                border: `1px solid ${type === key ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
               }}
             >
               {label}
@@ -141,9 +141,9 @@ export function AvailabilityModal({
                 style={{
                   background: selectedSlots.includes(slot)
                     ? 'rgba(37,99,235,0.12)'
-                    : 'rgba(255,255,255,0.025)',
+                    : 'var(--app-bg-card)',
                   color: selectedSlots.includes(slot) ? '#60A5FA' : '#4B5C75',
-                  border: `1px solid ${selectedSlots.includes(slot) ? 'rgba(96,165,250,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                  border: `1px solid ${selectedSlots.includes(slot) ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
                 }}
               >
                 {t(`calendar.availability.${SLOT_KEYS[idx]}`)}
@@ -163,19 +163,23 @@ export function AvailabilityModal({
                 {t('calendar.availability.from')}
               </label>
               <select
-                value={fromHour}
-                onChange={(e) => setFromHour(e.target.value)}
+                value={fromTime}
+                onChange={(e) => setFromTime(e.target.value)}
                 className="w-full rounded-[10px] p-2 text-sm text-text outline-none"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  background: 'var(--app-bg-hover)',
+                  border: '1px solid var(--app-border-strong)',
                 }}
               >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={String(i)}>
-                    {String(i).padStart(2, '0')}:00
-                  </option>
-                ))}
+                {Array.from({ length: 48 }, (_, i) => {
+                  const h = String(Math.floor(i / 2)).padStart(2, '0');
+                  const m = i % 2 === 0 ? '00' : '30';
+                  return (
+                    <option key={i} value={`${h}:${m}`}>
+                      {h}:{m}
+                    </option>
+                  );
+                })}
               </select>
             </div>
             <span className="text-text-dark mt-3.5">→</span>
@@ -184,19 +188,24 @@ export function AvailabilityModal({
                 {t('calendar.availability.to')}
               </label>
               <select
-                value={toHour}
-                onChange={(e) => setToHour(e.target.value)}
+                value={toTime}
+                onChange={(e) => setToTime(e.target.value)}
                 className="w-full rounded-[10px] p-2 text-sm text-text outline-none"
                 style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  background: 'var(--app-bg-hover)',
+                  border: '1px solid var(--app-border-strong)',
                 }}
               >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <option key={i} value={String(i)}>
-                    {String(i).padStart(2, '0')}:00
-                  </option>
-                ))}
+                {Array.from({ length: 48 }, (_, i) => {
+                  const h = String(Math.floor(i / 2)).padStart(2, '0');
+                  const m = i % 2 === 0 ? '00' : '30';
+                  return (
+                    <option key={i} value={`${h}:${m}`}>
+                      {h}:{m}
+                    </option>
+                  );
+                })}
+                <option value="23:59">23:59</option>
               </select>
             </div>
           </div>
@@ -220,7 +229,7 @@ export function AvailabilityModal({
             disabled={isDeleting}
             className="w-full py-2.5 rounded-btn text-xs font-semibold transition-colors"
             style={{
-              background: 'rgba(255,255,255,0.04)',
+              background: 'var(--app-bg-hover)',
               color: '#FB7185',
               border: '1px solid rgba(251,113,133,0.15)',
             }}

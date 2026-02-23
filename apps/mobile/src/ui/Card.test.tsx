@@ -17,7 +17,7 @@ describe('Card', () => {
   it('applies default (unselected) border styles', () => {
     render(<Card data-testid="card">Content</Card>);
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('border-white/5');
+    expect(card.className).toContain('border-subtle');
     expect(card.className).not.toContain('border-primary/25');
   });
 
@@ -39,7 +39,7 @@ describe('Card', () => {
       </Card>,
     );
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('border-white/5');
+    expect(card.className).toContain('border-subtle');
     expect(card.className).not.toContain('border-primary/25');
   });
 

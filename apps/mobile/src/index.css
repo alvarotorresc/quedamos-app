@@ -16,6 +16,11 @@
   --app-text-muted: #94A3B8;
   --app-text-dark: #4B5C75;
   --app-border: rgba(255, 255, 255, 0.05);
+  --app-border-strong: rgba(255, 255, 255, 0.1);
+  --app-bg-card: rgba(255, 255, 255, 0.025);
+  --app-bg-input: rgba(255, 255, 255, 0.05);
+  --app-bg-hover: rgba(255, 255, 255, 0.04);
+  --app-toggle-off: rgba(255, 255, 255, 0.1);
   --app-tab-bar: rgba(8, 14, 26, 0.92);
 }
 
@@ -31,6 +36,11 @@
   --app-text-muted: #64748B;
   --app-text-dark: #94A3B8;
   --app-border: rgba(0, 0, 0, 0.08);
+  --app-border-strong: rgba(0, 0, 0, 0.12);
+  --app-bg-card: rgba(0, 0, 0, 0.03);
+  --app-bg-input: rgba(0, 0, 0, 0.04);
+  --app-bg-hover: rgba(0, 0, 0, 0.03);
+  --app-toggle-off: rgba(0, 0, 0, 0.1);
   --app-tab-bar: rgba(248, 250, 252, 0.92);
 }
 

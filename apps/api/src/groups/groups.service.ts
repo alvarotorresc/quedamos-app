@@ -121,6 +121,28 @@ export class GroupsService {
       },
     });
 
+    // Backfill: add new member as attendee to all active future events
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const activeEvents = await this.prisma.event.findMany({
+      where: {
+        groupId: group.id,
+        status: { not: 'cancelled' },
+        date: { gte: today },
+      },
+    });
+
+    if (activeEvents.length > 0) {
+      await this.prisma.eventAttendee.createMany({
+        data: activeEvents.map((event: { id: string }) => ({
+          eventId: event.id,
+          userId,
+          status: 'pending',
+        })),
+        skipDuplicates: true,
+      });
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (user) {
       this.notificationsService

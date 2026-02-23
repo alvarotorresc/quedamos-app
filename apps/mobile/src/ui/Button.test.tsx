@@ -23,7 +23,7 @@ describe('Button', () => {
   it('applies secondary variant styles when variant is secondary', () => {
     render(<Button variant="secondary">Secondary</Button>);
     const button = screen.getByRole('button', { name: 'Secondary' });
-    expect(button.className).toContain('bg-white/5');
+    expect(button.className).toContain('bg-bg-input');
     expect(button.className).toContain('text-text-muted');
     expect(button.className).toContain('border');
   });

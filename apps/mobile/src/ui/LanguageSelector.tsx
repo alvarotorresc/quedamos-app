@@ -19,7 +19,7 @@ export function LanguageSelector() {
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn text-sm font-medium transition-colors ${
             current === code
               ? 'bg-primary/15 border border-primary/30 text-primary'
-              : 'bg-white/5 border border-white/10 text-text-muted'
+              : 'bg-bg-input border border-strong text-text-muted'
           }`}
         >
           <span>{flag}</span>

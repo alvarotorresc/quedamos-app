@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { api } from '../lib/api';
 import { unregisterFromBackend } from '../lib/push-notifications';
 import i18n from '../i18n';
 
@@ -114,13 +115,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   updateName: async (name) => {
     const { error } = await supabase.auth.updateUser({ data: { name } });
     if (error) throw error;
+    await api.patch('/auth/me', { name });
     set((state) => ({
       user: state.user ? { ...state.user, name } : null,
     }));
   },
 
   updateEmail: async (email) => {
-    const { error } = await supabase.auth.updateUser({ email });
+    const { error } = await supabase.auth.updateUser(
+      { email },
+      { emailRedirectTo: `${window.location.origin}/tabs/profile` },
+    );
     if (error) throw error;
   },
 }));

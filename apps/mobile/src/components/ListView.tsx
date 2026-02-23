@@ -59,8 +59,8 @@ export function ListView({
               className="rounded-card mb-1.5 cursor-pointer flex items-center justify-between"
               style={{
                 padding: '12px 14px',
-                background: 'rgba(255,255,255,0.025)',
-                border: `1px solid ${isBest ? 'rgba(96,165,250,0.12)' : 'rgba(255,255,255,0.05)'}`,
+                background: 'var(--app-bg-card)',
+                border: `1px solid ${isBest ? 'rgba(96,165,250,0.12)' : 'var(--app-border)'}`,
               }}
             >
               <div>

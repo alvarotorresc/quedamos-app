@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LanguageSelector } from './LanguageSelector';
 
 // Create a shared spy that both the test and the component will reference
@@ -40,7 +40,7 @@ describe('LanguageSelector', () => {
   it('highlights English as inactive by default (language is es)', () => {
     render(<LanguageSelector />);
     const englishButton = screen.getByText('English').closest('button');
-    expect(englishButton?.className).toContain('bg-white/5');
+    expect(englishButton?.className).toContain('bg-bg-input');
     expect(englishButton?.className).toContain('text-text-muted');
   });
 

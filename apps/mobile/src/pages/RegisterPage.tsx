@@ -132,7 +132,7 @@ export default function RegisterPage() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
+              className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
               placeholder={t('register.namePlaceholder')}
               required
             />
@@ -144,7 +144,7 @@ export default function RegisterPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
+              className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
               placeholder={t('common.emailPlaceholder')}
               required
             />
@@ -157,7 +157,7 @@ export default function RegisterPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
                 placeholder={t('common.passwordPlaceholder')}
                 required
               />
@@ -179,7 +179,7 @@ export default function RegisterPage() {
                       <div
                         key={i}
                         className={`h-1 flex-1 rounded-full transition-colors ${
-                          i <= strength.level ? strength.color : 'bg-white/10'
+                          i <= strength.level ? strength.color : 'bg-toggle-off'
                         }`}
                       />
                     ))}
@@ -206,10 +206,10 @@ export default function RegisterPage() {
                 type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full bg-white/5 border rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
+                className={`w-full bg-bg-input border rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
                   confirmPassword.length > 0 && password !== confirmPassword
                     ? 'border-danger/50'
-                    : 'border-white/10'
+                    : 'border-strong'
                 }`}
                 placeholder={t('common.passwordPlaceholder')}
                 required

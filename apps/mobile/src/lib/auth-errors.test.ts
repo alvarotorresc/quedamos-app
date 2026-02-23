@@ -12,7 +12,7 @@ import { translateAuthError } from './auth-errors';
 
 describe('translateAuthError', () => {
   beforeEach(() => {
-    vi.mocked(i18n.t).mockImplementation((key: string) => key);
+    vi.mocked(i18n.t).mockImplementation(((key: string) => key) as any);
   });
 
   describe('known error messages', () => {

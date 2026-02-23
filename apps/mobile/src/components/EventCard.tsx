@@ -143,7 +143,7 @@ export function EventCard({ event, groupId, memberColorMap }: EventCardProps) {
             disabled={isResponding}
             className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors"
             style={{
-              background: 'rgba(255,255,255,0.04)',
+              background: 'var(--app-bg-hover)',
               color: '#FB7185',
               border: '1px solid rgba(251,113,133,0.15)',
             }}

@@ -53,22 +53,11 @@ describe('AvatarStack', () => {
     expect(screen.getByText('AB')).toBeInTheDocument();
   });
 
-  it('applies overlap styling via negative margin on subsequent items', () => {
+  it('applies small gap between avatars instead of overlap', () => {
     const { container } = render(<AvatarStack members={mockMembers.slice(0, 3)} />);
-    const wrappers = container.querySelectorAll('.flex > div');
-    // First item should have no negative margin
-    expect(wrappers[0]).toHaveStyle({ marginLeft: '0px' });
-    // Second and third items should have negative margin for overlap
-    expect(wrappers[1]).toHaveStyle({ marginLeft: '-6px' });
-    expect(wrappers[2]).toHaveStyle({ marginLeft: '-6px' });
-  });
-
-  it('applies descending z-index for proper stacking order', () => {
-    const { container } = render(<AvatarStack members={mockMembers.slice(0, 3)} />);
-    const wrappers = container.querySelectorAll('.flex > div');
-    expect(wrappers[0]).toHaveStyle({ zIndex: 10 });
-    expect(wrappers[1]).toHaveStyle({ zIndex: 9 });
-    expect(wrappers[2]).toHaveStyle({ zIndex: 8 });
+    const wrapper = container.querySelector('.flex');
+    // gap = round(24 * 0.08) = 2
+    expect(wrapper).toHaveStyle({ gap: '2px' });
   });
 
   it('uses default max of 6', () => {
