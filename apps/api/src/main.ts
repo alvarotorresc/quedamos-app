@@ -9,7 +9,11 @@ async function bootstrap() {
 
   app.use(helmet());
 
-  const origins: string[] = ['https://quedamos-app-mobile.vercel.app'];
+  const origins: string[] = [
+    'https://quedamos-app-mobile.vercel.app',
+    'https://localhost',
+    'http://localhost',
+  ];
   if (process.env.NODE_ENV !== 'production') {
     origins.push('http://localhost:5173', 'http://localhost:8100');
   }
