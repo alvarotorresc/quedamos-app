@@ -6,7 +6,8 @@
     "emailPlaceholder": "you@email.com",
     "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
     "captchaError": "Could not verify captcha. Please try again.",
-    "unexpectedError": "An unexpected error occurred"
+    "unexpectedError": "An unexpected error occurred",
+    "cancel": "Cancel"
   },
   "splash": {
     "title": "\u00bfQuedamos?",
@@ -228,7 +229,7 @@
     "saving": "Saving...",
     "sendConfirmation": "Send confirmation",
     "sending": "Sending...",
-    "emailSent": "Check your email to confirm the change",
+    "emailSent": "Check your new email to confirm the change",
     "sameEmailError": "New email must be different from current email",
     "nameUpdated": "Name updated",
     "passwordUpdated": "Password updated",

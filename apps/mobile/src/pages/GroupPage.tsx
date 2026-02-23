@@ -218,7 +218,7 @@ export default function GroupPage() {
                   <button
                     type="button"
                     onClick={() => toggleForm(null)}
-                    className="w-full py-2.5 text-xs font-semibold text-text-muted transition-colors"
+                    className="w-full py-2.5 text-xs font-semibold text-danger/70 transition-colors"
                   >
                     {t('common.cancel')}
                   </button>
@@ -247,7 +247,7 @@ export default function GroupPage() {
                   <button
                     type="button"
                     onClick={() => toggleForm(null)}
-                    className="w-full py-2.5 text-xs font-semibold text-text-muted transition-colors"
+                    className="w-full py-2.5 text-xs font-semibold text-danger/70 transition-colors"
                   >
                     {t('common.cancel')}
                   </button>

@@ -6,7 +6,8 @@
     "emailPlaceholder": "tu@email.com",
     "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
     "captchaError": "No se pudo verificar el captcha. Int\u00e9ntalo de nuevo.",
-    "unexpectedError": "Ha ocurrido un error inesperado"
+    "unexpectedError": "Ha ocurrido un error inesperado",
+    "cancel": "Cancelar"
   },
   "splash": {
     "title": "\u00bfQuedamos?",
@@ -228,7 +229,7 @@
     "saving": "Guardando...",
     "sendConfirmation": "Enviar confirmaci\u00f3n",
     "sending": "Enviando...",
-    "emailSent": "Revisa tu email para confirmar el cambio",
+    "emailSent": "Revisa tu nuevo email para confirmar el cambio",
     "sameEmailError": "El nuevo email debe ser diferente al actual",
     "nameUpdated": "Nombre actualizado",
     "passwordUpdated": "Contrase\u00f1a actualizada",

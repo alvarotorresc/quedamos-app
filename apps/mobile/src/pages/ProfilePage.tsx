@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
+import { useIonViewWillEnter } from '@ionic/react';
+import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
 import { useMyColor } from '../hooks/useMyColor';
@@ -27,6 +29,11 @@ export default function ProfilePage() {
   const toggleTheme = useThemeStore((s) => s.toggle);
   const { data: notifPrefs } = useNotificationPreferences();
   const updatePref = useUpdateNotificationPreference();
+
+  // Refresh session when entering profile to pick up email changes confirmed externally
+  useIonViewWillEnter(() => {
+    supabase.auth.refreshSession();
+  });
 
   const NOTIF_TYPES: { type: NotificationType; labelKey: string }[] = [
     { type: 'new_event', labelKey: 'profile.notifications.newEvent' },
