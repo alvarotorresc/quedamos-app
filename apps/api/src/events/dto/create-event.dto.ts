@@ -1,7 +1,8 @@
-import { IsString, IsOptional, MaxLength, Matches } from 'class-validator';
+import { IsString, IsOptional, MaxLength, Matches, IsNotEmpty } from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
+  @IsNotEmpty()
   @MaxLength(200)
   title: string;
 

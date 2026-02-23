@@ -5,6 +5,7 @@ import {
   Param,
   Body,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -19,7 +20,7 @@ export class EventsController {
 
   @Get()
   findAll(
-    @Param('groupId') groupId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
   ) {
     return this.eventsService.findAllForGroup(groupId, user.id);
@@ -27,8 +28,8 @@ export class EventsController {
 
   @Get(':eventId')
   findOne(
-    @Param('groupId') groupId: string,
-    @Param('eventId') eventId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Param('eventId', ParseUUIDPipe) eventId: string,
     @CurrentUser() user: { id: string },
   ) {
     return this.eventsService.findById(groupId, eventId, user.id);
@@ -36,7 +37,7 @@ export class EventsController {
 
   @Post()
   create(
-    @Param('groupId') groupId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
     @Body() dto: CreateEventDto,
   ) {
@@ -45,8 +46,8 @@ export class EventsController {
 
   @Post(':eventId/respond')
   respond(
-    @Param('groupId') groupId: string,
-    @Param('eventId') eventId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Param('eventId', ParseUUIDPipe) eventId: string,
     @CurrentUser() user: { id: string },
     @Body() dto: RespondEventDto,
   ) {

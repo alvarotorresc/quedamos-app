@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase';
 import { unregisterFromBackend } from '../lib/push-notifications';
 import i18n from '../i18n';
 
+let authSubscription: { unsubscribe: () => void } | null = null;
+
 interface User {
   id: string;
   email: string;
@@ -76,7 +78,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: null, isLoading: false });
     }
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    if (authSubscription) {
+      authSubscription.unsubscribe();
+    }
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         set({
           user: {
@@ -90,6 +95,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ user: null });
       }
     });
+    authSubscription = data.subscription;
   },
 
   resetPassword: async (email, captchaToken) => {

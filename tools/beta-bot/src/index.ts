@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
+import { randomBytes } from 'crypto';
 import { config } from 'dotenv';
 
 // Load environment variables
@@ -58,49 +59,25 @@ let apkFileId: string | null = null;
 // === Utility Functions ===
 
 /**
- * Generate a readable random password
- * Format: 8 characters with letters, numbers, and one special char
+ * Generate a cryptographically secure random password
+ * Uses crypto.randomBytes instead of Math.random()
  */
 function generatePassword(): string {
-  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
-  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const numbers = '0123456789';
-  const special = '!@#$%&*';
-
-  const pick = (str: string) => str[Math.floor(Math.random() * str.length)];
-
-  // Ensure at least one of each type
-  let password = [
-    pick(uppercase),
-    pick(lowercase),
-    pick(numbers),
-    pick(special),
-  ];
-
-  // Fill remaining with random mix
-  const all = lowercase + uppercase + numbers;
-  for (let i = password.length; i < 8; i++) {
-    password.push(pick(all));
-  }
-
-  // Shuffle
-  password = password.sort(() => Math.random() - 0.5);
-
-  return password.join('');
+  return randomBytes(16).toString('base64url');
 }
 
 /**
- * Check if email already exists in Supabase
+ * Send password reset email for an existing user.
+ * Used when a user tries to register with an already-registered email,
+ * so we don't reveal whether the email exists (M-04).
  */
-async function emailExists(email: string): Promise<boolean> {
-  const { data, error } = await supabase.auth.admin.listUsers();
-
+async function sendPasswordReset(email: string): Promise<void> {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${WEB_URL}/reset-password`,
+  });
   if (error) {
-    console.error('Error checking email:', error);
-    return false;
+    console.error('Error sending password reset:', error.message);
   }
-
-  return data.users.some(user => user.email === email);
 }
 
 /**
@@ -282,7 +259,7 @@ bot.on('document', async (ctx) => {
 });
 
 bot.on('text', async (ctx) => {
-  console.error(`[DEBUG] Text message from user ${ctx.from.id}: ${ctx.message.text.substring(0, 20)}...`);
+  console.error(`[DEBUG] Text message from user ${ctx.from.id}`);
   const userId = ctx.from.id;
   const state = getUserState(userId);
   const text = ctx.message.text.trim();
@@ -300,8 +277,8 @@ bot.on('text', async (ctx) => {
       break;
 
     case 'awaiting_name':
-      if (text.length < 2) {
-        await ctx.reply('⚠️ Por favor, introduce un nombre válido (mínimo 2 caracteres).');
+      if (text.length < 2 || text.length > 100) {
+        await ctx.reply('⚠️ Por favor, introduce un nombre válido (entre 2 y 100 caracteres).');
         return;
       }
 
@@ -316,16 +293,6 @@ bot.on('text', async (ctx) => {
 
       if (!emailRegex.test(text)) {
         await ctx.reply('⚠️ Por favor, introduce un email válido.');
-        return;
-      }
-
-      // Check if email already exists
-      const exists = await emailExists(text);
-      if (exists) {
-        await ctx.reply(
-          '⚠️ Este email ya está registrado.\n\n' +
-          'Si olvidaste tu contraseña, usa la opción de recuperación en la app.'
-        );
         return;
       }
 
@@ -369,9 +336,7 @@ bot.on('text', async (ctx) => {
           `📩 Email: ${state.email}\n\n` +
           '⚠️ Si no recibes el email:\n' +
           '1. Revisa tu carpeta de spam\n' +
-          '2. Usa la opción "Olvidé mi contraseña" en la app\n\n' +
-          `💡 También puedes usar esta contraseña temporal:\n\`${password}\``,
-          { parse_mode: 'Markdown' }
+          '2. Usa la opción "Olvidé mi contraseña" en la app'
         );
 
         // Send APK if available
@@ -416,9 +381,9 @@ bot.telegram.getMe().then((botInfo) => {
   console.error('✅ Connected to Telegram API');
   console.error(`📱 Bot: @${botInfo.username} (${botInfo.first_name})`);
   console.error('');
-  console.error('🔧 Configuration:');
-  console.error(`📋 Admin ID: ${ADMIN_TELEGRAM_ID}`);
-  console.error(`🔐 Invite code: ${BETA_INVITE_CODE}`);
+  console.error('🔧 Configuration loaded:');
+  console.error(`📋 Admin ID: ***${String(ADMIN_TELEGRAM_ID).slice(-4)}`);
+  console.error(`🔐 Invite code: ***${BETA_INVITE_CODE.slice(-4)}`);
   console.error(`🌐 Web URL: ${WEB_URL}`);
   console.error('');
   console.error('✅ Bot is running. You can now:');

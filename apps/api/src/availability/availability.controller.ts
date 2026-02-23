@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -20,7 +21,7 @@ export class AvailabilityController {
 
   @Get()
   findAll(
-    @Param('groupId') groupId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
   ) {
     return this.availabilityService.findAllForGroup(groupId, user.id);
@@ -28,7 +29,7 @@ export class AvailabilityController {
 
   @Get('me')
   findMine(
-    @Param('groupId') groupId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
   ) {
     return this.availabilityService.findMyAvailability(groupId, user.id);
@@ -36,7 +37,7 @@ export class AvailabilityController {
 
   @Post()
   create(
-    @Param('groupId') groupId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
     @Body() dto: CreateAvailabilityDto,
   ) {
@@ -45,7 +46,7 @@ export class AvailabilityController {
 
   @Put(':date')
   update(
-    @Param('groupId') groupId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @Param('date') date: string,
     @CurrentUser() user: { id: string },
     @Body() dto: CreateAvailabilityDto,
@@ -55,7 +56,7 @@ export class AvailabilityController {
 
   @Delete(':date')
   delete(
-    @Param('groupId') groupId: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @Param('date') date: string,
     @CurrentUser() user: { id: string },
   ) {

@@ -141,9 +141,9 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
               {t('plans.create.attendees')}
             </label>
             <div className="flex gap-1 flex-wrap">
-              {prefill.availableMembers.map((m) => (
+              {prefill.availableMembers.map((m, i) => (
                 <div
-                  key={m.name}
+                  key={`${m.name}-${i}`}
                   className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5"
                   style={{
                     background: 'rgba(255,255,255,0.03)',

@@ -6,7 +6,9 @@ import {
   Param,
   Body,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { GroupsService } from './groups.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -29,32 +31,33 @@ export class GroupsController {
   }
 
   @Get(':id')
-  findOne(@CurrentUser() user: { id: string }, @Param('id') id: string) {
+  findOne(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
     return this.groupsService.findById(id, user.id);
   }
 
   @Post('join')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   join(@CurrentUser() user: { id: string }, @Body() dto: JoinGroupDto) {
     return this.groupsService.joinByCode(user.id, dto.inviteCode);
   }
 
   @Delete(':id/leave')
-  leave(@CurrentUser() user: { id: string }, @Param('id') id: string) {
+  leave(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
     return this.groupsService.leave(id, user.id);
   }
 
   @Get(':id/members')
-  getMembers(@CurrentUser() user: { id: string }, @Param('id') id: string) {
+  getMembers(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
     return this.groupsService.getMembers(id, user.id);
   }
 
   @Get(':id/invite')
-  getInvite(@CurrentUser() user: { id: string }, @Param('id') id: string) {
+  getInvite(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
     return this.groupsService.getInviteInfo(id, user.id);
   }
 
   @Post(':id/invite/refresh')
-  refreshInvite(@CurrentUser() user: { id: string }, @Param('id') id: string) {
+  refreshInvite(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
     return this.groupsService.refreshInviteCode(id, user.id);
   }
 }

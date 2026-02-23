@@ -148,11 +148,12 @@ export default function App() {
 
   // Deep link handler for native app (reset password, join group)
   useEffect(() => {
+    const ALLOWED_PREFIXES = ['/reset-password', '/join/', '/tabs/'];
     const listener = CapApp.addListener('appUrlOpen', (event) => {
       try {
         const url = new URL(event.url);
         const path = url.pathname + url.search + url.hash;
-        if (path) {
+        if (path && ALLOWED_PREFIXES.some((p) => path.startsWith(p))) {
           window.location.href = path;
         }
       } catch {

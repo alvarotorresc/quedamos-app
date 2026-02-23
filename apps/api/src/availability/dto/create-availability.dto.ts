@@ -4,6 +4,8 @@ import {
   IsIn,
   IsArray,
   Matches,
+  ArrayMaxSize,
+  MaxLength,
 } from 'class-validator';
 
 export class CreateAvailabilityDto {
@@ -16,7 +18,9 @@ export class CreateAvailabilityDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(10)
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
   slots?: string[];
 
   @IsOptional()

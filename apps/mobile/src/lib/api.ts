@@ -27,6 +27,10 @@ async function fetchApi<T>(
     throw new Error(error.message || 'API Error');
   }
 
+  if (response.status === 204) {
+    return null as T;
+  }
+
   return response.json();
 }
 

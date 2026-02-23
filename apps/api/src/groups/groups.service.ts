@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
@@ -13,13 +14,24 @@ export class GroupsService {
   private generateInviteCode(): string {
     let code = '';
     for (let i = 0; i < 8; i++) {
-      code += Math.floor(Math.random() * 10).toString();
+      code += randomInt(0, 10).toString();
     }
     return code;
   }
 
+  private async generateUniqueInviteCode(): Promise<string> {
+    for (let i = 0; i < 5; i++) {
+      const code = this.generateInviteCode();
+      const existing = await this.prisma.group.findUnique({
+        where: { inviteCode: code },
+      });
+      if (!existing) return code;
+    }
+    throw new InternalServerErrorException('Failed to create group, please try again');
+  }
+
   async create(userId: string, dto: CreateGroupDto) {
-    const inviteCode = this.generateInviteCode();
+    const inviteCode = await this.generateUniqueInviteCode();
 
     const group = await this.prisma.group.create({
       data: {
@@ -182,7 +194,7 @@ export class GroupsService {
   async refreshInviteCode(groupId: string, userId: string) {
     await this.findById(groupId, userId);
 
-    const newCode = this.generateInviteCode();
+    const newCode = await this.generateUniqueInviteCode();
 
     await this.prisma.group.update({
       where: { id: groupId },

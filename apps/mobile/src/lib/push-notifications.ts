@@ -6,6 +6,7 @@ import { api } from './api';
 
 let currentToken: string | null = null;
 let webForegroundSetup = false;
+let nativePushSetup = false;
 
 export function getCurrentToken(): string | null {
   return currentToken;
@@ -13,6 +14,10 @@ export function getCurrentToken(): string | null {
 
 export function setCurrentToken(token: string | null): void {
   currentToken = token;
+}
+
+export function resetNativePushSetup(): void {
+  nativePushSetup = false;
 }
 
 export async function registerForPush(): Promise<string | null> {
@@ -83,7 +88,9 @@ export async function unregisterFromBackend(): Promise<void> {
 }
 
 export function setupPushListeners(): void {
+  if (nativePushSetup) return;
   if (!Capacitor.isNativePlatform()) return;
+  nativePushSetup = true;
 
   PushNotifications.addListener(
     'pushNotificationReceived',
@@ -109,17 +116,23 @@ export function setupPushListeners(): void {
 
 const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function navigateFromPush(data: Record<string, string>): void {
   const { type, groupId, eventId } = data;
 
-  if (groupId) {
-    localStorage.setItem(GROUP_STORAGE_KEY, groupId);
+  // Validate UUIDs before using in URLs or storage
+  const validGroupId = groupId && UUID_RE.test(groupId) ? groupId : undefined;
+  const validEventId = eventId && UUID_RE.test(eventId) ? eventId : undefined;
+
+  if (validGroupId) {
+    localStorage.setItem(GROUP_STORAGE_KEY, validGroupId);
   }
 
   if (type === 'member_joined' || type === 'member_left') {
-    window.location.href = groupId ? `/tabs/group/${groupId}` : '/tabs/group';
-  } else if (eventId) {
-    window.location.href = `/tabs/plans?eventId=${eventId}`;
+    window.location.href = validGroupId ? `/tabs/group/${validGroupId}` : '/tabs/group';
+  } else if (validEventId) {
+    window.location.href = `/tabs/plans?eventId=${validEventId}`;
   } else {
     window.location.href = '/tabs/plans';
   }

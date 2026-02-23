@@ -15,7 +15,8 @@ export default function LoginPage() {
   const history = useHistory();
   const location = useLocation();
   const signIn = useAuthStore((s) => s.signIn);
-  const redirectTo = new URLSearchParams(location.search).get('redirect') || '/tabs';
+  const rawRedirect = new URLSearchParams(location.search).get('redirect') || '/tabs';
+  const redirectTo = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/tabs';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

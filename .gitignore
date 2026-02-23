@@ -50,6 +50,15 @@ tools/beta-bot/.apk-file-id
 # APK builds
 *.apk
 
+# Keystores and credentials
+*.keystore
+*.jks
+*.pem
+*.key
+*.p12
+credentials.json
+google-services.json
+
 #Claude
 CLAUDE.md
 progress.md

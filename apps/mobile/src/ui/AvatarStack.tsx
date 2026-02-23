@@ -18,7 +18,7 @@ export function AvatarStack({ members, size = 24, max = 6 }: AvatarStackProps) {
     <div className="flex">
       {visible.map((member, i) => (
         <div
-          key={member.name}
+          key={`${member.name}-${i}`}
           style={{ marginLeft: i > 0 ? -6 : 0, zIndex: 10 - i }}
         >
           <Avatar name={member.name} color={member.color} size={size} />

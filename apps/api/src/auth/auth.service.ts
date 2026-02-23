@@ -52,7 +52,7 @@ export class AuthService {
         jwt.verify(
           token,
           (header, cb) => this.getKey(header, cb),
-          { algorithms: ['ES256', 'HS256'] },
+          { algorithms: ['ES256'] },
           (err, decoded) => {
             if (err) reject(err);
             else resolve(decoded as SupabaseJwtPayload);
@@ -73,12 +73,16 @@ export class AuthService {
     });
 
     if (!dbUser) {
+      const name = (payload.user_metadata?.name ?? 'Usuario').trim().slice(0, 100);
+      const email = (payload.email ?? '').trim().slice(0, 255);
+      const avatarEmoji = (payload.user_metadata?.avatarEmoji ?? '😊').slice(0, 10);
+
       dbUser = await this.prisma.user.create({
         data: {
           id: payload.sub,
-          email: payload.email ?? '',
-          name: payload.user_metadata?.name ?? 'Usuario',
-          avatarEmoji: payload.user_metadata?.avatarEmoji ?? '😊',
+          email,
+          name,
+          avatarEmoji,
         },
       });
     }

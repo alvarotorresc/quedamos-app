@@ -60,6 +60,7 @@ export function AvailabilityModal({
   const handleSave = async () => {
     if (!selectedDay) return;
     if (type === 'slots' && selectedSlots.length === 0) return;
+    if (type === 'range' && parseInt(fromHour) >= parseInt(toHour)) return;
 
     const date = formatDateKey(selectedDay);
     await createAvailability.mutateAsync({

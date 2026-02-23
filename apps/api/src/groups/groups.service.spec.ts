@@ -21,6 +21,7 @@ describe('GroupsService', () => {
   describe('create', () => {
     it('should create group and add creator as member', async () => {
       const group = createTestGroup();
+      prisma.group.findUnique.mockResolvedValue(null);
       prisma.group.create.mockResolvedValue({ ...group, members: [{ userId: 'user-1' }] });
 
       const result = await service.create('user-1', { name: 'Test Group', emoji: '👥' });
@@ -39,6 +40,7 @@ describe('GroupsService', () => {
     });
 
     it('should use default emoji when not provided', async () => {
+      prisma.group.findUnique.mockResolvedValue(null);
       prisma.group.create.mockResolvedValue(createTestGroup());
 
       await service.create('user-1', { name: 'No Emoji' });
@@ -208,6 +210,7 @@ describe('GroupsService', () => {
   describe('refreshInviteCode', () => {
     it('should generate new invite code', async () => {
       prisma.group.findFirst.mockResolvedValue(createTestGroup());
+      prisma.group.findUnique.mockResolvedValue(null);
       prisma.group.update.mockResolvedValue({});
 
       const result = await service.refreshInviteCode('group-1', 'user-1');
