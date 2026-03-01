@@ -70,3 +70,39 @@ export function useRefreshInvite() {
     },
   });
 }
+
+export function useUpdateMemberRole(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: 'admin' | 'member' }) =>
+      groupsService.updateMemberRole(groupId, userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups', groupId] });
+      broadcastSync(groupId, 'groups');
+    },
+  });
+}
+
+export function useKickMember(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) => groupsService.kickMember(groupId, userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups', groupId] });
+      broadcastSync(groupId, 'groups');
+    },
+  });
+}
+
+export function useDeleteGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: groupsService.deleteGroup,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+    },
+  });
+}

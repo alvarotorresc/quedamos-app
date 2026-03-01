@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useGroups, useGroup, useCreateGroup, useJoinGroup, useLeaveGroup, useGroupInvite } from './useGroups';
+import {
+  useGroups,
+  useGroup,
+  useCreateGroup,
+  useJoinGroup,
+  useLeaveGroup,
+  useGroupInvite,
+  useRefreshInvite,
+  useUpdateMemberRole,
+  useKickMember,
+  useDeleteGroup,
+} from './useGroups';
 import { groupsService } from '../services/groups';
 import { createWrapper } from '../test/test-utils';
 
@@ -13,6 +24,9 @@ vi.mock('../services/groups', () => ({
     leave: vi.fn(),
     getInvite: vi.fn(),
     refreshInvite: vi.fn(),
+    updateMemberRole: vi.fn(),
+    kickMember: vi.fn(),
+    deleteGroup: vi.fn(),
   },
 }));
 
@@ -111,5 +125,85 @@ describe('useGroupInvite', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(invite);
+  });
+});
+
+describe('useRefreshInvite', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should refresh invite code', async () => {
+    const newInvite = { inviteCode: 'NEW12345', inviteUrl: 'https://.../join/NEW12345' };
+    vi.mocked(groupsService.refreshInvite).mockResolvedValue(newInvite as any);
+
+    const { result } = renderHook(() => useRefreshInvite(), { wrapper: createWrapper() });
+
+    result.current.mutate('g1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(groupsService.refreshInvite).toHaveBeenCalledWith('g1', expect.anything());
+  });
+});
+
+describe('useUpdateMemberRole', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should promote member to admin', async () => {
+    vi.mocked(groupsService.updateMemberRole).mockResolvedValue({ role: 'admin' } as any);
+
+    const { result } = renderHook(() => useUpdateMemberRole('g1'), { wrapper: createWrapper() });
+
+    result.current.mutate({ userId: 'user-2', role: 'admin' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(groupsService.updateMemberRole).toHaveBeenCalledWith('g1', 'user-2', 'admin');
+  });
+
+  it('should demote admin to member', async () => {
+    vi.mocked(groupsService.updateMemberRole).mockResolvedValue({ role: 'member' } as any);
+
+    const { result } = renderHook(() => useUpdateMemberRole('g1'), { wrapper: createWrapper() });
+
+    result.current.mutate({ userId: 'user-2', role: 'member' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(groupsService.updateMemberRole).toHaveBeenCalledWith('g1', 'user-2', 'member');
+  });
+});
+
+describe('useKickMember', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should kick member from group', async () => {
+    vi.mocked(groupsService.kickMember).mockResolvedValue({ success: true } as any);
+
+    const { result } = renderHook(() => useKickMember('g1'), { wrapper: createWrapper() });
+
+    result.current.mutate('user-2');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(groupsService.kickMember).toHaveBeenCalledWith('g1', 'user-2');
+  });
+});
+
+describe('useDeleteGroup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should delete group', async () => {
+    vi.mocked(groupsService.deleteGroup).mockResolvedValue({ success: true } as any);
+
+    const { result } = renderHook(() => useDeleteGroup(), { wrapper: createWrapper() });
+
+    result.current.mutate('g1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(groupsService.deleteGroup).toHaveBeenCalledWith('g1', expect.anything());
   });
 });
