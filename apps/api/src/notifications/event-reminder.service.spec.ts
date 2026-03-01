@@ -17,6 +17,53 @@ describe('EventReminderService', () => {
     prisma.event.update.mockResolvedValue({});
   });
 
+  describe('combineDateTime', () => {
+    // Access private method via bracket notation for testing
+    const combine = (date: Date, time: string | null) =>
+      (service as any).combineDateTime(date, time);
+
+    it('should combine date and time correctly', () => {
+      const date = new Date('2026-03-15T00:00:00.000Z');
+      const result = combine(date, '14:30');
+
+      expect(result.getUTCHours()).toBe(14);
+      expect(result.getUTCMinutes()).toBe(30);
+      expect(result.getUTCSeconds()).toBe(0);
+    });
+
+    it('should default to midnight when time is null', () => {
+      const date = new Date('2026-03-15T00:00:00.000Z');
+      const result = combine(date, null);
+
+      expect(result.getUTCHours()).toBe(0);
+      expect(result.getUTCMinutes()).toBe(0);
+    });
+
+    it('should handle time near midnight', () => {
+      const date = new Date('2026-03-15T00:00:00.000Z');
+      const result = combine(date, '23:59');
+
+      expect(result.getUTCHours()).toBe(23);
+      expect(result.getUTCMinutes()).toBe(59);
+    });
+
+    it('should handle early morning time', () => {
+      const date = new Date('2026-03-15T00:00:00.000Z');
+      const result = combine(date, '00:00');
+
+      expect(result.getUTCHours()).toBe(0);
+      expect(result.getUTCMinutes()).toBe(0);
+    });
+
+    it('should not mutate the original date', () => {
+      const date = new Date('2026-03-15T00:00:00.000Z');
+      const original = date.getTime();
+      combine(date, '14:30');
+
+      expect(date.getTime()).toBe(original);
+    });
+  });
+
   describe('sendReminders', () => {
     it('should skip when no events found', async () => {
       prisma.event.findMany.mockResolvedValue([]);
@@ -60,6 +107,33 @@ describe('EventReminderService', () => {
       );
     });
 
+    it('should await all notifications before marking reminderSentAt', async () => {
+      const tomorrow = new Date();
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setUTCHours(0, 0, 0, 0);
+
+      const callOrder: string[] = [];
+      notifications.sendToUser.mockImplementation(async () => {
+        callOrder.push('sendToUser');
+        return { sent: 1 };
+      });
+      prisma.event.update.mockImplementation(async () => {
+        callOrder.push('event.update');
+        return {};
+      });
+
+      const event = {
+        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        attendees: [{ userId: 'user-1', status: 'pending' }],
+        group: { name: 'Test Group' },
+      };
+      prisma.event.findMany.mockResolvedValue([event]);
+
+      await service.sendReminders();
+
+      expect(callOrder).toEqual(['sendToUser', 'event.update']);
+    });
+
     it('should mark reminderSentAt after sending', async () => {
       const tomorrow = new Date();
       tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
@@ -74,6 +148,34 @@ describe('EventReminderService', () => {
 
       await service.sendReminders();
 
+      expect(prisma.event.update).toHaveBeenCalledWith({
+        where: { id: 'event-1' },
+        data: { reminderSentAt: expect.any(Date) },
+      });
+    });
+
+    it('should still mark reminderSentAt even if some notifications fail', async () => {
+      const tomorrow = new Date();
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+      tomorrow.setUTCHours(0, 0, 0, 0);
+
+      notifications.sendToUser
+        .mockResolvedValueOnce({ sent: 1 })
+        .mockRejectedValueOnce(new Error('FCM down'));
+
+      const event = {
+        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        attendees: [
+          { userId: 'user-1', status: 'pending' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+        group: { name: 'Test Group' },
+      };
+      prisma.event.findMany.mockResolvedValue([event]);
+
+      await service.sendReminders();
+
+      // Should still mark as sent (Promise.allSettled handles failures)
       expect(prisma.event.update).toHaveBeenCalledWith({
         where: { id: 'event-1' },
         data: { reminderSentAt: expect.any(Date) },

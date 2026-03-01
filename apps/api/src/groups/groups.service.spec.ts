@@ -466,6 +466,28 @@ describe('GroupsService', () => {
       );
     });
 
+    it('should send notification before deleting group', async () => {
+      const callOrder: string[] = [];
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+      prisma.group.findUnique.mockResolvedValue(createTestGroup());
+      notifications.sendToGroup.mockImplementation(async () => {
+        callOrder.push('sendToGroup');
+        return { sent: 1 };
+      });
+      prisma.group.delete.mockImplementation(async () => {
+        callOrder.push('group.delete');
+        return {};
+      });
+
+      await service.deleteGroup('group-1', 'user-1');
+
+      expect(callOrder).toEqual(['sendToGroup', 'group.delete']);
+    });
+
     it('should reject delete from non-creator', async () => {
       prisma.group.findUnique.mockResolvedValue(createTestGroup());
 

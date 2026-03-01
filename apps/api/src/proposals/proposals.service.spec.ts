@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import { ProposalsService } from './proposals.service';
 import { GroupsService } from '../groups/groups.service';
 import { EventsService } from '../events/events.service';
@@ -121,12 +121,33 @@ describe('ProposalsService', () => {
         votes: [{ userId: 'user-1', vote: 'no' }],
       });
 
-      const result = await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'no' });
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'no' });
 
       expect(prisma.planVote.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           update: expect.objectContaining({ vote: 'no' }),
         }),
+      );
+    });
+
+    it('should send proposal_voted notification', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
+      prisma.planVote.upsert.mockResolvedValue({});
+      prisma.planProposal.findUnique.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'yes' }],
+      });
+
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' });
+
+      expect(notifications.sendToGroup).toHaveBeenCalledWith(
+        'group-1',
+        expect.any(String),
+        expect.any(String),
+        'user-1',
+        expect.objectContaining({ type: 'proposal_voted' }),
+        'proposal_voted',
       );
     });
   });
@@ -153,6 +174,32 @@ describe('ProposalsService', () => {
         expect.objectContaining({
           data: expect.objectContaining({ status: 'converted' }),
         }),
+      );
+    });
+
+    it('should send proposal_converted notification', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+      });
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(notifications.sendToGroup).toHaveBeenCalledWith(
+        'group-1',
+        expect.any(String),
+        expect.any(String),
+        'user-1',
+        expect.objectContaining({ type: 'proposal_converted' }),
+        'proposal_converted',
       );
     });
 

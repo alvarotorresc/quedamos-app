@@ -58,11 +58,13 @@ export function createMockPrisma() {
     },
     pushToken: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     },
     notificationPreference: {
       findUnique: jest.fn(),

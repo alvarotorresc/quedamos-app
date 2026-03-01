@@ -2,21 +2,23 @@ import { NotificationsService } from './notifications.service';
 import { createMockPrisma, createMockConfigService } from '../common/test-utils';
 
 // Mock firebase-admin
-jest.mock('firebase-admin', () => ({
-  initializeApp: jest.fn(),
-  credential: {
-    cert: jest.fn().mockReturnValue({}),
-  },
-  messaging: jest.fn().mockReturnValue({
-    sendEachForMulticast: jest.fn().mockResolvedValue({
-      successCount: 1,
-      failureCount: 0,
-      responses: [{ success: true }],
+jest.mock('firebase-admin', () => {
+  const mockSendEachForMulticast = jest.fn();
+  return {
+    initializeApp: jest.fn(),
+    credential: {
+      cert: jest.fn().mockReturnValue({}),
+    },
+    messaging: jest.fn().mockReturnValue({
+      sendEachForMulticast: mockSendEachForMulticast,
     }),
-  }),
-}));
+    __mockSendEachForMulticast: mockSendEachForMulticast,
+  };
+});
 
 import * as admin from 'firebase-admin';
+
+const mockSendEachForMulticast = (admin as any).__mockSendEachForMulticast as jest.Mock;
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
@@ -24,6 +26,7 @@ describe('NotificationsService', () => {
   let configService: ReturnType<typeof createMockConfigService>;
 
   beforeEach(() => {
+    jest.clearAllMocks();
     prisma = createMockPrisma();
     configService = createMockConfigService();
     service = new NotificationsService(prisma as any, configService as any);
@@ -33,7 +36,7 @@ describe('NotificationsService', () => {
     it('should initialize Firebase when credentials are configured', () => {
       service.onModuleInit();
 
-      expect(admin.initializeApp).toHaveBeenCalled();
+      expect(admin.initializeApp).toHaveBeenCalledTimes(1);
     });
 
     it('should not initialize Firebase when credentials are missing', () => {
@@ -47,12 +50,13 @@ describe('NotificationsService', () => {
 
       svc.onModuleInit();
 
-      // Firebase init should only be called from previous test, not this one
+      expect(admin.initializeApp).not.toHaveBeenCalled();
     });
   });
 
   describe('registerToken', () => {
     it('should upsert push token', async () => {
+      prisma.pushToken.count.mockResolvedValue(0);
       prisma.pushToken.upsert.mockResolvedValue({
         userId: 'user-1',
         token: 'tok',
@@ -67,6 +71,42 @@ describe('NotificationsService', () => {
           where: { userId_token: { userId: 'user-1', token: 'tok' } },
         }),
       );
+    });
+
+    it('should evict oldest token when at max capacity', async () => {
+      prisma.pushToken.count.mockResolvedValue(10);
+      prisma.pushToken.findFirst.mockResolvedValue({ id: 'old-token-id', token: 'old' });
+      prisma.pushToken.delete.mockResolvedValue({});
+      prisma.pushToken.upsert.mockResolvedValue({
+        userId: 'user-1',
+        token: 'new-tok',
+        platform: 'web',
+      });
+
+      await service.registerToken('user-1', { token: 'new-tok', platform: 'web' });
+
+      expect(prisma.pushToken.findFirst).toHaveBeenCalledWith({
+        where: { userId: 'user-1' },
+        orderBy: { createdAt: 'asc' },
+      });
+      expect(prisma.pushToken.delete).toHaveBeenCalledWith({
+        where: { id: 'old-token-id' },
+      });
+      expect(prisma.pushToken.upsert).toHaveBeenCalled();
+    });
+
+    it('should not evict when under max capacity', async () => {
+      prisma.pushToken.count.mockResolvedValue(5);
+      prisma.pushToken.upsert.mockResolvedValue({
+        userId: 'user-1',
+        token: 'tok',
+        platform: 'web',
+      });
+
+      await service.registerToken('user-1', { token: 'tok', platform: 'web' });
+
+      expect(prisma.pushToken.findFirst).not.toHaveBeenCalled();
+      expect(prisma.pushToken.delete).not.toHaveBeenCalled();
     });
   });
 
@@ -117,7 +157,10 @@ describe('NotificationsService', () => {
 
   describe('updatePreference', () => {
     it('should upsert preference', async () => {
-      prisma.notificationPreference.upsert.mockResolvedValue({ type: 'new_event', enabled: false });
+      prisma.notificationPreference.upsert.mockResolvedValue({
+        type: 'new_event',
+        enabled: false,
+      });
 
       const result = await service.updatePreference('user-1', {
         type: 'new_event',
@@ -174,6 +217,67 @@ describe('NotificationsService', () => {
       expect(result).toEqual({ sent: 0 });
       expect(prisma.pushToken.findMany).toHaveBeenCalled();
     });
+
+    it('should send via FCM when Firebase is initialized', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([{ token: 'fcm-token-123' }]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+
+      const result = await service.sendToUser('user-1', 'Title', 'Body', { type: 'test' });
+
+      expect(result).toEqual({ sent: 1 });
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokens: ['fcm-token-123'],
+          notification: { title: 'Title', body: 'Body' },
+          data: { type: 'test' },
+        }),
+      );
+    });
+
+    it('should clean up invalid tokens on FCM error', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([
+        { token: 'valid-token' },
+        { token: 'invalid-token' },
+      ]);
+      prisma.pushToken.deleteMany.mockResolvedValue({ count: 1 });
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 1,
+        responses: [
+          { success: true },
+          {
+            success: false,
+            error: {
+              code: 'messaging/registration-token-not-registered',
+              message: 'Token not registered',
+            },
+          },
+        ],
+      });
+
+      const result = await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(result).toEqual({ sent: 1 });
+      expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
+        where: { token: { in: ['invalid-token'] } },
+      });
+    });
+
+    it('should return sent 0 on FCM fatal error', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([{ token: 'tok' }]);
+      mockSendEachForMulticast.mockRejectedValue(new Error('FCM down'));
+
+      const result = await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(result).toEqual({ sent: 0 });
+    });
   });
 
   describe('sendToGroup', () => {
@@ -225,6 +329,27 @@ describe('NotificationsService', () => {
       await service.sendToGroup('group-1', 'Title', 'Body');
 
       expect(prisma.notificationPreference.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should apply both exclude and notificationType filter', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([
+        { userId: 'user-1' },
+        { userId: 'user-2' },
+        { userId: 'user-3' },
+      ]);
+      prisma.notificationPreference.findMany.mockResolvedValue([
+        { userId: 'user-2', type: 'new_event', enabled: false },
+      ]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+
+      await service.sendToGroup('group-1', 'Title', 'Body', 'user-1', undefined, 'new_event');
+
+      // user-1 excluded, user-2 disabled preference, only user-3 remains
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: { in: ['user-3'] } },
+        }),
+      );
     });
   });
 });
