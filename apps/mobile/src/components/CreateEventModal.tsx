@@ -26,17 +26,22 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
   const createEvent = useCreateEvent(groupId);
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [time, setTime] = useState('');
+  const [endTime, setEndTime] = useState('');
 
   const isCreating = createEvent.isPending;
-  const canSubmit = title.trim() && prefill?.date && !isCreating;
+  const endTimeError = !!(endTime && time && endTime <= time);
+  const canSubmit = title.trim() && prefill?.date && !isCreating && !endTimeError;
 
   useEffect(() => {
     if (isOpen && prefill) {
       setTitle('');
+      setDescription('');
       setLocation('');
       setTime(prefill.suggestedTime ?? '');
+      setEndTime('');
     }
   }, [isOpen, prefill]);
 
@@ -46,18 +51,24 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
       title: title.trim(),
       date: prefill.date,
       ...(time && { time }),
+      ...(endTime && { endTime }),
+      ...(description.trim() && { description: description.trim() }),
       ...(location.trim() && { location: location.trim() }),
     });
     setTitle('');
+    setDescription('');
     setLocation('');
     setTime('');
+    setEndTime('');
     onClose();
   };
 
   const handleDismiss = () => {
     setTitle('');
+    setDescription('');
     setLocation('');
     setTime('');
+    setEndTime('');
     onClose();
   };
 
@@ -115,8 +126,23 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
           />
         </div>
 
+        {/* Description */}
+        <div className="mb-2">
+          <label className="block text-[10px] text-text-dark mb-1">
+            {t('plans.create.description')}
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t('plans.create.descriptionPlaceholder')}
+            rows={2}
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark resize-none"
+            style={inputStyle}
+          />
+        </div>
+
         {/* Time */}
-        <div className="mb-3">
+        <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('plans.create.time')}
             {prefill?.suggestedTime && prefill?.suggestedSlot && (
@@ -132,6 +158,24 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
             className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
             style={inputStyle}
           />
+        </div>
+
+        {/* End Time */}
+        <div className="mb-3">
+          <label className="block text-[10px] text-text-dark mb-1">
+            {t('plans.create.endTime')}
+          </label>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            min={time || undefined}
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            style={inputStyle}
+          />
+          {endTimeError && (
+            <p className="text-[10px] text-danger mt-1">{t('plans.create.endTimeError')}</p>
+          )}
         </div>
 
         {/* Attendees */}

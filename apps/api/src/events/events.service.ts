@@ -1,12 +1,16 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateEventDto } from './dto/create-event.dto';
+import { UpdateEventDto } from './dto/update-event.dto';
 import { RespondEventDto } from './dto/respond-event.dto';
 
 @Injectable()
 export class EventsService {
+  private readonly logger = new Logger(EventsService.name);
+
   constructor(
     private prisma: PrismaService,
     private groupsService: GroupsService,
@@ -20,9 +24,9 @@ export class EventsService {
       where: { groupId },
       include: {
         attendees: {
-          include: { user: true },
+          include: { user: { select: PUBLIC_USER_SELECT } },
         },
-        createdBy: true,
+        createdBy: { select: PUBLIC_USER_SELECT },
       },
       orderBy: { date: 'asc' },
     });
@@ -35,9 +39,9 @@ export class EventsService {
       where: { id: eventId, groupId },
       include: {
         attendees: {
-          include: { user: true },
+          include: { user: { select: PUBLIC_USER_SELECT } },
         },
-        createdBy: true,
+        createdBy: { select: PUBLIC_USER_SELECT },
       },
     });
 
@@ -58,6 +62,10 @@ export class EventsService {
       throw new BadRequestException('No se pueden crear quedadas en fechas pasadas');
     }
 
+    if (dto.time && dto.endTime && dto.endTime <= dto.time) {
+      throw new BadRequestException('End time must be after start time');
+    }
+
     const members = await this.groupsService.getMembers(groupId, userId);
 
     const event = await this.prisma.event.create({
@@ -69,6 +77,7 @@ export class EventsService {
         location: dto.location,
         date: new Date(dto.date),
         time: dto.time,
+        endTime: dto.endTime,
         status: 'pending',
         attendees: {
           create: members.map((m) => ({
@@ -79,13 +88,12 @@ export class EventsService {
       },
       include: {
         attendees: {
-          include: { user: true },
+          include: { user: { select: PUBLIC_USER_SELECT } },
         },
-        createdBy: true,
+        createdBy: { select: PUBLIC_USER_SELECT },
       },
     });
 
-    // Fire-and-forget push notification
     this.notificationsService
       .sendToGroup(
         groupId,
@@ -93,10 +101,117 @@ export class EventsService {
         `${event.createdBy.name} ha creado "${event.title}"`,
         userId,
         { type: 'new_event', eventId: event.id, groupId },
+        'new_event',
       )
-      .catch(() => {});
+      .catch((err) => this.logger.error('Failed to send new_event notification', err));
 
     return event;
+  }
+
+  async update(groupId: string, eventId: string, userId: string, dto: UpdateEventDto) {
+    const event = await this.findById(groupId, eventId, userId);
+
+    if (event.createdById !== userId) {
+      throw new ForbiddenException('Only the creator can edit this event');
+    }
+
+    if (dto.date) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const eventDate = new Date(dto.date + 'T00:00:00');
+      if (eventDate < today) {
+        throw new BadRequestException('Cannot set date to the past');
+      }
+    }
+
+    const finalTime = dto.time ?? event.time;
+    const finalEndTime = dto.endTime ?? event.endTime;
+    if (finalTime && finalEndTime && finalEndTime <= finalTime) {
+      throw new BadRequestException('End time must be after start time');
+    }
+
+    const data: Record<string, unknown> = {};
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.location !== undefined) data.location = dto.location;
+    if (dto.date !== undefined) data.date = new Date(dto.date);
+    if (dto.time !== undefined) data.time = dto.time;
+    if (dto.endTime !== undefined) data.endTime = dto.endTime;
+
+    const updated = await this.prisma.event.update({
+      where: { id: eventId },
+      data,
+      include: {
+        attendees: { include: { user: { select: PUBLIC_USER_SELECT } } },
+        createdBy: { select: PUBLIC_USER_SELECT },
+      },
+    });
+
+    this.notificationsService
+      .sendToGroup(
+        groupId,
+        'Quedada actualizada',
+        `"${updated.title}" ha sido editada`,
+        userId,
+        { type: 'event_updated', eventId, groupId },
+        'event_updated',
+      )
+      .catch((err) => this.logger.error('Failed to send event_updated notification', err));
+
+    return updated;
+  }
+
+  async delete(groupId: string, eventId: string, userId: string) {
+    const event = await this.findById(groupId, eventId, userId);
+
+    if (event.createdById !== userId) {
+      throw new ForbiddenException('Only the creator can delete this event');
+    }
+
+    await this.prisma.event.delete({ where: { id: eventId } });
+
+    this.notificationsService
+      .sendToGroup(
+        groupId,
+        'Quedada eliminada',
+        `"${event.title}" ha sido eliminada`,
+        userId,
+        { type: 'event_deleted', eventId, groupId },
+        'event_deleted',
+      )
+      .catch((err) => this.logger.error('Failed to send event_deleted notification', err));
+
+    return { success: true };
+  }
+
+  async cancel(groupId: string, eventId: string, userId: string) {
+    const event = await this.findById(groupId, eventId, userId);
+
+    if (event.createdById !== userId) {
+      throw new ForbiddenException('Only the creator can cancel this event');
+    }
+
+    const updated = await this.prisma.event.update({
+      where: { id: eventId },
+      data: { status: 'cancelled' },
+      include: {
+        attendees: { include: { user: { select: PUBLIC_USER_SELECT } } },
+        createdBy: { select: PUBLIC_USER_SELECT },
+      },
+    });
+
+    this.notificationsService
+      .sendToGroup(
+        groupId,
+        'Quedada cancelada',
+        `"${event.title}" ha sido cancelada`,
+        userId,
+        { type: 'event_cancelled', eventId, groupId },
+        'event_cancelled',
+      )
+      .catch((err) => this.logger.error('Failed to send event_cancelled notification', err));
+
+    return updated;
   }
 
   async respond(
@@ -138,7 +253,6 @@ export class EventsService {
         data: { status: 'confirmed' },
       });
 
-      // Fire-and-forget push notification
       const event = await this.prisma.event.findUnique({
         where: { id: eventId },
       });
@@ -150,8 +264,9 @@ export class EventsService {
             `Todos han confirmado "${event.title}"`,
             undefined,
             { type: 'event_confirmed', eventId, groupId },
+            'event_confirmed',
           )
-          .catch(() => {});
+          .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
       }
     } else if (anyDeclined) {
       await this.prisma.event.update({
@@ -174,8 +289,9 @@ export class EventsService {
             `${user.name} ha rechazado "${event.title}"`,
             userId,
             { type: 'event_declined', eventId, groupId },
+            'event_declined',
           )
-          .catch(() => {});
+          .catch((err) => this.logger.error('Failed to send event_declined notification', err));
       }
     }
 

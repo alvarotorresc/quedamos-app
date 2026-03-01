@@ -1,10 +1,10 @@
-import { IsString, IsOptional, MaxLength, Matches, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, MaxLength, Matches } from 'class-validator';
 
-export class CreateEventDto {
+export class UpdateEventDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(200)
-  title: string;
+  title?: string;
 
   @IsOptional()
   @IsString()
@@ -16,9 +16,10 @@ export class CreateEventDto {
   @MaxLength(200)
   location?: string;
 
+  @IsOptional()
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  date: string;
+  date?: string;
 
   @IsOptional()
   @IsString()
