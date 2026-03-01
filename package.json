@@ -13,6 +13,7 @@
   },
   "devDependencies": {
     "lefthook": "^1.13.6",
+    "prettier": "^3.4.2",
     "turbo": "^2.3.0",
     "typescript": "^5.7.2"
   },
