@@ -20,6 +20,9 @@ export function useGroupSync(groupId: string | undefined): void {
           queryClient.invalidateQueries({ queryKey: ['groups'] });
           queryClient.invalidateQueries({ queryKey: ['groups', groupId] });
           break;
+        case 'proposals':
+          queryClient.invalidateQueries({ queryKey: ['proposals', groupId] });
+          break;
       }
     },
     [groupId, queryClient],

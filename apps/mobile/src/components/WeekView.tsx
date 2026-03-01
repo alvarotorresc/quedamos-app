@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { getWeekDays, formatDateKey, isSameDay, isToday } from '../lib/date-utils';
 import { AvatarStack } from '../ui/AvatarStack';
+import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
+import type { WeatherData } from '../services/weather';
 
 interface MemberInfo {
   name: string;
@@ -17,9 +19,12 @@ interface WeekViewProps {
   myAvailabilityByDate: Map<string, Availability>;
   memberColorMap: Map<string, string>;
   totalMembers: number;
+  bestDayKey?: string | null;
+  secondBestDayKey?: string | null;
   onMarkAvailability: () => void;
   onCreateEvent: (day: Date) => void;
   onViewDetail: (day: Date) => void;
+  weatherByDate?: Map<string, WeatherData[]>;
 }
 
 export function WeekView({
@@ -31,9 +36,12 @@ export function WeekView({
   myAvailabilityByDate,
   memberColorMap,
   totalMembers,
+  bestDayKey,
+  secondBestDayKey,
   onMarkAvailability,
   onCreateEvent,
   onViewDetail,
+  weatherByDate,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -72,6 +80,8 @@ export function WeekView({
         const myAvail = myAvailabilityByDate.get(key);
         const isSel = isSameDay(selectedDay, day);
         const today = isToday(day);
+        const isBest = key === bestDayKey;
+        const isSecondBest = key === secondBestDayKey;
 
         // Build member list with colors
         const availMembers: MemberInfo[] = dayAvail.map((a) => ({
@@ -143,6 +153,22 @@ export function WeekView({
                         ? `${availMembers.length}/${totalMembers}`
                         : '—'}
                     </span>
+                    {isBest && (
+                      <span
+                        className="text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-[6px] ml-1"
+                        style={{ background: 'rgba(96,165,250,0.12)', color: '#60A5FA' }}
+                      >
+                        {t('calendar.recommended')}
+                      </span>
+                    )}
+                    {isSecondBest && (
+                      <span
+                        className="text-[9px] font-bold tracking-wide px-1.5 py-0.5 rounded-[6px] ml-1"
+                        style={{ background: 'rgba(148,163,184,0.10)', color: '#94A3B8' }}
+                      >
+                        {t('calendar.secondRecommended')}
+                      </span>
+                    )}
                   </div>
                   {availLabel && (
                     <div className="text-[10px] text-primary mt-0.5">
@@ -151,6 +177,19 @@ export function WeekView({
                   )}
                 </div>
               </div>
+
+              {/* Weather */}
+              {(() => {
+                const dayWeather = weatherByDate?.get(key);
+                if (!dayWeather || dayWeather.length === 0) return null;
+                const w = dayWeather[0];
+                return (
+                  <span className="text-[9px] text-text-muted flex items-center gap-0.5 shrink-0">
+                    <span className="text-xs">{getWeatherIcon(w.weatherCode)}</span>
+                    {Math.round(w.tempMax)}°
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Expanded selection */}

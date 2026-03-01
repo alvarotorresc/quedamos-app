@@ -8,8 +8,10 @@ import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
 import { useAvailability, useMyAvailability } from '../hooks/useAvailability';
 import { useMyColor } from '../hooks/useMyColor';
+import { useGroupWeather } from '../hooks/useWeather';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
+import { calculateTopDays } from '../lib/calendar-utils';
 import { WeekView } from '../components/WeekView';
 import { MonthView } from '../components/MonthView';
 import { ListView } from '../components/ListView';
@@ -20,6 +22,7 @@ import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
 import { CreateEventModal } from '../components/CreateEventModal';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
+import type { WeatherData } from '../services/weather';
 
 function suggestBestTime(availabilities: Availability[]): { time: string; slot: string } | null {
   if (availabilities.length === 0) return null;
@@ -96,6 +99,9 @@ export default function CalendarPage() {
   const { data: allAvailability, isLoading: availLoading } = useAvailability(groupId);
   const { data: myAvailability } = useMyAvailability(groupId);
 
+  // Weather data
+  const { data: weather } = useGroupWeather(groupId);
+
   // Calendar state
   const [calView, setCalView] = useState<CalView>('week');
   const [weekOffset, setWeekOffset] = useState(0);
@@ -138,21 +144,26 @@ export default function CalendarPage() {
     return map;
   }, [myAvailability]);
 
-  // Best day calculation — day with most people available (future only)
-  const bestDay = useMemo(() => {
-    if (!allAvailability || availabilityByDate.size === 0) return null;
-
-    const today = formatDateKey(new Date());
-    let best: { dateKey: string; count: number } | null = null;
-
-    for (const [dateKey, avails] of availabilityByDate) {
-      if (dateKey < today) continue;
-      if (!best || avails.length > best.count) {
-        best = { dateKey, count: avails.length };
-      }
+  // Index weather by date
+  const weatherByDate = useMemo(() => {
+    const map = new Map<string, WeatherData[]>();
+    if (!weather) return map;
+    for (const w of weather) {
+      const list = map.get(w.date) ?? [];
+      list.push(w);
+      map.set(w.date, list);
     }
-    return best;
-  }, [allAvailability, availabilityByDate]);
+    return map;
+  }, [weather]);
+
+  // Top days calculation — days with most people available (future only)
+  const topDays = useMemo(() => {
+    const today = formatDateKey(new Date());
+    return calculateTopDays(availabilityByDate, today, 2);
+  }, [availabilityByDate]);
+
+  const bestDay = topDays[0] ?? null;
+  const secondBestDay = topDays[1] ?? null;
 
   // Existing availability for selected day (for modal)
   const existingAvail = selectedDay
@@ -330,9 +341,12 @@ export default function CalendarPage() {
                   myAvailabilityByDate={myAvailabilityByDate}
                   memberColorMap={memberColorMap}
                   totalMembers={members.length}
+                  bestDayKey={bestDay?.dateKey ?? null}
+                  secondBestDayKey={secondBestDay?.dateKey ?? null}
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
                   onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
+                  weatherByDate={weatherByDate}
                 />
               )}
               {calView === 'month' && (
@@ -348,6 +362,7 @@ export default function CalendarPage() {
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
                   onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
+                  weatherByDate={weatherByDate}
                 />
               )}
               {calView === 'list' && (
@@ -356,10 +371,12 @@ export default function CalendarPage() {
                   memberColorMap={memberColorMap}
                   totalMembers={members.length}
                   bestDayKey={bestDay?.dateKey ?? null}
+                  secondBestDayKey={secondBestDay?.dateKey ?? null}
                   onSelectDay={(day) => {
                     setSelectedDay(day);
                     setCalView('week');
                   }}
+                  weatherByDate={weatherByDate}
                 />
               )}
 
@@ -370,8 +387,18 @@ export default function CalendarPage() {
                     dateKey={bestDay.dateKey}
                     availableCount={bestDay.count}
                     totalMembers={members.length}
+                    rank={1}
                     onClick={() => handleCreateEvent(parseDateKey(bestDay.dateKey))}
                   />
+                  {secondBestDay && (
+                    <BestDayBanner
+                      dateKey={secondBestDay.dateKey}
+                      availableCount={secondBestDay.count}
+                      totalMembers={members.length}
+                      rank={2}
+                      onClick={() => handleCreateEvent(parseDateKey(secondBestDay.dateKey))}
+                    />
+                  )}
                 </div>
               )}
               {calView === 'month' && (

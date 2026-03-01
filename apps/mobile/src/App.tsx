@@ -11,6 +11,7 @@ import PlansPage from './pages/PlansPage';
 import GroupPage from './pages/GroupPage';
 import GroupDetailPage from './pages/GroupDetailPage';
 import ProfilePage from './pages/ProfilePage';
+import NotificationsSettingsPage from './pages/NotificationsSettingsPage';
 import SplashPage from './pages/SplashPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -50,6 +51,7 @@ function AppTabs() {
         <Route exact path="/tabs/plans" component={PlansPage} />
         <Route exact path="/tabs/group/:id" component={GroupDetailPage} />
         <Route exact path="/tabs/group" component={GroupPage} />
+        <Route exact path="/tabs/profile/notifications" component={NotificationsSettingsPage} />
         <Route exact path="/tabs/profile" component={ProfilePage} />
         <Route exact path="/tabs">
           <Redirect to="/tabs/calendar" />

@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-export type SyncResource = 'availability' | 'events' | 'groups';
+export type SyncResource = 'availability' | 'events' | 'groups' | 'proposals';
 
 type SyncCallback = (resource: SyncResource) => void;
 
