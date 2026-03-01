@@ -12,6 +12,8 @@ export class WeeklyReminderService {
     private notificationsService: NotificationsService,
   ) {}
 
+  // NOTE: Cron jobs assume single-instance deployment. For horizontal scaling,
+  // use a distributed lock (e.g., PostgreSQL advisory locks) or a job queue.
   @Cron('0 20 * * 0') // Sunday 20:00 UTC
   async sendWeeklyReminders() {
     const { nextMonday, nextSunday } = this.getNextWeekRange();
@@ -46,16 +48,27 @@ export class WeeklyReminderService {
       `Sending weekly reminders to ${usersToNotify.length} user(s) without availability`,
     );
 
-    for (const userId of usersToNotify) {
-      this.notificationsService
-        .sendToUser(
-          userId,
-          'Marca tu disponibilidad',
-          'Todavía no has marcado disponibilidad para la semana que viene',
-          { type: 'weekly_availability_reminder' },
-          'weekly_availability_reminder',
-        )
-        .catch((err) => this.logger.error(`Failed to send weekly reminder to user ${userId}`, err));
+    // Process in batches to avoid unbounded concurrency
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < usersToNotify.length; i += BATCH_SIZE) {
+      const batch = usersToNotify.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((userId) =>
+          this.notificationsService.sendToUser(
+            userId,
+            'Marca tu disponibilidad',
+            'Todavía no has marcado disponibilidad para la semana que viene',
+            { type: 'weekly_availability_reminder' },
+            'weekly_availability_reminder',
+          ),
+        ),
+      );
+
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          this.logger.error('Failed to send weekly reminder', result.reason);
+        }
+      }
     }
   }
 

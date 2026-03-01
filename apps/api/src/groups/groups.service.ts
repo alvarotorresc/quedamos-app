@@ -381,7 +381,8 @@ export class GroupsService {
       throw new ForbiddenException('Only the group creator can delete the group');
     }
 
-    this.notificationsService
+    // Send notification BEFORE delete and await it to avoid race with CASCADE
+    await this.notificationsService
       .sendToGroup(
         groupId,
         'Group deleted',

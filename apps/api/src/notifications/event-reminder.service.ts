@@ -12,6 +12,8 @@ export class EventReminderService {
     private notificationsService: NotificationsService,
   ) {}
 
+  // NOTE: Cron jobs assume single-instance deployment. The reminderSentAt column
+  // provides idempotency, but there is a small race window between findMany and update.
   @Cron(CronExpression.EVERY_HOUR)
   async sendReminders() {
     const now = new Date();
@@ -49,21 +51,23 @@ export class EventReminderService {
       const attendeeUserIds = event.attendees.map((a) => a.userId);
       if (attendeeUserIds.length === 0) continue;
 
-      for (const userId of attendeeUserIds) {
-        this.notificationsService
-          .sendToUser(
+      // Await all notifications before marking as sent
+      const results = await Promise.allSettled(
+        attendeeUserIds.map((userId) =>
+          this.notificationsService.sendToUser(
             userId,
             'Recordatorio',
             `"${event.title}" es mañana`,
             { type: 'event_reminder', eventId: event.id, groupId: event.groupId },
             'event_reminder',
-          )
-          .catch((err) =>
-            this.logger.error(
-              `Failed to send reminder for event ${event.id} to user ${userId}`,
-              err,
-            ),
-          );
+          ),
+        ),
+      );
+
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          this.logger.error(`Failed to send reminder for event ${event.id}`, result.reason);
+        }
       }
 
       // Mark as sent to prevent duplicates

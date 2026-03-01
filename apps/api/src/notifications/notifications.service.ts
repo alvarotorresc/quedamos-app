@@ -44,7 +44,21 @@ export class NotificationsService implements OnModuleInit {
     }
   }
 
+  private static readonly MAX_TOKENS_PER_USER = 10;
+
   async registerToken(userId: string, dto: RegisterTokenDto) {
+    const tokenCount = await this.prisma.pushToken.count({ where: { userId } });
+    if (tokenCount >= NotificationsService.MAX_TOKENS_PER_USER) {
+      // Delete oldest token to make room
+      const oldest = await this.prisma.pushToken.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (oldest) {
+        await this.prisma.pushToken.delete({ where: { id: oldest.id } });
+      }
+    }
+
     return this.prisma.pushToken.upsert({
       where: {
         userId_token: {
@@ -211,7 +225,7 @@ export class NotificationsService implements OnModuleInit {
         response.responses.forEach((resp, idx) => {
           if (resp.error) {
             this.logger.warn(
-              `FCM error for token ${tokens[idx].slice(0, 20)}...: ${resp.error.code} — ${resp.error.message}`,
+              `FCM error for token ${tokens[idx].slice(0, 8)}...: ${resp.error.code} — ${resp.error.message}`,
             );
           }
           if (
