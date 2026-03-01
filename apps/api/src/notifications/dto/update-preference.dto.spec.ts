@@ -11,10 +11,21 @@ describe('UpdatePreferenceDto', () => {
 
   const validTypes = [
     'new_event',
+    'event_updated',
+    'event_deleted',
+    'event_cancelled',
     'event_confirmed',
     'event_declined',
+    'event_reminder',
+    'new_proposal',
+    'proposal_voted',
+    'proposal_converted',
     'member_joined',
     'member_left',
+    'role_changed',
+    'member_kicked',
+    'group_deleted',
+    'weekly_availability_reminder',
   ] as const;
 
   describe('valid payloads', () => {
