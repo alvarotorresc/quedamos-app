@@ -3,15 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
-import { UpdatePreferenceDto, NotificationType } from './dto/update-preference.dto';
-
-const ALL_NOTIFICATION_TYPES: NotificationType[] = [
-  'new_event',
-  'event_confirmed',
-  'event_declined',
-  'member_joined',
-  'member_left',
-];
+import { UpdatePreferenceDto, NotificationType, NOTIFICATION_TYPES } from './dto/update-preference.dto';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
@@ -83,7 +75,7 @@ export class NotificationsService implements OnModuleInit {
     });
     const savedMap = new Map(saved.map((p) => [p.type, p.enabled]));
 
-    return ALL_NOTIFICATION_TYPES.map((type) => ({
+    return NOTIFICATION_TYPES.map((type) => ({
       type,
       enabled: savedMap.get(type) ?? true,
     }));
@@ -116,7 +108,13 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
+    notificationType?: NotificationType,
   ) {
+    if (notificationType) {
+      const enabled = await this.isNotificationEnabled(userId, notificationType);
+      if (!enabled) return { sent: 0 };
+    }
+
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId },
     });
@@ -137,13 +135,22 @@ export class NotificationsService implements OnModuleInit {
     body: string,
     excludeUserId?: string,
     data?: Record<string, string>,
+    notificationType?: NotificationType,
   ) {
     const members = await this.prisma.groupMember.findMany({
       where: { groupId },
     });
 
     const allUserIds = members.map((m) => m.userId);
-    const userIds = allUserIds.filter((id) => id !== excludeUserId);
+    let userIds = allUserIds.filter((id) => id !== excludeUserId);
+
+    if (notificationType && userIds.length > 0) {
+      const disabledPrefs = await this.prisma.notificationPreference.findMany({
+        where: { userId: { in: userIds }, type: notificationType, enabled: false },
+      });
+      const disabledSet = new Set(disabledPrefs.map((p) => p.userId));
+      userIds = userIds.filter((id) => !disabledSet.has(id));
+    }
 
     this.logger.debug(
       `sendToGroup: group=${groupId}, members=${allUserIds.length}, exclude=${excludeUserId}, remaining=${userIds.length}`,

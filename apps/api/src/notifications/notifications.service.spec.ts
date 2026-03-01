@@ -77,12 +77,12 @@ describe('NotificationsService', () => {
   });
 
   describe('getPreferences', () => {
-    it('should return all notification types with defaults', async () => {
+    it('should return all 16 notification types with defaults', async () => {
       prisma.notificationPreference.findMany.mockResolvedValue([]);
 
       const result = await service.getPreferences('user-1');
 
-      expect(result).toHaveLength(5);
+      expect(result).toHaveLength(16);
       expect(result.every((p) => p.enabled === true)).toBe(true);
     });
 
@@ -95,6 +95,19 @@ describe('NotificationsService', () => {
 
       const newEventPref = result.find((p) => p.type === 'new_event');
       expect(newEventPref?.enabled).toBe(false);
+    });
+
+    it('should include all notification type categories', async () => {
+      prisma.notificationPreference.findMany.mockResolvedValue([]);
+
+      const result = await service.getPreferences('user-1');
+      const types = result.map((p) => p.type);
+
+      expect(types).toContain('event_reminder');
+      expect(types).toContain('new_proposal');
+      expect(types).toContain('proposal_voted');
+      expect(types).toContain('role_changed');
+      expect(types).toContain('weekly_availability_reminder');
     });
   });
 
@@ -138,6 +151,29 @@ describe('NotificationsService', () => {
 
       expect(result).toEqual({ sent: 0 });
     });
+
+    it('should skip when notificationType is disabled', async () => {
+      prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: false });
+
+      const result = await service.sendToUser(
+        'user-1', 'Title', 'Body', undefined, 'new_event',
+      );
+
+      expect(result).toEqual({ sent: 0 });
+      expect(prisma.pushToken.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should proceed when notificationType is enabled', async () => {
+      prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: true });
+      prisma.pushToken.findMany.mockResolvedValue([]);
+
+      const result = await service.sendToUser(
+        'user-1', 'Title', 'Body', undefined, 'new_event',
+      );
+
+      expect(result).toEqual({ sent: 0 });
+      expect(prisma.pushToken.findMany).toHaveBeenCalled();
+    });
   });
 
   describe('sendToGroup', () => {
@@ -163,6 +199,40 @@ describe('NotificationsService', () => {
       const result = await service.sendToGroup('group-1', 'Title', 'Body');
 
       expect(result).toEqual({ sent: 0 });
+    });
+
+    it('should filter out users with disabled notificationType', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([
+        { userId: 'user-1' },
+        { userId: 'user-2' },
+        { userId: 'user-3' },
+      ]);
+      prisma.notificationPreference.findMany.mockResolvedValue([
+        { userId: 'user-2', type: 'new_event', enabled: false },
+      ]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+
+      await service.sendToGroup(
+        'group-1', 'Title', 'Body', undefined, undefined, 'new_event',
+      );
+
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: { in: ['user-1', 'user-3'] } },
+        }),
+      );
+    });
+
+    it('should not filter when notificationType is not provided', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([
+        { userId: 'user-1' },
+        { userId: 'user-2' },
+      ]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+
+      await service.sendToGroup('group-1', 'Title', 'Body');
+
+      expect(prisma.notificationPreference.findMany).not.toHaveBeenCalled();
     });
   });
 });
