@@ -92,7 +92,9 @@
     "list": "Lista",
     "daysWithAvailability": "Días con disponibilidad",
     "recommended": "Recomendado",
+    "secondRecommended": "Otro día",
     "bestDay": "Mejor día",
+    "secondBestDay": "Otro día",
     "noAvailability": "Nadie disponible",
     "you": "Tú",
     "allDay": "Todo el día",
@@ -149,6 +151,22 @@
     "decline": "Rechazar",
     "youConfirmed": "Has confirmado asistencia",
     "youDeclined": "Has rechazado esta quedada",
+    "editButton": "Editar",
+    "deleteEvent": "Eliminar quedada",
+    "deleteConfirm": "Esta accion no se puede deshacer",
+    "cancelEvent": "Marcar como cancelada",
+    "cancelConfirm": "Cancelar esta quedada?",
+    "openInMaps": "Abrir en mapas",
+    "edit": {
+      "title": "Editar quedada",
+      "submit": "Guardar cambios",
+      "saving": "Guardando..."
+    },
+    "tabs": {
+      "plans": "Quedadas",
+      "proposals": "Propuestas"
+    },
+    "tapToChange": "Toca para cambiar",
     "status": {
       "pending": "Pendiente",
       "confirmed": "Confirmada",
@@ -165,7 +183,11 @@
       "creating": "Creando...",
       "available": "disponibles",
       "attendees": "Asistentes",
-      "suggested": "Sugerido"
+      "suggested": "Sugerido",
+      "endTime": "Hora fin",
+      "endTimeError": "La hora de fin debe ser posterior",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Detalles del plan..."
     }
   },
   "group": {
@@ -206,7 +228,20 @@
     "regenerateTitle": "Regenerar código",
     "regenerateMessage": "El código de invitación actual dejará de funcionar. ¿Quieres generar uno nuevo?",
     "cancel": "Cancelar",
-    "codeRegenerated": "Código regenerado"
+    "codeRegenerated": "Código regenerado",
+    "admin": "Admin",
+    "member": "Miembro",
+    "promoteAdmin": "Hacer admin",
+    "demoteAdmin": "Quitar admin",
+    "kickMember": "Expulsar",
+    "kickConfirm": "¿Expulsar a {{name}} del grupo?",
+    "kickMessage": "El miembro será eliminado del grupo y sus asistencias a quedadas futuras serán borradas.",
+    "deleteGroup": "Eliminar grupo",
+    "deleteMessage": "Se eliminarán todas las quedadas y datos del grupo. Esta acción no se puede deshacer.",
+    "deleteConfirm": "¿Eliminar el grupo?",
+    "lastAdminError": "Debe haber al menos un admin",
+    "roleChanged": "Rol actualizado",
+    "creator": "Fundador"
   },
   "joinGroup": {
     "joining": "Uni\u00e9ndose al grupo...",
@@ -238,11 +273,28 @@
     "theme": "Tema oscuro",
     "notifications": {
       "title": "Notificaciones",
+      "groups": {
+        "events": "Quedadas",
+        "proposals": "Propuestas",
+        "members": "Miembros",
+        "reminders": "Recordatorios"
+      },
       "newEvent": "Nueva quedada creada",
+      "eventUpdated": "Quedada actualizada",
+      "eventDeleted": "Quedada eliminada",
+      "eventCancelled": "Quedada cancelada",
       "eventConfirmed": "Quedada confirmada por todos",
       "eventDeclined": "Alguien rechazó una quedada",
+      "eventReminder": "Recordatorio 24h antes de una quedada",
+      "newProposal": "Nueva propuesta creada",
+      "proposalVoted": "Alguien votó en una propuesta",
+      "proposalConverted": "Propuesta convertida en quedada",
       "memberJoined": "Nuevo miembro en grupo",
-      "memberLeft": "Miembro salió del grupo"
+      "memberLeft": "Miembro salió del grupo",
+      "roleChanged": "Tu rol fue cambiado",
+      "memberKicked": "Fuiste eliminado de un grupo",
+      "groupDeleted": "Grupo eliminado",
+      "weeklyReminder": "Recordatorio semanal de disponibilidad"
     },
     "reportBug": "Reportar error",
     "logout": "Cerrar sesión"
@@ -361,6 +413,50 @@
       "madeWith": "Hecho con",
       "by": "por"
     }
+  },
+  "weather": {
+    "title": "Clima",
+    "addCity": "Añadir ciudad",
+    "searchCity": "Buscar ciudad...",
+    "noData": "Sin datos de clima",
+    "showDetail": "Ver detalle del clima",
+    "forecast": "Previsión",
+    "desc": {
+      "clear": "Cielo despejado",
+      "partlyCloudy": "Parcialmente nublado",
+      "foggy": "Niebla",
+      "drizzle": "Llovizna",
+      "rain": "Lluvia",
+      "snow": "Nieve",
+      "showers": "Chubascos",
+      "snowShowers": "Chubascos de nieve",
+      "thunderstorm": "Tormenta"
+    }
+  },
+  "proposals": {
+    "title": "Propuestas",
+    "create": "Nueva propuesta",
+    "titlePlaceholder": "Cena, excursion, cine...",
+    "description": "Descripcion",
+    "descriptionPlaceholder": "Detalles de la propuesta...",
+    "proposedDate": "Fecha propuesta",
+    "creating": "Creando...",
+    "voteYes": "A favor",
+    "voteNo": "En contra",
+    "convert": "Convertir en quedada",
+    "convertDate": "Fecha",
+    "converting": "Convirtiendo...",
+    "close": "Cerrar propuesta",
+    "status": {
+      "open": "Abierta",
+      "closed": "Cerrada",
+      "converted": "Convertida"
+    },
+    "edit": "Editar propuesta",
+    "editSaving": "Guardando...",
+    "empty": "No hay propuestas",
+    "closed": "Cerradas",
+    "votes": "{{yes}} a favor, {{no}} en contra"
   },
   "authErrors": {
     "invalidCredentials": "Email o contrase\u00f1a incorrectos",
