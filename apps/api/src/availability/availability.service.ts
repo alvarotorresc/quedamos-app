@@ -59,12 +59,7 @@ export class AvailabilityService {
     });
   }
 
-  async update(
-    groupId: string,
-    date: string,
-    userId: string,
-    dto: CreateAvailabilityDto,
-  ) {
+  async update(groupId: string, date: string, userId: string, dto: CreateAvailabilityDto) {
     await this.groupsService.findById(groupId, userId);
 
     const existing = await this.prisma.availability.findUnique({

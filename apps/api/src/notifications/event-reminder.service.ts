@@ -59,7 +59,10 @@ export class EventReminderService {
             'event_reminder',
           )
           .catch((err) =>
-            this.logger.error(`Failed to send reminder for event ${event.id} to user ${userId}`, err),
+            this.logger.error(
+              `Failed to send reminder for event ${event.id} to user ${userId}`,
+              err,
+            ),
           );
       }
 

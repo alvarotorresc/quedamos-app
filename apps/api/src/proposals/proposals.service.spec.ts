@@ -189,9 +189,9 @@ describe('ProposalsService', () => {
     it('should reject close from non-creator', async () => {
       prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
 
-      await expect(
-        service.close('group-1', 'proposal-1', 'user-2'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.close('group-1', 'proposal-1', 'user-2')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 
@@ -226,9 +226,7 @@ describe('ProposalsService', () => {
     });
 
     it('should reject update on closed proposal', async () => {
-      prisma.planProposal.findFirst.mockResolvedValue(
-        createTestProposal({ status: 'closed' }),
-      );
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal({ status: 'closed' }));
 
       await expect(
         service.update('group-1', 'proposal-1', 'user-1', { title: 'Nope' }),

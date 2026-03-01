@@ -60,7 +60,7 @@ describe('WeatherController', () => {
   describe('getGroupWeather', () => {
     it('should return weather for all group cities', async () => {
       const cities = [
-        { id: 'city-1', groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.70 },
+        { id: 'city-1', groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.7 },
         { id: 'city-2', groupId: 'group-1', name: 'Barcelona', lat: 41.39, lon: 2.17 },
       ];
       prisma.groupCity.findMany.mockResolvedValue(cities);
@@ -80,7 +80,7 @@ describe('WeatherController', () => {
       expect(result).toHaveLength(4);
       expect(mockGroupsService.findById).toHaveBeenCalledWith('group-1', 'user-1');
       expect(mockWeatherService.getForecast).toHaveBeenCalledTimes(2);
-      expect(mockWeatherService.getForecast).toHaveBeenCalledWith('Madrid', 40.42, -3.70);
+      expect(mockWeatherService.getForecast).toHaveBeenCalledWith('Madrid', 40.42, -3.7);
       expect(mockWeatherService.getForecast).toHaveBeenCalledWith('Barcelona', 41.39, 2.17);
     });
 
@@ -108,7 +108,7 @@ describe('WeatherController', () => {
       );
 
       expect(result).toEqual(weather);
-      expect(mockWeatherService.getForDate).toHaveBeenCalledWith('', 40.42, -3.70, '2026-03-15');
+      expect(mockWeatherService.getForDate).toHaveBeenCalledWith('', 40.42, -3.7, '2026-03-15');
     });
 
     it('should return null when date is not in forecast range', async () => {

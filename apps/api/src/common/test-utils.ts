@@ -128,10 +128,16 @@ export function createMockConfigService(overrides: Record<string, string> = {}) 
 }
 
 // Factory functions for test data
-export function createTestUser(overrides: Partial<{
-  id: string; email: string; name: string; avatarEmoji: string;
-  createdAt: Date; updatedAt: Date;
-}> = {}) {
+export function createTestUser(
+  overrides: Partial<{
+    id: string;
+    email: string;
+    name: string;
+    avatarEmoji: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = {},
+) {
   return {
     id: 'user-1',
     email: 'test@test.com',
@@ -143,10 +149,17 @@ export function createTestUser(overrides: Partial<{
   };
 }
 
-export function createTestGroup(overrides: Partial<{
-  id: string; name: string; emoji: string; inviteCode: string;
-  createdById: string; createdAt: Date; updatedAt: Date;
-}> = {}) {
+export function createTestGroup(
+  overrides: Partial<{
+    id: string;
+    name: string;
+    emoji: string;
+    inviteCode: string;
+    createdById: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = {},
+) {
   return {
     id: 'group-1',
     name: 'Test Group',
@@ -159,12 +172,23 @@ export function createTestGroup(overrides: Partial<{
   };
 }
 
-export function createTestEvent(overrides: Partial<{
-  id: string; groupId: string; title: string; description: string;
-  location: string; date: Date; time: string; endTime: string;
-  status: string; createdById: string; reminderSentAt: Date | null;
-  createdAt: Date; updatedAt: Date;
-}> = {}) {
+export function createTestEvent(
+  overrides: Partial<{
+    id: string;
+    groupId: string;
+    title: string;
+    description: string;
+    location: string;
+    date: Date;
+    time: string;
+    endTime: string;
+    status: string;
+    createdById: string;
+    reminderSentAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = {},
+) {
   return {
     id: 'event-1',
     groupId: 'group-1',

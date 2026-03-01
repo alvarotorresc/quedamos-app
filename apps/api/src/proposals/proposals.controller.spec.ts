@@ -85,7 +85,10 @@ describe('ProposalsController', () => {
 
   describe('findAll', () => {
     it('should call proposalsService.findAll with groupId and userId', async () => {
-      const proposals = [createTestProposal(), createTestProposal({ id: 'proposal-2', title: 'Another' })];
+      const proposals = [
+        createTestProposal(),
+        createTestProposal({ id: 'proposal-2', title: 'Another' }),
+      ];
       mockProposalsService.findAll.mockResolvedValue(proposals);
 
       const result = await controller.findAll('group-1', { id: 'user-1' });
@@ -113,7 +116,12 @@ describe('ProposalsController', () => {
       const result = await controller.update('group-1', 'proposal-1', { id: 'user-1' }, dto);
 
       expect(result).toEqual(updated);
-      expect(mockProposalsService.update).toHaveBeenCalledWith('group-1', 'proposal-1', 'user-1', dto);
+      expect(mockProposalsService.update).toHaveBeenCalledWith(
+        'group-1',
+        'proposal-1',
+        'user-1',
+        dto,
+      );
       expect(mockProposalsService.update).toHaveBeenCalledTimes(1);
     });
   });
@@ -129,7 +137,12 @@ describe('ProposalsController', () => {
       const result = await controller.vote('group-1', 'proposal-1', { id: 'user-1' }, dto);
 
       expect(result).toEqual(proposal);
-      expect(mockProposalsService.vote).toHaveBeenCalledWith('group-1', 'proposal-1', 'user-1', dto);
+      expect(mockProposalsService.vote).toHaveBeenCalledWith(
+        'group-1',
+        'proposal-1',
+        'user-1',
+        dto,
+      );
       expect(mockProposalsService.vote).toHaveBeenCalledTimes(1);
     });
 
@@ -139,7 +152,12 @@ describe('ProposalsController', () => {
 
       await controller.vote('group-1', 'proposal-1', { id: 'user-1' }, dto);
 
-      expect(mockProposalsService.vote).toHaveBeenCalledWith('group-1', 'proposal-1', 'user-1', dto);
+      expect(mockProposalsService.vote).toHaveBeenCalledWith(
+        'group-1',
+        'proposal-1',
+        'user-1',
+        dto,
+      );
     });
   });
 
@@ -152,7 +170,12 @@ describe('ProposalsController', () => {
       const result = await controller.convert('group-1', 'proposal-1', { id: 'user-1' }, dto);
 
       expect(result).toEqual(converted);
-      expect(mockProposalsService.convert).toHaveBeenCalledWith('group-1', 'proposal-1', 'user-1', dto);
+      expect(mockProposalsService.convert).toHaveBeenCalledWith(
+        'group-1',
+        'proposal-1',
+        'user-1',
+        dto,
+      );
       expect(mockProposalsService.convert).toHaveBeenCalledTimes(1);
     });
 
@@ -162,7 +185,12 @@ describe('ProposalsController', () => {
 
       await controller.convert('group-1', 'proposal-1', { id: 'user-1' }, dto);
 
-      expect(mockProposalsService.convert).toHaveBeenCalledWith('group-1', 'proposal-1', 'user-1', dto);
+      expect(mockProposalsService.convert).toHaveBeenCalledWith(
+        'group-1',
+        'proposal-1',
+        'user-1',
+        dto,
+      );
     });
   });
 

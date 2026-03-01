@@ -55,9 +55,7 @@ export class WeeklyReminderService {
           { type: 'weekly_availability_reminder' },
           'weekly_availability_reminder',
         )
-        .catch((err) =>
-          this.logger.error(`Failed to send weekly reminder to user ${userId}`, err),
-        );
+        .catch((err) => this.logger.error(`Failed to send weekly reminder to user ${userId}`, err));
     }
   }
 

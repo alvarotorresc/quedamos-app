@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
@@ -289,10 +296,16 @@ export class GroupsService {
     });
 
     this.notificationsService
-      .sendToUser(targetUserId, 'Role updated', `Your role has been changed to ${role}`, {
-        type: 'role_changed',
-        groupId,
-      }, 'role_changed')
+      .sendToUser(
+        targetUserId,
+        'Role updated',
+        `Your role has been changed to ${role}`,
+        {
+          type: 'role_changed',
+          groupId,
+        },
+        'role_changed',
+      )
       .catch((err) => this.logger.error('Failed to send role_changed notification', err));
 
     return updated;
@@ -340,10 +353,16 @@ export class GroupsService {
     });
 
     this.notificationsService
-      .sendToUser(targetUserId, 'Removed from group', 'You have been removed from a group', {
-        type: 'member_kicked',
-        groupId,
-      }, 'member_kicked')
+      .sendToUser(
+        targetUserId,
+        'Removed from group',
+        'You have been removed from a group',
+        {
+          type: 'member_kicked',
+          groupId,
+        },
+        'member_kicked',
+      )
       .catch((err) => this.logger.error('Failed to send member_kicked notification', err));
 
     return { success: true };
@@ -363,10 +382,17 @@ export class GroupsService {
     }
 
     this.notificationsService
-      .sendToGroup(groupId, 'Group deleted', `The group "${group.name}" has been deleted`, userId, {
-        type: 'group_deleted',
+      .sendToGroup(
         groupId,
-      }, 'group_deleted')
+        'Group deleted',
+        `The group "${group.name}" has been deleted`,
+        userId,
+        {
+          type: 'group_deleted',
+          groupId,
+        },
+        'group_deleted',
+      )
       .catch((err) => this.logger.error('Failed to send group_deleted notification', err));
 
     await this.prisma.group.delete({

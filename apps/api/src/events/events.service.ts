@@ -1,4 +1,10 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
@@ -214,12 +220,7 @@ export class EventsService {
     return updated;
   }
 
-  async respond(
-    groupId: string,
-    eventId: string,
-    userId: string,
-    dto: RespondEventDto,
-  ) {
+  async respond(groupId: string, eventId: string, userId: string, dto: RespondEventDto) {
     await this.findById(groupId, eventId, userId);
 
     const attendee = await this.prisma.eventAttendee.findUnique({

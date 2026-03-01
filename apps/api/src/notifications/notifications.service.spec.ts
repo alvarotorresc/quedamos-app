@@ -53,7 +53,11 @@ describe('NotificationsService', () => {
 
   describe('registerToken', () => {
     it('should upsert push token', async () => {
-      prisma.pushToken.upsert.mockResolvedValue({ userId: 'user-1', token: 'tok', platform: 'web' });
+      prisma.pushToken.upsert.mockResolvedValue({
+        userId: 'user-1',
+        token: 'tok',
+        platform: 'web',
+      });
 
       const result = await service.registerToken('user-1', { token: 'tok', platform: 'web' });
 
@@ -155,9 +159,7 @@ describe('NotificationsService', () => {
     it('should skip when notificationType is disabled', async () => {
       prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: false });
 
-      const result = await service.sendToUser(
-        'user-1', 'Title', 'Body', undefined, 'new_event',
-      );
+      const result = await service.sendToUser('user-1', 'Title', 'Body', undefined, 'new_event');
 
       expect(result).toEqual({ sent: 0 });
       expect(prisma.pushToken.findMany).not.toHaveBeenCalled();
@@ -167,9 +169,7 @@ describe('NotificationsService', () => {
       prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: true });
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      const result = await service.sendToUser(
-        'user-1', 'Title', 'Body', undefined, 'new_event',
-      );
+      const result = await service.sendToUser('user-1', 'Title', 'Body', undefined, 'new_event');
 
       expect(result).toEqual({ sent: 0 });
       expect(prisma.pushToken.findMany).toHaveBeenCalled();
@@ -178,10 +178,7 @@ describe('NotificationsService', () => {
 
   describe('sendToGroup', () => {
     it('should exclude specified user', async () => {
-      prisma.groupMember.findMany.mockResolvedValue([
-        { userId: 'user-1' },
-        { userId: 'user-2' },
-      ]);
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
       await service.sendToGroup('group-1', 'Title', 'Body', 'user-1');
@@ -212,9 +209,7 @@ describe('NotificationsService', () => {
       ]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      await service.sendToGroup(
-        'group-1', 'Title', 'Body', undefined, undefined, 'new_event',
-      );
+      await service.sendToGroup('group-1', 'Title', 'Body', undefined, undefined, 'new_event');
 
       expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -224,10 +219,7 @@ describe('NotificationsService', () => {
     });
 
     it('should not filter when notificationType is not provided', async () => {
-      prisma.groupMember.findMany.mockResolvedValue([
-        { userId: 'user-1' },
-        { userId: 'user-2' },
-      ]);
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
       await service.sendToGroup('group-1', 'Title', 'Body');

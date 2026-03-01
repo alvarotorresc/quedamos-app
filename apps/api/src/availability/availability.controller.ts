@@ -20,18 +20,12 @@ export class AvailabilityController {
   constructor(private availabilityService: AvailabilityService) {}
 
   @Get()
-  findAll(
-    @Param('groupId', ParseUUIDPipe) groupId: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  findAll(@Param('groupId', ParseUUIDPipe) groupId: string, @CurrentUser() user: { id: string }) {
     return this.availabilityService.findAllForGroup(groupId, user.id);
   }
 
   @Get('me')
-  findMine(
-    @Param('groupId', ParseUUIDPipe) groupId: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  findMine(@Param('groupId', ParseUUIDPipe) groupId: string, @CurrentUser() user: { id: string }) {
     return this.availabilityService.findMyAvailability(groupId, user.id);
   }
 

@@ -1,8 +1,5 @@
 import { WeeklyReminderService } from './weekly-reminder.service';
-import {
-  createMockPrisma,
-  createMockNotificationsService,
-} from '../common/test-utils';
+import { createMockPrisma, createMockNotificationsService } from '../common/test-utils';
 
 describe('WeeklyReminderService', () => {
   let service: WeeklyReminderService;
@@ -42,14 +39,8 @@ describe('WeeklyReminderService', () => {
     });
 
     it('should skip users who already have availability', async () => {
-      prisma.groupMember.findMany.mockResolvedValue([
-        { userId: 'user-1' },
-        { userId: 'user-2' },
-      ]);
-      prisma.availability.findMany.mockResolvedValue([
-        { userId: 'user-1' },
-        { userId: 'user-2' },
-      ]);
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.availability.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
 
       await service.sendWeeklyReminders();
 
@@ -62,9 +53,7 @@ describe('WeeklyReminderService', () => {
         { userId: 'user-2' },
         { userId: 'user-3' },
       ]);
-      prisma.availability.findMany.mockResolvedValue([
-        { userId: 'user-1' },
-      ]);
+      prisma.availability.findMany.mockResolvedValue([{ userId: 'user-1' }]);
 
       await service.sendWeeklyReminders();
 

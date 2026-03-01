@@ -38,7 +38,11 @@ describe('EventsController', () => {
     it('should call eventsService.findAllForGroup with groupId and userId', async () => {
       const events = [
         { ...createTestEvent(), createdBy: createTestUser(), attendees: [] },
-        { ...createTestEvent({ id: 'event-2', title: 'Event 2' }), createdBy: createTestUser(), attendees: [] },
+        {
+          ...createTestEvent({ id: 'event-2', title: 'Event 2' }),
+          createdBy: createTestUser(),
+          attendees: [],
+        },
       ];
       mockEventsService.findAllForGroup.mockResolvedValue(events);
 

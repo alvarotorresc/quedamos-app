@@ -3,9 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { UnregisterTokenDto } from './unregister-token.dto';
 
 describe('UnregisterTokenDto', () => {
-  function createDto(
-    partial: Partial<Record<string, unknown>>,
-  ): UnregisterTokenDto {
+  function createDto(partial: Partial<Record<string, unknown>>): UnregisterTokenDto {
     return plainToInstance(UnregisterTokenDto, partial);
   }
 

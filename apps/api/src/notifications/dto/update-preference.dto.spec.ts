@@ -3,9 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { UpdatePreferenceDto } from './update-preference.dto';
 
 describe('UpdatePreferenceDto', () => {
-  function createDto(
-    partial: Partial<Record<string, unknown>>,
-  ): UpdatePreferenceDto {
+  function createDto(partial: Partial<Record<string, unknown>>): UpdatePreferenceDto {
     return plainToInstance(UpdatePreferenceDto, partial);
   }
 
@@ -29,23 +27,17 @@ describe('UpdatePreferenceDto', () => {
   ] as const;
 
   describe('valid payloads', () => {
-    it.each(validTypes)(
-      'should accept valid type "%s" with enabled true',
-      async (type) => {
-        const dto = createDto({ type, enabled: true });
-        const errors = await validate(dto);
-        expect(errors.length).toBe(0);
-      },
-    );
+    it.each(validTypes)('should accept valid type "%s" with enabled true', async (type) => {
+      const dto = createDto({ type, enabled: true });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+    });
 
-    it.each(validTypes)(
-      'should accept valid type "%s" with enabled false',
-      async (type) => {
-        const dto = createDto({ type, enabled: false });
-        const errors = await validate(dto);
-        expect(errors.length).toBe(0);
-      },
-    );
+    it.each(validTypes)('should accept valid type "%s" with enabled false', async (type) => {
+      const dto = createDto({ type, enabled: false });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+    });
   });
 
   describe('type validation', () => {

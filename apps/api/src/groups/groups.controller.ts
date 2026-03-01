@@ -74,10 +74,7 @@ export class GroupsController {
   }
 
   @Get(':id/cities')
-  getCities(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  getCities(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     return this.groupsService.getCities(id, user.id);
   }
 
@@ -110,10 +107,7 @@ export class GroupsController {
   }
 
   @Delete(':id')
-  deleteGroup(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  deleteGroup(@Param('id', ParseUUIDPipe) id: string, @CurrentUser() user: { id: string }) {
     return this.groupsService.deleteGroup(id, user.id);
   }
 }

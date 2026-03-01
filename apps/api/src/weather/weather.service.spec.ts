@@ -23,7 +23,7 @@ describe('WeatherService', () => {
   });
 
   it('should fetch forecast from Open-Meteo', async () => {
-    const result = await service.getForecast('Madrid', 40.42, -3.70);
+    const result = await service.getForecast('Madrid', 40.42, -3.7);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const calledUrl = mockFetch.mock.calls[0][0];
@@ -40,14 +40,14 @@ describe('WeatherService', () => {
   });
 
   it('should cache results on second call', async () => {
-    await service.getForecast('Madrid', 40.42, -3.70);
-    await service.getForecast('Madrid', 40.42, -3.70);
+    await service.getForecast('Madrid', 40.42, -3.7);
+    await service.getForecast('Madrid', 40.42, -3.7);
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
   it('should return weather for specific date', async () => {
-    const result = await service.getForDate('Madrid', 40.42, -3.70, '2026-03-02');
+    const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-03-02');
 
     expect(result).toBeDefined();
     expect(result!.tempMax).toBe(20.1);
@@ -55,7 +55,7 @@ describe('WeatherService', () => {
   });
 
   it('should return null for date not in forecast', async () => {
-    const result = await service.getForDate('Madrid', 40.42, -3.70, '2026-04-01');
+    const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-04-01');
 
     expect(result).toBeNull();
   });
@@ -63,7 +63,7 @@ describe('WeatherService', () => {
   it('should throw on API error', async () => {
     mockFetch.mockResolvedValue({ ok: false, status: 500 });
 
-    await expect(service.getForecast('Madrid', 40.42, -3.70)).rejects.toThrow(
+    await expect(service.getForecast('Madrid', 40.42, -3.7)).rejects.toThrow(
       'Open-Meteo API error: 500',
     );
   });

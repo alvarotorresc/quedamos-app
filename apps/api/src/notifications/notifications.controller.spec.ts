@@ -48,7 +48,11 @@ describe('NotificationsController', () => {
 
     it('should pass web platform token to service', async () => {
       const dto = { token: 'web-push-token-xyz', platform: 'web' as const };
-      mockNotificationsService.registerToken.mockResolvedValue({ id: 'pt-2', userId: 'user-1', ...dto });
+      mockNotificationsService.registerToken.mockResolvedValue({
+        id: 'pt-2',
+        userId: 'user-1',
+        ...dto,
+      });
 
       await controller.registerToken({ id: 'user-1' }, dto);
 
@@ -64,7 +68,10 @@ describe('NotificationsController', () => {
       const result = await controller.unregisterToken({ id: 'user-1' }, dto);
 
       expect(result).toEqual({ success: true });
-      expect(mockNotificationsService.unregisterToken).toHaveBeenCalledWith('user-1', 'fcm-token-abc');
+      expect(mockNotificationsService.unregisterToken).toHaveBeenCalledWith(
+        'user-1',
+        'fcm-token-abc',
+      );
       expect(mockNotificationsService.unregisterToken).toHaveBeenCalledTimes(1);
     });
   });

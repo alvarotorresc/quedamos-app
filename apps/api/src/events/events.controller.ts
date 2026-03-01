@@ -22,10 +22,7 @@ export class EventsController {
   constructor(private eventsService: EventsService) {}
 
   @Get()
-  findAll(
-    @Param('groupId', ParseUUIDPipe) groupId: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  findAll(@Param('groupId', ParseUUIDPipe) groupId: string, @CurrentUser() user: { id: string }) {
     return this.eventsService.findAllForGroup(groupId, user.id);
   }
 

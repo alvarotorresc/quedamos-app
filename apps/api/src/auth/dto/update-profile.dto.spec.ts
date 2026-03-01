@@ -3,9 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { UpdateProfileDto } from './update-profile.dto';
 
 describe('UpdateProfileDto', () => {
-  function createDto(
-    partial: Partial<Record<string, unknown>>,
-  ): UpdateProfileDto {
+  function createDto(partial: Partial<Record<string, unknown>>): UpdateProfileDto {
     return plainToInstance(UpdateProfileDto, partial);
   }
 

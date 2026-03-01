@@ -31,10 +31,7 @@ export class AuthService {
     });
   }
 
-  private getKey(
-    header: jwt.JwtHeader,
-    callback: (err: Error | null, key?: string) => void,
-  ) {
+  private getKey(header: jwt.JwtHeader, callback: (err: Error | null, key?: string) => void) {
     this.jwks.getSigningKey(header.kid, (err, key) => {
       if (err) {
         callback(err);

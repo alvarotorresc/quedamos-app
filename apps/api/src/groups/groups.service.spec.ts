@@ -43,7 +43,10 @@ describe('GroupsService', () => {
     it('should set creator as admin on create', async () => {
       const group = createTestGroup();
       prisma.group.findUnique.mockResolvedValue(null);
-      prisma.group.create.mockResolvedValue({ ...group, members: [{ userId: 'user-1', role: 'admin' }] });
+      prisma.group.create.mockResolvedValue({
+        ...group,
+        members: [{ userId: 'user-1', role: 'admin' }],
+      });
 
       await service.create('user-1', { name: 'Admin Group' });
 
@@ -94,9 +97,7 @@ describe('GroupsService', () => {
     it('should throw NotFoundException when group not found', async () => {
       prisma.group.findFirst.mockResolvedValue(null);
 
-      await expect(service.findById('nonexistent', 'user-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.findById('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -136,18 +137,14 @@ describe('GroupsService', () => {
     it('should throw NotFoundException for invalid invite code', async () => {
       prisma.group.findUnique.mockResolvedValue(null);
 
-      await expect(service.joinByCode('user-1', 'INVALID')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.joinByCode('user-1', 'INVALID')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw BadRequestException when already a member', async () => {
       prisma.group.findUnique.mockResolvedValue(createTestGroup());
       prisma.groupMember.findUnique.mockResolvedValue({ groupId: 'group-1', userId: 'user-1' });
 
-      await expect(service.joinByCode('user-1', '12345678')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(service.joinByCode('user-1', '12345678')).rejects.toThrow(BadRequestException);
     });
 
     it('should add new member as attendee to active future events', async () => {
@@ -239,9 +236,7 @@ describe('GroupsService', () => {
     it('should throw NotFoundException when not a member', async () => {
       prisma.groupMember.findUnique.mockResolvedValue(null);
 
-      await expect(service.leave('group-1', 'user-1')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.leave('group-1', 'user-1')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ForbiddenException when creator tries to leave', async () => {
@@ -249,9 +244,7 @@ describe('GroupsService', () => {
       prisma.user.findUnique.mockResolvedValue(createTestUser());
       prisma.group.findUnique.mockResolvedValue(createTestGroup());
 
-      await expect(service.leave('group-1', 'user-1')).rejects.toThrow(
-        ForbiddenException,
-      );
+      await expect(service.leave('group-1', 'user-1')).rejects.toThrow(ForbiddenException);
     });
 
     it('should send notification when leaving', async () => {
@@ -392,9 +385,9 @@ describe('GroupsService', () => {
         role: 'member',
       });
 
-      await expect(
-        service.kickMember('group-1', 'user-3', 'user-2'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.kickMember('group-1', 'user-3', 'user-2')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should not kick another admin', async () => {
@@ -411,9 +404,9 @@ describe('GroupsService', () => {
         role: 'admin',
       });
 
-      await expect(
-        service.kickMember('group-1', 'user-2', 'user-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.kickMember('group-1', 'user-2', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should clean event attendees on kick', async () => {
@@ -476,16 +469,18 @@ describe('GroupsService', () => {
     it('should reject delete from non-creator', async () => {
       prisma.group.findUnique.mockResolvedValue(createTestGroup());
 
-      await expect(
-        service.deleteGroup('group-1', 'user-2'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.deleteGroup('group-1', 'user-2')).rejects.toThrow(ForbiddenException);
     });
   });
 
   describe('refreshInviteCode', () => {
     it('should generate new invite code for admin', async () => {
       prisma.group.findFirst.mockResolvedValue(createTestGroup());
-      prisma.groupMember.findUnique.mockResolvedValue({ groupId: 'group-1', userId: 'user-1', role: 'admin' });
+      prisma.groupMember.findUnique.mockResolvedValue({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
       prisma.group.findUnique.mockResolvedValue(null);
       prisma.group.update.mockResolvedValue({});
 
@@ -498,7 +493,11 @@ describe('GroupsService', () => {
 
     it('should reject invite refresh from non-admin', async () => {
       prisma.group.findFirst.mockResolvedValue(createTestGroup());
-      prisma.groupMember.findUnique.mockResolvedValue({ groupId: 'group-1', userId: 'user-2', role: 'member' });
+      prisma.groupMember.findUnique.mockResolvedValue({
+        groupId: 'group-1',
+        userId: 'user-2',
+        role: 'member',
+      });
 
       await expect(service.refreshInviteCode('group-1', 'user-2')).rejects.toThrow(
         ForbiddenException,
@@ -597,9 +596,9 @@ describe('GroupsService', () => {
         role: 'admin',
       });
 
-      await expect(
-        service.kickMember('group-1', 'user-1', 'user-1'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.kickMember('group-1', 'user-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should reject kicking the group creator', async () => {
@@ -618,9 +617,9 @@ describe('GroupsService', () => {
       // group shows user-1 is creator
       prisma.group.findUnique.mockResolvedValue(createTestGroup({ createdById: 'user-1' }));
 
-      await expect(
-        service.kickMember('group-1', 'user-1', 'user-2'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.kickMember('group-1', 'user-1', 'user-2')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should throw NotFoundException when target is not a member', async () => {
@@ -633,9 +632,9 @@ describe('GroupsService', () => {
       // target not found
       prisma.groupMember.findUnique.mockResolvedValueOnce(null);
 
-      await expect(
-        service.kickMember('group-1', 'user-99', 'user-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.kickMember('group-1', 'user-99', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should send notification to kicked user', async () => {
@@ -677,9 +676,7 @@ describe('GroupsService', () => {
       });
       prisma.group.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.deleteGroup('group-1', 'user-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.deleteGroup('group-1', 'user-1')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -690,18 +687,18 @@ describe('GroupsService', () => {
         userId: 'user-1',
         role: 'admin',
       });
-      const city = { id: 'city-1', groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.70 };
+      const city = { id: 'city-1', groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.7 };
       prisma.groupCity.create.mockResolvedValue(city);
 
       const result = await service.addCity('group-1', 'user-1', {
         name: 'Madrid',
         lat: 40.42,
-        lon: -3.70,
+        lon: -3.7,
       });
 
       expect(result).toEqual(city);
       expect(prisma.groupCity.create).toHaveBeenCalledWith({
-        data: { groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.70 },
+        data: { groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.7 },
       });
     });
 
@@ -713,7 +710,7 @@ describe('GroupsService', () => {
       });
 
       await expect(
-        service.addCity('group-1', 'user-2', { name: 'Madrid', lat: 40.42, lon: -3.70 }),
+        service.addCity('group-1', 'user-2', { name: 'Madrid', lat: 40.42, lon: -3.7 }),
       ).rejects.toThrow(ForbiddenException);
     });
   });
@@ -722,7 +719,7 @@ describe('GroupsService', () => {
     it('should return cities for group', async () => {
       prisma.group.findFirst.mockResolvedValue(createTestGroup());
       const cities = [
-        { id: 'city-1', groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.70 },
+        { id: 'city-1', groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.7 },
         { id: 'city-2', groupId: 'group-1', name: 'Barcelona', lat: 41.39, lon: 2.17 },
       ];
       prisma.groupCity.findMany.mockResolvedValue(cities);
@@ -736,9 +733,7 @@ describe('GroupsService', () => {
     it('should throw NotFoundException when user is not a member', async () => {
       prisma.group.findFirst.mockResolvedValue(null);
 
-      await expect(service.getCities('group-1', 'user-99')).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(service.getCities('group-1', 'user-99')).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -771,9 +766,9 @@ describe('GroupsService', () => {
         role: 'member',
       });
 
-      await expect(
-        service.removeCity('group-1', 'city-1', 'user-2'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.removeCity('group-1', 'city-1', 'user-2')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should throw NotFoundException when city does not exist', async () => {
@@ -784,9 +779,9 @@ describe('GroupsService', () => {
       });
       prisma.groupCity.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.removeCity('group-1', 'city-99', 'user-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.removeCity('group-1', 'city-99', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

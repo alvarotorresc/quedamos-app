@@ -3,7 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
-import { UpdatePreferenceDto, NotificationType, NOTIFICATION_TYPES } from './dto/update-preference.dto';
+import {
+  UpdatePreferenceDto,
+  NotificationType,
+  NOTIFICATION_TYPES,
+} from './dto/update-preference.dto';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
@@ -21,9 +25,7 @@ export class NotificationsService implements OnModuleInit {
     const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
 
     if (!projectId || !clientEmail || !privateKey) {
-      this.logger.warn(
-        'Firebase credentials not configured — push notifications disabled',
-      );
+      this.logger.warn('Firebase credentials not configured — push notifications disabled');
       return;
     }
 
@@ -91,10 +93,7 @@ export class NotificationsService implements OnModuleInit {
     });
   }
 
-  async isNotificationEnabled(
-    userId: string,
-    type: NotificationType,
-  ): Promise<boolean> {
+  async isNotificationEnabled(userId: string, type: NotificationType): Promise<boolean> {
     const pref = await this.prisma.notificationPreference.findUnique({
       where: {
         userId_type: { userId, type },

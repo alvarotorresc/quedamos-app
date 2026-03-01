@@ -88,9 +88,7 @@ describe('AuthService', () => {
         cb(new Error('invalid signature'));
       });
 
-      await expect(service.validateToken('bad-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.validateToken('bad-token')).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when sub is missing', async () => {
@@ -98,9 +96,7 @@ describe('AuthService', () => {
         cb(null, { email: 'test@test.com' });
       });
 
-      await expect(service.validateToken('no-sub-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.validateToken('no-sub-token')).rejects.toThrow(UnauthorizedException);
     });
   });
 

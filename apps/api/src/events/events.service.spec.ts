@@ -53,9 +53,9 @@ describe('EventsService', () => {
     it('should throw NotFoundException when event not found', async () => {
       prisma.event.findFirst.mockResolvedValue(null);
 
-      await expect(
-        service.findById('group-1', 'nonexistent', 'user-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findById('group-1', 'nonexistent', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -184,7 +184,11 @@ describe('EventsService', () => {
     });
 
     it('should update attendee status to confirmed', async () => {
-      prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-1', status: 'pending' });
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-1',
+        status: 'pending',
+      });
       prisma.eventAttendee.update.mockResolvedValue({});
       prisma.eventAttendee.findMany.mockResolvedValue([
         { userId: 'user-1', status: 'confirmed' },
@@ -477,9 +481,9 @@ describe('EventsService', () => {
       };
       prisma.event.findFirst.mockResolvedValue(event);
 
-      await expect(
-        service.delete('group-1', 'event-1', 'user-2'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.delete('group-1', 'event-1', 'user-2')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should send notification on delete', async () => {
@@ -531,9 +535,9 @@ describe('EventsService', () => {
       };
       prisma.event.findFirst.mockResolvedValue(event);
 
-      await expect(
-        service.cancel('group-1', 'event-1', 'user-2'),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.cancel('group-1', 'event-1', 'user-2')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
 
     it('should send notification on cancel', async () => {

@@ -43,10 +43,7 @@ export class ProposalsController {
   }
 
   @Get()
-  findAll(
-    @Param('groupId', ParseUUIDPipe) groupId: string,
-    @CurrentUser() user: { id: string },
-  ) {
+  findAll(@Param('groupId', ParseUUIDPipe) groupId: string, @CurrentUser() user: { id: string }) {
     return this.proposalsService.findAll(groupId, user.id);
   }
 
