@@ -23,6 +23,8 @@ model User {
   eventResponses          EventAttendee[]
   pushTokens              PushToken[]
   notificationPreferences NotificationPreference[]
+  createdProposals        PlanProposal[]           @relation("CreatedProposals")
+  proposalVotes           PlanVote[]
 
   @@map("users")
 }
@@ -41,6 +43,8 @@ model Group {
   members      GroupMember[]
   availability Availability[]
   events       Event[]
+  proposals    PlanProposal[]
+  cities       GroupCity[]
 
   @@map("groups")
 }
@@ -49,6 +53,7 @@ model GroupMember {
   groupId  String   @map("group_id") @db.Uuid
   userId   String   @map("user_id") @db.Uuid
   joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz
+  role     String   @default("member") @map("role")
 
   // Relations
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
@@ -85,15 +90,18 @@ model Event {
   location    String?
   date        DateTime @db.Date
   time        String?
+  endTime     String?  @map("end_time")
   status      String   @default("pending") // 'pending' | 'confirmed' | 'cancelled'
   createdById String   @map("created_by") @db.Uuid
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  reminderSentAt DateTime? @map("reminder_sent_at") @db.Timestamptz
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
-  group     Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  createdBy User            @relation("CreatedEvents", fields: [createdById], references: [id])
-  attendees EventAttendee[]
+  group        Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy    User            @relation("CreatedEvents", fields: [createdById], references: [id])
+  attendees    EventAttendee[]
+  fromProposal PlanProposal?
 
   @@map("events")
 }
@@ -136,4 +144,53 @@ model NotificationPreference {
 
   @@id([userId, type])
   @@map("notification_preferences")
+}
+
+model GroupCity {
+  id      String @id @default(uuid()) @db.Uuid
+  groupId String @map("group_id") @db.Uuid
+  name    String
+  lat     Float
+  lon     Float
+
+  // Relations
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@map("group_cities")
+}
+
+model PlanProposal {
+  id               String   @id @default(uuid()) @db.Uuid
+  groupId          String   @map("group_id") @db.Uuid
+  title            String
+  description      String?
+  location         String?
+  proposedDate     String?  @map("proposed_date")
+  createdById      String   @map("created_by") @db.Uuid
+  status           String   @default("open") // 'open' | 'closed' | 'converted'
+  convertedEventId String?  @unique @map("converted_event_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  group          Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy      User       @relation("CreatedProposals", fields: [createdById], references: [id])
+  votes          PlanVote[]
+  convertedEvent Event?     @relation(fields: [convertedEventId], references: [id])
+
+  @@map("plan_proposals")
+}
+
+model PlanVote {
+  proposalId String   @map("proposal_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  vote       String   // 'yes' | 'no'
+  votedAt    DateTime @default(now()) @map("voted_at") @db.Timestamptz
+
+  // Relations
+  proposal PlanProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([proposalId, userId])
+  @@map("plan_votes")
 }

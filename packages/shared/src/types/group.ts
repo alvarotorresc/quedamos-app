@@ -14,6 +14,7 @@ export interface GroupMember {
   groupId: string;
   userId: string;
   joinedAt: Date;
+  role?: 'admin' | 'member';
   user?: User;
 }
 
