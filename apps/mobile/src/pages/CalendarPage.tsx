@@ -422,6 +422,7 @@ export default function CalendarPage() {
           onClose={() => setShowCreateEvent(false)}
           groupId={groupId}
           prefill={createEventPrefill}
+          weatherByDate={weatherByDate}
         />
       </IonContent>
     </IonPage>

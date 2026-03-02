@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useGroupWeather } from './useWeather';
+import { useGroupWeather, useForecast } from './useWeather';
 import { weatherService } from '../services/weather';
 import { createWrapper } from '../test/test-utils';
 
@@ -59,5 +59,73 @@ describe('useGroupWeather', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual([]);
+  });
+});
+
+describe('useForecast', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should fetch forecast when all params are provided', async () => {
+    const forecast = createWeatherData({ city: 'Barcelona' });
+    vi.mocked(weatherService.getForecast).mockResolvedValue(forecast as any);
+
+    const { result } = renderHook(() => useForecast('group-1', '2026-03-15', 41.38, 2.15), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toEqual(forecast);
+    expect(weatherService.getForecast).toHaveBeenCalledWith('group-1', '2026-03-15', 41.38, 2.15);
+  });
+
+  it('should not fetch when date is null', () => {
+    const { result } = renderHook(() => useForecast('group-1', null, 41.38, 2.15), {
+      wrapper: createWrapper(),
+    });
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+
+  it('should not fetch when lat is null', () => {
+    const { result } = renderHook(() => useForecast('group-1', '2026-03-15', null, 2.15), {
+      wrapper: createWrapper(),
+    });
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+
+  it('should not fetch when lon is null', () => {
+    const { result } = renderHook(() => useForecast('group-1', '2026-03-15', 41.38, null), {
+      wrapper: createWrapper(),
+    });
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+
+  it('should not fetch when groupId is empty', () => {
+    const { result } = renderHook(() => useForecast('', '2026-03-15', 41.38, 2.15), {
+      wrapper: createWrapper(),
+    });
+    expect(result.current.fetchStatus).toBe('idle');
+  });
+
+  it('should handle null response gracefully', async () => {
+    vi.mocked(weatherService.getForecast).mockResolvedValue(null as any);
+
+    const { result } = renderHook(() => useForecast('group-1', '2026-03-15', 41.38, 2.15), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toBeNull();
+  });
+
+  it('should handle error', async () => {
+    vi.mocked(weatherService.getForecast).mockRejectedValue(new Error('Forecast error'));
+
+    const { result } = renderHook(() => useForecast('group-1', '2026-03-15', 41.38, 2.15), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });

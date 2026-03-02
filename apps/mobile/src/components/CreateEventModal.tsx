@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useCreateEvent } from '../hooks/useEvents';
+import { useForecast } from '../hooks/useWeather';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
 import { WeatherBadge } from './WeatherWidget';
+import { LocationSearch } from './LocationSearch';
 import { formatDateKey } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
 
@@ -23,15 +25,24 @@ interface CreateEventModalProps {
   onClose: () => void;
   groupId: string;
   prefill: EventPrefill | null;
+  weatherByDate?: Map<string, WeatherData[]>;
 }
 
-export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEventModalProps) {
+export function CreateEventModal({
+  isOpen,
+  onClose,
+  groupId,
+  prefill,
+  weatherByDate,
+}: CreateEventModalProps) {
   const { t } = useTranslation();
   const createEvent = useCreateEvent(groupId);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [locationLat, setLocationLat] = useState<number | null>(null);
+  const [locationLon, setLocationLon] = useState<number | null>(null);
   const [time, setTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [date, setDate] = useState('');
@@ -41,6 +52,17 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
   const resolvedDate = prefill?.date ?? date;
   const canSubmit = title.trim() && resolvedDate && !isCreating && !endTimeError;
 
+  const forecast = useForecast(groupId, resolvedDate || null, locationLat, locationLon);
+
+  const weatherToShow: WeatherData[] | null =
+    locationLat !== null && locationLon !== null && resolvedDate
+      ? forecast.data
+        ? [forecast.data]
+        : null
+      : resolvedDate
+        ? (prefill?.weather ?? weatherByDate?.get(resolvedDate) ?? null)
+        : null;
+
   const today = formatDateKey(new Date());
 
   useEffect(() => {
@@ -48,6 +70,8 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
       setTitle('');
       setDescription('');
       setLocation('');
+      setLocationLat(null);
+      setLocationLon(null);
       setTime(prefill?.suggestedTime ?? '');
       setEndTime('');
       setDate('');
@@ -67,6 +91,8 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
     setTitle('');
     setDescription('');
     setLocation('');
+    setLocationLat(null);
+    setLocationLon(null);
     setTime('');
     setEndTime('');
     setDate('');
@@ -77,6 +103,8 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
     setTitle('');
     setDescription('');
     setLocation('');
+    setLocationLat(null);
+    setLocationLon(null);
     setTime('');
     setEndTime('');
     setDate('');
@@ -106,9 +134,9 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
             <p className="text-xs text-text-dark capitalize">
               {prefill.dateLabel} · {prefill.availableCount} {t('plans.create.available')}
             </p>
-            {prefill.weather && prefill.weather.length > 0 && (
+            {weatherToShow && weatherToShow.length > 0 && (
               <div className="flex items-center gap-1.5">
-                {prefill.weather.map((w) => (
+                {weatherToShow.map((w) => (
                   <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />
                 ))}
               </div>
@@ -152,21 +180,44 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
         <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('plans.create.location')}
+            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
           </label>
-          <input
-            type="text"
+          <LocationSearch
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
             placeholder={t('plans.create.locationPlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
             style={inputStyle}
+            onChange={(text) => {
+              setLocation(text);
+              setLocationLat(null);
+              setLocationLon(null);
+            }}
+            onSelect={(name, lat, lon) => {
+              setLocation(name);
+              setLocationLat(lat);
+              setLocationLon(lon);
+            }}
+            onClear={() => {
+              setLocation('');
+              setLocationLat(null);
+              setLocationLon(null);
+            }}
           />
         </div>
+
+        {/* Weather badge for direct open (no prefill) with date selected */}
+        {!prefill && weatherToShow && weatherToShow.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-2">
+            {weatherToShow.map((w) => (
+              <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />
+            ))}
+          </div>
+        )}
 
         {/* Description */}
         <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('plans.create.description')}
+            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
           </label>
           <textarea
             value={description}
@@ -182,6 +233,9 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
         <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('plans.create.time')}
+            {!prefill?.suggestedTime && (
+              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+            )}
             {prefill?.suggestedTime && prefill?.suggestedSlot && (
               <span className="ml-1.5 text-primary">
                 · {t('plans.create.suggested')}:{' '}
@@ -202,6 +256,7 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
         <div className="mb-3">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('plans.create.endTime')}
+            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
           </label>
           <input
             type="time"
