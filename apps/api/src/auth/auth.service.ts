@@ -82,6 +82,12 @@ export class AuthService {
           avatarEmoji,
         },
       });
+    } else if (payload.email && dbUser.email !== payload.email) {
+      // Sync email when user confirms an email change in Supabase
+      dbUser = await this.prisma.user.update({
+        where: { id: payload.sub },
+        data: { email: payload.email.trim().slice(0, 255) },
+      });
     }
 
     return dbUser;

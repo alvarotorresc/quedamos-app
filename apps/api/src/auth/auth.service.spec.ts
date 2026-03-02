@@ -83,6 +83,24 @@ describe('AuthService', () => {
       });
     });
 
+    it('should sync email in DB when Supabase email differs', async () => {
+      const user = createTestUser({ email: 'old@test.com' });
+      const updatedUser = createTestUser({ email: 'new@test.com' });
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', email: 'new@test.com' });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(updatedUser);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(updatedUser);
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { email: 'new@test.com' },
+      });
+    });
+
     it('should throw UnauthorizedException on invalid token', async () => {
       (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
         cb(new Error('invalid signature'));
