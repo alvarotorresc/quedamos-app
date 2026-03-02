@@ -2,6 +2,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Button } from './Button';
 
+vi.mock('@ionic/react', () => ({
+  IonSpinner: ({ className }: { className?: string }) => (
+    <span data-testid="spinner" className={className} />
+  ),
+}));
+
 describe('Button', () => {
   it('renders children text correctly', () => {
     render(<Button>Click me</Button>);
@@ -84,5 +90,35 @@ describe('Button', () => {
     );
     expect(screen.getByTestId('icon')).toBeInTheDocument();
     expect(screen.getByText('Save')).toBeInTheDocument();
+  });
+
+  it('is disabled when loading is true', () => {
+    render(<Button loading>Loading</Button>);
+    expect(screen.getByRole('button', { name: /Loading/i })).toBeDisabled();
+  });
+
+  it('does not call onClick when loading', () => {
+    const handleClick = vi.fn();
+    render(
+      <Button loading onClick={handleClick}>
+        Loading
+      </Button>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /Loading/i }));
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it('is disabled when both loading and disabled are true', () => {
+    render(
+      <Button loading disabled>
+        Button
+      </Button>,
+    );
+    expect(screen.getByRole('button', { name: /Button/i })).toBeDisabled();
+  });
+
+  it('is not disabled when loading is false', () => {
+    render(<Button loading={false}>Button</Button>);
+    expect(screen.getByRole('button', { name: 'Button' })).not.toBeDisabled();
   });
 });
