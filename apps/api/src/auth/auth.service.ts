@@ -84,10 +84,15 @@ export class AuthService {
       });
     } else if (payload.email && dbUser.email !== payload.email) {
       // Sync email when user confirms an email change in Supabase
-      dbUser = await this.prisma.user.update({
-        where: { id: payload.sub },
-        data: { email: payload.email.trim().slice(0, 255) },
-      });
+      const newEmail = payload.email.trim().slice(0, 255);
+      if (newEmail.length >= 3 && newEmail.includes('@')) {
+        dbUser = await this.prisma.user.update({
+          where: { id: payload.sub },
+          data: { email: newEmail },
+        });
+      } else {
+        this.logger.warn(`Skipping email sync — malformed email in JWT for user ${payload.sub}`);
+      }
     }
 
     return dbUser;
