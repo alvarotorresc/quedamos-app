@@ -184,6 +184,7 @@
       "available": "available",
       "attendees": "Attendees",
       "suggested": "Suggested",
+      "date": "Date",
       "endTime": "End time",
       "endTimeError": "End time must be after start time",
       "description": "Description",

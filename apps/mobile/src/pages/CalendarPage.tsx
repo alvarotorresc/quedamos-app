@@ -167,11 +167,16 @@ export default function CalendarPage() {
 
   // Existing availability for selected day (for modal)
   const existingAvail = selectedDay
-    ? myAvailabilityByDate.get(formatDateKey(selectedDay)) ?? null
+    ? (myAvailabilityByDate.get(formatDateKey(selectedDay)) ?? null)
     : null;
 
   const handleMarkAvailability = () => {
     setShowAvailModal(true);
+  };
+
+  const handleCreateEventDirect = () => {
+    setCreateEventPrefill(null);
+    setShowCreateEvent(true);
   };
 
   const handleCreateEvent = (day: Date) => {
@@ -233,19 +238,21 @@ export default function CalendarPage() {
           <IonToolbar className="py-2">
             <IonTitle>{t('calendar.title')}</IonTitle>
             <div slot="end" className="pr-4">
-              <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
+              <Avatar
+                name={user?.name ?? 'U'}
+                color={myColor}
+                size={32}
+                onClick={() => history.push('/tabs/profile')}
+                className="cursor-pointer"
+              />
             </div>
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
           <div className="text-center py-16 px-4">
             <div className="text-5xl mb-4">📆</div>
-            <h2 className="text-lg font-bold text-text mb-1">
-              {t('calendar.noGroups')}
-            </h2>
-            <p className="text-sm text-text-muted mb-8">
-              {t('calendar.noGroupsSubtitle')}
-            </p>
+            <h2 className="text-lg font-bold text-text mb-1">{t('calendar.noGroups')}</h2>
+            <p className="text-sm text-text-muted mb-8">{t('calendar.noGroupsSubtitle')}</p>
             <button
               onClick={() => history.push('/tabs/group')}
               className="px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
@@ -263,8 +270,22 @@ export default function CalendarPage() {
       <IonHeader className="ion-no-border">
         <IonToolbar className="py-2">
           <IonTitle>{t('calendar.title')}</IonTitle>
-          <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
+          <div slot="end" className="pr-4 flex items-center gap-3">
+            <button
+              onClick={handleCreateEventDirect}
+              className="w-8 h-8 flex items-center justify-center rounded-full border-none text-primary text-xl font-light leading-none"
+              style={{ background: 'rgba(37,99,235,0.12)' }}
+              aria-label={t('plans.create.title')}
+            >
+              +
+            </button>
+            <Avatar
+              name={user?.name ?? 'U'}
+              color={myColor}
+              size={32}
+              onClick={() => history.push('/tabs/profile')}
+              className="cursor-pointer"
+            />
           </div>
         </IonToolbar>
       </IonHeader>
@@ -286,9 +307,7 @@ export default function CalendarPage() {
                     }}
                     className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-none whitespace-nowrap"
                     style={{
-                      background: isActive
-                        ? 'rgba(37,99,235,0.12)'
-                        : 'var(--app-bg-card)',
+                      background: isActive ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
                       color: isActive ? '#60A5FA' : '#4B5C75',
                       border: `1px solid ${isActive ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
                     }}
@@ -311,10 +330,7 @@ export default function CalendarPage() {
                 }}
                 className="flex-1 py-2 rounded-btn text-xs font-semibold border-none"
                 style={{
-                  background:
-                    calView === view
-                      ? 'rgba(37,99,235,0.12)'
-                      : 'var(--app-bg-card)',
+                  background: calView === view ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
                   color: calView === view ? '#60A5FA' : '#4B5C75',
                 }}
               >
@@ -345,7 +361,10 @@ export default function CalendarPage() {
                   secondBestDayKey={secondBestDay?.dateKey ?? null}
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
-                  onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
+                  onViewDetail={(day) => {
+                    setSelectedDay(day);
+                    setShowDetailModal(true);
+                  }}
                   weatherByDate={weatherByDate}
                 />
               )}
@@ -361,7 +380,10 @@ export default function CalendarPage() {
                   totalMembers={members.length}
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
-                  onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
+                  onViewDetail={(day) => {
+                    setSelectedDay(day);
+                    setShowDetailModal(true);
+                  }}
                   weatherByDate={weatherByDate}
                 />
               )}
@@ -417,7 +439,9 @@ export default function CalendarPage() {
           isOpen={showDetailModal}
           onClose={() => setShowDetailModal(false)}
           selectedDay={selectedDay}
-          availabilities={selectedDay ? availabilityByDate.get(formatDateKey(selectedDay)) ?? [] : []}
+          availabilities={
+            selectedDay ? (availabilityByDate.get(formatDateKey(selectedDay)) ?? []) : []
+          }
           memberColorMap={memberColorMap}
           onMarkAvailability={handleMarkAvailability}
         />

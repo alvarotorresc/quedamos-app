@@ -184,6 +184,7 @@
       "available": "disponibles",
       "attendees": "Asistentes",
       "suggested": "Sugerido",
+      "date": "Fecha",
       "endTime": "Hora fin",
       "endTimeError": "La hora de fin debe ser posterior",
       "description": "Descripción",
