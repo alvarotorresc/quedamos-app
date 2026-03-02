@@ -12,6 +12,8 @@ import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { LanguageSelector } from '../ui/LanguageSelector';
 import { translateAuthError } from '../lib/auth-errors';
+import { broadcastSync } from '../lib/group-sync';
+import { useGroups } from '../hooks/useGroups';
 import { HiOutlineBell, HiOutlineChevronRight } from 'react-icons/hi2';
 
 type ExpandedSection = 'name' | 'email' | 'password' | null;
@@ -45,6 +47,8 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const { data: groups } = useGroups();
+
   const toggleSection = (section: ExpandedSection) => {
     setError('');
     setSuccessMessage('');
@@ -68,6 +72,10 @@ export default function ProfilePage() {
     try {
       await updateName(newName.trim());
       queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['proposals'] });
+      queryClient.invalidateQueries({ queryKey: ['availability'] });
+      groups?.forEach((g) => broadcastSync(g.id, 'members'));
       setSuccessMessage(t('profile.nameUpdated'));
       setExpanded(null);
     } catch (e) {
@@ -125,7 +133,8 @@ export default function ProfilePage() {
     window.location.replace('/');
   };
 
-  const inputClass = 'w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40';
+  const inputClass =
+    'w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40';
 
   return (
     <IonPage>
@@ -237,7 +246,10 @@ export default function ProfilePage() {
                     placeholder={t('profile.confirmPassword')}
                     className={inputClass}
                   />
-                  <Button onClick={handleUpdatePassword} disabled={loading || !newPassword || !confirmPassword}>
+                  <Button
+                    onClick={handleUpdatePassword}
+                    disabled={loading || !newPassword || !confirmPassword}
+                  >
                     {loading ? t('profile.saving') : t('profile.save')}
                   </Button>
                 </div>
@@ -258,8 +270,12 @@ export default function ProfilePage() {
             className="mt-6 w-full bg-bg-card border border-subtle rounded-btn px-4 py-3.5 flex items-center justify-between"
           >
             <span className="text-sm text-text">{t('profile.theme')}</span>
-            <div className={`w-10 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary/30' : 'bg-toggle-off'}`}>
-              <div className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${darkMode ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`} />
+            <div
+              className={`w-10 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary/30' : 'bg-toggle-off'}`}
+            >
+              <div
+                className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${darkMode ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`}
+              />
             </div>
           </button>
 
@@ -285,15 +301,28 @@ export default function ProfilePage() {
               className="w-full bg-bg-card border border-subtle rounded-btn px-4 py-3.5 flex items-center justify-between"
             >
               <span className="text-sm text-text">{t('profile.reportBug')}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 text-text-dark">
-                <path fillRule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17h-8.5A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5zm7.25-.75a.75.75 0 01.75-.75h3.5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V6.31l-5.47 5.47a.75.75 0 01-1.06-1.06l5.47-5.47H12.25a.75.75 0 01-.75-.75z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="w-4 h-4 text-text-dark"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17h-8.5A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5zm7.25-.75a.75.75 0 01.75-.75h3.5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V6.31l-5.47 5.47a.75.75 0 01-1.06-1.06l5.47-5.47H12.25a.75.75 0 01-.75-.75z"
+                  clipRule="evenodd"
+                />
               </svg>
             </a>
           </div>
 
           {/* Sign out */}
           <div className="mt-8 mb-8">
-            <Button variant="secondary" onClick={handleSignOut} className="w-full text-danger border-danger/20">
+            <Button
+              variant="secondary"
+              onClick={handleSignOut}
+              className="w-full text-danger border-danger/20"
+            >
               {t('profile.logout')}
             </Button>
           </div>
