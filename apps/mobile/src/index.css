@@ -3,18 +3,18 @@
 @tailwind utilities;
 
 :root {
-  --ion-background-color: #080E1A;
-  --ion-text-color: #E2E8F0;
-  --ion-toolbar-background: #080E1A;
+  --ion-background-color: #080e1a;
+  --ion-text-color: #e2e8f0;
+  --ion-toolbar-background: #080e1a;
   --ion-tab-bar-background: rgba(8, 14, 26, 0.92);
   --ion-safe-area-top: env(safe-area-inset-top);
   --ion-safe-area-bottom: env(safe-area-inset-bottom);
 
-  --app-bg: #080E1A;
-  --app-bg-light: #0F1729;
-  --app-text: #E2E8F0;
-  --app-text-muted: #94A3B8;
-  --app-text-dark: #4B5C75;
+  --app-bg: #080e1a;
+  --app-bg-light: #0f1729;
+  --app-text: #e2e8f0;
+  --app-text-muted: #94a3b8;
+  --app-text-dark: #4b5c75;
   --app-border: rgba(255, 255, 255, 0.05);
   --app-border-strong: rgba(255, 255, 255, 0.1);
   --app-bg-card: rgba(255, 255, 255, 0.025);
@@ -25,16 +25,16 @@
 }
 
 .light {
-  --ion-background-color: #F8FAFC;
-  --ion-text-color: #1E293B;
-  --ion-toolbar-background: #F8FAFC;
+  --ion-background-color: #f8fafc;
+  --ion-text-color: #1e293b;
+  --ion-toolbar-background: #f8fafc;
   --ion-tab-bar-background: rgba(248, 250, 252, 0.92);
 
-  --app-bg: #F8FAFC;
-  --app-bg-light: #F1F5F9;
-  --app-text: #1E293B;
-  --app-text-muted: #64748B;
-  --app-text-dark: #94A3B8;
+  --app-bg: #f8fafc;
+  --app-bg-light: #f1f5f9;
+  --app-text: #1e293b;
+  --app-text-muted: #64748b;
+  --app-text-dark: #94a3b8;
   --app-border: rgba(0, 0, 0, 0.08);
   --app-border-strong: rgba(0, 0, 0, 0.12);
   --app-bg-card: rgba(0, 0, 0, 0.03);
@@ -45,24 +45,24 @@
 }
 
 .light ion-alert .alert-wrapper {
-  background: #FFFFFF !important;
+  background: #ffffff !important;
   border: 1px solid var(--app-border);
 }
 
 .light ion-alert .alert-title {
-  color: #1E293B !important;
+  color: #1e293b !important;
 }
 
 .light ion-alert .alert-message {
-  color: #64748B !important;
+  color: #64748b !important;
 }
 
 .light ion-alert .alert-button {
-  color: #2563EB !important;
+  color: #2563eb !important;
 }
 
-.light ion-alert .alert-button[role="destructive"] {
-  color: #E11D48 !important;
+.light ion-alert .alert-button[role='destructive'] {
+  color: #e11d48 !important;
 }
 
 body {
@@ -107,11 +107,56 @@ ion-alert .alert-message {
 }
 
 ion-alert .alert-button {
-  color: #60A5FA !important;
+  color: #60a5fa !important;
 }
 
-ion-alert .alert-button[role="destructive"] {
-  color: #FB7185 !important;
+ion-alert .alert-button[role='destructive'] {
+  color: #fb7185 !important;
+}
+
+ion-action-sheet {
+  --background: var(--app-bg-light);
+  --button-background: transparent;
+  --button-color: var(--app-text);
+  --button-background-activated: rgba(255, 255, 255, 0.04);
+  --color: var(--app-text-muted);
+}
+
+ion-action-sheet .action-sheet-container .action-sheet-group {
+  background: var(--app-bg-light) !important;
+  border: 1px solid var(--app-border);
+  border-radius: 14px;
+}
+
+ion-action-sheet .action-sheet-title {
+  color: var(--app-text-muted) !important;
+  font-size: 13px;
+}
+
+ion-action-sheet .action-sheet-button {
+  color: #60a5fa !important;
+}
+
+ion-action-sheet .action-sheet-button.ion-color-danger,
+ion-action-sheet .action-sheet-button[role='destructive'] {
+  color: #fb7185 !important;
+}
+
+ion-action-sheet .action-sheet-cancel .action-sheet-button-inner {
+  color: var(--app-text-muted) !important;
+}
+
+.light ion-action-sheet .action-sheet-container .action-sheet-group {
+  background: #ffffff !important;
+}
+
+.light ion-action-sheet .action-sheet-button {
+  color: #2563eb !important;
+}
+
+.light ion-action-sheet .action-sheet-button.ion-color-danger,
+.light ion-action-sheet .action-sheet-button[role='destructive'] {
+  color: #e11d48 !important;
 }
 
 ion-modal.availability-modal {
@@ -132,7 +177,9 @@ ion-modal.availability-modal {
 .landing-animate {
   opacity: 0;
   transform: translateY(30px);
-  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .landing-visible {
@@ -141,14 +188,22 @@ ion-modal.availability-modal {
 }
 
 /* Staggered children animation */
-.landing-visible > *:nth-child(1) { transition-delay: 0ms; }
-.landing-visible > *:nth-child(2) { transition-delay: 80ms; }
-.landing-visible > *:nth-child(3) { transition-delay: 160ms; }
-.landing-visible > *:nth-child(4) { transition-delay: 240ms; }
+.landing-visible > *:nth-child(1) {
+  transition-delay: 0ms;
+}
+.landing-visible > *:nth-child(2) {
+  transition-delay: 80ms;
+}
+.landing-visible > *:nth-child(3) {
+  transition-delay: 160ms;
+}
+.landing-visible > *:nth-child(4) {
+  transition-delay: 240ms;
+}
 
 /* Animated gradient text */
 .landing-gradient-text {
-  background: linear-gradient(135deg, #60A5FA 0%, #A78BFA 50%, #F472B6 100%);
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f472b6 100%);
   background-size: 200% 200%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -157,8 +212,13 @@ ion-modal.availability-modal {
 }
 
 @keyframes landing-gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* Subtle dot grid background */
@@ -173,8 +233,13 @@ ion-modal.availability-modal {
 
 /* Floating animation for mockup */
 @keyframes landing-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
 
 .landing-float {
@@ -208,8 +273,13 @@ ion-modal.availability-modal {
 
 /* Pulse glow on feature icons */
 @keyframes landing-pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(96, 165, 250, 0); }
-  50% { box-shadow: 0 0 20px 2px rgba(96, 165, 250, 0.12); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
+  }
+  50% {
+    box-shadow: 0 0 20px 2px rgba(96, 165, 250, 0.12);
+  }
 }
 
 .landing-glass:hover .landing-icon-glow {
@@ -223,7 +293,9 @@ ion-modal.availability-modal {
   backdrop-filter: blur(12px);
   border-radius: 16px;
   padding: 20px;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s ease;
 }
 
 .landing-screenshot-card:hover {

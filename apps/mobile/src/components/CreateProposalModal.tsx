@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useCreateProposal } from '../hooks/useProposals';
+import { useForecast } from '../hooks/useWeather';
 import { Button } from '../ui/Button';
+import { WeatherBadge } from './WeatherWidget';
+import { LocationSearch } from './LocationSearch';
 
 interface CreateProposalModalProps {
   isOpen: boolean;
@@ -17,16 +20,29 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+  const [locationLat, setLocationLat] = useState<number | null>(null);
+  const [locationLon, setLocationLon] = useState<number | null>(null);
   const [proposedDate, setProposedDate] = useState('');
 
   const isCreating = createProposal.isPending;
   const canSubmit = title.trim() && !isCreating;
+
+  const forecast = useForecast(groupId, proposedDate || null, locationLat, locationLon);
+
+  const weatherToShow =
+    locationLat !== null && locationLon !== null && proposedDate
+      ? forecast.data
+        ? [forecast.data]
+        : null
+      : null;
 
   useEffect(() => {
     if (isOpen) {
       setTitle('');
       setDescription('');
       setLocation('');
+      setLocationLat(null);
+      setLocationLon(null);
       setProposedDate('');
     }
   }, [isOpen]);
@@ -46,6 +62,8 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
     setTitle('');
     setDescription('');
     setLocation('');
+    setLocationLat(null);
+    setLocationLon(null);
     setProposedDate('');
     onClose();
   };
@@ -67,15 +85,11 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
         {/* Handle bar */}
         <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
-        <h3 className="text-[17px] font-bold text-text mb-3.5">
-          {t('proposals.create')}
-        </h3>
+        <h3 className="text-[17px] font-bold text-text mb-3.5">{t('proposals.create')}</h3>
 
         {/* Title */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.name')}
-          </label>
+          <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.name')}</label>
           <input
             type="text"
             value={title}
@@ -90,6 +104,7 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
         <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('proposals.description')}
+            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
           </label>
           <textarea
             value={description}
@@ -105,21 +120,35 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
         <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('plans.create.location')}
+            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
           </label>
-          <input
-            type="text"
+          <LocationSearch
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
             placeholder={t('plans.create.locationPlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
             style={inputStyle}
+            onChange={(text) => {
+              setLocation(text);
+              setLocationLat(null);
+              setLocationLon(null);
+            }}
+            onSelect={(name, lat, lon) => {
+              setLocation(name);
+              setLocationLat(lat);
+              setLocationLon(lon);
+            }}
+            onClear={() => {
+              setLocation('');
+              setLocationLat(null);
+              setLocationLon(null);
+            }}
           />
         </div>
 
         {/* Proposed Date */}
-        <div className="mb-4">
+        <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('proposals.proposedDate')}
+            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
           </label>
           <input
             type="date"
@@ -130,12 +159,19 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
           />
         </div>
 
+        {/* Weather badge */}
+        {weatherToShow && weatherToShow.length > 0 && (
+          <div className="flex items-center gap-1.5 mb-4">
+            {weatherToShow.map((w) => (
+              <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />
+            ))}
+          </div>
+        )}
+
+        {!weatherToShow && <div className="mb-4" />}
+
         {/* Submit */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="w-full"
-        >
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
           {isCreating ? t('proposals.creating') : t('proposals.create')}
         </Button>
       </div>

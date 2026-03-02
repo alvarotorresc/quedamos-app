@@ -7,7 +7,8 @@
     "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
     "captchaError": "Could not verify captcha. Please try again.",
     "unexpectedError": "An unexpected error occurred",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "optional": "optional"
   },
   "splash": {
     "title": "\u00bfQuedamos?",

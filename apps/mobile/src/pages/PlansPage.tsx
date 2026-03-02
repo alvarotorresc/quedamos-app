@@ -1,5 +1,13 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonSpinner, IonAlert } from '@ionic/react';
+import {
+  IonPage,
+  IonContent,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonSpinner,
+  IonAlert,
+} from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
@@ -79,6 +87,8 @@ export default function PlansPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
   const [cancellingEvent, setCancellingEvent] = useState<Event | null>(null);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
   const deleteEvent = useDeleteEvent(groupId);
   const cancelEvent = useCancelEvent(groupId);
 
@@ -86,6 +96,8 @@ export default function PlansPage() {
   const { data: proposals } = useProposals(groupId);
   const voteProposal = useVoteProposal(groupId);
   const closeProposal = useCloseProposal(groupId);
+  const [votingProposalId, setVotingProposalId] = useState<string | null>(null);
+  const [closingProposalId, setClosingProposalId] = useState<string | null>(null);
   const [showCreateProposal, setShowCreateProposal] = useState(false);
   const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
   const [showEditProposalModal, setShowEditProposalModal] = useState(false);
@@ -178,19 +190,21 @@ export default function PlansPage() {
           <IonToolbar className="py-2">
             <IonTitle>{t('plans.title')}</IonTitle>
             <div slot="end" className="pr-4">
-              <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
+              <Avatar
+                name={user?.name ?? 'U'}
+                color={myColor}
+                size={32}
+                onClick={() => history.push('/tabs/profile')}
+                className="cursor-pointer"
+              />
             </div>
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
           <div className="text-center py-16 px-4">
             <div className="text-5xl mb-4">📋</div>
-            <h2 className="text-lg font-bold text-text mb-1">
-              {t('plans.noGroups')}
-            </h2>
-            <p className="text-sm text-text-muted mb-8">
-              {t('plans.noGroupsSubtitle')}
-            </p>
+            <h2 className="text-lg font-bold text-text mb-1">{t('plans.noGroups')}</h2>
+            <p className="text-sm text-text-muted mb-8">{t('plans.noGroupsSubtitle')}</p>
             <button
               onClick={() => history.push('/tabs/group')}
               className="px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
@@ -217,11 +231,20 @@ export default function PlansPage() {
   };
 
   const handleVote = (proposalId: string, vote: 'yes' | 'no') => {
-    voteProposal.mutate({ proposalId, data: { vote } });
+    setVotingProposalId(proposalId);
+    voteProposal.mutate(
+      { proposalId, data: { vote } },
+      {
+        onSettled: () => setVotingProposalId(null),
+      },
+    );
   };
 
   const handleCloseProposal = (proposalId: string) => {
-    closeProposal.mutate(proposalId);
+    setClosingProposalId(proposalId);
+    closeProposal.mutate(proposalId, {
+      onSettled: () => setClosingProposalId(null),
+    });
   };
 
   const handleEditProposal = (proposal: Proposal) => {
@@ -242,7 +265,13 @@ export default function PlansPage() {
         <IonToolbar className="py-2">
           <IonTitle>{t('plans.title')}</IonTitle>
           <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
+            <Avatar
+              name={user?.name ?? 'U'}
+              color={myColor}
+              size={32}
+              onClick={() => history.push('/tabs/profile')}
+              className="cursor-pointer"
+            />
           </div>
         </IonToolbar>
       </IonHeader>
@@ -259,9 +288,7 @@ export default function PlansPage() {
                     onClick={() => setCurrentGroup(g)}
                     className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-none whitespace-nowrap"
                     style={{
-                      background: isActive
-                        ? 'rgba(37,99,235,0.12)'
-                        : 'var(--app-bg-card)',
+                      background: isActive ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
                       color: isActive ? '#60A5FA' : '#4B5C75',
                       border: `1px solid ${isActive ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
                     }}
@@ -304,9 +331,7 @@ export default function PlansPage() {
               </p>
               {activeTab === 'plans' ? (
                 <>
-                  <p className="text-text-dark text-xs mt-1">
-                    {t('plans.emptySubtitle')}
-                  </p>
+                  <p className="text-text-dark text-xs mt-1">{t('plans.emptySubtitle')}</p>
                   <button
                     onClick={() => history.push('/tabs/calendar')}
                     className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
@@ -349,6 +374,8 @@ export default function PlansPage() {
                               onEdit={handleEdit}
                               onDelete={handleDelete}
                               onCancel={handleCancel}
+                              isDeleting={deletingEventId === ev.id}
+                              isCancelling={cancellingEventId === ev.id}
                             />
                           </div>
                         ))}
@@ -424,6 +451,8 @@ export default function PlansPage() {
                             onConvert={(proposal) => setConvertingProposal(proposal)}
                             onClose={handleCloseProposal}
                             onEdit={handleEditProposal}
+                            isVoting={votingProposalId === p.id}
+                            isClosing={closingProposalId === p.id}
                           />
                         ))}
                       </div>
@@ -439,7 +468,9 @@ export default function PlansPage() {
                       >
                         <span
                           className="transition-transform text-[10px]"
-                          style={{ transform: showClosedProposals ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                          style={{
+                            transform: showClosedProposals ? 'rotate(90deg)' : 'rotate(0deg)',
+                          }}
                         >
                           ▶
                         </span>
@@ -471,7 +502,10 @@ export default function PlansPage() {
       {/* Edit Event Modal */}
       <EditEventModal
         isOpen={showEditModal}
-        onClose={() => { setShowEditModal(false); setEditingEvent(null); }}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingEvent(null);
+        }}
         groupId={groupId}
         event={editingEvent}
       />
@@ -488,7 +522,12 @@ export default function PlansPage() {
             text: t('plans.deleteEvent'),
             role: 'destructive',
             handler: () => {
-              if (deletingEvent) deleteEvent.mutate(deletingEvent.id);
+              if (deletingEvent) {
+                setDeletingEventId(deletingEvent.id);
+                deleteEvent.mutate(deletingEvent.id, {
+                  onSettled: () => setDeletingEventId(null),
+                });
+              }
             },
           },
         ]}
@@ -504,7 +543,10 @@ export default function PlansPage() {
       {/* Edit Proposal Modal */}
       <EditProposalModal
         isOpen={showEditProposalModal}
-        onClose={() => { setShowEditProposalModal(false); setEditingProposal(null); }}
+        onClose={() => {
+          setShowEditProposalModal(false);
+          setEditingProposal(null);
+        }}
         groupId={groupId}
         proposal={editingProposal}
       />
@@ -528,7 +570,12 @@ export default function PlansPage() {
           {
             text: t('plans.cancelEvent'),
             handler: () => {
-              if (cancellingEvent) cancelEvent.mutate(cancellingEvent.id);
+              if (cancellingEvent) {
+                setCancellingEventId(cancellingEvent.id);
+                cancelEvent.mutate(cancellingEvent.id, {
+                  onSettled: () => setCancellingEventId(null),
+                });
+              }
             },
           },
         ]}
