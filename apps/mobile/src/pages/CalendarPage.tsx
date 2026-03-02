@@ -11,7 +11,7 @@ import { useMyColor } from '../hooks/useMyColor';
 import { useGroupWeather } from '../hooks/useWeather';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
-import { calculateTopDays } from '../lib/calendar-utils';
+import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
 import { WeekView } from '../components/WeekView';
 import { MonthView } from '../components/MonthView';
 import { ListView } from '../components/ListView';
@@ -23,46 +23,6 @@ import { CreateEventModal } from '../components/CreateEventModal';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
-
-function suggestBestTime(availabilities: Availability[]): { time: string; slot: string } | null {
-  if (availabilities.length === 0) return null;
-
-  const votes = { morning: 0, afternoon: 0, night: 0 };
-
-  for (const a of availabilities) {
-    if (a.type === 'day') {
-      votes.morning++;
-      votes.afternoon++;
-      votes.night++;
-    } else if (a.type === 'slots' && a.slots) {
-      for (const slot of a.slots) {
-        if (slot === 'Mañana') votes.morning++;
-        else if (slot === 'Tarde') votes.afternoon++;
-        else if (slot === 'Noche') votes.night++;
-      }
-    } else if (a.type === 'range' && a.startTime && a.endTime) {
-      const start = parseInt(a.startTime.split(':')[0]);
-      const end = parseInt(a.endTime.split(':')[0]);
-      if (start <= 13 && end >= 8) votes.morning++;
-      if (start <= 19 && end >= 14) votes.afternoon++;
-      if (end >= 20 || start >= 20) votes.night++;
-    }
-  }
-
-  const entries = Object.entries(votes).sort(([, a], [, b]) => b - a);
-  if (entries[0][1] === 0) return null;
-
-  switch (entries[0][0]) {
-    case 'morning':
-      return { time: '10:00', slot: 'morning' };
-    case 'afternoon':
-      return { time: '17:00', slot: 'afternoon' };
-    case 'night':
-      return { time: '21:00', slot: 'night' };
-    default:
-      return null;
-  }
-}
 
 const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 

@@ -18,6 +18,9 @@ import { HiOutlineBell, HiOutlineChevronRight } from 'react-icons/hi2';
 
 type ExpandedSection = 'name' | 'email' | 'password' | null;
 
+// Supabase enforces a minimum password length of 6 characters
+const SUPABASE_MIN_PASSWORD_LENGTH = 6;
+
 export default function ProfilePage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -33,7 +36,9 @@ export default function ProfilePage() {
 
   // Refresh session when entering profile to pick up email changes confirmed externally
   useIonViewWillEnter(() => {
-    supabase.auth.refreshSession();
+    supabase.auth.refreshSession().catch(() => {
+      // Silent failure is acceptable here — the user is already logged in
+    });
   });
 
   const [expanded, setExpanded] = useState<ExpandedSection>(null);
@@ -106,7 +111,7 @@ export default function ProfilePage() {
 
   const handleUpdatePassword = async () => {
     setError('');
-    if (newPassword.length < 6) {
+    if (newPassword.length < SUPABASE_MIN_PASSWORD_LENGTH) {
       setError(t('profile.minLengthError'));
       return;
     }

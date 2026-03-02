@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTopDays } from './calendar-utils';
+import { calculateTopDays, suggestBestTime } from './calendar-utils';
 import type { Availability } from '../services/availability';
 
 function makeAvailability(overrides: Partial<Availability> = {}): Availability {
@@ -13,9 +13,7 @@ function makeAvailability(overrides: Partial<Availability> = {}): Availability {
   };
 }
 
-function buildMap(
-  entries: Array<[string, number]>,
-): Map<string, Availability[]> {
+function buildMap(entries: Array<[string, number]>): Map<string, Availability[]> {
   const map = new Map<string, Availability[]>();
   for (const [dateKey, count] of entries) {
     const avails: Availability[] = [];
@@ -26,6 +24,82 @@ function buildMap(
   }
   return map;
 }
+
+function makeAvail(overrides: Partial<Availability> = {}): Availability {
+  return {
+    id: crypto.randomUUID(),
+    userId: 'u1',
+    groupId: 'g1',
+    date: '2026-03-10',
+    type: 'day',
+    ...overrides,
+  };
+}
+
+describe('suggestBestTime', () => {
+  it('should return null for empty array', () => {
+    expect(suggestBestTime([])).toBeNull();
+  });
+
+  it('should return null when all vote counts are zero', () => {
+    // range that overlaps nothing
+    const a = makeAvail({ type: 'range', startTime: '00:00', endTime: '00:00' });
+    expect(suggestBestTime([a])).toBeNull();
+  });
+
+  it('should count all slots for type "day"', () => {
+    const avails = [makeAvail({ type: 'day' }), makeAvail({ type: 'day' })];
+    // all slots tied → Object.entries preserves insertion order: morning wins
+    const result = suggestBestTime(avails);
+    expect(result).not.toBeNull();
+  });
+
+  it('should return afternoon when majority votes Tarde', () => {
+    const avails = [
+      makeAvail({ type: 'slots', slots: ['Tarde'] }),
+      makeAvail({ type: 'slots', slots: ['Tarde'] }),
+      makeAvail({ type: 'slots', slots: ['Mañana'] }),
+    ];
+    expect(suggestBestTime(avails)).toEqual({ time: '17:00', slot: 'afternoon' });
+  });
+
+  it('should return morning when majority votes Mañana', () => {
+    const avails = [
+      makeAvail({ type: 'slots', slots: ['Mañana'] }),
+      makeAvail({ type: 'slots', slots: ['Mañana'] }),
+      makeAvail({ type: 'slots', slots: ['Noche'] }),
+    ];
+    expect(suggestBestTime(avails)).toEqual({ time: '10:00', slot: 'morning' });
+  });
+
+  it('should return night when majority votes Noche', () => {
+    const avails = [
+      makeAvail({ type: 'slots', slots: ['Noche', 'Noche'] }),
+      makeAvail({ type: 'slots', slots: ['Tarde'] }),
+    ];
+    expect(suggestBestTime(avails)).toEqual({ time: '21:00', slot: 'night' });
+  });
+
+  it('should count range overlapping morning (08:00–13:00)', () => {
+    const a = makeAvail({ type: 'range', startTime: '09:00', endTime: '12:00' });
+    expect(suggestBestTime([a])).toEqual({ time: '10:00', slot: 'morning' });
+  });
+
+  it('should count range overlapping afternoon (14:00–19:00)', () => {
+    const a = makeAvail({ type: 'range', startTime: '15:00', endTime: '18:00' });
+    expect(suggestBestTime([a])).toEqual({ time: '17:00', slot: 'afternoon' });
+  });
+
+  it('should count range overlapping night (start >= 20)', () => {
+    const a = makeAvail({ type: 'range', startTime: '21:00', endTime: '23:00' });
+    expect(suggestBestTime([a])).toEqual({ time: '21:00', slot: 'night' });
+  });
+
+  it('should ignore slots entries with null/undefined slots array', () => {
+    const a = makeAvail({ type: 'slots', slots: undefined });
+    expect(suggestBestTime([a])).toBeNull();
+  });
+});
 
 describe('calculateTopDays', () => {
   const today = '2026-03-01';
