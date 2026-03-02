@@ -208,6 +208,7 @@ export default function CalendarPage() {
       suggestedSlot: suggestion?.slot ?? null,
       availableMembers: availMembers,
       availableCount: dayAvail.length,
+      weather: weatherByDate.get(dateKey) ?? null,
     });
     setShowCreateEvent(true);
   };

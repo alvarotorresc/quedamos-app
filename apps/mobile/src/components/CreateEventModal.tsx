@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useCreateEvent } from '../hooks/useEvents';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
+import { WeatherBadge } from './WeatherWidget';
 import { formatDateKey } from '../lib/date-utils';
+import type { WeatherData } from '../services/weather';
 
 export interface EventPrefill {
   date: string;
@@ -13,6 +15,7 @@ export interface EventPrefill {
   suggestedSlot: string | null;
   availableMembers: { name: string; color: string }[];
   availableCount: number;
+  weather?: WeatherData[] | null;
 }
 
 interface CreateEventModalProps {
@@ -99,9 +102,18 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
 
         <h3 className="text-[17px] font-bold text-text mb-0.5">{t('plans.create.title')}</h3>
         {prefill ? (
-          <p className="text-xs text-text-dark mb-3.5 capitalize">
-            {prefill.dateLabel} · {prefill.availableCount} {t('plans.create.available')}
-          </p>
+          <div className="flex items-center gap-2 mb-3.5 flex-wrap">
+            <p className="text-xs text-text-dark capitalize">
+              {prefill.dateLabel} · {prefill.availableCount} {t('plans.create.available')}
+            </p>
+            {prefill.weather && prefill.weather.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                {prefill.weather.map((w) => (
+                  <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div className="h-3.5 mb-0.5" />
         )}
