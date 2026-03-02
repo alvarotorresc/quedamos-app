@@ -92,7 +92,9 @@
     "list": "List",
     "daysWithAvailability": "Days with availability",
     "recommended": "Recommended",
+    "secondRecommended": "Another day",
     "bestDay": "Best day",
+    "secondBestDay": "Another day",
     "noAvailability": "Nobody available",
     "you": "You",
     "allDay": "All day",
@@ -149,6 +151,22 @@
     "decline": "Decline",
     "youConfirmed": "You confirmed attendance",
     "youDeclined": "You declined this event",
+    "editButton": "Edit",
+    "deleteEvent": "Delete plan",
+    "deleteConfirm": "This action cannot be undone",
+    "cancelEvent": "Mark as cancelled",
+    "cancelConfirm": "Cancel this plan?",
+    "openInMaps": "Open in maps",
+    "edit": {
+      "title": "Edit plan",
+      "submit": "Save changes",
+      "saving": "Saving..."
+    },
+    "tabs": {
+      "plans": "Plans",
+      "proposals": "Proposals"
+    },
+    "tapToChange": "Tap to change",
     "status": {
       "pending": "Pending",
       "confirmed": "Confirmed",
@@ -165,7 +183,12 @@
       "creating": "Creating...",
       "available": "available",
       "attendees": "Attendees",
-      "suggested": "Suggested"
+      "suggested": "Suggested",
+      "date": "Date",
+      "endTime": "End time",
+      "endTimeError": "End time must be after start time",
+      "description": "Description",
+      "descriptionPlaceholder": "Plan details..."
     }
   },
   "group": {
@@ -206,7 +229,20 @@
     "regenerateTitle": "Regenerate code",
     "regenerateMessage": "The current invite code will stop working. Do you want to generate a new one?",
     "cancel": "Cancel",
-    "codeRegenerated": "Code regenerated"
+    "codeRegenerated": "Code regenerated",
+    "admin": "Admin",
+    "member": "Member",
+    "promoteAdmin": "Make admin",
+    "demoteAdmin": "Remove admin",
+    "kickMember": "Kick",
+    "kickConfirm": "Kick {{name}} from the group?",
+    "kickMessage": "The member will be removed from the group and their attendance to future plans will be deleted.",
+    "deleteGroup": "Delete group",
+    "deleteMessage": "All plans and group data will be deleted. This action cannot be undone.",
+    "deleteConfirm": "Delete the group?",
+    "lastAdminError": "There must be at least one admin",
+    "roleChanged": "Role updated",
+    "creator": "Creator"
   },
   "joinGroup": {
     "joining": "Joining group...",
@@ -238,11 +274,28 @@
     "theme": "Dark theme",
     "notifications": {
       "title": "Notifications",
+      "groups": {
+        "events": "Events",
+        "proposals": "Proposals",
+        "members": "Members",
+        "reminders": "Reminders"
+      },
       "newEvent": "New plan created",
+      "eventUpdated": "Plan updated",
+      "eventDeleted": "Plan deleted",
+      "eventCancelled": "Plan cancelled",
       "eventConfirmed": "Plan confirmed by all",
       "eventDeclined": "Someone declined a plan",
+      "eventReminder": "24h reminder before a plan",
+      "newProposal": "New proposal created",
+      "proposalVoted": "Someone voted on a proposal",
+      "proposalConverted": "Proposal converted to plan",
       "memberJoined": "New member in group",
-      "memberLeft": "Member left group"
+      "memberLeft": "Member left group",
+      "roleChanged": "Your role was changed",
+      "memberKicked": "You were removed from a group",
+      "groupDeleted": "Group was deleted",
+      "weeklyReminder": "Weekly availability reminder"
     },
     "reportBug": "Report bug",
     "logout": "Sign out"
@@ -361,6 +414,50 @@
       "madeWith": "Made with",
       "by": "by"
     }
+  },
+  "weather": {
+    "title": "Weather",
+    "addCity": "Add city",
+    "searchCity": "Search city...",
+    "noData": "No weather data",
+    "showDetail": "Show weather detail",
+    "forecast": "Forecast",
+    "desc": {
+      "clear": "Clear sky",
+      "partlyCloudy": "Partly cloudy",
+      "foggy": "Foggy",
+      "drizzle": "Drizzle",
+      "rain": "Rain",
+      "snow": "Snow",
+      "showers": "Rain showers",
+      "snowShowers": "Snow showers",
+      "thunderstorm": "Thunderstorm"
+    }
+  },
+  "proposals": {
+    "title": "Proposals",
+    "create": "New proposal",
+    "titlePlaceholder": "Dinner, hike, movies...",
+    "description": "Description",
+    "descriptionPlaceholder": "Proposal details...",
+    "proposedDate": "Proposed date",
+    "creating": "Creating...",
+    "voteYes": "In favor",
+    "voteNo": "Against",
+    "convert": "Convert to plan",
+    "convertDate": "Date",
+    "converting": "Converting...",
+    "close": "Close proposal",
+    "status": {
+      "open": "Open",
+      "closed": "Closed",
+      "converted": "Converted"
+    },
+    "edit": "Edit proposal",
+    "editSaving": "Saving...",
+    "empty": "No proposals",
+    "closed": "Closed",
+    "votes": "{{yes}} in favor, {{no}} against"
   },
   "authErrors": {
     "invalidCredentials": "Invalid email or password",

@@ -31,10 +31,7 @@ export class AuthService {
     });
   }
 
-  private getKey(
-    header: jwt.JwtHeader,
-    callback: (err: Error | null, key?: string) => void,
-  ) {
+  private getKey(header: jwt.JwtHeader, callback: (err: Error | null, key?: string) => void) {
     this.jwks.getSigningKey(header.kid, (err, key) => {
       if (err) {
         callback(err);
@@ -85,6 +82,17 @@ export class AuthService {
           avatarEmoji,
         },
       });
+    } else if (payload.email && dbUser.email !== payload.email) {
+      // Sync email when user confirms an email change in Supabase
+      const newEmail = payload.email.trim().slice(0, 255);
+      if (newEmail.length >= 3 && newEmail.includes('@')) {
+        dbUser = await this.prisma.user.update({
+          where: { id: payload.sub },
+          data: { email: newEmail },
+        });
+      } else {
+        this.logger.warn(`Skipping email sync — malformed email in JWT for user ${payload.sub}`);
+      }
     }
 
     return dbUser;

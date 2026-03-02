@@ -9,6 +9,8 @@ import { GroupsModule } from './groups/groups.module';
 import { AvailabilityModule } from './availability/availability.module';
 import { EventsModule } from './events/events.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ProposalsModule } from './proposals/proposals.module';
+import { WeatherModule } from './weather/weather.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 
 @Module({
@@ -30,6 +32,8 @@ import { PrismaModule } from './common/prisma/prisma.module';
     AvailabilityModule,
     EventsModule,
     NotificationsModule,
+    ProposalsModule,
+    WeatherModule,
   ],
   providers: [
     {

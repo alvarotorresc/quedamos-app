@@ -83,14 +83,56 @@ describe('AuthService', () => {
       });
     });
 
+    it('should sync email in DB when Supabase email differs', async () => {
+      const user = createTestUser({ email: 'old@test.com' });
+      const updatedUser = createTestUser({ email: 'new@test.com' });
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', email: 'new@test.com' });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(updatedUser);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(updatedUser);
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { email: 'new@test.com' },
+      });
+    });
+
+    it('should not update DB when JWT has no email and user already exists', async () => {
+      const user = createTestUser({ email: 'existing@test.com' });
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1' }); // no email in payload
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(user);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should not update DB when JWT email is malformed', async () => {
+      const user = createTestUser({ email: 'existing@test.com' });
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', email: 'not-an-email' });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(user);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
     it('should throw UnauthorizedException on invalid token', async () => {
       (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
         cb(new Error('invalid signature'));
       });
 
-      await expect(service.validateToken('bad-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.validateToken('bad-token')).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw UnauthorizedException when sub is missing', async () => {
@@ -98,9 +140,7 @@ describe('AuthService', () => {
         cb(null, { email: 'test@test.com' });
       });
 
-      await expect(service.validateToken('no-sub-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.validateToken('no-sub-token')).rejects.toThrow(UnauthorizedException);
     });
   });
 

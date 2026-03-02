@@ -37,8 +37,20 @@ describe('AvailabilityController', () => {
   describe('findAll', () => {
     it('should call availabilityService.findAllForGroup with groupId and userId', async () => {
       const availabilities = [
-        { id: 'av-1', groupId: 'group-1', userId: 'user-1', date: new Date('2026-03-01'), type: 'day' },
-        { id: 'av-2', groupId: 'group-1', userId: 'user-2', date: new Date('2026-03-01'), type: 'slots' },
+        {
+          id: 'av-1',
+          groupId: 'group-1',
+          userId: 'user-1',
+          date: new Date('2026-03-01'),
+          type: 'day',
+        },
+        {
+          id: 'av-2',
+          groupId: 'group-1',
+          userId: 'user-2',
+          date: new Date('2026-03-01'),
+          type: 'slots',
+        },
       ];
       mockAvailabilityService.findAllForGroup.mockResolvedValue(availabilities);
 
@@ -61,7 +73,13 @@ describe('AvailabilityController', () => {
   describe('findMine', () => {
     it('should call availabilityService.findMyAvailability with groupId and userId', async () => {
       const myAvailabilities = [
-        { id: 'av-1', groupId: 'group-1', userId: 'user-1', date: new Date('2026-03-01'), type: 'day' },
+        {
+          id: 'av-1',
+          groupId: 'group-1',
+          userId: 'user-1',
+          date: new Date('2026-03-01'),
+          type: 'day',
+        },
       ];
       mockAvailabilityService.findMyAvailability.mockResolvedValue(myAvailabilities);
 
@@ -96,7 +114,12 @@ describe('AvailabilityController', () => {
     });
 
     it('should pass range type dto to service', async () => {
-      const dto = { date: '2026-03-15', type: 'range' as const, startTime: '09:00', endTime: '17:00' };
+      const dto = {
+        date: '2026-03-15',
+        type: 'range' as const,
+        startTime: '09:00',
+        endTime: '17:00',
+      };
       mockAvailabilityService.create.mockResolvedValue({ id: 'av-new', ...dto });
 
       await controller.create('group-1', { id: 'user-1' }, dto);
@@ -131,7 +154,11 @@ describe('AvailabilityController', () => {
       const result = await controller.delete('group-1', '2026-03-15', { id: 'user-1' });
 
       expect(result).toEqual({ success: true });
-      expect(mockAvailabilityService.delete).toHaveBeenCalledWith('group-1', '2026-03-15', 'user-1');
+      expect(mockAvailabilityService.delete).toHaveBeenCalledWith(
+        'group-1',
+        '2026-03-15',
+        'user-1',
+      );
       expect(mockAvailabilityService.delete).toHaveBeenCalledTimes(1);
     });
   });

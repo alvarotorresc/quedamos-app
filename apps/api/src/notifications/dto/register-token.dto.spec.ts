@@ -3,9 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { RegisterTokenDto } from './register-token.dto';
 
 describe('RegisterTokenDto', () => {
-  function createDto(
-    partial: Partial<Record<string, unknown>>,
-  ): RegisterTokenDto {
+  function createDto(partial: Partial<Record<string, unknown>>): RegisterTokenDto {
     return plainToInstance(RegisterTokenDto, partial);
   }
 

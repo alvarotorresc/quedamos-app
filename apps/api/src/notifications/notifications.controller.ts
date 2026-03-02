@@ -12,18 +12,12 @@ export class NotificationsController {
   constructor(private notificationsService: NotificationsService) {}
 
   @Post('register-token')
-  registerToken(
-    @CurrentUser() user: { id: string },
-    @Body() dto: RegisterTokenDto,
-  ) {
+  registerToken(@CurrentUser() user: { id: string }, @Body() dto: RegisterTokenDto) {
     return this.notificationsService.registerToken(user.id, dto);
   }
 
   @Delete('unregister-token')
-  unregisterToken(
-    @CurrentUser() user: { id: string },
-    @Body() dto: UnregisterTokenDto,
-  ) {
+  unregisterToken(@CurrentUser() user: { id: string }, @Body() dto: UnregisterTokenDto) {
     return this.notificationsService.unregisterToken(user.id, dto.token);
   }
 
@@ -33,10 +27,7 @@ export class NotificationsController {
   }
 
   @Put('preferences')
-  updatePreference(
-    @CurrentUser() user: { id: string },
-    @Body() dto: UpdatePreferenceDto,
-  ) {
+  updatePreference(@CurrentUser() user: { id: string }, @Body() dto: UpdatePreferenceDto) {
     return this.notificationsService.updatePreference(user.id, dto);
   }
 }

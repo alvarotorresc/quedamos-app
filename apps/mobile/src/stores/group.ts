@@ -4,7 +4,6 @@ interface Group {
   id: string;
   name: string;
   emoji: string;
-  inviteCode: string;
 }
 
 interface GroupState {

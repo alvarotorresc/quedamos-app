@@ -3,15 +3,11 @@ import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
-import { UpdatePreferenceDto, NotificationType } from './dto/update-preference.dto';
-
-const ALL_NOTIFICATION_TYPES: NotificationType[] = [
-  'new_event',
-  'event_confirmed',
-  'event_declined',
-  'member_joined',
-  'member_left',
-];
+import {
+  UpdatePreferenceDto,
+  NotificationType,
+  NOTIFICATION_TYPES,
+} from './dto/update-preference.dto';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
@@ -29,9 +25,7 @@ export class NotificationsService implements OnModuleInit {
     const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
 
     if (!projectId || !clientEmail || !privateKey) {
-      this.logger.warn(
-        'Firebase credentials not configured — push notifications disabled',
-      );
+      this.logger.warn('Firebase credentials not configured — push notifications disabled');
       return;
     }
 
@@ -50,7 +44,21 @@ export class NotificationsService implements OnModuleInit {
     }
   }
 
+  private static readonly MAX_TOKENS_PER_USER = 10;
+
   async registerToken(userId: string, dto: RegisterTokenDto) {
+    const tokenCount = await this.prisma.pushToken.count({ where: { userId } });
+    if (tokenCount >= NotificationsService.MAX_TOKENS_PER_USER) {
+      // Delete oldest token to make room
+      const oldest = await this.prisma.pushToken.findFirst({
+        where: { userId },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (oldest) {
+        await this.prisma.pushToken.delete({ where: { id: oldest.id } });
+      }
+    }
+
     return this.prisma.pushToken.upsert({
       where: {
         userId_token: {
@@ -83,7 +91,7 @@ export class NotificationsService implements OnModuleInit {
     });
     const savedMap = new Map(saved.map((p) => [p.type, p.enabled]));
 
-    return ALL_NOTIFICATION_TYPES.map((type) => ({
+    return NOTIFICATION_TYPES.map((type) => ({
       type,
       enabled: savedMap.get(type) ?? true,
     }));
@@ -99,10 +107,7 @@ export class NotificationsService implements OnModuleInit {
     });
   }
 
-  async isNotificationEnabled(
-    userId: string,
-    type: NotificationType,
-  ): Promise<boolean> {
+  async isNotificationEnabled(userId: string, type: NotificationType): Promise<boolean> {
     const pref = await this.prisma.notificationPreference.findUnique({
       where: {
         userId_type: { userId, type },
@@ -116,7 +121,13 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
+    notificationType?: NotificationType,
   ) {
+    if (notificationType) {
+      const enabled = await this.isNotificationEnabled(userId, notificationType);
+      if (!enabled) return { sent: 0 };
+    }
+
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId },
     });
@@ -137,13 +148,22 @@ export class NotificationsService implements OnModuleInit {
     body: string,
     excludeUserId?: string,
     data?: Record<string, string>,
+    notificationType?: NotificationType,
   ) {
     const members = await this.prisma.groupMember.findMany({
       where: { groupId },
     });
 
     const allUserIds = members.map((m) => m.userId);
-    const userIds = allUserIds.filter((id) => id !== excludeUserId);
+    let userIds = allUserIds.filter((id) => id !== excludeUserId);
+
+    if (notificationType && userIds.length > 0) {
+      const disabledPrefs = await this.prisma.notificationPreference.findMany({
+        where: { userId: { in: userIds }, type: notificationType, enabled: false },
+      });
+      const disabledSet = new Set(disabledPrefs.map((p) => p.userId));
+      userIds = userIds.filter((id) => !disabledSet.has(id));
+    }
 
     this.logger.debug(
       `sendToGroup: group=${groupId}, members=${allUserIds.length}, exclude=${excludeUserId}, remaining=${userIds.length}`,
@@ -205,7 +225,7 @@ export class NotificationsService implements OnModuleInit {
         response.responses.forEach((resp, idx) => {
           if (resp.error) {
             this.logger.warn(
-              `FCM error for token ${tokens[idx].slice(0, 20)}...: ${resp.error.code} — ${resp.error.message}`,
+              `FCM error for token ${tokens[idx].slice(0, 8)}...: ${resp.error.code} — ${resp.error.message}`,
             );
           }
           if (

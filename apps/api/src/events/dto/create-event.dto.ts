@@ -24,4 +24,9 @@ export class CreateEventDto {
   @IsString()
   @Matches(/^\d{2}:\d{2}$/)
   time?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{2}:\d{2}$/)
+  endTime?: string;
 }

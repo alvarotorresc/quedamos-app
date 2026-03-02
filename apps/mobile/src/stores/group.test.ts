@@ -14,7 +14,7 @@ describe('useGroupStore', () => {
   });
 
   it('should set current group and persist to localStorage', () => {
-    const group = { id: 'g1', name: 'Test', emoji: '👥', inviteCode: '12345678' };
+    const group = { id: 'g1', name: 'Test', emoji: '👥' };
     useGroupStore.getState().setCurrentGroup(group);
 
     expect(useGroupStore.getState().currentGroup).toEqual(group);
@@ -29,8 +29,8 @@ describe('useGroupStore', () => {
 
   it('should set groups list', () => {
     const groups = [
-      { id: 'g1', name: 'A', emoji: '👥', inviteCode: '11111111' },
-      { id: 'g2', name: 'B', emoji: '🎉', inviteCode: '22222222' },
+      { id: 'g1', name: 'A', emoji: '👥' },
+      { id: 'g2', name: 'B', emoji: '🎉' },
     ];
     useGroupStore.getState().setGroups(groups);
 

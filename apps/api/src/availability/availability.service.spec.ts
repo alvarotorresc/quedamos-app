@@ -31,7 +31,9 @@ describe('AvailabilityService', () => {
 
   describe('findMyAvailability', () => {
     it('should return only user availability', async () => {
-      const items = [{ id: '1', userId: 'user-1', groupId: 'group-1', date: new Date(), type: 'day' }];
+      const items = [
+        { id: '1', userId: 'user-1', groupId: 'group-1', date: new Date(), type: 'day' },
+      ];
       prisma.availability.findMany.mockResolvedValue(items);
 
       const result = await service.findMyAvailability('group-1', 'user-1');
@@ -117,9 +119,9 @@ describe('AvailabilityService', () => {
     it('should throw NotFoundException when not found', async () => {
       prisma.availability.findUnique.mockResolvedValue(null);
 
-      await expect(
-        service.delete('group-1', '2026-03-01', 'user-1'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.delete('group-1', '2026-03-01', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

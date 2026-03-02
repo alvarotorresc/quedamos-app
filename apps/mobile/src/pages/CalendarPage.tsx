@@ -8,8 +8,10 @@ import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
 import { useAvailability, useMyAvailability } from '../hooks/useAvailability';
 import { useMyColor } from '../hooks/useMyColor';
+import { useGroupWeather } from '../hooks/useWeather';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
+import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
 import { WeekView } from '../components/WeekView';
 import { MonthView } from '../components/MonthView';
 import { ListView } from '../components/ListView';
@@ -20,46 +22,7 @@ import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
 import { CreateEventModal } from '../components/CreateEventModal';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
-
-function suggestBestTime(availabilities: Availability[]): { time: string; slot: string } | null {
-  if (availabilities.length === 0) return null;
-
-  const votes = { morning: 0, afternoon: 0, night: 0 };
-
-  for (const a of availabilities) {
-    if (a.type === 'day') {
-      votes.morning++;
-      votes.afternoon++;
-      votes.night++;
-    } else if (a.type === 'slots' && a.slots) {
-      for (const slot of a.slots) {
-        if (slot === 'Mañana') votes.morning++;
-        else if (slot === 'Tarde') votes.afternoon++;
-        else if (slot === 'Noche') votes.night++;
-      }
-    } else if (a.type === 'range' && a.startTime && a.endTime) {
-      const start = parseInt(a.startTime.split(':')[0]);
-      const end = parseInt(a.endTime.split(':')[0]);
-      if (start <= 13 && end >= 8) votes.morning++;
-      if (start <= 19 && end >= 14) votes.afternoon++;
-      if (end >= 20 || start >= 20) votes.night++;
-    }
-  }
-
-  const entries = Object.entries(votes).sort(([, a], [, b]) => b - a);
-  if (entries[0][1] === 0) return null;
-
-  switch (entries[0][0]) {
-    case 'morning':
-      return { time: '10:00', slot: 'morning' };
-    case 'afternoon':
-      return { time: '17:00', slot: 'afternoon' };
-    case 'night':
-      return { time: '21:00', slot: 'night' };
-    default:
-      return null;
-  }
-}
+import type { WeatherData } from '../services/weather';
 
 const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 
@@ -95,6 +58,9 @@ export default function CalendarPage() {
   // Availability data
   const { data: allAvailability, isLoading: availLoading } = useAvailability(groupId);
   const { data: myAvailability } = useMyAvailability(groupId);
+
+  // Weather data
+  const { data: weather } = useGroupWeather(groupId);
 
   // Calendar state
   const [calView, setCalView] = useState<CalView>('week');
@@ -138,29 +104,39 @@ export default function CalendarPage() {
     return map;
   }, [myAvailability]);
 
-  // Best day calculation — day with most people available (future only)
-  const bestDay = useMemo(() => {
-    if (!allAvailability || availabilityByDate.size === 0) return null;
-
-    const today = formatDateKey(new Date());
-    let best: { dateKey: string; count: number } | null = null;
-
-    for (const [dateKey, avails] of availabilityByDate) {
-      if (dateKey < today) continue;
-      if (!best || avails.length > best.count) {
-        best = { dateKey, count: avails.length };
-      }
+  // Index weather by date
+  const weatherByDate = useMemo(() => {
+    const map = new Map<string, WeatherData[]>();
+    if (!weather) return map;
+    for (const w of weather) {
+      const list = map.get(w.date) ?? [];
+      list.push(w);
+      map.set(w.date, list);
     }
-    return best;
-  }, [allAvailability, availabilityByDate]);
+    return map;
+  }, [weather]);
+
+  // Top days calculation — days with most people available (future only)
+  const topDays = useMemo(() => {
+    const today = formatDateKey(new Date());
+    return calculateTopDays(availabilityByDate, today, 2);
+  }, [availabilityByDate]);
+
+  const bestDay = topDays[0] ?? null;
+  const secondBestDay = topDays[1] ?? null;
 
   // Existing availability for selected day (for modal)
   const existingAvail = selectedDay
-    ? myAvailabilityByDate.get(formatDateKey(selectedDay)) ?? null
+    ? (myAvailabilityByDate.get(formatDateKey(selectedDay)) ?? null)
     : null;
 
   const handleMarkAvailability = () => {
     setShowAvailModal(true);
+  };
+
+  const handleCreateEventDirect = () => {
+    setCreateEventPrefill(null);
+    setShowCreateEvent(true);
   };
 
   const handleCreateEvent = (day: Date) => {
@@ -192,6 +168,7 @@ export default function CalendarPage() {
       suggestedSlot: suggestion?.slot ?? null,
       availableMembers: availMembers,
       availableCount: dayAvail.length,
+      weather: weatherByDate.get(dateKey) ?? null,
     });
     setShowCreateEvent(true);
   };
@@ -222,19 +199,21 @@ export default function CalendarPage() {
           <IonToolbar className="py-2">
             <IonTitle>{t('calendar.title')}</IonTitle>
             <div slot="end" className="pr-4">
-              <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
+              <Avatar
+                name={user?.name ?? 'U'}
+                color={myColor}
+                size={32}
+                onClick={() => history.push('/tabs/profile')}
+                className="cursor-pointer"
+              />
             </div>
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
           <div className="text-center py-16 px-4">
             <div className="text-5xl mb-4">📆</div>
-            <h2 className="text-lg font-bold text-text mb-1">
-              {t('calendar.noGroups')}
-            </h2>
-            <p className="text-sm text-text-muted mb-8">
-              {t('calendar.noGroupsSubtitle')}
-            </p>
+            <h2 className="text-lg font-bold text-text mb-1">{t('calendar.noGroups')}</h2>
+            <p className="text-sm text-text-muted mb-8">{t('calendar.noGroupsSubtitle')}</p>
             <button
               onClick={() => history.push('/tabs/group')}
               className="px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
@@ -252,8 +231,22 @@ export default function CalendarPage() {
       <IonHeader className="ion-no-border">
         <IonToolbar className="py-2">
           <IonTitle>{t('calendar.title')}</IonTitle>
-          <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
+          <div slot="end" className="pr-4 flex items-center gap-3">
+            <button
+              onClick={handleCreateEventDirect}
+              className="w-8 h-8 flex items-center justify-center rounded-full border-none text-primary text-xl font-light leading-none"
+              style={{ background: 'rgba(37,99,235,0.12)' }}
+              aria-label={t('plans.create.title')}
+            >
+              +
+            </button>
+            <Avatar
+              name={user?.name ?? 'U'}
+              color={myColor}
+              size={32}
+              onClick={() => history.push('/tabs/profile')}
+              className="cursor-pointer"
+            />
           </div>
         </IonToolbar>
       </IonHeader>
@@ -275,9 +268,7 @@ export default function CalendarPage() {
                     }}
                     className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-none whitespace-nowrap"
                     style={{
-                      background: isActive
-                        ? 'rgba(37,99,235,0.12)'
-                        : 'var(--app-bg-card)',
+                      background: isActive ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
                       color: isActive ? '#60A5FA' : '#4B5C75',
                       border: `1px solid ${isActive ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
                     }}
@@ -300,10 +291,7 @@ export default function CalendarPage() {
                 }}
                 className="flex-1 py-2 rounded-btn text-xs font-semibold border-none"
                 style={{
-                  background:
-                    calView === view
-                      ? 'rgba(37,99,235,0.12)'
-                      : 'var(--app-bg-card)',
+                  background: calView === view ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
                   color: calView === view ? '#60A5FA' : '#4B5C75',
                 }}
               >
@@ -330,9 +318,15 @@ export default function CalendarPage() {
                   myAvailabilityByDate={myAvailabilityByDate}
                   memberColorMap={memberColorMap}
                   totalMembers={members.length}
+                  bestDayKey={bestDay?.dateKey ?? null}
+                  secondBestDayKey={secondBestDay?.dateKey ?? null}
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
-                  onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
+                  onViewDetail={(day) => {
+                    setSelectedDay(day);
+                    setShowDetailModal(true);
+                  }}
+                  weatherByDate={weatherByDate}
                 />
               )}
               {calView === 'month' && (
@@ -347,7 +341,11 @@ export default function CalendarPage() {
                   totalMembers={members.length}
                   onMarkAvailability={handleMarkAvailability}
                   onCreateEvent={handleCreateEvent}
-                  onViewDetail={(day) => { setSelectedDay(day); setShowDetailModal(true); }}
+                  onViewDetail={(day) => {
+                    setSelectedDay(day);
+                    setShowDetailModal(true);
+                  }}
+                  weatherByDate={weatherByDate}
                 />
               )}
               {calView === 'list' && (
@@ -356,10 +354,12 @@ export default function CalendarPage() {
                   memberColorMap={memberColorMap}
                   totalMembers={members.length}
                   bestDayKey={bestDay?.dateKey ?? null}
+                  secondBestDayKey={secondBestDay?.dateKey ?? null}
                   onSelectDay={(day) => {
                     setSelectedDay(day);
                     setCalView('week');
                   }}
+                  weatherByDate={weatherByDate}
                 />
               )}
 
@@ -370,8 +370,18 @@ export default function CalendarPage() {
                     dateKey={bestDay.dateKey}
                     availableCount={bestDay.count}
                     totalMembers={members.length}
+                    rank={1}
                     onClick={() => handleCreateEvent(parseDateKey(bestDay.dateKey))}
                   />
+                  {secondBestDay && (
+                    <BestDayBanner
+                      dateKey={secondBestDay.dateKey}
+                      availableCount={secondBestDay.count}
+                      totalMembers={members.length}
+                      rank={2}
+                      onClick={() => handleCreateEvent(parseDateKey(secondBestDay.dateKey))}
+                    />
+                  )}
                 </div>
               )}
               {calView === 'month' && (
@@ -390,7 +400,9 @@ export default function CalendarPage() {
           isOpen={showDetailModal}
           onClose={() => setShowDetailModal(false)}
           selectedDay={selectedDay}
-          availabilities={selectedDay ? availabilityByDate.get(formatDateKey(selectedDay)) ?? [] : []}
+          availabilities={
+            selectedDay ? (availabilityByDate.get(formatDateKey(selectedDay)) ?? []) : []
+          }
           memberColorMap={memberColorMap}
           onMarkAvailability={handleMarkAvailability}
         />

@@ -1,17 +1,26 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonSpinner } from '@ionic/react';
+import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonSpinner, IonAlert } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
-import { useEvents } from '../hooks/useEvents';
+import { useEvents, useDeleteEvent, useCancelEvent } from '../hooks/useEvents';
+import { useProposals, useVoteProposal, useCloseProposal } from '../hooks/useProposals';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupSync } from '../hooks/useGroupSync';
+import { useGroupWeather } from '../hooks/useWeather';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
+import type { WeatherData } from '../services/weather';
 import { EventCard } from '../components/EventCard';
+import { EditEventModal } from '../components/EditEventModal';
+import { ProposalCard } from '../components/ProposalCard';
+import { CreateProposalModal } from '../components/CreateProposalModal';
+import { EditProposalModal } from '../components/EditProposalModal';
+import { ConvertProposalModal } from '../components/ConvertProposalModal';
 import type { Event } from '../services/events';
+import type { Proposal } from '../services/proposals';
 
 const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 
@@ -52,8 +61,43 @@ export default function PlansPage() {
   // Events data
   const { data: events, isLoading: eventsLoading } = useEvents(groupId);
 
-  // Collapsible past
+  // Weather data
+  const { data: weather } = useGroupWeather(groupId);
+  const weatherByDate = useMemo(() => {
+    const map = new Map<string, WeatherData[]>();
+    if (!weather) return map;
+    for (const w of weather) {
+      const list = map.get(w.date) ?? [];
+      list.push(w);
+      map.set(w.date, list);
+    }
+    return map;
+  }, [weather]);
+
+  // Edit/delete/cancel state
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
+  const [cancellingEvent, setCancellingEvent] = useState<Event | null>(null);
+  const deleteEvent = useDeleteEvent(groupId);
+  const cancelEvent = useCancelEvent(groupId);
+
+  // Proposals state
+  const { data: proposals } = useProposals(groupId);
+  const voteProposal = useVoteProposal(groupId);
+  const closeProposal = useCloseProposal(groupId);
+  const [showCreateProposal, setShowCreateProposal] = useState(false);
+  const [editingProposal, setEditingProposal] = useState<Proposal | null>(null);
+  const [showEditProposalModal, setShowEditProposalModal] = useState(false);
+  const [convertingProposal, setConvertingProposal] = useState<Proposal | null>(null);
+
+  // Tab state
+  type PlansTab = 'plans' | 'proposals';
+  const [activeTab, setActiveTab] = useState<PlansTab>('plans');
+
+  // Collapsible sections
   const [showPast, setShowPast] = useState(false);
+  const [showClosedProposals, setShowClosedProposals] = useState(false);
 
   // Member color map (userId -> color)
   const memberColorMap = useMemo(() => {
@@ -159,7 +203,38 @@ export default function PlansPage() {
     );
   }
 
+  const handleEdit = (ev: Event) => {
+    setEditingEvent(ev);
+    setShowEditModal(true);
+  };
+
+  const handleDelete = (ev: Event) => {
+    setDeletingEvent(ev);
+  };
+
+  const handleCancel = (ev: Event) => {
+    setCancellingEvent(ev);
+  };
+
+  const handleVote = (proposalId: string, vote: 'yes' | 'no') => {
+    voteProposal.mutate({ proposalId, data: { vote } });
+  };
+
+  const handleCloseProposal = (proposalId: string) => {
+    closeProposal.mutate(proposalId);
+  };
+
+  const handleEditProposal = (proposal: Proposal) => {
+    setEditingProposal(proposal);
+    setShowEditProposalModal(true);
+  };
+
+  const openProposals = proposals?.filter((p) => p.status === 'open') ?? [];
+  const closedOrConvertedProposals = proposals?.filter((p) => p.status !== 'open') ?? [];
+  const allProposals = [...openProposals, ...closedOrConvertedProposals];
   const hasEvents = upcoming.length > 0 || past.length > 0;
+  const hasProposals = allProposals.length > 0;
+  const hasContent = activeTab === 'plans' ? hasEvents : hasProposals;
 
   return (
     <IonPage>
@@ -198,92 +273,266 @@ export default function PlansPage() {
             </div>
           )}
 
+          {/* Tab bar */}
+          <div className="flex gap-1 mb-3">
+            {(['plans', 'proposals'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className="flex-1 py-2 rounded-btn text-xs font-semibold border-none"
+                style={{
+                  background: activeTab === tab ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
+                  color: activeTab === tab ? '#60A5FA' : '#4B5C75',
+                }}
+              >
+                {t(`plans.tabs.${tab}`)}
+              </button>
+            ))}
+          </div>
+
           {/* Loading events */}
           {eventsLoading ? (
             <div className="flex items-center justify-center py-10">
               <IonSpinner name="crescent" className="text-primary w-5 h-5" />
             </div>
-          ) : !hasEvents ? (
+          ) : !hasContent ? (
             /* Empty state */
             <div className="text-center py-16 px-4">
-              <div className="text-4xl mb-3">📅</div>
+              <div className="text-4xl mb-3">{activeTab === 'plans' ? '📅' : '💡'}</div>
               <p className="text-text-muted text-sm font-semibold">
-                {t('plans.empty')}
+                {activeTab === 'plans' ? t('plans.empty') : t('proposals.empty')}
               </p>
-              <p className="text-text-dark text-xs mt-1">
-                {t('plans.emptySubtitle')}
-              </p>
-              <button
-                onClick={() => history.push('/tabs/calendar')}
-                className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
-              >
-                {t('plans.goToCalendar')}
-              </button>
+              {activeTab === 'plans' ? (
+                <>
+                  <p className="text-text-dark text-xs mt-1">
+                    {t('plans.emptySubtitle')}
+                  </p>
+                  <button
+                    onClick={() => history.push('/tabs/calendar')}
+                    className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
+                  >
+                    {t('plans.goToCalendar')}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowCreateProposal(true)}
+                  className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
+                >
+                  + {t('proposals.create')}
+                </button>
+              )}
             </div>
           ) : (
             <>
-              {/* Upcoming events */}
-              {upcoming.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
-                    {t('plans.upcoming')}
-                  </h3>
-                  <div className="space-y-2">
-                    {upcoming.map((ev) => (
-                      <div
-                        key={ev.id}
-                        id={`event-${ev.id}`}
-                        className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
-                      >
-                        <EventCard
-                          event={ev}
-                          groupId={groupId}
-                          memberColorMap={memberColorMap}
-                        />
+              {/* Tab: Quedadas */}
+              {activeTab === 'plans' && (
+                <>
+                  {/* Upcoming events */}
+                  {upcoming.length > 0 && (
+                    <div className="mb-4">
+                      <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                        {t('plans.upcoming')}
+                      </h3>
+                      <div className="space-y-2">
+                        {upcoming.map((ev) => (
+                          <div
+                            key={ev.id}
+                            id={`event-${ev.id}`}
+                            className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
+                          >
+                            <EventCard
+                              event={ev}
+                              groupId={groupId}
+                              memberColorMap={memberColorMap}
+                              weather={weatherByDate.get(apiDateToKey(ev.date))}
+                              onEdit={handleEdit}
+                              onDelete={handleDelete}
+                              onCancel={handleCancel}
+                            />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Past events */}
-              {past.length > 0 && (
-                <div className="mb-4">
-                  <button
-                    onClick={() => setShowPast(!showPast)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-text-dark uppercase tracking-wider mb-2 border-none bg-transparent"
-                  >
-                    <span
-                      className="transition-transform text-[10px]"
-                      style={{ transform: showPast ? 'rotate(90deg)' : 'rotate(0deg)' }}
-                    >
-                      ▶
-                    </span>
-                    {t('plans.past')} ({past.length})
-                  </button>
-                  {showPast && (
-                    <div className="space-y-2 opacity-70">
-                      {past.map((ev) => (
-                        <div
-                          key={ev.id}
-                          id={`event-${ev.id}`}
-                          className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
-                        >
-                          <EventCard
-                            event={ev}
-                            groupId={groupId}
-                            memberColorMap={memberColorMap}
-                          />
-                        </div>
-                      ))}
                     </div>
                   )}
-                </div>
+
+                  {/* Past events */}
+                  {past.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setShowPast(!showPast)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-text-dark uppercase tracking-wider mb-2 border-none bg-transparent"
+                      >
+                        <span
+                          className="transition-transform text-[10px]"
+                          style={{ transform: showPast ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                        >
+                          ▶
+                        </span>
+                        {t('plans.past')} ({past.length})
+                      </button>
+                      {showPast && (
+                        <div className="space-y-2 opacity-70">
+                          {past.map((ev) => (
+                            <div
+                              key={ev.id}
+                              id={`event-${ev.id}`}
+                              className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
+                            >
+                              <EventCard
+                                event={ev}
+                                groupId={groupId}
+                                memberColorMap={memberColorMap}
+                                weather={weatherByDate.get(apiDateToKey(ev.date))}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Tab: Propuestas */}
+              {activeTab === 'proposals' && (
+                <>
+                  {/* New proposal button */}
+                  <div className="flex justify-end mb-3">
+                    <button
+                      onClick={() => setShowCreateProposal(true)}
+                      className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border-none"
+                      style={{
+                        background: 'rgba(37,99,235,0.1)',
+                        color: '#60A5FA',
+                        border: '1px solid rgba(96,165,250,0.2)',
+                      }}
+                    >
+                      + {t('proposals.create')}
+                    </button>
+                  </div>
+
+                  {/* Open proposals — shown directly without header */}
+                  {openProposals.length > 0 && (
+                    <div className="mb-4">
+                      <div className="space-y-2">
+                        {openProposals.map((p) => (
+                          <ProposalCard
+                            key={p.id}
+                            proposal={p}
+                            onVote={handleVote}
+                            onConvert={(proposal) => setConvertingProposal(proposal)}
+                            onClose={handleCloseProposal}
+                            onEdit={handleEditProposal}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Closed / Converted proposals — collapsible */}
+                  {closedOrConvertedProposals.length > 0 && (
+                    <div className="mb-4">
+                      <button
+                        onClick={() => setShowClosedProposals(!showClosedProposals)}
+                        className="flex items-center gap-1.5 text-xs font-bold text-text-dark uppercase tracking-wider mb-2 border-none bg-transparent"
+                      >
+                        <span
+                          className="transition-transform text-[10px]"
+                          style={{ transform: showClosedProposals ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                        >
+                          ▶
+                        </span>
+                        {t('proposals.closed')} ({closedOrConvertedProposals.length})
+                      </button>
+                      {showClosedProposals && (
+                        <div className="space-y-2 opacity-70">
+                          {closedOrConvertedProposals.map((p) => (
+                            <ProposalCard
+                              key={p.id}
+                              proposal={p}
+                              onVote={handleVote}
+                              onConvert={(proposal) => setConvertingProposal(proposal)}
+                              onClose={handleCloseProposal}
+                              onEdit={handleEditProposal}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </>
           )}
         </div>
       </IonContent>
+
+      {/* Edit Event Modal */}
+      <EditEventModal
+        isOpen={showEditModal}
+        onClose={() => { setShowEditModal(false); setEditingEvent(null); }}
+        groupId={groupId}
+        event={editingEvent}
+      />
+
+      {/* Delete confirmation */}
+      <IonAlert
+        isOpen={!!deletingEvent}
+        onDidDismiss={() => setDeletingEvent(null)}
+        header={t('plans.deleteEvent')}
+        message={t('plans.deleteConfirm')}
+        buttons={[
+          { text: t('common.cancel'), role: 'cancel' },
+          {
+            text: t('plans.deleteEvent'),
+            role: 'destructive',
+            handler: () => {
+              if (deletingEvent) deleteEvent.mutate(deletingEvent.id);
+            },
+          },
+        ]}
+      />
+
+      {/* Create Proposal Modal */}
+      <CreateProposalModal
+        isOpen={showCreateProposal}
+        onClose={() => setShowCreateProposal(false)}
+        groupId={groupId}
+      />
+
+      {/* Edit Proposal Modal */}
+      <EditProposalModal
+        isOpen={showEditProposalModal}
+        onClose={() => { setShowEditProposalModal(false); setEditingProposal(null); }}
+        groupId={groupId}
+        proposal={editingProposal}
+      />
+
+      {/* Convert Proposal Modal */}
+      <ConvertProposalModal
+        isOpen={!!convertingProposal}
+        onClose={() => setConvertingProposal(null)}
+        groupId={groupId}
+        proposal={convertingProposal}
+      />
+
+      {/* Cancel confirmation */}
+      <IonAlert
+        isOpen={!!cancellingEvent}
+        onDidDismiss={() => setCancellingEvent(null)}
+        header={t('plans.cancelEvent')}
+        message={t('plans.cancelConfirm')}
+        buttons={[
+          { text: t('common.cancel'), role: 'cancel' },
+          {
+            text: t('plans.cancelEvent'),
+            handler: () => {
+              if (cancellingEvent) cancelEvent.mutate(cancellingEvent.id);
+            },
+          },
+        ]}
+      />
     </IonPage>
   );
 }

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
 
@@ -15,7 +16,7 @@ export class AvailabilityService {
 
     return this.prisma.availability.findMany({
       where: { groupId },
-      include: { user: true },
+      include: { user: { select: PUBLIC_USER_SELECT } },
       orderBy: { date: 'asc' },
     });
   }
@@ -58,12 +59,7 @@ export class AvailabilityService {
     });
   }
 
-  async update(
-    groupId: string,
-    date: string,
-    userId: string,
-    dto: CreateAvailabilityDto,
-  ) {
+  async update(groupId: string, date: string, userId: string, dto: CreateAvailabilityDto) {
     await this.groupsService.findById(groupId, userId);
 
     const existing = await this.prisma.availability.findUnique({

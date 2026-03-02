@@ -4,13 +4,14 @@ export interface Group {
   id: string;
   name: string;
   emoji: string;
-  inviteCode: string;
+  createdById: string;
   createdAt: string;
 }
 
 export interface GroupMember {
   userId: string;
   joinedAt: string;
+  role: string;
   user: {
     id: string;
     name: string;
@@ -40,4 +41,13 @@ export const groupsService = {
 
   refreshInvite: (id: string) =>
     api.post<{ inviteCode: string; inviteUrl: string }>(`/groups/${id}/invite/refresh`, {}),
+
+  updateMemberRole: (groupId: string, userId: string, role: 'admin' | 'member') =>
+    api.patch(`/groups/${groupId}/members/${userId}/role`, { role }),
+
+  kickMember: (groupId: string, userId: string) =>
+    api.delete(`/groups/${groupId}/members/${userId}`),
+
+  deleteGroup: (groupId: string) =>
+    api.delete(`/groups/${groupId}`),
 };

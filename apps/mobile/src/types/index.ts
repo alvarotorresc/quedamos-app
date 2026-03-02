@@ -9,7 +9,6 @@ export interface Group {
   id: string;
   name: string;
   emoji: string;
-  inviteCode: string;
 }
 
 export type AvailabilityType = 'day' | 'slots' | 'range';

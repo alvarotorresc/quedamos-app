@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useCreateEvent } from '../hooks/useEvents';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
+import { WeatherBadge } from './WeatherWidget';
+import { formatDateKey } from '../lib/date-utils';
+import type { WeatherData } from '../services/weather';
 
 export interface EventPrefill {
   date: string;
@@ -12,6 +15,7 @@ export interface EventPrefill {
   suggestedSlot: string | null;
   availableMembers: { name: string; color: string }[];
   availableCount: number;
+  weather?: WeatherData[] | null;
 }
 
 interface CreateEventModalProps {
@@ -26,38 +30,56 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
   const createEvent = useCreateEvent(groupId);
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [time, setTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [date, setDate] = useState('');
 
   const isCreating = createEvent.isPending;
-  const canSubmit = title.trim() && prefill?.date && !isCreating;
+  const endTimeError = !!(endTime && time && endTime <= time);
+  const resolvedDate = prefill?.date ?? date;
+  const canSubmit = title.trim() && resolvedDate && !isCreating && !endTimeError;
+
+  const today = formatDateKey(new Date());
 
   useEffect(() => {
-    if (isOpen && prefill) {
+    if (isOpen) {
       setTitle('');
+      setDescription('');
       setLocation('');
-      setTime(prefill.suggestedTime ?? '');
+      setTime(prefill?.suggestedTime ?? '');
+      setEndTime('');
+      setDate('');
     }
   }, [isOpen, prefill]);
 
   const handleSubmit = async () => {
-    if (!canSubmit || !prefill) return;
+    if (!canSubmit) return;
     await createEvent.mutateAsync({
       title: title.trim(),
-      date: prefill.date,
+      date: resolvedDate,
       ...(time && { time }),
+      ...(endTime && { endTime }),
+      ...(description.trim() && { description: description.trim() }),
       ...(location.trim() && { location: location.trim() }),
     });
     setTitle('');
+    setDescription('');
     setLocation('');
     setTime('');
+    setEndTime('');
+    setDate('');
     onClose();
   };
 
   const handleDismiss = () => {
     setTitle('');
+    setDescription('');
     setLocation('');
     setTime('');
+    setEndTime('');
+    setDate('');
     onClose();
   };
 
@@ -78,18 +100,44 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
         {/* Handle bar */}
         <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
-        <h3 className="text-[17px] font-bold text-text mb-0.5">
-          {t('plans.create.title')}
-        </h3>
-        <p className="text-xs text-text-dark mb-3.5 capitalize">
-          {prefill?.dateLabel} · {prefill?.availableCount} {t('plans.create.available')}
-        </p>
+        <h3 className="text-[17px] font-bold text-text mb-0.5">{t('plans.create.title')}</h3>
+        {prefill ? (
+          <div className="flex items-center gap-2 mb-3.5 flex-wrap">
+            <p className="text-xs text-text-dark capitalize">
+              {prefill.dateLabel} · {prefill.availableCount} {t('plans.create.available')}
+            </p>
+            {prefill.weather && prefill.weather.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                {prefill.weather.map((w) => (
+                  <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="h-3.5 mb-0.5" />
+        )}
+
+        {/* Date — only shown when not coming from calendar */}
+        {!prefill && (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('plans.create.date')}
+            </label>
+            <input
+              type="date"
+              value={date}
+              min={today}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+              style={inputStyle}
+            />
+          </div>
+        )}
 
         {/* Title */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.name')}
-          </label>
+          <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.name')}</label>
           <input
             type="text"
             value={title}
@@ -115,13 +163,29 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
           />
         </div>
 
+        {/* Description */}
+        <div className="mb-2">
+          <label className="block text-[10px] text-text-dark mb-1">
+            {t('plans.create.description')}
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder={t('plans.create.descriptionPlaceholder')}
+            rows={2}
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark resize-none"
+            style={inputStyle}
+          />
+        </div>
+
         {/* Time */}
-        <div className="mb-3">
+        <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">
             {t('plans.create.time')}
             {prefill?.suggestedTime && prefill?.suggestedSlot && (
               <span className="ml-1.5 text-primary">
-                · {t('plans.create.suggested')}: {t(`calendar.availability.${prefill.suggestedSlot}`)}
+                · {t('plans.create.suggested')}:{' '}
+                {t(`calendar.availability.${prefill.suggestedSlot}`)}
               </span>
             )}
           </label>
@@ -132,6 +196,24 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
             className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
             style={inputStyle}
           />
+        </div>
+
+        {/* End Time */}
+        <div className="mb-3">
+          <label className="block text-[10px] text-text-dark mb-1">
+            {t('plans.create.endTime')}
+          </label>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            min={time || undefined}
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            style={inputStyle}
+          />
+          {endTimeError && (
+            <p className="text-[10px] text-danger mt-1">{t('plans.create.endTimeError')}</p>
+          )}
         </div>
 
         {/* Attendees */}
@@ -159,11 +241,7 @@ export function CreateEventModal({ isOpen, onClose, groupId, prefill }: CreateEv
         )}
 
         {/* Submit */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="w-full"
-        >
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
           {isCreating ? t('plans.create.creating') : t('plans.create.submit')}
         </Button>
       </div>

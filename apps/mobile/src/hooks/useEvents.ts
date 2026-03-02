@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { eventsService, CreateEventDto, Event } from '../services/events';
+import { eventsService, CreateEventDto, UpdateEventDto, Event } from '../services/events';
 import { broadcastSync } from '../lib/group-sync';
 import { useAuthStore } from '../stores/auth';
 
@@ -24,6 +24,43 @@ export function useCreateEvent(groupId: string) {
 
   return useMutation({
     mutationFn: (data: CreateEventDto) => eventsService.create(groupId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', groupId] });
+      broadcastSync(groupId, 'events');
+    },
+  });
+}
+
+export function useUpdateEvent(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ eventId, data }: { eventId: string; data: UpdateEventDto }) =>
+      eventsService.update(groupId, eventId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', groupId] });
+      broadcastSync(groupId, 'events');
+    },
+  });
+}
+
+export function useDeleteEvent(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (eventId: string) => eventsService.delete(groupId, eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', groupId] });
+      broadcastSync(groupId, 'events');
+    },
+  });
+}
+
+export function useCancelEvent(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (eventId: string) => eventsService.cancel(groupId, eventId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', groupId] });
       broadcastSync(groupId, 'events');

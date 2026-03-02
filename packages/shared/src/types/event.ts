@@ -9,6 +9,7 @@ export interface Event {
   location?: string;
   date: string; // YYYY-MM-DD
   time?: string; // HH:mm
+  endTime?: string; // HH:mm
   status: EventStatus;
   createdBy: string;
   createdAt: Date;
@@ -32,6 +33,7 @@ export interface CreateEventDto {
   location?: string;
   date: string;
   time?: string;
+  endTime?: string;
 }
 
 export interface RespondEventDto {

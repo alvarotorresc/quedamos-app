@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { getMonthCells, formatDateKey, isSameDay, isToday } from '../lib/date-utils';
 import { AvatarStack } from '../ui/AvatarStack';
+import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
+import type { WeatherData } from '../services/weather';
 
 interface MemberInfo {
   name: string;
@@ -20,6 +22,7 @@ interface MonthViewProps {
   onMarkAvailability: () => void;
   onCreateEvent: (day: Date) => void;
   onViewDetail: (day: Date) => void;
+  weatherByDate?: Map<string, WeatherData[]>;
 }
 
 export function MonthView({
@@ -34,6 +37,7 @@ export function MonthView({
   onMarkAvailability,
   onCreateEvent,
   onViewDetail,
+  weatherByDate,
 }: MonthViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -130,6 +134,15 @@ export function MonthView({
               >
                 {day.getDate()}
               </div>
+              {(() => {
+                const dayWeather = weatherByDate?.get(key);
+                if (!dayWeather || dayWeather.length === 0) return null;
+                return (
+                  <div className="text-[8px] leading-none mt-0.5">
+                    {getWeatherIcon(dayWeather[0].weatherCode)}
+                  </div>
+                );
+              })()}
               {dayAvail.length > 0 && (
                 <div className="flex justify-center gap-[2px] mt-1">
                   {dotMembers.map((m) => (

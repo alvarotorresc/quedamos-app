@@ -16,10 +16,7 @@ export class AuthController {
 
   @Patch('me')
   @UseGuards(AuthGuard)
-  updateProfile(
-    @CurrentUser() user: { id: string },
-    @Body() dto: UpdateProfileDto,
-  ) {
+  updateProfile(@CurrentUser() user: { id: string }, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(user.id, dto);
   }
 }

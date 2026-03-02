@@ -3,9 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { CreateAvailabilityDto } from './create-availability.dto';
 
 describe('CreateAvailabilityDto', () => {
-  function createDto(
-    partial: Partial<Record<string, unknown>>,
-  ): CreateAvailabilityDto {
+  function createDto(partial: Partial<Record<string, unknown>>): CreateAvailabilityDto {
     return plainToInstance(CreateAvailabilityDto, partial);
   }
 
@@ -87,15 +85,12 @@ describe('CreateAvailabilityDto', () => {
       expect(typeError!.constraints).toHaveProperty('isIn');
     });
 
-    it.each(['day', 'slots', 'range'])(
-      'should accept type "%s"',
-      async (type) => {
-        const dto = createDto({ date: '2026-03-15', type });
-        const errors = await validate(dto);
-        const typeErrors = errors.filter((e) => e.property === 'type');
-        expect(typeErrors.length).toBe(0);
-      },
-    );
+    it.each(['day', 'slots', 'range'])('should accept type "%s"', async (type) => {
+      const dto = createDto({ date: '2026-03-15', type });
+      const errors = await validate(dto);
+      const typeErrors = errors.filter((e) => e.property === 'type');
+      expect(typeErrors.length).toBe(0);
+    });
   });
 
   describe('slots validation', () => {

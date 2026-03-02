@@ -3,9 +3,7 @@ import { plainToInstance } from 'class-transformer';
 import { RespondEventDto } from './respond-event.dto';
 
 describe('RespondEventDto', () => {
-  function createDto(
-    partial: Partial<Record<string, unknown>>,
-  ): RespondEventDto {
+  function createDto(partial: Partial<Record<string, unknown>>): RespondEventDto {
     return plainToInstance(RespondEventDto, partial);
   }
 

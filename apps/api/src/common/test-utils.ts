@@ -12,6 +12,7 @@ export function createMockPrisma() {
     },
     group: {
       findUnique: jest.fn(),
+      findUniqueOrThrow: jest.fn(),
       findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
@@ -26,6 +27,7 @@ export function createMockPrisma() {
       update: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
+      count: jest.fn(),
     },
     availability: {
       findUnique: jest.fn(),
@@ -52,20 +54,46 @@ export function createMockPrisma() {
       createMany: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     pushToken: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     },
     notificationPreference: {
       findUnique: jest.fn(),
       findMany: jest.fn(),
       create: jest.fn(),
       upsert: jest.fn(),
+    },
+    planProposal: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    planVote: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      upsert: jest.fn(),
+      delete: jest.fn(),
+    },
+    groupCity: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      delete: jest.fn(),
     },
   };
 }
@@ -102,10 +130,16 @@ export function createMockConfigService(overrides: Record<string, string> = {}) 
 }
 
 // Factory functions for test data
-export function createTestUser(overrides: Partial<{
-  id: string; email: string; name: string; avatarEmoji: string;
-  createdAt: Date; updatedAt: Date;
-}> = {}) {
+export function createTestUser(
+  overrides: Partial<{
+    id: string;
+    email: string;
+    name: string;
+    avatarEmoji: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = {},
+) {
   return {
     id: 'user-1',
     email: 'test@test.com',
@@ -117,10 +151,17 @@ export function createTestUser(overrides: Partial<{
   };
 }
 
-export function createTestGroup(overrides: Partial<{
-  id: string; name: string; emoji: string; inviteCode: string;
-  createdById: string; createdAt: Date; updatedAt: Date;
-}> = {}) {
+export function createTestGroup(
+  overrides: Partial<{
+    id: string;
+    name: string;
+    emoji: string;
+    inviteCode: string;
+    createdById: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = {},
+) {
   return {
     id: 'group-1',
     name: 'Test Group',
@@ -133,11 +174,23 @@ export function createTestGroup(overrides: Partial<{
   };
 }
 
-export function createTestEvent(overrides: Partial<{
-  id: string; groupId: string; title: string; description: string;
-  location: string; date: Date; time: string; status: string;
-  createdById: string; createdAt: Date; updatedAt: Date;
-}> = {}) {
+export function createTestEvent(
+  overrides: Partial<{
+    id: string;
+    groupId: string;
+    title: string;
+    description: string;
+    location: string;
+    date: Date;
+    time: string;
+    endTime: string;
+    status: string;
+    createdById: string;
+    reminderSentAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }> = {},
+) {
   return {
     id: 'event-1',
     groupId: 'group-1',
@@ -146,8 +199,10 @@ export function createTestEvent(overrides: Partial<{
     location: null,
     date: new Date('2026-03-01'),
     time: '18:00',
+    endTime: null,
     status: 'pending',
     createdById: 'user-1',
+    reminderSentAt: null,
     createdAt: new Date('2026-01-01'),
     updatedAt: new Date('2026-01-01'),
     ...overrides,

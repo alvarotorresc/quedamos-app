@@ -22,6 +22,7 @@ export interface Event {
   location?: string;
   date: string;
   time?: string;
+  endTime?: string;
   status: EventStatus;
   attendees: EventAttendee[];
   createdBy: {
@@ -36,6 +37,16 @@ export interface CreateEventDto {
   location?: string;
   date: string;
   time?: string;
+  endTime?: string;
+}
+
+export interface UpdateEventDto {
+  title?: string;
+  description?: string;
+  location?: string;
+  date?: string;
+  time?: string;
+  endTime?: string;
 }
 
 export const eventsService = {
@@ -50,4 +61,13 @@ export const eventsService = {
 
   respond: (groupId: string, eventId: string, status: 'confirmed' | 'declined') =>
     api.post<Event>(`/groups/${groupId}/events/${eventId}/respond`, { status }),
+
+  update: (groupId: string, eventId: string, data: UpdateEventDto) =>
+    api.patch<Event>(`/groups/${groupId}/events/${eventId}`, data),
+
+  delete: (groupId: string, eventId: string) =>
+    api.delete<{ success: boolean }>(`/groups/${groupId}/events/${eventId}`),
+
+  cancel: (groupId: string, eventId: string) =>
+    api.post<Event>(`/groups/${groupId}/events/${eventId}/cancel`, {}),
 };

@@ -164,7 +164,16 @@ export function AvailabilityModal({
               </label>
               <select
                 value={fromTime}
-                onChange={(e) => setFromTime(e.target.value)}
+                onChange={(e) => {
+                  const newFrom = e.target.value;
+                  setFromTime(newFrom);
+                  if (toTime <= newFrom) {
+                    const idx = Math.floor((parseInt(newFrom.split(':')[0]) * 2 + (newFrom.split(':')[1] === '30' ? 1 : 0)) + 1);
+                    const h = String(Math.floor(idx / 2)).padStart(2, '0');
+                    const m = idx % 2 === 0 ? '00' : '30';
+                    setToTime(idx < 48 ? `${h}:${m}` : '23:59');
+                  }
+                }}
                 className="w-full rounded-[10px] p-2 text-sm text-text outline-none"
                 style={{
                   background: 'var(--app-bg-hover)',
@@ -199,8 +208,10 @@ export function AvailabilityModal({
                 {Array.from({ length: 48 }, (_, i) => {
                   const h = String(Math.floor(i / 2)).padStart(2, '0');
                   const m = i % 2 === 0 ? '00' : '30';
+                  const val = `${h}:${m}`;
+                  if (val <= fromTime) return null;
                   return (
-                    <option key={i} value={`${h}:${m}`}>
+                    <option key={i} value={val}>
                       {h}:{m}
                     </option>
                   );
