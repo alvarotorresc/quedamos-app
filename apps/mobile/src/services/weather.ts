@@ -32,8 +32,7 @@ export interface GeocodingResult {
 }
 
 export const weatherService = {
-  getGroupWeather: (groupId: string) =>
-    api.get<WeatherData[]>(`/groups/${groupId}/weather`),
+  getGroupWeather: (groupId: string) => api.get<WeatherData[]>(`/groups/${groupId}/weather`),
 
   getForecast: (groupId: string, date: string, lat: number, lon: number) => {
     const params = new URLSearchParams({ date, lat: String(lat), lon: String(lon) });
@@ -42,8 +41,7 @@ export const weatherService = {
 };
 
 export const citiesService = {
-  getAll: (groupId: string) =>
-    api.get<GroupCity[]>(`/groups/${groupId}/cities`),
+  getAll: (groupId: string) => api.get<GroupCity[]>(`/groups/${groupId}/cities`),
 
   add: (groupId: string, data: AddCityDto) =>
     api.post<GroupCity>(`/groups/${groupId}/cities`, data),
@@ -54,16 +52,15 @@ export const citiesService = {
 
 export async function searchCities(query: string): Promise<GeocodingResult[]> {
   if (!query || query.length < 2) return [];
-  const res = await fetch(
-    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=en`,
-  );
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&accept-language=es,en`;
+  const res = await fetch(url, { headers: { 'User-Agent': 'QuedamosApp/0.2' } });
   if (!res.ok) return [];
-  const json = await res.json();
-  return (json.results ?? []).map((r: any) => ({
-    name: r.name,
-    latitude: r.latitude,
-    longitude: r.longitude,
-    country: r.country,
-    admin1: r.admin1,
+  const json: any[] = await res.json();
+  return json.map((r) => ({
+    name: r.name || r.display_name.split(',')[0],
+    latitude: parseFloat(r.lat),
+    longitude: parseFloat(r.lon),
+    country: r.address?.country ?? '',
+    admin1: r.address?.city ?? r.address?.town ?? r.address?.municipality ?? r.address?.state,
   }));
 }
