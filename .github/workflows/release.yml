@@ -1,0 +1,55 @@
+name: Release APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @quedamos/api exec prisma generate
+
+      - run: pnpm --filter @quedamos/api test
+      - run: pnpm --filter @quedamos/mobile test
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build APK
+        working-directory: apps/mobile
+        run: eas build --platform android --profile preview --non-interactive --wait
+
+      - name: Download APK
+        working-directory: apps/mobile
+        run: |
+          BUILD_URL=$(eas build:list --platform android --status finished --limit 1 --non-interactive --json | jq -r '.[0].artifacts.buildUrl')
+          curl -L -o ../../quedamos.apk "$BUILD_URL"
+
+      - name: Get version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Quedamos ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: quedamos.apk
