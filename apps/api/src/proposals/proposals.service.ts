@@ -138,11 +138,18 @@ export class ProposalsService {
       },
     });
 
+    const voter = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+    const voterName = voter?.name ?? 'Someone';
+    const voteLabel = dto.vote === 'yes' ? 'a favor' : 'en contra';
+
     this.notificationsService
       .sendToGroup(
         groupId,
         'Voto en propuesta',
-        `Alguien ha votado en "${proposal.title}"`,
+        `${voterName} ha votado ${voteLabel} en "${proposal.title}"`,
         userId,
         { type: 'proposal_voted', proposalId, groupId },
         'proposal_voted',

@@ -453,6 +453,7 @@ export default function PlansPage() {
                             onEdit={handleEditProposal}
                             isVoting={votingProposalId === p.id}
                             isClosing={closingProposalId === p.id}
+                            memberColorMap={memberColorMap}
                           />
                         ))}
                       </div>
@@ -486,6 +487,7 @@ export default function PlansPage() {
                               onConvert={(proposal) => setConvertingProposal(proposal)}
                               onClose={handleCloseProposal}
                               onEdit={handleEditProposal}
+                              memberColorMap={memberColorMap}
                             />
                           ))}
                         </div>
