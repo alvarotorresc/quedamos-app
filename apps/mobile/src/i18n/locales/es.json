@@ -187,6 +187,8 @@
       "creating": "Creando...",
       "available": "disponibles",
       "attendees": "Asistentes",
+      "selectAttendees": "Invitar miembros específicos",
+      "allMembersDefault": "Todos los miembros del grupo serán invitados por defecto",
       "suggested": "Sugerido",
       "date": "Fecha",
       "endTime": "Hora fin",

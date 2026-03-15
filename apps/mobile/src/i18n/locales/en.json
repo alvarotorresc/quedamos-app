@@ -187,6 +187,8 @@
       "creating": "Creating...",
       "available": "available",
       "attendees": "Attendees",
+      "selectAttendees": "Invite specific members",
+      "allMembersDefault": "All group members will be invited by default",
       "suggested": "Suggested",
       "date": "Date",
       "endTime": "End time",

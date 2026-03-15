@@ -38,6 +38,7 @@ export interface CreateEventDto {
   date: string;
   time?: string;
   endTime?: string;
+  attendeeIds?: string[];
 }
 
 export interface UpdateEventDto {
@@ -50,8 +51,7 @@ export interface UpdateEventDto {
 }
 
 export const eventsService = {
-  getAll: (groupId: string) =>
-    api.get<Event[]>(`/groups/${groupId}/events`),
+  getAll: (groupId: string) => api.get<Event[]>(`/groups/${groupId}/events`),
 
   getById: (groupId: string, eventId: string) =>
     api.get<Event>(`/groups/${groupId}/events/${eventId}`),
