@@ -7,6 +7,10 @@ vi.mock('../services/weather', () => ({
   searchCities: vi.fn(),
 }));
 
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 const mockResults = [
   { name: 'Madrid', latitude: 40.41, longitude: -3.7, country: 'Spain', admin1: 'Madrid' },
   { name: 'Malaga', latitude: 36.72, longitude: -4.42, country: 'Spain', admin1: 'Andalusia' },
@@ -74,8 +78,8 @@ describe('LocationSearch', () => {
 
     await advanceAndFlush();
 
-    expect(screen.getByText('Madrid, Madrid — Spain')).toBeInTheDocument();
-    expect(screen.getByText('Malaga, Andalusia — Spain')).toBeInTheDocument();
+    expect(screen.getByText('📍 Madrid, Madrid — Spain')).toBeInTheDocument();
+    expect(screen.getByText('📍 Malaga, Andalusia — Spain')).toBeInTheDocument();
   });
 
   it('calls onSelect with lat/lon when user picks a result', async () => {
@@ -87,7 +91,7 @@ describe('LocationSearch', () => {
 
     await advanceAndFlush();
 
-    fireEvent.mouseDown(screen.getByText('Madrid, Madrid — Spain'));
+    fireEvent.mouseDown(screen.getByText('📍 Madrid, Madrid — Spain'));
     expect(onSelect).toHaveBeenCalledWith('Madrid', 40.41, -3.7);
   });
 
@@ -100,11 +104,11 @@ describe('LocationSearch', () => {
 
     await advanceAndFlush();
 
-    expect(screen.getByText('Madrid, Madrid — Spain')).toBeInTheDocument();
+    expect(screen.getByText('📍 Madrid, Madrid — Spain')).toBeInTheDocument();
 
-    fireEvent.mouseDown(screen.getByText('Madrid, Madrid — Spain'));
+    fireEvent.mouseDown(screen.getByText('📍 Madrid, Madrid — Spain'));
 
-    expect(screen.queryByText('Madrid, Madrid — Spain')).not.toBeInTheDocument();
+    expect(screen.queryByText('📍 Madrid, Madrid — Spain')).not.toBeInTheDocument();
   });
 
   it('calls onClear and resets dropdown when text is cleared', () => {
@@ -141,10 +145,10 @@ describe('LocationSearch', () => {
 
     await advanceAndFlush();
 
-    expect(screen.getByText('Madrid, Madrid — Spain')).toBeInTheDocument();
+    expect(screen.getByText('📍 Madrid, Madrid — Spain')).toBeInTheDocument();
 
     const callCountBefore = vi.mocked(searchCities).mock.calls.length;
-    fireEvent.mouseDown(screen.getByText('Madrid, Madrid — Spain'));
+    fireEvent.mouseDown(screen.getByText('📍 Madrid, Madrid — Spain'));
 
     // Simulate parent updating value prop after selection
     rerender(<LocationSearch value="Madrid" onChange={vi.fn()} onSelect={onSelect} />);

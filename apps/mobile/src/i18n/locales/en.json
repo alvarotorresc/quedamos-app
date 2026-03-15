@@ -189,7 +189,8 @@
       "endTime": "End time",
       "endTimeError": "End time must be after start time",
       "description": "Description",
-      "descriptionPlaceholder": "Plan details..."
+      "descriptionPlaceholder": "Plan details...",
+      "customLocationHint": "Or just type a custom place name"
     }
   },
   "group": {

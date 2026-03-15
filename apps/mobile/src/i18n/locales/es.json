@@ -189,7 +189,8 @@
       "endTime": "Hora fin",
       "endTimeError": "La hora de fin debe ser posterior",
       "description": "Descripción",
-      "descriptionPlaceholder": "Detalles del plan..."
+      "descriptionPlaceholder": "Detalles del plan...",
+      "customLocationHint": "O escribe un lugar personalizado"
     }
   },
   "group": {

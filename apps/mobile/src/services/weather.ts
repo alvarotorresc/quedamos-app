@@ -52,7 +52,7 @@ export const citiesService = {
 
 export async function searchCities(query: string): Promise<GeocodingResult[]> {
   if (!query || query.length < 2) return [];
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&accept-language=es,en`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&addressdetails=1&accept-language=es,en&countrycodes=es`;
   const res = await fetch(url, { headers: { 'User-Agent': 'QuedamosApp/0.2' } });
   if (!res.ok) return [];
   const json: any[] = await res.json();
