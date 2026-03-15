@@ -4,6 +4,7 @@ import { AvatarStack } from '../ui/AvatarStack';
 import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
+import type { Event } from '../services/events';
 
 interface MemberInfo {
   name: string;
@@ -23,6 +24,8 @@ interface MonthViewProps {
   onCreateEvent: (day: Date) => void;
   onViewDetail: (day: Date) => void;
   weatherByDate?: Map<string, WeatherData[]>;
+  eventsByDate?: Map<string, Event[]>;
+  onEventClick?: (event: Event) => void;
 }
 
 export function MonthView({
@@ -38,6 +41,8 @@ export function MonthView({
   onCreateEvent,
   onViewDetail,
   weatherByDate,
+  eventsByDate,
+  onEventClick,
 }: MonthViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -52,7 +57,8 @@ export function MonthView({
 
   // Selected day details
   const selKey = selectedDay ? formatDateKey(selectedDay) : null;
-  const selAvail = selKey ? availabilityByDate.get(selKey) ?? [] : [];
+  const selAvail = selKey ? (availabilityByDate.get(selKey) ?? []) : [];
+  const selEvents = selKey ? (eventsByDate?.get(selKey) ?? []) : [];
   const selMembers: MemberInfo[] = selAvail.map((a) => ({
     name: a.user?.name ?? '?',
     color: memberColorMap.get(a.userId) ?? '#60A5FA',
@@ -69,9 +75,7 @@ export function MonthView({
         >
           ‹
         </button>
-        <span className="text-text-dark text-sm font-semibold capitalize">
-          {monthLabel}
-        </span>
+        <span className="text-text-dark text-sm font-semibold capitalize">{monthLabel}</span>
         <button
           onClick={() => onMonthChange(monthOffset + 1)}
           className="text-text-dark text-lg px-3 py-1 bg-transparent border-none"
@@ -83,10 +87,7 @@ export function MonthView({
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1 mb-1">
         {weekdays.map((d, i) => (
-          <div
-            key={i}
-            className="text-center text-[11px] text-text-dark font-semibold py-1.5"
-          >
+          <div key={i} className="text-center text-[11px] text-text-dark font-semibold py-1.5">
             {d}
           </div>
         ))}
@@ -104,6 +105,8 @@ export function MonthView({
           const isSel = isSameDay(day, selectedDay);
 
           // Members with colors for dots
+          const dayEvents = eventsByDate?.get(key) ?? [];
+
           const dotMembers = dayAvail.slice(0, 4).map((a) => ({
             userId: a.userId,
             color: memberColorMap.get(a.userId) ?? '#60A5FA',
@@ -120,9 +123,7 @@ export function MonthView({
                   : ratio > 0.5
                     ? `rgba(96,165,250,${ratio * 0.12})`
                     : 'transparent',
-                border: today
-                  ? '1px solid rgba(96,165,250,0.3)'
-                  : '1px solid transparent',
+                border: today ? '1px solid rgba(96,165,250,0.3)' : '1px solid transparent',
               }}
             >
               <div
@@ -143,17 +144,18 @@ export function MonthView({
                   </div>
                 );
               })()}
-              {dayAvail.length > 0 && (
-                <div className="flex justify-center gap-[2px] mt-1">
-                  {dotMembers.map((m) => (
-                    <div
-                      key={m.userId}
-                      className="w-1 h-1 rounded-full"
-                      style={{ background: m.color }}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="flex justify-center gap-[2px] mt-1">
+                {dayEvents.length > 0 && (
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#F59E0B' }} />
+                )}
+                {dotMembers.map((m) => (
+                  <div
+                    key={m.userId}
+                    className="w-1 h-1 rounded-full"
+                    style={{ background: m.color }}
+                  />
+                ))}
+              </div>
             </div>
           );
         })}
@@ -188,8 +190,25 @@ export function MonthView({
               </div>
             </div>
           ) : (
-            <div className="text-[11px] text-text-dark">
-              {t('calendar.noAvailability')}
+            <div className="text-[11px] text-text-dark">{t('calendar.noAvailability')}</div>
+          )}
+
+          {selEvents.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {selEvents.map((ev) => (
+                <button
+                  key={ev.id}
+                  onClick={() => onEventClick?.(ev)}
+                  className="flex items-center gap-1.5 w-full text-left text-[11px] border-none bg-transparent p-0 cursor-pointer"
+                  style={{ color: '#F59E0B' }}
+                >
+                  <span>📅</span>
+                  <span className="truncate text-text">{ev.title}</span>
+                  {ev.time && (
+                    <span className="text-text-dark shrink-0">{ev.time.slice(0, 5)}</span>
+                  )}
+                </button>
+              ))}
             </div>
           )}
 
@@ -198,9 +217,7 @@ export function MonthView({
               onClick={onMarkAvailability}
               className="flex-1 py-[7px] text-xs font-semibold rounded-btn bg-primary-dark text-white border-none"
             >
-              {selMyAvail
-                ? t('calendar.editAvailability')
-                : t('calendar.available')}
+              {selMyAvail ? t('calendar.editAvailability') : t('calendar.available')}
             </button>
             {selMembers.length >= 2 && selectedDay && (
               <button

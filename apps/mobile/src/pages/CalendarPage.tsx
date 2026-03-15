@@ -9,8 +9,10 @@ import { useGroups, useGroup } from '../hooks/useGroups';
 import { useAvailability, useMyAvailability } from '../hooks/useAvailability';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupWeather } from '../hooks/useWeather';
+import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
+import type { Event } from '../services/events';
 import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
 import { WeekView } from '../components/WeekView';
 import { MonthView } from '../components/MonthView';
@@ -20,6 +22,7 @@ import { MonthSummary } from '../components/MonthSummary';
 import { AvailabilityModal } from '../components/AvailabilityModal';
 import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
 import { CreateEventModal } from '../components/CreateEventModal';
+import { EventDetailModal } from '../components/EventDetailModal';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
@@ -59,6 +62,9 @@ export default function CalendarPage() {
   const { data: allAvailability, isLoading: availLoading } = useAvailability(groupId);
   const { data: myAvailability } = useMyAvailability(groupId);
 
+  // Events data
+  const { data: events } = useEvents(groupId);
+
   // Weather data
   const { data: weather } = useGroupWeather(groupId);
 
@@ -71,6 +77,7 @@ export default function CalendarPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventPrefill, setCreateEventPrefill] = useState<EventPrefill | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
   // Member color map (userId -> color)
   const memberColorMap = useMemo(() => {
@@ -115,6 +122,20 @@ export default function CalendarPage() {
     }
     return map;
   }, [weather]);
+
+  // Index events by date
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, Event[]>();
+    if (!events) return map;
+    for (const ev of events) {
+      if (ev.status === 'cancelled') continue;
+      const key = apiDateToKey(ev.date);
+      const list = map.get(key) ?? [];
+      list.push(ev);
+      map.set(key, list);
+    }
+    return map;
+  }, [events]);
 
   // Top days calculation — days with most people available (future only)
   const topDays = useMemo(() => {
@@ -327,6 +348,8 @@ export default function CalendarPage() {
                     setShowDetailModal(true);
                   }}
                   weatherByDate={weatherByDate}
+                  eventsByDate={eventsByDate}
+                  onEventClick={(ev) => setSelectedEvent(ev)}
                 />
               )}
               {calView === 'month' && (
@@ -346,6 +369,8 @@ export default function CalendarPage() {
                     setShowDetailModal(true);
                   }}
                   weatherByDate={weatherByDate}
+                  eventsByDate={eventsByDate}
+                  onEventClick={(ev) => setSelectedEvent(ev)}
                 />
               )}
               {calView === 'list' && (
@@ -423,6 +448,14 @@ export default function CalendarPage() {
           groupId={groupId}
           prefill={createEventPrefill}
           weatherByDate={weatherByDate}
+        />
+
+        {/* Event detail modal */}
+        <EventDetailModal
+          isOpen={!!selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          event={selectedEvent}
+          memberColorMap={memberColorMap}
         />
       </IonContent>
     </IonPage>

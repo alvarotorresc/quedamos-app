@@ -4,6 +4,7 @@ import { AvatarStack } from '../ui/AvatarStack';
 import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
+import type { Event } from '../services/events';
 
 interface MemberInfo {
   name: string;
@@ -25,6 +26,8 @@ interface WeekViewProps {
   onCreateEvent: (day: Date) => void;
   onViewDetail: (day: Date) => void;
   weatherByDate?: Map<string, WeatherData[]>;
+  eventsByDate?: Map<string, Event[]>;
+  onEventClick?: (event: Event) => void;
 }
 
 export function WeekView({
@@ -42,6 +45,8 @@ export function WeekView({
   onCreateEvent,
   onViewDetail,
   weatherByDate,
+  eventsByDate,
+  onEventClick,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -62,9 +67,7 @@ export function WeekView({
         >
           ‹
         </button>
-        <span className="text-text-dark text-xs font-semibold capitalize">
-          {monthLabel}
-        </span>
+        <span className="text-text-dark text-xs font-semibold capitalize">{monthLabel}</span>
         <button
           onClick={() => onWeekChange(weekOffset + 1)}
           className="text-text-dark text-base px-2 py-1 bg-transparent border-none"
@@ -89,6 +92,9 @@ export function WeekView({
           color: memberColorMap.get(a.userId) ?? '#60A5FA',
         }));
 
+        // Events for this day
+        const dayEvents = eventsByDate?.get(key) ?? [];
+
         // User's availability label
         let availLabel: string | null = null;
         if (myAvail) {
@@ -109,9 +115,7 @@ export function WeekView({
             style={{
               padding: '12px 14px',
               border: `1px solid ${isSel ? 'rgba(96,165,250,0.25)' : 'var(--app-border)'}`,
-              background: isSel
-                ? 'rgba(37,99,235,0.06)'
-                : 'var(--app-bg-card)',
+              background: isSel ? 'rgba(37,99,235,0.06)' : 'var(--app-bg-card)',
             }}
           >
             <div className="flex justify-between items-center">
@@ -140,18 +144,14 @@ export function WeekView({
                       }
                     }}
                   >
-                    {availMembers.length > 0 && (
-                      <AvatarStack members={availMembers} size={18} />
-                    )}
+                    {availMembers.length > 0 && <AvatarStack members={availMembers} size={18} />}
                     <span
                       className="text-[11px] ml-0.5"
                       style={{
                         color: availMembers.length > 0 ? '#64748B' : '#334155',
                       }}
                     >
-                      {availMembers.length > 0
-                        ? `${availMembers.length}/${totalMembers}`
-                        : '—'}
+                      {availMembers.length > 0 ? `${availMembers.length}/${totalMembers}` : '—'}
                     </span>
                     {isBest && (
                       <span
@@ -173,6 +173,24 @@ export function WeekView({
                   {availLabel && (
                     <div className="text-[10px] text-primary mt-0.5">
                       {t('calendar.you')}: {availLabel}
+                    </div>
+                  )}
+                  {dayEvents.length > 0 && (
+                    <div className="flex flex-col gap-0.5 mt-0.5">
+                      {dayEvents.map((ev) => (
+                        <button
+                          key={ev.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEventClick?.(ev);
+                          }}
+                          className="flex items-center gap-1 text-[10px] text-left border-none p-0 cursor-pointer bg-transparent"
+                          style={{ color: '#F59E0B' }}
+                        >
+                          <span>📅</span>
+                          <span className="truncate max-w-[120px]">{ev.title}</span>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -205,9 +223,7 @@ export function WeekView({
                   }}
                   className="flex-1 py-2 text-xs font-semibold rounded-btn bg-primary-dark text-white border-none"
                 >
-                  {myAvail
-                    ? t('calendar.editAvailability')
-                    : t('calendar.markAvailable')}
+                  {myAvail ? t('calendar.editAvailability') : t('calendar.markAvailable')}
                 </button>
                 {availMembers.length >= 2 && (
                   <button

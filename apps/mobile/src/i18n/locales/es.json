@@ -135,6 +135,9 @@
     },
     "availabilityDetail": {
       "title": "Disponibilidad del día"
+    },
+    "eventDetail": {
+      "createdBy": "Creada por {{name}}"
     }
   },
   "plans": {
