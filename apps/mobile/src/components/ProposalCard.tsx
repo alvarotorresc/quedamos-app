@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { HiOutlineCheck, HiOutlineXMark, HiOutlinePencil } from 'react-icons/hi2';
 import { useAuthStore } from '../stores/auth';
 import { AvatarStack } from '../ui/AvatarStack';
+import { WeatherBadge } from './WeatherWidget';
 import type { Proposal } from '../services/proposals';
+import type { WeatherData } from '../services/weather';
 
 const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 
@@ -17,6 +19,7 @@ interface ProposalCardProps {
   isVoting?: boolean;
   isClosing?: boolean;
   memberColorMap?: Map<string, string>;
+  weather?: WeatherData[];
 }
 
 export function ProposalCard({
@@ -28,6 +31,7 @@ export function ProposalCard({
   isVoting,
   isClosing,
   memberColorMap,
+  weather,
 }: ProposalCardProps) {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -122,9 +126,14 @@ export function ProposalCard({
         <p className="text-[11px] text-text-dark mb-2">📍 {proposal.location}</p>
       )}
 
-      {/* Proposed Date */}
+      {/* Proposed Date + Weather */}
       {proposal.proposedDate && (
-        <p className="text-[11px] text-text-dark mb-2">📅 {formattedProposedDate}</p>
+        <div className="flex items-center gap-2 text-[11px] text-text-dark mb-2">
+          <span>📅 {formattedProposedDate}</span>
+          {weather && weather.length > 0 && (
+            <WeatherBadge weatherCode={weather[0].weatherCode} tempMax={weather[0].tempMax} />
+          )}
+        </div>
       )}
 
       {/* Vote bar */}
