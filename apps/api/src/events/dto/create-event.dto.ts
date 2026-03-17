@@ -1,4 +1,12 @@
-import { IsString, IsOptional, MaxLength, Matches, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MaxLength,
+  Matches,
+  IsNotEmpty,
+  IsArray,
+  IsUUID,
+} from 'class-validator';
 
 export class CreateEventDto {
   @IsString()
@@ -29,4 +37,9 @@ export class CreateEventDto {
   @IsString()
   @Matches(/^\d{2}:\d{2}$/)
   endTime?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  attendeeIds?: string[];
 }

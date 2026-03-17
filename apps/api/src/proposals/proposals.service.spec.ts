@@ -105,6 +105,7 @@ describe('ProposalsService', () => {
         createdBy: createTestUser(),
         votes: [{ userId: 'user-1', vote: 'yes' }],
       });
+      prisma.user.findUnique.mockResolvedValue(createTestUser());
 
       const result = await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' });
 
@@ -120,6 +121,7 @@ describe('ProposalsService', () => {
         createdBy: createTestUser(),
         votes: [{ userId: 'user-1', vote: 'no' }],
       });
+      prisma.user.findUnique.mockResolvedValue(createTestUser());
 
       await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'no' });
 
@@ -130,7 +132,7 @@ describe('ProposalsService', () => {
       );
     });
 
-    it('should send proposal_voted notification', async () => {
+    it('should send proposal_voted notification with voter name', async () => {
       prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
       prisma.planVote.upsert.mockResolvedValue({});
       prisma.planProposal.findUnique.mockResolvedValue({
@@ -138,6 +140,7 @@ describe('ProposalsService', () => {
         createdBy: createTestUser(),
         votes: [{ userId: 'user-1', vote: 'yes' }],
       });
+      prisma.user.findUnique.mockResolvedValue(createTestUser());
 
       await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' });
 

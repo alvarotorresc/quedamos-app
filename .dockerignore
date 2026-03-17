@@ -1,0 +1,70 @@
+# Dependencies — installed inside the container
+node_modules
+.pnpm-store
+
+# Build outputs — built inside the container
+dist
+build
+.turbo
+*.tsbuildinfo
+
+# Git
+.git
+.gitignore
+.github
+
+# Environment and secrets
+.env
+.env.*
+*.keystore
+*.jks
+*.pem
+*.key
+*.p12
+credentials.json
+google-services.json
+
+# IDE
+.idea
+.vscode
+.claude
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test and coverage
+coverage
+apps/api/test
+
+# Documentation
+README.md
+CLAUDE.md
+progress.md
+*.md
+
+# Mobile app — not needed for API image
+apps/mobile
+
+# Shared package — API does not depend on it
+packages
+
+# Tools
+tools
+
+# APK builds
+*.apk
+
+# Other root files not needed in the image
+quedamos-prototype.jsx
+lefthook.yml
+turbo.json
+bun.lock
+.prettierrc.json

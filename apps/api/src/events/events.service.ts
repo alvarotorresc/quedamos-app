@@ -73,6 +73,24 @@ export class EventsService {
     }
 
     const members = await this.groupsService.getMembers(groupId, userId);
+    const memberIds = new Set(members.map((m) => m.userId));
+
+    // Determine target attendees: all members or specific subset
+    let targetMemberIds: string[];
+    if (dto.attendeeIds && dto.attendeeIds.length > 0) {
+      // Validate all attendeeIds are group members
+      for (const id of dto.attendeeIds) {
+        if (!memberIds.has(id)) {
+          throw new BadRequestException(`User ${id} is not a member of this group`);
+        }
+      }
+      // Always include the creator
+      const targetSet = new Set(dto.attendeeIds);
+      targetSet.add(userId);
+      targetMemberIds = [...targetSet];
+    } else {
+      targetMemberIds = members.map((m) => m.userId);
+    }
 
     const event = await this.prisma.event.create({
       data: {
@@ -86,9 +104,9 @@ export class EventsService {
         endTime: dto.endTime,
         status: 'pending',
         attendees: {
-          create: members.map((m) => ({
-            userId: m.userId,
-            status: m.userId === userId ? 'confirmed' : 'pending',
+          create: targetMemberIds.map((id) => ({
+            userId: id,
+            status: id === userId ? 'confirmed' : 'pending',
           })),
         },
       },

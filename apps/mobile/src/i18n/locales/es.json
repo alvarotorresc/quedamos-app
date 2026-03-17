@@ -135,6 +135,9 @@
     },
     "availabilityDetail": {
       "title": "Disponibilidad del día"
+    },
+    "eventDetail": {
+      "createdBy": "Creada por {{name}}"
     }
   },
   "plans": {
@@ -184,12 +187,15 @@
       "creating": "Creando...",
       "available": "disponibles",
       "attendees": "Asistentes",
+      "selectAttendees": "Invitar miembros específicos",
+      "allMembersDefault": "Todos los miembros del grupo serán invitados por defecto",
       "suggested": "Sugerido",
       "date": "Fecha",
       "endTime": "Hora fin",
       "endTimeError": "La hora de fin debe ser posterior",
       "description": "Descripción",
-      "descriptionPlaceholder": "Detalles del plan..."
+      "descriptionPlaceholder": "Detalles del plan...",
+      "customLocationHint": "O escribe un lugar personalizado"
     }
   },
   "group": {

@@ -453,6 +453,8 @@ export default function PlansPage() {
                             onEdit={handleEditProposal}
                             isVoting={votingProposalId === p.id}
                             isClosing={closingProposalId === p.id}
+                            memberColorMap={memberColorMap}
+                            weather={p.proposedDate ? weatherByDate.get(p.proposedDate) : undefined}
                           />
                         ))}
                       </div>
@@ -486,6 +488,10 @@ export default function PlansPage() {
                               onConvert={(proposal) => setConvertingProposal(proposal)}
                               onClose={handleCloseProposal}
                               onEdit={handleEditProposal}
+                              memberColorMap={memberColorMap}
+                              weather={
+                                p.proposedDate ? weatherByDate.get(p.proposedDate) : undefined
+                              }
                             />
                           ))}
                         </div>

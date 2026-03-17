@@ -3,7 +3,12 @@ import { IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { HiOutlineCheck, HiOutlineXMark, HiOutlinePencil } from 'react-icons/hi2';
 import { useAuthStore } from '../stores/auth';
+import { AvatarStack } from '../ui/AvatarStack';
+import { WeatherBadge } from './WeatherWidget';
 import type { Proposal } from '../services/proposals';
+import type { WeatherData } from '../services/weather';
+
+const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 
 interface ProposalCardProps {
   proposal: Proposal;
@@ -13,6 +18,8 @@ interface ProposalCardProps {
   onEdit?: (proposal: Proposal) => void;
   isVoting?: boolean;
   isClosing?: boolean;
+  memberColorMap?: Map<string, string>;
+  weather?: WeatherData[];
 }
 
 export function ProposalCard({
@@ -23,22 +30,33 @@ export function ProposalCard({
   onEdit,
   isVoting,
   isClosing,
+  memberColorMap,
+  weather,
 }: ProposalCardProps) {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isCreator = proposal.createdBy.id === user?.id;
 
-  const { yesCount, noCount, total, myVote } = useMemo(() => {
-    let yes = 0;
-    let no = 0;
+  const { yesVoters, noVoters, yesCount, noCount, total, myVote } = useMemo(() => {
+    const yv: { name: string; color: string }[] = [];
+    const nv: { name: string; color: string }[] = [];
     let mine: 'yes' | 'no' | null = null;
     for (const v of proposal.votes) {
-      if (v.vote === 'yes') yes++;
-      else no++;
+      const color = memberColorMap?.get(v.userId) ?? MEMBER_COLORS[0];
+      const entry = { name: v.user?.name ?? '?', color };
+      if (v.vote === 'yes') yv.push(entry);
+      else nv.push(entry);
       if (v.userId === user?.id) mine = v.vote;
     }
-    return { yesCount: yes, noCount: no, total: yes + no, myVote: mine };
-  }, [proposal.votes, user?.id]);
+    return {
+      yesVoters: yv,
+      noVoters: nv,
+      yesCount: yv.length,
+      noCount: nv.length,
+      total: yv.length + nv.length,
+      myVote: mine,
+    };
+  }, [proposal.votes, user?.id, memberColorMap]);
 
   const yesPercent = total > 0 ? Math.round((yesCount / total) * 100) : 0;
   const noPercent = total > 0 ? Math.round((noCount / total) * 100) : 0;
@@ -108,9 +126,14 @@ export function ProposalCard({
         <p className="text-[11px] text-text-dark mb-2">📍 {proposal.location}</p>
       )}
 
-      {/* Proposed Date */}
+      {/* Proposed Date + Weather */}
       {proposal.proposedDate && (
-        <p className="text-[11px] text-text-dark mb-2">📅 {formattedProposedDate}</p>
+        <div className="flex items-center gap-2 text-[11px] text-text-dark mb-2">
+          <span>📅 {formattedProposedDate}</span>
+          {weather && weather.length > 0 && (
+            <WeatherBadge weatherCode={weather[0].weatherCode} tempMax={weather[0].tempMax} />
+          )}
+        </div>
       )}
 
       {/* Vote bar */}
@@ -136,6 +159,34 @@ export function ProposalCard({
           <p className="text-[10px] text-text-dark">
             {t('proposals.votes', { yes: yesCount, no: noCount })}
           </p>
+        </div>
+      )}
+
+      {/* Voters detail */}
+      {total > 0 && (
+        <div className="space-y-1.5 mb-2">
+          {yesVoters.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold" style={{ color: '#34D399' }}>
+                {yesCount}
+              </span>
+              <AvatarStack size={20} members={yesVoters} />
+              <span className="text-[10px] text-text-dark truncate">
+                {yesVoters.map((v) => v.name).join(', ')}
+              </span>
+            </div>
+          )}
+          {noVoters.length > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-semibold" style={{ color: '#FB7185' }}>
+                {noCount}
+              </span>
+              <AvatarStack size={20} members={noVoters} />
+              <span className="text-[10px] text-text-dark truncate">
+                {noVoters.map((v) => v.name).join(', ')}
+              </span>
+            </div>
+          )}
         </div>
       )}
 

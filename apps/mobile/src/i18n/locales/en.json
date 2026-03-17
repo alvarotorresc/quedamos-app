@@ -135,6 +135,9 @@
     },
     "availabilityDetail": {
       "title": "Day availability"
+    },
+    "eventDetail": {
+      "createdBy": "Created by {{name}}"
     }
   },
   "plans": {
@@ -184,12 +187,15 @@
       "creating": "Creating...",
       "available": "available",
       "attendees": "Attendees",
+      "selectAttendees": "Invite specific members",
+      "allMembersDefault": "All group members will be invited by default",
       "suggested": "Suggested",
       "date": "Date",
       "endTime": "End time",
       "endTimeError": "End time must be after start time",
       "description": "Description",
-      "descriptionPlaceholder": "Plan details..."
+      "descriptionPlaceholder": "Plan details...",
+      "customLocationHint": "Or just type a custom place name"
     }
   },
   "group": {

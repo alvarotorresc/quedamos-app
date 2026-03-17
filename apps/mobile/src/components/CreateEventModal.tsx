@@ -2,13 +2,17 @@ import { useState, useEffect } from 'react';
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useCreateEvent } from '../hooks/useEvents';
+import { useGroup } from '../hooks/useGroups';
 import { useForecast } from '../hooks/useWeather';
+import { useAuthStore } from '../stores/auth';
 import { Button } from '../ui/Button';
 import { Avatar } from '../ui/Avatar';
 import { WeatherBadge } from './WeatherWidget';
 import { LocationSearch } from './LocationSearch';
 import { formatDateKey } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
+
+const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 
 export interface EventPrefill {
   date: string;
@@ -37,6 +41,9 @@ export function CreateEventModal({
 }: CreateEventModalProps) {
   const { t } = useTranslation();
   const createEvent = useCreateEvent(groupId);
+  const user = useAuthStore((s) => s.user);
+  const { data: groupDetail } = useGroup(groupId);
+  const members = groupDetail?.members ?? [];
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -46,6 +53,8 @@ export function CreateEventModal({
   const [time, setTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [date, setDate] = useState('');
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+  const [showMemberSelector, setShowMemberSelector] = useState(false);
 
   const isCreating = createEvent.isPending;
   const endTimeError = !!(endTime && time && endTime <= time);
@@ -75,8 +84,22 @@ export function CreateEventModal({
       setTime(prefill?.suggestedTime ?? '');
       setEndTime('');
       setDate('');
+      setSelectedMemberIds(new Set());
+      setShowMemberSelector(false);
     }
   }, [isOpen, prefill]);
+
+  const toggleMember = (memberId: string) => {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(memberId)) {
+        next.delete(memberId);
+      } else {
+        next.add(memberId);
+      }
+      return next;
+    });
+  };
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -87,19 +110,12 @@ export function CreateEventModal({
       ...(endTime && { endTime }),
       ...(description.trim() && { description: description.trim() }),
       ...(location.trim() && { location: location.trim() }),
+      ...(selectedMemberIds.size > 0 && { attendeeIds: [...selectedMemberIds] }),
     });
-    setTitle('');
-    setDescription('');
-    setLocation('');
-    setLocationLat(null);
-    setLocationLon(null);
-    setTime('');
-    setEndTime('');
-    setDate('');
-    onClose();
+    resetAndClose();
   };
 
-  const handleDismiss = () => {
+  const resetAndClose = () => {
     setTitle('');
     setDescription('');
     setLocation('');
@@ -108,6 +124,8 @@ export function CreateEventModal({
     setTime('');
     setEndTime('');
     setDate('');
+    setSelectedMemberIds(new Set());
+    setShowMemberSelector(false);
     onClose();
   };
 
@@ -116,10 +134,13 @@ export function CreateEventModal({
     border: '1px solid var(--app-border-strong)',
   };
 
+  // Other members (excluding current user)
+  const otherMembers = members.filter((m) => m.userId !== user?.id);
+
   return (
     <IonModal
       isOpen={isOpen}
-      onDidDismiss={handleDismiss}
+      onDidDismiss={resetAndClose}
       breakpoints={[0, 1]}
       initialBreakpoint={1}
       className="create-event-modal"
@@ -271,8 +292,81 @@ export function CreateEventModal({
           )}
         </div>
 
-        {/* Attendees */}
-        {prefill && prefill.availableMembers.length > 0 && (
+        {/* Member selector */}
+        {otherMembers.length > 0 && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowMemberSelector(!showMemberSelector)}
+              className="flex items-center gap-1.5 text-[10px] text-text-dark mb-1.5 bg-transparent border-none p-0 cursor-pointer"
+            >
+              <span>{t('plans.create.selectAttendees')}</span>
+              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+              <span
+                className="transition-transform text-[8px]"
+                style={{ transform: showMemberSelector ? 'rotate(90deg)' : 'rotate(0deg)' }}
+              >
+                ▶
+              </span>
+            </button>
+
+            {showMemberSelector && (
+              <div className="space-y-1.5">
+                {selectedMemberIds.size === 0 && (
+                  <p className="text-[10px] text-text-dark">
+                    {t('plans.create.allMembersDefault')}
+                  </p>
+                )}
+                {otherMembers.map((m, i) => {
+                  const isSelected = selectedMemberIds.has(m.userId);
+                  const color = MEMBER_COLORS[i % MEMBER_COLORS.length];
+                  return (
+                    <button
+                      key={m.userId}
+                      onClick={() => toggleMember(m.userId)}
+                      className="flex items-center gap-2 w-full text-left rounded-[10px] py-1.5 px-2 border-none cursor-pointer"
+                      style={{
+                        background: isSelected ? 'rgba(37,99,235,0.08)' : 'transparent',
+                        border: isSelected
+                          ? '1px solid rgba(96,165,250,0.2)'
+                          : '1px solid var(--app-border)',
+                      }}
+                    >
+                      <Avatar name={m.user?.name ?? '?'} color={color} size={24} />
+                      <span className="text-xs text-text flex-1">{m.user?.name ?? '?'}</span>
+                      {isSelected && <span className="text-primary text-xs">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {selectedMemberIds.size > 0 && !showMemberSelector && (
+              <div className="flex gap-1 flex-wrap">
+                {[...selectedMemberIds].map((id) => {
+                  const m = members.find((mem) => mem.userId === id);
+                  const idx = members.findIndex((mem) => mem.userId === id);
+                  const color = MEMBER_COLORS[idx % MEMBER_COLORS.length];
+                  return (
+                    <div
+                      key={id}
+                      className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5"
+                      style={{
+                        background: 'var(--app-bg-card)',
+                        border: '1px solid var(--app-border)',
+                      }}
+                    >
+                      <Avatar name={m?.user?.name ?? '?'} color={color} size={20} />
+                      <span className="text-[11px] text-text-muted">{m?.user?.name ?? '?'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Prefill attendees (from calendar) - informational only */}
+        {prefill && prefill.availableMembers.length > 0 && selectedMemberIds.size === 0 && (
           <div className="mb-4">
             <label className="block text-[10px] text-text-dark mb-1.5">
               {t('plans.create.attendees')}

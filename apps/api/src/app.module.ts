@@ -12,8 +12,10 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ProposalsModule } from './proposals/proposals.module';
 import { WeatherModule } from './weather/weather.module';
 import { PrismaModule } from './common/prisma/prisma.module';
+import { HealthController } from './health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
