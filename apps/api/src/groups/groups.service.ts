@@ -200,6 +200,24 @@ export class GroupsService {
       throw new ForbiddenException('The group creator cannot leave. Delete the group instead.');
     }
 
+    // Clean up user's availability in this group
+    await this.prisma.availability.deleteMany({
+      where: { groupId, userId },
+    });
+
+    // Clean up user's attendance from future events in this group
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+    await this.prisma.eventAttendee.deleteMany({
+      where: {
+        userId,
+        event: {
+          groupId,
+          date: { gte: now },
+        },
+      },
+    });
+
     await this.prisma.groupMember.delete({
       where: {
         groupId_userId: { groupId, userId },

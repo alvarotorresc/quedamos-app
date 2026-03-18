@@ -37,6 +37,7 @@ export function createMockPrisma() {
       update: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     event: {
       findUnique: jest.fn(),
