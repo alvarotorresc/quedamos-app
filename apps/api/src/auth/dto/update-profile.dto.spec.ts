@@ -49,6 +49,15 @@ describe('UpdateProfileDto', () => {
       expect(errors.length).toBe(0);
     });
 
+    it('should reject empty string name', async () => {
+      const dto = createDto({ name: '' });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      const nameError = errors.find((e) => e.property === 'name');
+      expect(nameError).toBeDefined();
+      expect(nameError!.constraints).toHaveProperty('minLength');
+    });
+
     it('should reject non-string name', async () => {
       const dto = createDto({ name: 42 });
       const errors = await validate(dto);
