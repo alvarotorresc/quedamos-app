@@ -7,6 +7,8 @@ import {
   IsArray,
   IsUUID,
   IsNumber,
+  Min,
+  Max,
 } from 'class-validator';
 
 export class CreateEventDto {
@@ -27,10 +29,14 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(-90)
+  @Max(90)
   locationLat?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(-180)
+  @Max(180)
   locationLon?: number;
 
   @IsString()
