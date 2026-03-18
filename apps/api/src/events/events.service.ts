@@ -135,16 +135,29 @@ export class EventsService {
       }
     }
 
-    this.notificationsService
-      .sendToGroup(
-        groupId,
-        'Nueva quedada',
-        `${event.createdBy.name} ha creado "${event.title}"`,
-        userId,
-        { type: 'new_event', eventId: event.id, groupId },
-        'new_event',
-      )
-      .catch((err) => this.logger.error('Failed to send new_event notification', err));
+    if (dto.attendeeIds && dto.attendeeIds.length > 0) {
+      this.notificationsService
+        .sendToEventAttendees(
+          event.id,
+          'Nueva quedada',
+          `${event.createdBy.name} ha creado "${event.title}"`,
+          userId,
+          { type: 'new_event', eventId: event.id, groupId },
+          'new_event',
+        )
+        .catch((err) => this.logger.error('Failed to send new_event notification', err));
+    } else {
+      this.notificationsService
+        .sendToGroup(
+          groupId,
+          'Nueva quedada',
+          `${event.createdBy.name} ha creado "${event.title}"`,
+          userId,
+          { type: 'new_event', eventId: event.id, groupId },
+          'new_event',
+        )
+        .catch((err) => this.logger.error('Failed to send new_event notification', err));
+    }
 
     return event;
   }

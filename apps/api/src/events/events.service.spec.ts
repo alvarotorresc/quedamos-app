@@ -115,6 +115,34 @@ describe('EventsService', () => {
       );
     });
 
+    it('should use sendToEventAttendees when attendeeIds are provided', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'pending' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Selective Event',
+        date: '2026-12-01',
+        attendeeIds: ['user-2'],
+      });
+
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Nueva quedada',
+        expect.stringContaining('Test Event'),
+        'user-1',
+        expect.objectContaining({ type: 'new_event' }),
+        'new_event',
+      );
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+    });
+
     it('should reject events in the past', async () => {
       await expect(
         service.create('group-1', 'user-1', {
