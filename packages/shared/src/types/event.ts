@@ -7,6 +7,8 @@ export interface Event {
   title: string;
   description?: string;
   location?: string;
+  locationLat?: number;
+  locationLon?: number;
   date: string; // YYYY-MM-DD
   time?: string; // HH:mm
   endTime?: string; // HH:mm
@@ -31,6 +33,8 @@ export interface CreateEventDto {
   title: string;
   description?: string;
   location?: string;
+  locationLat?: number;
+  locationLon?: number;
   date: string;
   time?: string;
   endTime?: string;
