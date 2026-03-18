@@ -8,6 +8,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ProposalsService } from './proposals.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -17,6 +18,8 @@ import { UpdateProposalDto } from './dto/update-proposal.dto';
 import { VoteProposalDto } from './dto/vote-proposal.dto';
 import { ConvertProposalDto } from './dto/convert-proposal.dto';
 
+@ApiTags('Proposals')
+@ApiBearerAuth()
 @Controller('groups/:groupId/proposals')
 @UseGuards(AuthGuard)
 export class ProposalsController {

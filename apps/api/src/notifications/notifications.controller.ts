@@ -1,4 +1,5 @@
 import { Controller, Post, Delete, Get, Put, Body, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -6,6 +7,8 @@ import { RegisterTokenDto } from './dto/register-token.dto';
 import { UnregisterTokenDto } from './dto/unregister-token.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
 
+@ApiTags('Notifications')
+@ApiBearerAuth()
 @Controller('notifications')
 @UseGuards(AuthGuard)
 export class NotificationsController {
