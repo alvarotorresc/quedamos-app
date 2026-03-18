@@ -160,6 +160,7 @@ describe('ProposalsService', () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),
         createdBy: createTestUser(),
+        votes: [],
       });
       prisma.planProposal.update.mockResolvedValue({
         ...createTestProposal({ status: 'converted' }),
@@ -184,6 +185,7 @@ describe('ProposalsService', () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),
         createdBy: createTestUser(),
+        votes: [],
       });
       prisma.planProposal.update.mockResolvedValue({
         ...createTestProposal({ status: 'converted' }),
@@ -206,10 +208,45 @@ describe('ProposalsService', () => {
       );
     });
 
+    it('should transfer yes votes as confirmed and no votes as declined', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [
+          { userId: 'user-1', vote: 'yes' },
+          { userId: 'user-2', vote: 'yes' },
+          { userId: 'user-3', vote: 'no' },
+        ],
+      });
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(eventsService.create).toHaveBeenCalledWith(
+        'group-1',
+        'user-1',
+        expect.objectContaining({
+          attendeeStatusMap: {
+            'user-1': 'confirmed',
+            'user-2': 'confirmed',
+            'user-3': 'declined',
+          },
+        }),
+      );
+    });
+
     it('should reject convert from non-creator', async () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),
         createdBy: createTestUser(),
+        votes: [],
       });
 
       await expect(

@@ -164,7 +164,10 @@ export class ProposalsService {
 
     const proposal = await this.prisma.planProposal.findFirst({
       where: { id: proposalId, groupId },
-      include: { createdBy: { select: PUBLIC_USER_SELECT } },
+      include: {
+        createdBy: { select: PUBLIC_USER_SELECT },
+        votes: true,
+      },
     });
 
     if (!proposal) {
@@ -179,6 +182,12 @@ export class ProposalsService {
       throw new BadRequestException('End time must be after start time');
     }
 
+    // Build attendee status map from proposal votes
+    const attendeeStatusMap: Record<string, 'confirmed' | 'declined'> = {};
+    for (const vote of proposal.votes) {
+      attendeeStatusMap[vote.userId] = vote.vote === 'yes' ? 'confirmed' : 'declined';
+    }
+
     // Create event using EventsService
     const event = await this.eventsService.create(groupId, userId, {
       title: proposal.title,
@@ -187,6 +196,7 @@ export class ProposalsService {
       date: dto.date,
       time: dto.time,
       endTime: dto.endTime,
+      attendeeStatusMap,
     });
 
     // Mark proposal as converted
