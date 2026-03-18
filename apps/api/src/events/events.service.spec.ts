@@ -242,6 +242,18 @@ describe('EventsService', () => {
       prisma.event.findFirst.mockResolvedValue(createTestEvent());
     });
 
+    it('should reject respond to cancelled event', async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent({ status: 'cancelled' }),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await expect(
+        service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should update attendee status to confirmed', async () => {
       prisma.eventAttendee.findUnique.mockResolvedValue({
         eventId: 'event-1',

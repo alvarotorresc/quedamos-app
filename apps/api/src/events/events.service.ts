@@ -245,7 +245,11 @@ export class EventsService {
   }
 
   async respond(groupId: string, eventId: string, userId: string, dto: RespondEventDto) {
-    await this.findById(groupId, eventId, userId);
+    const event = await this.findById(groupId, eventId, userId);
+
+    if (event.status === 'cancelled') {
+      throw new BadRequestException('Cannot respond to a cancelled event');
+    }
 
     const attendee = await this.prisma.eventAttendee.findUnique({
       where: {
