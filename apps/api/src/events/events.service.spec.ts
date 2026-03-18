@@ -292,13 +292,14 @@ describe('EventsService', () => {
 
       await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada confirmada',
         expect.any(String),
         undefined,
         expect.objectContaining({ type: 'event_confirmed' }),
         'event_confirmed',
+        'confirmed',
       );
     });
 
@@ -345,13 +346,14 @@ describe('EventsService', () => {
 
       await service.respond('group-1', 'event-1', 'user-2', { status: 'declined' });
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Asistencia rechazada',
         expect.stringContaining('User 2'),
         'user-2',
         expect.objectContaining({ type: 'event_declined' }),
         'event_declined',
+        'confirmed',
       );
     });
   });
@@ -415,13 +417,14 @@ describe('EventsService', () => {
 
       await service.update('group-1', 'event-1', 'user-1', { title: 'Updated' });
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada actualizada',
         expect.any(String),
         'user-1',
         expect.objectContaining({ type: 'event_updated' }),
         'event_updated',
+        'confirmed',
       );
     });
 
@@ -584,8 +587,8 @@ describe('EventsService', () => {
 
       await service.cancel('group-1', 'event-1', 'user-1');
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada cancelada',
         expect.stringContaining('Test Event'),
         'user-1',

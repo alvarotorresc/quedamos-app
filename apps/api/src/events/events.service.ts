@@ -177,13 +177,14 @@ export class EventsService {
     });
 
     this.notificationsService
-      .sendToGroup(
-        groupId,
+      .sendToEventAttendees(
+        eventId,
         'Quedada actualizada',
         `"${updated.title}" ha sido editada`,
         userId,
         { type: 'event_updated', eventId, groupId },
         'event_updated',
+        'confirmed',
       )
       .catch((err) => this.logger.error('Failed to send event_updated notification', err));
 
@@ -230,8 +231,8 @@ export class EventsService {
     });
 
     this.notificationsService
-      .sendToGroup(
-        groupId,
+      .sendToEventAttendees(
+        eventId,
         'Quedada cancelada',
         `"${event.title}" ha sido cancelada`,
         userId,
@@ -282,13 +283,14 @@ export class EventsService {
       });
       if (event) {
         this.notificationsService
-          .sendToGroup(
-            groupId,
+          .sendToEventAttendees(
+            eventId,
             'Quedada confirmada',
             `Todos han confirmado "${event.title}"`,
             undefined,
             { type: 'event_confirmed', eventId, groupId },
             'event_confirmed',
+            'confirmed',
           )
           .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
       }
@@ -307,13 +309,14 @@ export class EventsService {
       ]);
       if (user && event) {
         this.notificationsService
-          .sendToGroup(
-            groupId,
+          .sendToEventAttendees(
+            eventId,
             'Asistencia rechazada',
             `${user.name} ha rechazado "${event.title}"`,
             userId,
             { type: 'event_declined', eventId, groupId },
             'event_declined',
+            'confirmed',
           )
           .catch((err) => this.logger.error('Failed to send event_declined notification', err));
       }
