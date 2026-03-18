@@ -43,7 +43,7 @@ COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/api/prisma apps/api/prisma
 
 WORKDIR /app/apps/api
-RUN npx prisma generate
+RUN sed -i '/generator dbml/,/^}/d' prisma/schema.prisma && npx prisma generate
 
 USER node
 
