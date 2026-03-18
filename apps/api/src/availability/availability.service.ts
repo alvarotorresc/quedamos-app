@@ -30,6 +30,12 @@ export class AvailabilityService {
     });
   }
 
+  private validateDateFormat(date: string): void {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
+    }
+  }
+
   private validateTypeConsistency(dto: CreateAvailabilityDto): void {
     if (dto.type === 'range') {
       if (!dto.startTime || !dto.endTime) {
@@ -77,6 +83,7 @@ export class AvailabilityService {
   }
 
   async update(groupId: string, date: string, userId: string, dto: CreateAvailabilityDto) {
+    this.validateDateFormat(date);
     await this.groupsService.findById(groupId, userId);
     this.validateTypeConsistency(dto);
 
@@ -106,6 +113,7 @@ export class AvailabilityService {
   }
 
   async delete(groupId: string, date: string, userId: string) {
+    this.validateDateFormat(date);
     await this.groupsService.findById(groupId, userId);
 
     const existing = await this.prisma.availability.findUnique({
