@@ -225,11 +225,10 @@ export class EventsService {
       throw new ForbiddenException('Only the creator can delete this event');
     }
 
-    await this.prisma.event.delete({ where: { id: eventId } });
-
+    // Send notification before delete (attendees are cascade-deleted with the event)
     this.notificationsService
-      .sendToGroup(
-        groupId,
+      .sendToEventAttendees(
+        eventId,
         'Quedada eliminada',
         `"${event.title}" ha sido eliminada`,
         userId,
@@ -237,6 +236,8 @@ export class EventsService {
         'event_deleted',
       )
       .catch((err) => this.logger.error('Failed to send event_deleted notification', err));
+
+    await this.prisma.event.delete({ where: { id: eventId } });
 
     return { success: true };
   }

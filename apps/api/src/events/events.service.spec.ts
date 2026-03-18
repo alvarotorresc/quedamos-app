@@ -699,8 +699,8 @@ describe('EventsService', () => {
 
       await service.delete('group-1', 'event-1', 'user-1');
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada eliminada',
         expect.stringContaining('Test Event'),
         'user-1',
