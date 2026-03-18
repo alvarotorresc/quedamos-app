@@ -8,7 +8,17 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          connectSrc: ["'self'", 'https://*.supabase.co'],
+        },
+      },
+    }),
+  );
 
   const origins: string[] = [
     'https://quedamos-app-mobile.vercel.app',
