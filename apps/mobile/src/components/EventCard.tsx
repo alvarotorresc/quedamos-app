@@ -77,7 +77,8 @@ export function EventCard({
   // Current user's attendee status
   const myAttendee = event.attendees.find((a) => a.userId === user?.id);
   const myStatus = myAttendee?.status ?? 'pending';
-  const isPending = myStatus === 'pending';
+  const isInvited = !!myAttendee;
+  const isPending = isInvited && myStatus === 'pending';
 
   const isCreator = event.createdBy.id === user?.id;
 
