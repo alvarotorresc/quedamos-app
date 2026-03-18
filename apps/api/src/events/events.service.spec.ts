@@ -193,6 +193,32 @@ describe('EventsService', () => {
       );
     });
 
+    it('should pass through location coordinates on create', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Test Event',
+        date: '2026-12-01',
+        location: 'Retiro Park',
+        locationLat: 40.4153,
+        locationLon: -3.6845,
+      });
+
+      expect(prisma.event.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            locationLat: 40.4153,
+            locationLon: -3.6845,
+          }),
+        }),
+      );
+    });
+
     it('should allow event without endTime', async () => {
       const event = {
         ...createTestEvent(),
@@ -455,6 +481,34 @@ describe('EventsService', () => {
       expect(prisma.event.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ endTime: '22:00' }),
+        }),
+      );
+    });
+
+    it('should update location coordinates', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({
+        ...event,
+        locationLat: 40.4153,
+        locationLon: -3.6845,
+      });
+
+      await service.update('group-1', 'event-1', 'user-1', {
+        locationLat: 40.4153,
+        locationLon: -3.6845,
+      });
+
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            locationLat: 40.4153,
+            locationLon: -3.6845,
+          }),
         }),
       );
     });
