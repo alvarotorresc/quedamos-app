@@ -160,6 +160,39 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should use attendeeStatusMap for pre-set attendee statuses', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'declined' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'From Proposal',
+        date: '2026-12-01',
+        attendeeStatusMap: {
+          'user-2': 'declined',
+        },
+      });
+
+      expect(prisma.event.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            attendees: {
+              create: expect.arrayContaining([
+                expect.objectContaining({ userId: 'user-1', status: 'confirmed' }),
+                expect.objectContaining({ userId: 'user-2', status: 'declined' }),
+              ]),
+            },
+          }),
+        }),
+      );
+    });
+
     it('should allow event without endTime', async () => {
       const event = {
         ...createTestEvent(),

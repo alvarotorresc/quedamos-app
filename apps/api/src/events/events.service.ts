@@ -106,7 +106,8 @@ export class EventsService {
         attendees: {
           create: targetMemberIds.map((id) => ({
             userId: id,
-            status: id === userId ? 'confirmed' : 'pending',
+            status: id === userId ? 'confirmed' : (dto.attendeeStatusMap?.[id] ?? 'pending'),
+            ...(dto.attendeeStatusMap?.[id] ? { respondedAt: new Date() } : {}),
           })),
         },
       },
