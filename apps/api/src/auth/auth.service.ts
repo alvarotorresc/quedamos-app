@@ -74,14 +74,25 @@ export class AuthService {
       const email = (payload.email ?? '').trim().slice(0, 255);
       const avatarEmoji = (payload.user_metadata?.avatarEmoji ?? '😊').slice(0, 10);
 
-      dbUser = await this.prisma.user.create({
-        data: {
-          id: payload.sub,
-          email,
-          name,
-          avatarEmoji,
-        },
-      });
+      try {
+        dbUser = await this.prisma.user.create({
+          data: {
+            id: payload.sub,
+            email,
+            name,
+            avatarEmoji,
+          },
+        });
+      } catch (error: any) {
+        // Unique constraint violation — another concurrent request already created the user
+        if (error?.code === 'P2002') {
+          dbUser = await this.prisma.user.findUnique({
+            where: { id: payload.sub },
+          });
+        } else {
+          throw error;
+        }
+      }
     } else if (payload.email && dbUser.email !== payload.email) {
       // Sync email when user confirms an email change in Supabase
       const newEmail = payload.email.trim().slice(0, 255);
