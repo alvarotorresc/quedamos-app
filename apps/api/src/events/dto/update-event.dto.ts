@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, Matches } from 'class-validator';
+import { IsString, IsOptional, MaxLength, Matches, IsNumber } from 'class-validator';
 
 export class UpdateEventDto {
   @IsOptional()
@@ -15,6 +15,14 @@ export class UpdateEventDto {
   @IsString()
   @MaxLength(200)
   location?: string;
+
+  @IsOptional()
+  @IsNumber()
+  locationLat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  locationLon?: number;
 
   @IsOptional()
   @IsString()

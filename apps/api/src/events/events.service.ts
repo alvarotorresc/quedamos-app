@@ -99,6 +99,8 @@ export class EventsService {
         title: dto.title,
         description: dto.description,
         location: dto.location,
+        locationLat: dto.locationLat,
+        locationLon: dto.locationLon,
         date: new Date(dto.date),
         time: dto.time,
         endTime: dto.endTime,
@@ -159,6 +161,8 @@ export class EventsService {
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
     if (dto.location !== undefined) data.location = dto.location;
+    if (dto.locationLat !== undefined) data.locationLat = dto.locationLat;
+    if (dto.locationLon !== undefined) data.locationLon = dto.locationLon;
     if (dto.date !== undefined) data.date = new Date(dto.date);
     if (dto.time !== undefined) data.time = dto.time;
     if (dto.endTime !== undefined) data.endTime = dto.endTime;

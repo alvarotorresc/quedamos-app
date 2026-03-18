@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsArray,
   IsUUID,
+  IsNumber,
 } from 'class-validator';
 
 export class CreateEventDto {
@@ -23,6 +24,14 @@ export class CreateEventDto {
   @IsString()
   @MaxLength(200)
   location?: string;
+
+  @IsOptional()
+  @IsNumber()
+  locationLat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  locationLon?: number;
 
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
