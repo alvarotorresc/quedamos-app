@@ -61,10 +61,10 @@ export class EventsService {
   async create(groupId: string, userId: string, dto: CreateEventDto) {
     await this.groupsService.findById(groupId, userId);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const eventDate = new Date(dto.date + 'T00:00:00');
-    if (eventDate < today) {
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const eventDate = new Date(dto.date + 'T00:00:00Z');
+    if (eventDate < todayUTC) {
       throw new BadRequestException('No se pueden crear quedadas en fechas pasadas');
     }
 
@@ -101,7 +101,7 @@ export class EventsService {
         location: dto.location,
         locationLat: dto.locationLat,
         locationLon: dto.locationLon,
-        date: new Date(dto.date),
+        date: new Date(dto.date + 'T00:00:00Z'),
         time: dto.time,
         endTime: dto.endTime,
         status: 'pending',
@@ -170,10 +170,12 @@ export class EventsService {
     }
 
     if (dto.date) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const eventDate = new Date(dto.date + 'T00:00:00');
-      if (eventDate < today) {
+      const now = new Date();
+      const todayUTC = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+      );
+      const eventDate = new Date(dto.date + 'T00:00:00Z');
+      if (eventDate < todayUTC) {
         throw new BadRequestException('Cannot set date to the past');
       }
     }
@@ -190,7 +192,7 @@ export class EventsService {
     if (dto.location !== undefined) data.location = dto.location;
     if (dto.locationLat !== undefined) data.locationLat = dto.locationLat;
     if (dto.locationLon !== undefined) data.locationLon = dto.locationLon;
-    if (dto.date !== undefined) data.date = new Date(dto.date);
+    if (dto.date !== undefined) data.date = new Date(dto.date + 'T00:00:00Z');
     if (dto.time !== undefined) data.time = dto.time;
     if (dto.endTime !== undefined) data.endTime = dto.endTime;
 

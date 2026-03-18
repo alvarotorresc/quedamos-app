@@ -92,6 +92,24 @@ describe('EventsService', () => {
       );
     });
 
+    it('should store date as UTC midnight', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'UTC Test',
+        date: '2026-12-01',
+      });
+
+      const createCall = prisma.event.create.mock.calls[0][0];
+      const storedDate = createCall.data.date as Date;
+      expect(storedDate.toISOString()).toBe('2026-12-01T00:00:00.000Z');
+    });
+
     it('should send push notification on create', async () => {
       const event = {
         ...createTestEvent(),
@@ -542,6 +560,22 @@ describe('EventsService', () => {
       await expect(
         service.update('group-1', 'event-1', 'user-1', { date: '2020-01-01' }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should store updated date as UTC midnight', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, date: new Date('2026-12-15T00:00:00Z') });
+
+      await service.update('group-1', 'event-1', 'user-1', { date: '2026-12-15' });
+
+      const updateCall = prisma.event.update.mock.calls[0][0];
+      const storedDate = updateCall.data.date as Date;
+      expect(storedDate.toISOString()).toBe('2026-12-15T00:00:00.000Z');
     });
 
     it('should send notification on update', async () => {
