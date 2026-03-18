@@ -281,6 +281,28 @@ describe('EventsService', () => {
       );
     });
 
+    it('should use transaction for atomic attendee update and status check', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-1',
+        status: 'pending',
+      });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'pending' },
+      ]);
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
     it('should throw when not invited', async () => {
       prisma.eventAttendee.findUnique.mockResolvedValue(null);
 
