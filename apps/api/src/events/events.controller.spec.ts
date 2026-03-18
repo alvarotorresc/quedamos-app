@@ -92,6 +92,20 @@ describe('EventsController', () => {
       expect(mockEventsService.create).toHaveBeenCalledTimes(1);
     });
 
+    it('should strip attendeeStatusMap from dto before passing to service', async () => {
+      const dto = {
+        title: 'Beach Day',
+        date: '2026-07-15',
+        attendeeStatusMap: { 'user-2': 'confirmed' as const },
+      };
+      mockEventsService.create.mockResolvedValue(createTestEvent());
+
+      await controller.create('group-1', { id: 'user-1' }, dto as any);
+
+      const passedDto = mockEventsService.create.mock.calls[0][2];
+      expect(passedDto.attendeeStatusMap).toBeUndefined();
+    });
+
     it('should pass dto with optional fields to service', async () => {
       const dto = {
         title: 'Dinner',

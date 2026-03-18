@@ -41,6 +41,8 @@ export class EventsController {
     @CurrentUser() user: { id: string },
     @Body() dto: CreateEventDto,
   ) {
+    // Strip internal-only field to prevent external manipulation
+    delete (dto as any).attendeeStatusMap;
     return this.eventsService.create(groupId, user.id, dto);
   }
 
