@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
 import { GroupsService } from '../groups/groups.service';
 import { createMockPrisma, createTestGroup } from '../common/test-utils';
@@ -74,6 +74,34 @@ describe('AvailabilityService', () => {
         }),
       );
     });
+
+    it('should reject range type without startTime', async () => {
+      await expect(
+        service.create('group-1', 'user-1', { date: '2026-06-01', type: 'range' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject range type without endTime', async () => {
+      await expect(
+        service.create('group-1', 'user-1', {
+          date: '2026-06-01',
+          type: 'range',
+          startTime: '10:00',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject slots type without slots array', async () => {
+      await expect(
+        service.create('group-1', 'user-1', { date: '2026-06-01', type: 'slots' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject slots type with empty slots array', async () => {
+      await expect(
+        service.create('group-1', 'user-1', { date: '2026-06-01', type: 'slots', slots: [] }),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   describe('update', () => {
@@ -103,6 +131,18 @@ describe('AvailabilityService', () => {
       await expect(
         service.update('group-1', '2026-03-01', 'user-1', { date: '2026-03-01', type: 'day' }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should reject range type without startTime', async () => {
+      await expect(
+        service.update('group-1', '2026-06-01', 'user-1', { date: '2026-06-01', type: 'range' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject slots type without slots array', async () => {
+      await expect(
+        service.update('group-1', '2026-06-01', 'user-1', { date: '2026-06-01', type: 'slots' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
