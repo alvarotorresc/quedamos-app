@@ -19,7 +19,7 @@ public class MainActivity extends BridgeActivity {
             NotificationChannel channel = new NotificationChannel(
                 "default",
                 "Notificaciones",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             );
             channel.setDescription("Notificaciones de quedadas y disponibilidad");
             NotificationManager manager = getSystemService(NotificationManager.class);
