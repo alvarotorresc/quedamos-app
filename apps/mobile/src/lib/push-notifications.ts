@@ -20,30 +20,61 @@ export function resetNativePushSetup(): void {
   nativePushSetup = false;
 }
 
-export async function registerForPush(): Promise<string | null> {
+/**
+ * Register for push notifications on the current platform.
+ * Returns an object with the token and a cleanup function to remove listeners.
+ * The cleanup function MUST be called on unmount to prevent memory leaks
+ * from accumulated Capacitor listeners.
+ */
+export async function registerForPush(): Promise<{
+  token: string | null;
+  cleanup: () => void;
+}> {
   if (Capacitor.isNativePlatform()) {
     return registerNative();
   }
-  return registerWeb();
+  const token = await registerWeb();
+  return { token, cleanup: () => {} };
 }
 
-async function registerNative(): Promise<string | null> {
+async function registerNative(): Promise<{
+  token: string | null;
+  cleanup: () => void;
+}> {
   const permission = await PushNotifications.requestPermissions();
-  if (permission.receive !== 'granted') return null;
+  if (permission.receive !== 'granted') {
+    return { token: null, cleanup: () => {} };
+  }
 
-  return new Promise((resolve) => {
-    PushNotifications.addListener('registration', (token) => {
-      currentToken = token.value;
-      resolve(token.value);
-    });
-
-    PushNotifications.addListener('registrationError', (error) => {
-      console.error('[Push] Native registration error:', error);
-      resolve(null);
-    });
-
-    PushNotifications.register();
+  // Deferred promise so we can await listeners before calling register().
+  // This lets us capture PluginListenerHandle refs for proper cleanup,
+  // preventing listener accumulation when the hook unmounts/remounts.
+  let resolveToken: (value: string | null) => void;
+  const tokenPromise = new Promise<string | null>((resolve) => {
+    resolveToken = resolve;
   });
+
+  const registrationHandle = await PushNotifications.addListener('registration', (t) => {
+    currentToken = t.value;
+    resolveToken(t.value);
+  });
+
+  const errorHandle = await PushNotifications.addListener('registrationError', (error) => {
+    console.error('[Push] Native registration error:', error);
+    resolveToken(null);
+  });
+
+  await PushNotifications.register();
+
+  const token = await tokenPromise;
+
+  return {
+    token,
+    cleanup: () => {
+      registrationHandle.remove();
+      errorHandle.remove();
+    },
+  };
 }
 
 async function registerWeb(): Promise<string | null> {
@@ -92,26 +123,20 @@ export function setupPushListeners(): void {
   if (!Capacitor.isNativePlatform()) return;
   nativePushSetup = true;
 
-  PushNotifications.addListener(
-    'pushNotificationReceived',
-    (notification) => {
-      console.log('[Push] Received in foreground:', notification);
-      // On Android, foreground notifications are not shown automatically.
-      // The notification object contains title/body but needs a local notification
-      // plugin to display as a system notification. For now, we log it.
-    },
-  );
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    console.log('[Push] Received in foreground:', notification);
+    // On Android, foreground notifications are not shown automatically.
+    // The notification object contains title/body but needs a local notification
+    // plugin to display as a system notification. For now, we log it.
+  });
 
-  PushNotifications.addListener(
-    'pushNotificationActionPerformed',
-    (action) => {
-      console.log('[Push] Action performed:', action);
-      const data = action.notification.data;
-      if (!data?.type) return;
+  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+    console.log('[Push] Action performed:', action);
+    const data = action.notification.data;
+    if (!data?.type) return;
 
-      navigateFromPush(data);
-    },
-  );
+    navigateFromPush(data);
+  });
 }
 
 const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
