@@ -20,13 +20,14 @@ async function bootstrap() {
     }),
   );
 
-  const origins: string[] = [
-    'https://quedamos-app-mobile.vercel.app',
-    'https://localhost',
-    'http://localhost',
-  ];
+  const origins: string[] = ['https://quedamos-app-mobile.vercel.app'];
   if (process.env.NODE_ENV !== 'production') {
-    origins.push('http://localhost:5173', 'http://localhost:8100');
+    origins.push(
+      'http://localhost:5173',
+      'http://localhost:8100',
+      'https://localhost',
+      'http://localhost',
+    );
   }
   if (process.env.CORS_ORIGIN) {
     origins.push(process.env.CORS_ORIGIN);
