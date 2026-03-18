@@ -193,6 +193,56 @@ describe('EventsService', () => {
       );
     });
 
+    it('should auto-confirm event when all attendees are pre-confirmed', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      const result = await service.create('group-1', 'user-1', {
+        title: 'All Confirmed',
+        date: '2026-12-01',
+        attendeeStatusMap: {
+          'user-2': 'confirmed',
+        },
+      });
+
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: 'confirmed' },
+        }),
+      );
+      expect(result.status).toBe('confirmed');
+    });
+
+    it('should not auto-confirm when some attendees are not confirmed', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'declined' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Partial',
+        date: '2026-12-01',
+        attendeeStatusMap: {
+          'user-2': 'declined',
+        },
+      });
+
+      expect(prisma.event.update).not.toHaveBeenCalled();
+    });
+
     it('should pass through location coordinates on create', async () => {
       const event = {
         ...createTestEvent(),

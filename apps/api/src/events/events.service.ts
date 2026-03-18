@@ -121,6 +121,20 @@ export class EventsService {
       },
     });
 
+    // Auto-confirm event when all attendees are already confirmed (e.g. from proposals)
+    if (dto.attendeeStatusMap) {
+      const allConfirmed = targetMemberIds.every(
+        (id) => id === userId || dto.attendeeStatusMap?.[id] === 'confirmed',
+      );
+      if (allConfirmed) {
+        await this.prisma.event.update({
+          where: { id: event.id },
+          data: { status: 'confirmed' },
+        });
+        event.status = 'confirmed';
+      }
+    }
+
     this.notificationsService
       .sendToGroup(
         groupId,
