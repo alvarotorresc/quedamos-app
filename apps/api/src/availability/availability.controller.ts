@@ -9,11 +9,14 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AvailabilityService } from './availability.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
 
+@ApiTags('Availability')
+@ApiBearerAuth()
 @Controller('groups/:groupId/availability')
 @UseGuards(AuthGuard)
 export class AvailabilityController {

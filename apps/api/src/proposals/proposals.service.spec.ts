@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ProposalsService } from './proposals.service';
 import { GroupsService } from '../groups/groups.service';
 import { EventsService } from '../events/events.service';
@@ -96,6 +96,40 @@ describe('ProposalsService', () => {
     });
   });
 
+  describe('findAll', () => {
+    it('should return all proposals for a group', async () => {
+      const proposals = [
+        { ...createTestProposal(), createdBy: createTestUser(), votes: [] },
+        {
+          ...createTestProposal({ id: 'proposal-2', title: 'Second Proposal' }),
+          createdBy: createTestUser(),
+          votes: [],
+        },
+      ];
+      prisma.planProposal.findMany.mockResolvedValue(proposals);
+
+      const result = await service.findAll('group-1', 'user-1');
+
+      expect(result).toEqual(proposals);
+      expect(result).toHaveLength(2);
+      expect(groupsService.findById).toHaveBeenCalledWith('group-1', 'user-1');
+      expect(prisma.planProposal.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { groupId: 'group-1' },
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
+    });
+
+    it('should return empty array when no proposals exist', async () => {
+      prisma.planProposal.findMany.mockResolvedValue([]);
+
+      const result = await service.findAll('group-1', 'user-1');
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('vote', () => {
     it('should vote yes/no', async () => {
       prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
@@ -132,6 +166,22 @@ describe('ProposalsService', () => {
       );
     });
 
+    it('should throw NotFoundException when proposal not found', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when proposal is closed', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal({ status: 'closed' }));
+
+      await expect(
+        service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
     it('should send proposal_voted notification with voter name', async () => {
       prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
       prisma.planVote.upsert.mockResolvedValue({});
@@ -160,6 +210,7 @@ describe('ProposalsService', () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),
         createdBy: createTestUser(),
+        votes: [],
       });
       prisma.planProposal.update.mockResolvedValue({
         ...createTestProposal({ status: 'converted' }),
@@ -184,6 +235,7 @@ describe('ProposalsService', () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),
         createdBy: createTestUser(),
+        votes: [],
       });
       prisma.planProposal.update.mockResolvedValue({
         ...createTestProposal({ status: 'converted' }),
@@ -206,10 +258,85 @@ describe('ProposalsService', () => {
       );
     });
 
+    it('should transfer yes votes as confirmed and no votes as declined', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [
+          { userId: 'user-1', vote: 'yes' },
+          { userId: 'user-2', vote: 'yes' },
+          { userId: 'user-3', vote: 'no' },
+        ],
+      });
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(eventsService.create).toHaveBeenCalledWith(
+        'group-1',
+        'user-1',
+        expect.objectContaining({
+          attendeeStatusMap: {
+            'user-1': 'confirmed',
+            'user-2': 'confirmed',
+            'user-3': 'declined',
+          },
+        }),
+      );
+    });
+
+    it('should throw NotFoundException when proposal not found', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-12-01' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when endTime is before or equal to time', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', {
+          date: '2026-12-01',
+          time: '18:00',
+          endTime: '17:00',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when endTime equals time', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', {
+          date: '2026-12-01',
+          time: '18:00',
+          endTime: '18:00',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should reject convert from non-creator', async () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),
         createdBy: createTestUser(),
+        votes: [],
       });
 
       await expect(
@@ -241,6 +368,14 @@ describe('ProposalsService', () => {
 
       await expect(service.close('group-1', 'proposal-1', 'user-2')).rejects.toThrow(
         ForbiddenException,
+      );
+    });
+
+    it('should throw NotFoundException when proposal not found', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(null);
+
+      await expect(service.close('group-1', 'proposal-1', 'user-1')).rejects.toThrow(
+        NotFoundException,
       );
     });
   });

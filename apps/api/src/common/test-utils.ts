@@ -1,7 +1,7 @@
 /* Shared test utilities and mock factories for backend tests */
 
 export function createMockPrisma() {
-  return {
+  const prisma: any = {
     user: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
@@ -37,6 +37,7 @@ export function createMockPrisma() {
       update: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     event: {
       findUnique: jest.fn(),
@@ -96,12 +97,15 @@ export function createMockPrisma() {
       delete: jest.fn(),
     },
   };
+  prisma.$transaction = jest.fn((fn: any) => fn(prisma));
+  return prisma;
 }
 
 export function createMockNotificationsService() {
   return {
     sendToUser: jest.fn().mockResolvedValue({ sent: 1 }),
     sendToGroup: jest.fn().mockResolvedValue({ sent: 1 }),
+    sendToEventAttendees: jest.fn().mockResolvedValue({ sent: 1 }),
     isNotificationEnabled: jest.fn().mockResolvedValue(true),
     registerToken: jest.fn(),
     unregisterToken: jest.fn(),

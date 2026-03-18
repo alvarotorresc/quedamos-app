@@ -187,6 +187,48 @@ export class NotificationsService implements OnModuleInit {
     );
   }
 
+  async sendToEventAttendees(
+    eventId: string,
+    title: string,
+    body: string,
+    excludeUserId?: string,
+    data?: Record<string, string>,
+    notificationType?: NotificationType,
+    statusFilter?: string,
+  ) {
+    const where: Record<string, unknown> = { eventId };
+    if (statusFilter) {
+      where.status = statusFilter;
+    }
+
+    const attendees = await this.prisma.eventAttendee.findMany({ where });
+
+    let userIds = attendees.map((a) => a.userId).filter((id) => id !== excludeUserId);
+
+    if (notificationType && userIds.length > 0) {
+      const disabledPrefs = await this.prisma.notificationPreference.findMany({
+        where: { userId: { in: userIds }, type: notificationType, enabled: false },
+      });
+      const disabledSet = new Set(disabledPrefs.map((p) => p.userId));
+      userIds = userIds.filter((id) => !disabledSet.has(id));
+    }
+
+    if (userIds.length === 0) return { sent: 0 };
+
+    const tokens = await this.prisma.pushToken.findMany({
+      where: { userId: { in: userIds } },
+    });
+
+    if (tokens.length === 0) return { sent: 0 };
+
+    return this.sendToTokens(
+      tokens.map((t) => t.token),
+      title,
+      body,
+      data,
+    );
+  }
+
   private async sendToTokens(
     tokens: string[],
     title: string,

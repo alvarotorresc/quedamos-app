@@ -110,6 +110,7 @@ export function CreateEventModal({
       ...(endTime && { endTime }),
       ...(description.trim() && { description: description.trim() }),
       ...(location.trim() && { location: location.trim() }),
+      ...(locationLat != null && locationLon != null && { locationLat, locationLon }),
       ...(selectedMemberIds.size > 0 && { attendeeIds: [...selectedMemberIds] }),
     });
     resetAndClose();

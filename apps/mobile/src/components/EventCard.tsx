@@ -9,7 +9,7 @@ import { HiOutlineMapPin, HiOutlineClock, HiOutlinePencil } from 'react-icons/hi
 import { useRespondEvent } from '../hooks/useEvents';
 import { useAuthStore } from '../stores/auth';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
-import { openInMaps } from '../lib/maps-utils';
+import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { WeatherBadge, getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
 import type { Event } from '../services/events';
 import type { WeatherData } from '../services/weather';
@@ -77,7 +77,8 @@ export function EventCard({
   // Current user's attendee status
   const myAttendee = event.attendees.find((a) => a.userId === user?.id);
   const myStatus = myAttendee?.status ?? 'pending';
-  const isPending = myStatus === 'pending';
+  const isInvited = !!myAttendee;
+  const isPending = isInvited && myStatus === 'pending';
 
   const isCreator = event.createdBy.id === user?.id;
 
@@ -148,15 +149,21 @@ export function EventCard({
       )}
 
       {/* Location */}
-      {event.location && (
-        <button
-          onClick={() => openInMaps(event.location!)}
-          className="flex items-center gap-1 text-xs text-primary mb-1.5 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
-        >
-          <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
-          <span>{event.location}</span>
-        </button>
-      )}
+      {event.location &&
+        (hasCoordinates(event.locationLat, event.locationLon) ? (
+          <button
+            onClick={() => openInMaps(event.location!, event.locationLat, event.locationLon)}
+            className="flex items-center gap-1 text-xs text-primary mb-1.5 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
+          >
+            <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
+            <span>{event.location}</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-1 text-xs text-text-muted mb-1.5">
+            <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
+            <span>{event.location}</span>
+          </div>
+        ))}
 
       {/* Description */}
       {event.description && (

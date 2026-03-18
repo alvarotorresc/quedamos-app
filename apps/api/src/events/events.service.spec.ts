@@ -92,6 +92,24 @@ describe('EventsService', () => {
       );
     });
 
+    it('should store date as UTC midnight', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'UTC Test',
+        date: '2026-12-01',
+      });
+
+      const createCall = prisma.event.create.mock.calls[0][0];
+      const storedDate = createCall.data.date as Date;
+      expect(storedDate.toISOString()).toBe('2026-12-01T00:00:00.000Z');
+    });
+
     it('should send push notification on create', async () => {
       const event = {
         ...createTestEvent(),
@@ -113,6 +131,34 @@ describe('EventsService', () => {
         expect.objectContaining({ type: 'new_event' }),
         'new_event',
       );
+    });
+
+    it('should use sendToEventAttendees when attendeeIds are provided', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'pending' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Selective Event',
+        date: '2026-12-01',
+        attendeeIds: ['user-2'],
+      });
+
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Nueva quedada',
+        expect.stringContaining('Test Event'),
+        'user-1',
+        expect.objectContaining({ type: 'new_event' }),
+        'new_event',
+      );
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
     });
 
     it('should reject events in the past', async () => {
@@ -160,6 +206,115 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should use attendeeStatusMap for pre-set attendee statuses', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'declined' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'From Proposal',
+        date: '2026-12-01',
+        attendeeStatusMap: {
+          'user-2': 'declined',
+        },
+      });
+
+      expect(prisma.event.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            attendees: {
+              create: expect.arrayContaining([
+                expect.objectContaining({ userId: 'user-1', status: 'confirmed' }),
+                expect.objectContaining({ userId: 'user-2', status: 'declined' }),
+              ]),
+            },
+          }),
+        }),
+      );
+    });
+
+    it('should auto-confirm event when all attendees are pre-confirmed', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      const result = await service.create('group-1', 'user-1', {
+        title: 'All Confirmed',
+        date: '2026-12-01',
+        attendeeStatusMap: {
+          'user-2': 'confirmed',
+        },
+      });
+
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: 'confirmed' },
+        }),
+      );
+      expect(result.status).toBe('confirmed');
+    });
+
+    it('should not auto-confirm when some attendees are not confirmed', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'declined' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Partial',
+        date: '2026-12-01',
+        attendeeStatusMap: {
+          'user-2': 'declined',
+        },
+      });
+
+      expect(prisma.event.update).not.toHaveBeenCalled();
+    });
+
+    it('should pass through location coordinates on create', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Test Event',
+        date: '2026-12-01',
+        location: 'Retiro Park',
+        locationLat: 40.4153,
+        locationLon: -3.6845,
+      });
+
+      expect(prisma.event.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            locationLat: 40.4153,
+            locationLon: -3.6845,
+          }),
+        }),
+      );
+    });
+
     it('should allow event without endTime', async () => {
       const event = {
         ...createTestEvent(),
@@ -181,6 +336,18 @@ describe('EventsService', () => {
   describe('respond', () => {
     beforeEach(() => {
       prisma.event.findFirst.mockResolvedValue(createTestEvent());
+    });
+
+    it('should reject respond to cancelled event', async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent({ status: 'cancelled' }),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await expect(
+        service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should update attendee status to confirmed', async () => {
@@ -208,6 +375,28 @@ describe('EventsService', () => {
           data: expect.objectContaining({ status: 'confirmed' }),
         }),
       );
+    });
+
+    it('should use transaction for atomic attendee update and status check', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-1',
+        status: 'pending',
+      });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'pending' },
+      ]);
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     });
 
     it('should throw when not invited', async () => {
@@ -259,13 +448,14 @@ describe('EventsService', () => {
 
       await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada confirmada',
         expect.any(String),
         undefined,
         expect.objectContaining({ type: 'event_confirmed' }),
         'event_confirmed',
+        'confirmed',
       );
     });
 
@@ -312,13 +502,14 @@ describe('EventsService', () => {
 
       await service.respond('group-1', 'event-1', 'user-2', { status: 'declined' });
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Asistencia rechazada',
         expect.stringContaining('User 2'),
         'user-2',
         expect.objectContaining({ type: 'event_declined' }),
         'event_declined',
+        'confirmed',
       );
     });
   });
@@ -371,6 +562,22 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should store updated date as UTC midnight', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, date: new Date('2026-12-15T00:00:00Z') });
+
+      await service.update('group-1', 'event-1', 'user-1', { date: '2026-12-15' });
+
+      const updateCall = prisma.event.update.mock.calls[0][0];
+      const storedDate = updateCall.data.date as Date;
+      expect(storedDate.toISOString()).toBe('2026-12-15T00:00:00.000Z');
+    });
+
     it('should send notification on update', async () => {
       const event = {
         ...createTestEvent(),
@@ -382,8 +589,8 @@ describe('EventsService', () => {
 
       await service.update('group-1', 'event-1', 'user-1', { title: 'Updated' });
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada actualizada',
         expect.any(String),
         'user-1',
@@ -419,6 +626,63 @@ describe('EventsService', () => {
       expect(prisma.event.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ endTime: '22:00' }),
+        }),
+      );
+    });
+
+    it('should update location coordinates', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({
+        ...event,
+        locationLat: 40.4153,
+        locationLon: -3.6845,
+      });
+
+      await service.update('group-1', 'event-1', 'user-1', {
+        locationLat: 40.4153,
+        locationLon: -3.6845,
+      });
+
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            locationLat: 40.4153,
+            locationLon: -3.6845,
+          }),
+        }),
+      );
+    });
+
+    it('should clear coordinates when location is cleared', async () => {
+      const event = {
+        ...createTestEvent({
+          location: 'Retiro Park',
+        }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({
+        ...event,
+        location: '',
+        locationLat: null,
+        locationLon: null,
+      });
+
+      await service.update('group-1', 'event-1', 'user-1', { location: '' });
+
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            location: '',
+            locationLat: null,
+            locationLon: null,
+          }),
         }),
       );
     });
@@ -497,8 +761,8 @@ describe('EventsService', () => {
 
       await service.delete('group-1', 'event-1', 'user-1');
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada eliminada',
         expect.stringContaining('Test Event'),
         'user-1',
@@ -551,8 +815,8 @@ describe('EventsService', () => {
 
       await service.cancel('group-1', 'event-1', 'user-1');
 
-      expect(notifications.sendToGroup).toHaveBeenCalledWith(
-        'group-1',
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
         'Quedada cancelada',
         expect.stringContaining('Test Event'),
         'user-1',

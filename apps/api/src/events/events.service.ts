@@ -61,10 +61,10 @@ export class EventsService {
   async create(groupId: string, userId: string, dto: CreateEventDto) {
     await this.groupsService.findById(groupId, userId);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const eventDate = new Date(dto.date + 'T00:00:00');
-    if (eventDate < today) {
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const eventDate = new Date(dto.date + 'T00:00:00Z');
+    if (eventDate < todayUTC) {
       throw new BadRequestException('No se pueden crear quedadas en fechas pasadas');
     }
 
@@ -99,14 +99,17 @@ export class EventsService {
         title: dto.title,
         description: dto.description,
         location: dto.location,
-        date: new Date(dto.date),
+        locationLat: dto.locationLat,
+        locationLon: dto.locationLon,
+        date: new Date(dto.date + 'T00:00:00Z'),
         time: dto.time,
         endTime: dto.endTime,
         status: 'pending',
         attendees: {
           create: targetMemberIds.map((id) => ({
             userId: id,
-            status: id === userId ? 'confirmed' : 'pending',
+            status: id === userId ? 'confirmed' : (dto.attendeeStatusMap?.[id] ?? 'pending'),
+            ...(dto.attendeeStatusMap?.[id] ? { respondedAt: new Date() } : {}),
           })),
         },
       },
@@ -118,16 +121,43 @@ export class EventsService {
       },
     });
 
-    this.notificationsService
-      .sendToGroup(
-        groupId,
-        'Nueva quedada',
-        `${event.createdBy.name} ha creado "${event.title}"`,
-        userId,
-        { type: 'new_event', eventId: event.id, groupId },
-        'new_event',
-      )
-      .catch((err) => this.logger.error('Failed to send new_event notification', err));
+    // Auto-confirm event when all attendees are already confirmed (e.g. from proposals)
+    if (dto.attendeeStatusMap) {
+      const allConfirmed = targetMemberIds.every(
+        (id) => id === userId || dto.attendeeStatusMap?.[id] === 'confirmed',
+      );
+      if (allConfirmed) {
+        await this.prisma.event.update({
+          where: { id: event.id },
+          data: { status: 'confirmed' },
+        });
+        event.status = 'confirmed';
+      }
+    }
+
+    if (dto.attendeeIds && dto.attendeeIds.length > 0) {
+      this.notificationsService
+        .sendToEventAttendees(
+          event.id,
+          'Nueva quedada',
+          `${event.createdBy.name} ha creado "${event.title}"`,
+          userId,
+          { type: 'new_event', eventId: event.id, groupId },
+          'new_event',
+        )
+        .catch((err) => this.logger.error('Failed to send new_event notification', err));
+    } else {
+      this.notificationsService
+        .sendToGroup(
+          groupId,
+          'Nueva quedada',
+          `${event.createdBy.name} ha creado "${event.title}"`,
+          userId,
+          { type: 'new_event', eventId: event.id, groupId },
+          'new_event',
+        )
+        .catch((err) => this.logger.error('Failed to send new_event notification', err));
+    }
 
     return event;
   }
@@ -140,10 +170,12 @@ export class EventsService {
     }
 
     if (dto.date) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const eventDate = new Date(dto.date + 'T00:00:00');
-      if (eventDate < today) {
+      const now = new Date();
+      const todayUTC = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+      );
+      const eventDate = new Date(dto.date + 'T00:00:00Z');
+      if (eventDate < todayUTC) {
         throw new BadRequestException('Cannot set date to the past');
       }
     }
@@ -157,8 +189,16 @@ export class EventsService {
     const data: Record<string, unknown> = {};
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
-    if (dto.location !== undefined) data.location = dto.location;
-    if (dto.date !== undefined) data.date = new Date(dto.date);
+    if (dto.location !== undefined) {
+      data.location = dto.location;
+      if (!dto.location) {
+        data.locationLat = null;
+        data.locationLon = null;
+      }
+    }
+    if (dto.locationLat !== undefined) data.locationLat = dto.locationLat;
+    if (dto.locationLon !== undefined) data.locationLon = dto.locationLon;
+    if (dto.date !== undefined) data.date = new Date(dto.date + 'T00:00:00Z');
     if (dto.time !== undefined) data.time = dto.time;
     if (dto.endTime !== undefined) data.endTime = dto.endTime;
 
@@ -172,8 +212,8 @@ export class EventsService {
     });
 
     this.notificationsService
-      .sendToGroup(
-        groupId,
+      .sendToEventAttendees(
+        eventId,
         'Quedada actualizada',
         `"${updated.title}" ha sido editada`,
         userId,
@@ -192,11 +232,10 @@ export class EventsService {
       throw new ForbiddenException('Only the creator can delete this event');
     }
 
-    await this.prisma.event.delete({ where: { id: eventId } });
-
+    // Send notification before delete (attendees are cascade-deleted with the event)
     this.notificationsService
-      .sendToGroup(
-        groupId,
+      .sendToEventAttendees(
+        eventId,
         'Quedada eliminada',
         `"${event.title}" ha sido eliminada`,
         userId,
@@ -204,6 +243,8 @@ export class EventsService {
         'event_deleted',
       )
       .catch((err) => this.logger.error('Failed to send event_deleted notification', err));
+
+    await this.prisma.event.delete({ where: { id: eventId } });
 
     return { success: true };
   }
@@ -225,8 +266,8 @@ export class EventsService {
     });
 
     this.notificationsService
-      .sendToGroup(
-        groupId,
+      .sendToEventAttendees(
+        eventId,
         'Quedada cancelada',
         `"${event.title}" ha sido cancelada`,
         userId,
@@ -239,7 +280,11 @@ export class EventsService {
   }
 
   async respond(groupId: string, eventId: string, userId: string, dto: RespondEventDto) {
-    await this.findById(groupId, eventId, userId);
+    const event = await this.findById(groupId, eventId, userId);
+
+    if (event.status === 'cancelled') {
+      throw new BadRequestException('Cannot respond to a cancelled event');
+    }
 
     const attendee = await this.prisma.eventAttendee.findUnique({
       where: {
@@ -251,64 +296,73 @@ export class EventsService {
       throw new NotFoundException('Not invited to this event');
     }
 
-    await this.prisma.eventAttendee.update({
-      where: { eventId_userId: { eventId, userId } },
-      data: {
-        status: dto.status,
-        respondedAt: new Date(),
-      },
-    });
-
-    const allAttendees = await this.prisma.eventAttendee.findMany({
-      where: { eventId },
-    });
-
-    const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
-    const anyDeclined = allAttendees.some((a) => a.status === 'declined');
-
-    if (allConfirmed) {
-      await this.prisma.event.update({
-        where: { id: eventId },
-        data: { status: 'confirmed' },
+    // Transaction to atomically update attendee + check/update event status
+    await this.prisma.$transaction(async (tx) => {
+      await tx.eventAttendee.update({
+        where: { eventId_userId: { eventId, userId } },
+        data: {
+          status: dto.status,
+          respondedAt: new Date(),
+        },
       });
 
-      const event = await this.prisma.event.findUnique({
-        where: { id: eventId },
+      const allAttendees = await tx.eventAttendee.findMany({
+        where: { eventId },
       });
-      if (event) {
-        this.notificationsService
-          .sendToGroup(
-            groupId,
-            'Quedada confirmada',
-            `Todos han confirmado "${event.title}"`,
-            undefined,
-            { type: 'event_confirmed', eventId, groupId },
-            'event_confirmed',
-          )
-          .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+
+      const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
+      const anyDeclined = allAttendees.some((a) => a.status === 'declined');
+
+      if (allConfirmed) {
+        await tx.event.update({
+          where: { id: eventId },
+          data: { status: 'confirmed' },
+        });
+      } else if (anyDeclined) {
+        await tx.event.update({
+          where: { id: eventId },
+          data: { status: 'pending' },
+        });
       }
-    } else if (anyDeclined) {
-      await this.prisma.event.update({
-        where: { id: eventId },
-        data: { status: 'pending' },
-      });
+    });
+
+    // Notifications outside transaction (fire-and-forget)
+    if (dto.status === 'confirmed') {
+      const allAttendees = await this.prisma.eventAttendee.findMany({ where: { eventId } });
+      const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
+      if (allConfirmed) {
+        const event = await this.prisma.event.findUnique({ where: { id: eventId } });
+        if (event) {
+          this.notificationsService
+            .sendToEventAttendees(
+              eventId,
+              'Quedada confirmada',
+              `Todos han confirmado "${event.title}"`,
+              undefined,
+              { type: 'event_confirmed', eventId, groupId },
+              'event_confirmed',
+              'confirmed',
+            )
+            .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+        }
+      }
     }
 
-    // Notify group when someone declines
     if (dto.status === 'declined') {
-      const [user, event] = await Promise.all([
+      const [user, declinedEvent] = await Promise.all([
         this.prisma.user.findUnique({ where: { id: userId } }),
         this.prisma.event.findUnique({ where: { id: eventId } }),
       ]);
-      if (user && event) {
+      if (user && declinedEvent) {
         this.notificationsService
-          .sendToGroup(
-            groupId,
+          .sendToEventAttendees(
+            eventId,
             'Asistencia rechazada',
-            `${user.name} ha rechazado "${event.title}"`,
+            `${user.name} ha rechazado "${declinedEvent.title}"`,
             userId,
             { type: 'event_declined', eventId, groupId },
             'event_declined',
+            'confirmed',
           )
           .catch((err) => this.logger.error('Failed to send event_declined notification', err));
       }

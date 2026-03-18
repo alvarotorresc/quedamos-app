@@ -10,16 +10,29 @@ import {
 export function usePushNotifications() {
   const user = useAuthStore((s) => s.user);
   const registered = useRef(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!user || registered.current) return;
+
+    let cancelled = false;
 
     (async () => {
       try {
         setupPushListeners();
         setupWebForegroundHandler();
         console.log('[Push] Registering for push notifications...');
-        const token = await registerForPush();
+        const { token, cleanup } = await registerForPush();
+
+        // If the effect was cleaned up while we were awaiting, remove
+        // the listeners immediately to avoid orphaned handlers.
+        if (cancelled) {
+          cleanup();
+          return;
+        }
+
+        cleanupRef.current = cleanup;
+
         if (token) {
           console.log('[Push] Token obtained:', token.slice(0, 20) + '...');
           await sendTokenToBackend(token);
@@ -33,5 +46,11 @@ export function usePushNotifications() {
         // Don't set registered = true so it retries on next mount
       }
     })();
+
+    return () => {
+      cancelled = true;
+      cleanupRef.current?.();
+      cleanupRef.current = null;
+    };
   }, [user]);
 }

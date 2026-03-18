@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -7,15 +8,26 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'"],
+          connectSrc: ["'self'", 'https://*.supabase.co'],
+        },
+      },
+    }),
+  );
 
-  const origins: string[] = [
-    'https://quedamos-app-mobile.vercel.app',
-    'https://localhost',
-    'http://localhost',
-  ];
+  const origins: string[] = ['https://quedamos-app-mobile.vercel.app'];
   if (process.env.NODE_ENV !== 'production') {
-    origins.push('http://localhost:5173', 'http://localhost:8100');
+    origins.push(
+      'http://localhost:5173',
+      'http://localhost:8100',
+      'https://localhost',
+      'http://localhost',
+    );
   }
   if (process.env.CORS_ORIGIN) {
     origins.push(process.env.CORS_ORIGIN);
@@ -33,6 +45,17 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
+
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Quedamos API')
+      .setDescription('API para coordinar quedadas entre grupos de amigos')
+      .setVersion('0.2.3')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   const port = process.env.PORT ?? 3000;
   await app.listen(port);

@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
 import { GroupsService } from '../groups/groups.service';
 import { createMockPrisma, createTestGroup } from '../common/test-utils';
@@ -74,6 +74,76 @@ describe('AvailabilityService', () => {
         }),
       );
     });
+
+    it('should reject range type without startTime', async () => {
+      await expect(
+        service.create('group-1', 'user-1', { date: '2026-06-01', type: 'range' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject range type without endTime', async () => {
+      await expect(
+        service.create('group-1', 'user-1', {
+          date: '2026-06-01',
+          type: 'range',
+          startTime: '10:00',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject slots type without slots array', async () => {
+      await expect(
+        service.create('group-1', 'user-1', { date: '2026-06-01', type: 'slots' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject slots type with empty slots array', async () => {
+      await expect(
+        service.create('group-1', 'user-1', { date: '2026-06-01', type: 'slots', slots: [] }),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('date format validation', () => {
+    it('should reject invalid date format in update', async () => {
+      await expect(
+        service.update('group-1', 'INVALID', 'user-1', { date: '2026-03-01', type: 'day' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject invalid date format in delete', async () => {
+      await expect(service.delete('group-1', 'not-a-date', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject partial date format in update', async () => {
+      await expect(
+        service.update('group-1', '2026-03', 'user-1', { date: '2026-03-01', type: 'day' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject date with extra characters in delete', async () => {
+      await expect(service.delete('group-1', '2026-03-01T00:00', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should accept valid YYYY-MM-DD date in update', async () => {
+      prisma.availability.findUnique.mockResolvedValue({ id: '1' });
+      prisma.availability.update.mockResolvedValue({ id: '1', type: 'day' });
+
+      await expect(
+        service.update('group-1', '2026-03-01', 'user-1', { date: '2026-03-01', type: 'day' }),
+      ).resolves.toBeDefined();
+    });
+
+    it('should accept valid YYYY-MM-DD date in delete', async () => {
+      prisma.availability.findUnique.mockResolvedValue({ id: '1' });
+      prisma.availability.delete.mockResolvedValue({});
+
+      await expect(service.delete('group-1', '2026-03-01', 'user-1')).resolves.toBeDefined();
+    });
   });
 
   describe('update', () => {
@@ -103,6 +173,18 @@ describe('AvailabilityService', () => {
       await expect(
         service.update('group-1', '2026-03-01', 'user-1', { date: '2026-03-01', type: 'day' }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should reject range type without startTime', async () => {
+      await expect(
+        service.update('group-1', '2026-06-01', 'user-1', { date: '2026-06-01', type: 'range' }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject slots type without slots array', async () => {
+      await expect(
+        service.update('group-1', '2026-06-01', 'user-1', { date: '2026-06-01', type: 'slots' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 

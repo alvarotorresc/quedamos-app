@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { GroupsService } from './groups.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -18,6 +19,8 @@ import { JoinGroupDto } from './dto/join-group.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { AddCityDto } from './dto/add-city.dto';
 
+@ApiTags('Groups')
+@ApiBearerAuth()
 @Controller('groups')
 @UseGuards(AuthGuard)
 export class GroupsController {

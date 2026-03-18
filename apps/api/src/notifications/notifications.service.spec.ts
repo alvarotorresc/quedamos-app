@@ -352,4 +352,88 @@ describe('NotificationsService', () => {
       );
     });
   });
+
+  describe('sendToEventAttendees', () => {
+    it('should only send to confirmed attendees when statusFilter is confirmed', async () => {
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-3', status: 'confirmed' },
+      ]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+
+      await service.sendToEventAttendees(
+        'event-1',
+        'Title',
+        'Body',
+        'user-1',
+        undefined,
+        undefined,
+        'confirmed',
+      );
+
+      expect(prisma.eventAttendee.findMany).toHaveBeenCalledWith({
+        where: { eventId: 'event-1', status: 'confirmed' },
+      });
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: { in: ['user-3'] } },
+        }),
+      );
+    });
+
+    it('should send to ALL attendees when no statusFilter (cancel case)', async () => {
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'declined' },
+        { userId: 'user-3', status: 'pending' },
+      ]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+
+      await service.sendToEventAttendees('event-1', 'Quedada cancelada', 'Body', 'user-1');
+
+      expect(prisma.eventAttendee.findMany).toHaveBeenCalledWith({
+        where: { eventId: 'event-1' },
+      });
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: { in: ['user-2', 'user-3'] } },
+        }),
+      );
+    });
+
+    it('should return sent 0 when no matching attendees', async () => {
+      prisma.eventAttendee.findMany.mockResolvedValue([]);
+
+      const result = await service.sendToEventAttendees('event-1', 'Title', 'Body');
+
+      expect(result).toEqual({ sent: 0 });
+    });
+
+    it('should respect notification preferences', async () => {
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.notificationPreference.findMany.mockResolvedValue([
+        { userId: 'user-2', type: 'event_updated', enabled: false },
+      ]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+
+      await service.sendToEventAttendees(
+        'event-1',
+        'Title',
+        'Body',
+        undefined,
+        undefined,
+        'event_updated',
+        'confirmed',
+      );
+
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: { in: ['user-1'] } },
+        }),
+      );
+    });
+  });
 });

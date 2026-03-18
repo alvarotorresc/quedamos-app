@@ -8,6 +8,9 @@ const mockEventsService = {
   findAllForGroup: jest.fn(),
   findById: jest.fn(),
   create: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+  cancel: jest.fn(),
   respond: jest.fn(),
 };
 
@@ -92,6 +95,20 @@ describe('EventsController', () => {
       expect(mockEventsService.create).toHaveBeenCalledTimes(1);
     });
 
+    it('should strip attendeeStatusMap from dto before passing to service', async () => {
+      const dto = {
+        title: 'Beach Day',
+        date: '2026-07-15',
+        attendeeStatusMap: { 'user-2': 'confirmed' as const },
+      };
+      mockEventsService.create.mockResolvedValue(createTestEvent());
+
+      await controller.create('group-1', { id: 'user-1' }, dto as any);
+
+      const passedDto = mockEventsService.create.mock.calls[0][2];
+      expect(passedDto.attendeeStatusMap).toBeUndefined();
+    });
+
     it('should pass dto with optional fields to service', async () => {
       const dto = {
         title: 'Dinner',
@@ -105,6 +122,53 @@ describe('EventsController', () => {
       await controller.create('group-1', { id: 'user-1' }, dto);
 
       expect(mockEventsService.create).toHaveBeenCalledWith('group-1', 'user-1', dto);
+    });
+  });
+
+  describe('update', () => {
+    it('should call eventsService.update with groupId, eventId, userId, and dto', async () => {
+      const dto = { title: 'Updated Event', location: 'New Place' };
+      const updated = {
+        ...createTestEvent({ title: 'Updated Event' }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      mockEventsService.update.mockResolvedValue(updated);
+
+      const result = await controller.update('group-1', 'event-1', { id: 'user-1' }, dto);
+
+      expect(result).toEqual(updated);
+      expect(mockEventsService.update).toHaveBeenCalledWith('group-1', 'event-1', 'user-1', dto);
+      expect(mockEventsService.update).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('delete', () => {
+    it('should call eventsService.delete with groupId, eventId, and userId', async () => {
+      mockEventsService.delete.mockResolvedValue({ success: true });
+
+      const result = await controller.delete('group-1', 'event-1', { id: 'user-1' });
+
+      expect(result).toEqual({ success: true });
+      expect(mockEventsService.delete).toHaveBeenCalledWith('group-1', 'event-1', 'user-1');
+      expect(mockEventsService.delete).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('cancel', () => {
+    it('should call eventsService.cancel with groupId, eventId, and userId', async () => {
+      const cancelled = {
+        ...createTestEvent({ status: 'cancelled' }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      mockEventsService.cancel.mockResolvedValue(cancelled);
+
+      const result = await controller.cancel('group-1', 'event-1', { id: 'user-1' });
+
+      expect(result).toEqual(cancelled);
+      expect(mockEventsService.cancel).toHaveBeenCalledWith('group-1', 'event-1', 'user-1');
+      expect(mockEventsService.cancel).toHaveBeenCalledTimes(1);
     });
   });
 

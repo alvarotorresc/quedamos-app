@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
@@ -30,8 +30,31 @@ export class AvailabilityService {
     });
   }
 
+  private validateDateFormat(date: string): void {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
+    }
+  }
+
+  private validateTypeConsistency(dto: CreateAvailabilityDto): void {
+    if (dto.type === 'range') {
+      if (!dto.startTime || !dto.endTime) {
+        throw new BadRequestException('startTime and endTime are required for type "range"');
+      }
+    }
+
+    if (dto.type === 'slots') {
+      if (!dto.slots || dto.slots.length === 0) {
+        throw new BadRequestException(
+          'slots array is required and must not be empty for type "slots"',
+        );
+      }
+    }
+  }
+
   async create(groupId: string, userId: string, dto: CreateAvailabilityDto) {
     await this.groupsService.findById(groupId, userId);
+    this.validateTypeConsistency(dto);
 
     return this.prisma.availability.upsert({
       where: {
@@ -60,7 +83,9 @@ export class AvailabilityService {
   }
 
   async update(groupId: string, date: string, userId: string, dto: CreateAvailabilityDto) {
+    this.validateDateFormat(date);
     await this.groupsService.findById(groupId, userId);
+    this.validateTypeConsistency(dto);
 
     const existing = await this.prisma.availability.findUnique({
       where: {
@@ -88,6 +113,7 @@ export class AvailabilityService {
   }
 
   async delete(groupId: string, date: string, userId: string) {
+    this.validateDateFormat(date);
     await this.groupsService.findById(groupId, userId);
 
     const existing = await this.prisma.availability.findUnique({

@@ -127,6 +127,41 @@ describe('AuthService', () => {
       expect(prisma.user.update).not.toHaveBeenCalled();
     });
 
+    it('should handle concurrent user creation (P2002 unique constraint)', async () => {
+      const user = createTestUser();
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'test@test.com',
+          user_metadata: { name: 'Test User', avatarEmoji: '😊' },
+        });
+      });
+      prisma.user.findUnique
+        .mockResolvedValueOnce(null) // First call: user not found
+        .mockResolvedValueOnce(user); // Second call: fallback after P2002
+      prisma.user.create.mockRejectedValue({ code: 'P2002' });
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(user);
+      expect(prisma.user.create).toHaveBeenCalled();
+      expect(prisma.user.findUnique).toHaveBeenCalledTimes(2);
+    });
+
+    it('should rethrow non-P2002 errors during user creation', async () => {
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'test@test.com',
+          user_metadata: { name: 'Test User', avatarEmoji: '😊' },
+        });
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockRejectedValue(new Error('Connection failed'));
+
+      await expect(service.validateToken('valid-token')).rejects.toThrow('Connection failed');
+    });
+
     it('should throw UnauthorizedException on invalid token', async () => {
       (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
         cb(new Error('invalid signature'));

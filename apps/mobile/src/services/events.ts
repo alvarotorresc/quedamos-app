@@ -20,6 +20,8 @@ export interface Event {
   title: string;
   description?: string;
   location?: string;
+  locationLat?: number;
+  locationLon?: number;
   date: string;
   time?: string;
   endTime?: string;
@@ -35,6 +37,8 @@ export interface CreateEventDto {
   title: string;
   description?: string;
   location?: string;
+  locationLat?: number;
+  locationLon?: number;
   date: string;
   time?: string;
   endTime?: string;
@@ -45,6 +49,8 @@ export interface UpdateEventDto {
   title?: string;
   description?: string;
   location?: string;
+  locationLat?: number;
+  locationLon?: number;
   date?: string;
   time?: string;
   endTime?: string;

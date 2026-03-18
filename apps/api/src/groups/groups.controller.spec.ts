@@ -13,6 +13,12 @@ const mockGroupsService = {
   getMembers: jest.fn(),
   getInviteInfo: jest.fn(),
   refreshInviteCode: jest.fn(),
+  addCity: jest.fn(),
+  getCities: jest.fn(),
+  removeCity: jest.fn(),
+  updateMemberRole: jest.fn(),
+  kickMember: jest.fn(),
+  deleteGroup: jest.fn(),
 };
 
 const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -150,6 +156,94 @@ describe('GroupsController', () => {
       expect(result).toEqual(newInvite);
       expect(mockGroupsService.refreshInviteCode).toHaveBeenCalledWith('group-1', 'user-1');
       expect(mockGroupsService.refreshInviteCode).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('addCity', () => {
+    it('should call groupsService.addCity with groupId, userId, and dto', async () => {
+      const city = { id: 'city-1', name: 'Madrid', lat: 40.4168, lon: -3.7038, groupId: 'group-1' };
+      const dto = { name: 'Madrid', lat: 40.4168, lon: -3.7038 };
+      mockGroupsService.addCity.mockResolvedValue(city);
+
+      const result = await controller.addCity('group-1', { id: 'user-1' }, dto);
+
+      expect(result).toEqual(city);
+      expect(mockGroupsService.addCity).toHaveBeenCalledWith('group-1', 'user-1', dto);
+      expect(mockGroupsService.addCity).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getCities', () => {
+    it('should call groupsService.getCities with groupId and userId', async () => {
+      const cities = [
+        { id: 'city-1', name: 'Madrid', groupId: 'group-1' },
+        { id: 'city-2', name: 'Barcelona', groupId: 'group-1' },
+      ];
+      mockGroupsService.getCities.mockResolvedValue(cities);
+
+      const result = await controller.getCities('group-1', { id: 'user-1' });
+
+      expect(result).toEqual(cities);
+      expect(mockGroupsService.getCities).toHaveBeenCalledWith('group-1', 'user-1');
+      expect(mockGroupsService.getCities).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('removeCity', () => {
+    it('should call groupsService.removeCity with groupId, cityId, and userId', async () => {
+      mockGroupsService.removeCity.mockResolvedValue({ success: true });
+
+      const result = await controller.removeCity('group-1', 'city-1', { id: 'user-1' });
+
+      expect(result).toEqual({ success: true });
+      expect(mockGroupsService.removeCity).toHaveBeenCalledWith('group-1', 'city-1', 'user-1');
+      expect(mockGroupsService.removeCity).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('updateMemberRole', () => {
+    it('should call groupsService.updateMemberRole with groupId, userId, currentUser, and role', async () => {
+      mockGroupsService.updateMemberRole.mockResolvedValue({ success: true });
+
+      const result = await controller.updateMemberRole(
+        'group-1',
+        'user-2',
+        { id: 'user-1' },
+        { role: 'admin' },
+      );
+
+      expect(result).toEqual({ success: true });
+      expect(mockGroupsService.updateMemberRole).toHaveBeenCalledWith(
+        'group-1',
+        'user-2',
+        'user-1',
+        'admin',
+      );
+      expect(mockGroupsService.updateMemberRole).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('kickMember', () => {
+    it('should call groupsService.kickMember with groupId, userId, and currentUser', async () => {
+      mockGroupsService.kickMember.mockResolvedValue({ success: true });
+
+      const result = await controller.kickMember('group-1', 'user-2', { id: 'user-1' });
+
+      expect(result).toEqual({ success: true });
+      expect(mockGroupsService.kickMember).toHaveBeenCalledWith('group-1', 'user-2', 'user-1');
+      expect(mockGroupsService.kickMember).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('deleteGroup', () => {
+    it('should call groupsService.deleteGroup with groupId and userId', async () => {
+      mockGroupsService.deleteGroup.mockResolvedValue({ success: true });
+
+      const result = await controller.deleteGroup('group-1', { id: 'user-1' });
+
+      expect(result).toEqual({ success: true });
+      expect(mockGroupsService.deleteGroup).toHaveBeenCalledWith('group-1', 'user-1');
+      expect(mockGroupsService.deleteGroup).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -265,6 +265,40 @@ describe('GroupsService', () => {
         'member_left',
       );
     });
+
+    it('should clean up availability when leaving group', async () => {
+      const nonCreatorUser = createTestUser({ id: 'user-2', name: 'Other User' });
+      prisma.groupMember.findUnique.mockResolvedValue({ groupId: 'group-1', userId: 'user-2' });
+      prisma.user.findUnique.mockResolvedValue(nonCreatorUser);
+      prisma.group.findUnique.mockResolvedValue(createTestGroup());
+      prisma.groupMember.delete.mockResolvedValue({});
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
+        where: { groupId: 'group-1', userId: 'user-2' },
+      });
+    });
+
+    it('should clean up future event attendees when leaving group', async () => {
+      const nonCreatorUser = createTestUser({ id: 'user-2', name: 'Other User' });
+      prisma.groupMember.findUnique.mockResolvedValue({ groupId: 'group-1', userId: 'user-2' });
+      prisma.user.findUnique.mockResolvedValue(nonCreatorUser);
+      prisma.group.findUnique.mockResolvedValue(createTestGroup());
+      prisma.groupMember.delete.mockResolvedValue({});
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.eventAttendee.deleteMany).toHaveBeenCalledWith({
+        where: {
+          userId: 'user-2',
+          event: {
+            groupId: 'group-1',
+            date: { gte: expect.any(Date) },
+          },
+        },
+      });
+    });
   });
 
   describe('getMembers', () => {

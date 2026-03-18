@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -16,6 +17,8 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { RespondEventDto } from './dto/respond-event.dto';
 
+@ApiTags('Events')
+@ApiBearerAuth()
 @Controller('groups/:groupId/events')
 @UseGuards(AuthGuard)
 export class EventsController {
@@ -41,6 +44,8 @@ export class EventsController {
     @CurrentUser() user: { id: string },
     @Body() dto: CreateEventDto,
   ) {
+    // Strip internal-only field to prevent external manipulation
+    delete (dto as any).attendeeStatusMap;
     return this.eventsService.create(groupId, user.id, dto);
   }
 
