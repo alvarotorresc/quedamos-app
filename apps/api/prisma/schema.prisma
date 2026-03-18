@@ -88,6 +88,8 @@ model Event {
   title       String
   description String?
   location    String?
+  locationLat  Float?   @map("location_lat")
+  locationLon  Float?   @map("location_lon")
   date        DateTime @db.Date
   time        String?
   endTime     String?  @map("end_time")
