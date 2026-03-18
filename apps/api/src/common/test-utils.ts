@@ -102,6 +102,7 @@ export function createMockNotificationsService() {
   return {
     sendToUser: jest.fn().mockResolvedValue({ sent: 1 }),
     sendToGroup: jest.fn().mockResolvedValue({ sent: 1 }),
+    sendToEventAttendees: jest.fn().mockResolvedValue({ sent: 1 }),
     isNotificationEnabled: jest.fn().mockResolvedValue(true),
     registerToken: jest.fn(),
     unregisterToken: jest.fn(),
