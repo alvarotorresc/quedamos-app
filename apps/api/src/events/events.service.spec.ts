@@ -596,7 +596,6 @@ describe('EventsService', () => {
         'user-1',
         expect.objectContaining({ type: 'event_updated' }),
         'event_updated',
-        'confirmed',
       );
     });
 
@@ -654,6 +653,35 @@ describe('EventsService', () => {
           data: expect.objectContaining({
             locationLat: 40.4153,
             locationLon: -3.6845,
+          }),
+        }),
+      );
+    });
+
+    it('should clear coordinates when location is cleared', async () => {
+      const event = {
+        ...createTestEvent({
+          location: 'Retiro Park',
+        }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({
+        ...event,
+        location: '',
+        locationLat: null,
+        locationLon: null,
+      });
+
+      await service.update('group-1', 'event-1', 'user-1', { location: '' });
+
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            location: '',
+            locationLat: null,
+            locationLon: null,
           }),
         }),
       );

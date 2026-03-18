@@ -189,7 +189,13 @@ export class EventsService {
     const data: Record<string, unknown> = {};
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
-    if (dto.location !== undefined) data.location = dto.location;
+    if (dto.location !== undefined) {
+      data.location = dto.location;
+      if (!dto.location) {
+        data.locationLat = null;
+        data.locationLon = null;
+      }
+    }
     if (dto.locationLat !== undefined) data.locationLat = dto.locationLat;
     if (dto.locationLon !== undefined) data.locationLon = dto.locationLon;
     if (dto.date !== undefined) data.date = new Date(dto.date + 'T00:00:00Z');
@@ -213,7 +219,6 @@ export class EventsService {
         userId,
         { type: 'event_updated', eventId, groupId },
         'event_updated',
-        'confirmed',
       )
       .catch((err) => this.logger.error('Failed to send event_updated notification', err));
 
