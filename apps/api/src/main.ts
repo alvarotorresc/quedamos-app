@@ -20,7 +20,10 @@ async function bootstrap() {
     }),
   );
 
-  const origins: string[] = ['https://quedamos-app-mobile.vercel.app'];
+  const origins: string[] = [
+    'https://quedamos-app-mobile.vercel.app',
+    'https://localhost', // Capacitor Android (androidScheme: 'https')
+  ];
   if (process.env.NODE_ENV !== 'production') {
     origins.push(
       'http://localhost:5173',
