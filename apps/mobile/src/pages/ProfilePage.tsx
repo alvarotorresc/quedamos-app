@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
 import { useMyColor } from '../hooks/useMyColor';
+import { useScreenView } from '../hooks/useAnalytics';
 import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { LanguageSelector } from '../ui/LanguageSelector';
@@ -22,6 +23,7 @@ type ExpandedSection = 'name' | 'email' | 'password' | null;
 const SUPABASE_MIN_PASSWORD_LENGTH = 6;
 
 export default function ProfilePage() {
+  useScreenView('Profile');
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);

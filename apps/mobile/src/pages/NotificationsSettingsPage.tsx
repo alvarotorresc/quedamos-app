@@ -1,10 +1,19 @@
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton } from '@ionic/react';
+import {
+  IonPage,
+  IonContent,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonBackButton,
+} from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import {
   useNotificationPreferences,
   useUpdateNotificationPreference,
 } from '../hooks/useNotificationPreferences';
 import type { NotificationType } from '../services/notification-preferences';
+import { useScreenView } from '../hooks/useAnalytics';
 
 interface NotifSection {
   headerKey: string;
@@ -51,6 +60,7 @@ const NOTIF_SECTIONS: NotifSection[] = [
 ];
 
 export default function NotificationsSettingsPage() {
+  useScreenView('NotificationSettings');
   const { t } = useTranslation();
   const { data: notifPrefs } = useNotificationPreferences();
   const updatePref = useUpdateNotificationPreference();

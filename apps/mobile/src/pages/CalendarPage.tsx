@@ -9,6 +9,7 @@ import { useGroups, useGroup } from '../hooks/useGroups';
 import { useAvailability, useMyAvailability } from '../hooks/useAvailability';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupWeather } from '../hooks/useWeather';
+import { useScreenView } from '../hooks/useAnalytics';
 import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
@@ -32,6 +33,7 @@ const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#
 type CalView = 'week' | 'month' | 'list';
 
 export default function CalendarPage() {
+  useScreenView('Calendar');
   const { t, i18n } = useTranslation();
   const history = useHistory();
   const user = useAuthStore((s) => s.user);

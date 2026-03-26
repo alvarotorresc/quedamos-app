@@ -1,16 +1,37 @@
 import { useState } from 'react';
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonSpinner, IonAlert, IonActionSheet } from '@ionic/react';
+import {
+  IonPage,
+  IonContent,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonBackButton,
+  IonSpinner,
+  IonAlert,
+  IonActionSheet,
+} from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useHistory } from 'react-router-dom';
 import { Share } from '@capacitor/share';
-import { useGroup, useGroupInvite, useRefreshInvite, useLeaveGroup, useUpdateMemberRole, useKickMember, useDeleteGroup } from '../hooks/useGroups';
+import {
+  useGroup,
+  useGroupInvite,
+  useRefreshInvite,
+  useLeaveGroup,
+  useUpdateMemberRole,
+  useKickMember,
+  useDeleteGroup,
+} from '../hooks/useGroups';
 import { useGroupSync } from '../hooks/useGroupSync';
+import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { WeatherWidget } from '../components/WeatherWidget';
 import { useGroupWeather } from '../hooks/useWeather';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
 import { searchCities, type GeocodingResult } from '../services/weather';
 
@@ -21,6 +42,7 @@ function formatCode(code: string): string {
 }
 
 export default function GroupDetailPage() {
+  useScreenView('GroupDetail');
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const history = useHistory();
@@ -35,11 +57,16 @@ export default function GroupDetailPage() {
   const kickMember = useKickMember(id);
   const deleteGroup = useDeleteGroup();
 
+  const { track } = useAnalytics();
   const [copied, setCopied] = useState(false);
   const [showLeaveAlert, setShowLeaveAlert] = useState(false);
   const [showRegenerateAlert, setShowRegenerateAlert] = useState(false);
   const [regeneratedFeedback, setRegeneratedFeedback] = useState(false);
-  const [actionMember, setActionMember] = useState<{ userId: string; name: string; role: string } | null>(null);
+  const [actionMember, setActionMember] = useState<{
+    userId: string;
+    name: string;
+    role: string;
+  } | null>(null);
   const [showDeleteGroupAlert, setShowDeleteGroupAlert] = useState(false);
 
   // Weather & Cities
@@ -67,6 +94,7 @@ export default function GroupDetailPage() {
         url: invite.inviteUrl,
         dialogTitle: t('group.shareMessage'),
       });
+      track('share_group');
     } catch {
       // Capacitor Share failed or user cancelled — try Web Share API
       if (navigator.share) {
@@ -76,8 +104,11 @@ export default function GroupDetailPage() {
             text: t('group.shareMessage'),
             url: invite.inviteUrl,
           });
+          track('share_group');
           return;
-        } catch { /* user cancelled */ }
+        } catch {
+          /* user cancelled */
+        }
       }
       // Final fallback: copy to clipboard
       handleCopy();
@@ -166,7 +197,8 @@ export default function GroupDetailPage() {
     );
   }
 
-  const isAdmin = group?.members.some((m) => m.userId === currentUserId && m.role === 'admin') ?? false;
+  const isAdmin =
+    group?.members.some((m) => m.userId === currentUserId && m.role === 'admin') ?? false;
 
   if (!group) return null;
 
@@ -177,7 +209,9 @@ export default function GroupDetailPage() {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/tabs/group" text="" />
           </IonButtons>
-          <IonTitle>{group.emoji} {group.name}</IonTitle>
+          <IonTitle>
+            {group.emoji} {group.name}
+          </IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
@@ -210,14 +244,22 @@ export default function GroupDetailPage() {
                       <span className="text-xs text-text-muted">{t('group.memberYou')}</span>
                     )}
                   </div>
-                  {isAdmin && member.userId !== currentUserId && member.userId !== group.createdById && (
-                    <button
-                      onClick={() => setActionMember({ userId: member.userId, name: member.user.name, role: member.role })}
-                      className="text-text-dark hover:text-text text-lg px-1 border-none bg-transparent shrink-0"
-                    >
-                      &#x22EF;
-                    </button>
-                  )}
+                  {isAdmin &&
+                    member.userId !== currentUserId &&
+                    member.userId !== group.createdById && (
+                      <button
+                        onClick={() =>
+                          setActionMember({
+                            userId: member.userId,
+                            name: member.user.name,
+                            role: member.role,
+                          })
+                        }
+                        className="text-text-dark hover:text-text text-lg px-1 border-none bg-transparent shrink-0"
+                      >
+                        &#x22EF;
+                      </button>
+                    )}
                 </div>
               ))}
             </div>
@@ -267,11 +309,13 @@ export default function GroupDetailPage() {
                         onClick={() => handleAddCity(r)}
                         className="w-full text-left px-3 py-2 text-sm text-text border-none hover:bg-bg-hover"
                         style={{
-                          borderBottom: i < cityResults.length - 1 ? '1px solid var(--app-border)' : 'none',
+                          borderBottom:
+                            i < cityResults.length - 1 ? '1px solid var(--app-border)' : 'none',
                           background: 'transparent',
                         }}
                       >
-                        {r.name}{r.admin1 ? `, ${r.admin1}` : ''} — {r.country}
+                        {r.name}
+                        {r.admin1 ? `, ${r.admin1}` : ''} — {r.country}
                       </button>
                     ))}
                   </div>
@@ -306,9 +350,7 @@ export default function GroupDetailPage() {
             )}
 
             {/* Weather data */}
-            {weather && weather.length > 0 && (
-              <WeatherWidget weather={weather} />
-            )}
+            {weather && weather.length > 0 && <WeatherWidget weather={weather} />}
           </section>
 
           {/* Invite */}

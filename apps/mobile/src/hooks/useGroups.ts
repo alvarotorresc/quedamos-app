@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupsService } from '../services/groups';
 import { broadcastSync } from '../lib/group-sync';
+import { logEvent } from '../lib/firebase';
 
 export function useGroups() {
   return useQuery({
@@ -36,6 +37,7 @@ export function useJoinGroup() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['groups'] });
       broadcastSync(data.id, 'groups');
+      logEvent('join_group', { method: 'code' }).catch(() => {});
     },
   });
 }

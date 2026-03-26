@@ -5,6 +5,7 @@ import { useHistory } from 'react-router-dom';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import { useGroups, useCreateGroup, useJoinGroup } from '../hooks/useGroups';
+import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
 import { useMyColor } from '../hooks/useMyColor';
 import { Avatar } from '../ui/Avatar';
@@ -16,6 +17,7 @@ const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#
 type FormMode = 'create' | 'join' | null;
 
 export default function GroupPage() {
+  useScreenView('Groups');
   const { t } = useTranslation();
   const history = useHistory();
   const user = useAuthStore((s) => s.user);
@@ -95,7 +97,13 @@ export default function GroupPage() {
         <IonToolbar className="py-2">
           <IonTitle>{t('group.title')}</IonTitle>
           <div slot="end" className="pr-4">
-            <Avatar name={user?.name ?? 'U'} color={myColor} size={32} onClick={() => history.push('/tabs/profile')} className="cursor-pointer" />
+            <Avatar
+              name={user?.name ?? 'U'}
+              color={myColor}
+              size={32}
+              onClick={() => history.push('/tabs/profile')}
+              className="cursor-pointer"
+            />
           </div>
         </IonToolbar>
       </IonHeader>
@@ -113,7 +121,9 @@ export default function GroupPage() {
               <p className="text-sm text-text-muted mb-8">{t('group.noGroupSubtitle')}</p>
               <div className="flex flex-col gap-3 max-w-[280px] mx-auto">
                 <Button onClick={() => toggleForm('create')}>{t('group.createGroup')}</Button>
-                <Button variant="secondary" onClick={() => toggleForm('join')}>{t('group.joinWithCode')}</Button>
+                <Button variant="secondary" onClick={() => toggleForm('join')}>
+                  {t('group.joinWithCode')}
+                </Button>
               </div>
             </div>
           ) : (
@@ -158,7 +168,13 @@ export default function GroupPage() {
                   {t('group.createGroup')}
                 </Button>
                 <Button
-                  variant={formMode === 'create' ? 'secondary' : formMode === 'join' ? 'primary' : 'secondary'}
+                  variant={
+                    formMode === 'create'
+                      ? 'secondary'
+                      : formMode === 'join'
+                        ? 'primary'
+                        : 'secondary'
+                  }
                   onClick={() => toggleForm('join')}
                   className="flex-1"
                 >
@@ -177,7 +193,9 @@ export default function GroupPage() {
               {formMode === 'create' && (
                 <div className="bg-bg-card border border-subtle rounded-btn p-4 flex flex-col gap-3">
                   <div>
-                    <label className="text-xs text-text-muted mb-1 block">{t('group.groupName')}</label>
+                    <label className="text-xs text-text-muted mb-1 block">
+                      {t('group.groupName')}
+                    </label>
                     <input
                       type="text"
                       value={groupName}
@@ -212,7 +230,10 @@ export default function GroupPage() {
                       </div>
                     )}
                   </div>
-                  <Button onClick={handleCreate} disabled={createGroup.isPending || !groupName.trim()}>
+                  <Button
+                    onClick={handleCreate}
+                    disabled={createGroup.isPending || !groupName.trim()}
+                  >
                     {createGroup.isPending ? t('group.creating') : t('group.createGroup')}
                   </Button>
                   <button
@@ -229,7 +250,9 @@ export default function GroupPage() {
               {formMode === 'join' && (
                 <div className="bg-bg-card border border-subtle rounded-btn p-4 flex flex-col gap-3">
                   <div>
-                    <label className="text-xs text-text-muted mb-1 block">{t('group.inviteCode')}</label>
+                    <label className="text-xs text-text-muted mb-1 block">
+                      {t('group.inviteCode')}
+                    </label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -241,7 +264,10 @@ export default function GroupPage() {
                       autoFocus
                     />
                   </div>
-                  <Button onClick={handleJoin} disabled={joinGroup.isPending || inviteCode.replace(/\D/g, '').length !== 8}>
+                  <Button
+                    onClick={handleJoin}
+                    disabled={joinGroup.isPending || inviteCode.replace(/\D/g, '').length !== 8}
+                  >
                     {joinGroup.isPending ? t('group.joining') : t('group.joinWithCode')}
                   </Button>
                   <button

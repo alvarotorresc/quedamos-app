@@ -4,9 +4,11 @@ import { useParams, useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/auth';
 import { useJoinGroup } from '../hooks/useGroups';
+import { useScreenView } from '../hooks/useAnalytics';
 import { Button } from '../ui/Button';
 
 export default function JoinGroupPage() {
+  useScreenView('JoinGroup');
   const { t } = useTranslation();
   const { code } = useParams<{ code: string }>();
   const history = useHistory();
@@ -30,7 +32,8 @@ export default function JoinGroupPage() {
       return;
     }
 
-    joinGroup.mutateAsync(cleanCode)
+    joinGroup
+      .mutateAsync(cleanCode)
       .then((group) => {
         setStatus('success');
         setTimeout(() => {
