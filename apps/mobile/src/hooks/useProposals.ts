@@ -7,6 +7,7 @@ import {
   ConvertProposalDto,
 } from '../services/proposals';
 import { broadcastSync } from '../lib/group-sync';
+import { logEvent } from '../lib/firebase';
 
 export function useProposals(groupId: string) {
   return useQuery({
@@ -24,6 +25,7 @@ export function useCreateProposal(groupId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals', groupId] });
       broadcastSync(groupId, 'proposals');
+      logEvent('create_proposal').catch(() => {});
     },
   });
 }
@@ -50,6 +52,7 @@ export function useVoteProposal(groupId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals', groupId] });
       broadcastSync(groupId, 'proposals');
+      logEvent('vote_proposal').catch(() => {});
     },
   });
 }

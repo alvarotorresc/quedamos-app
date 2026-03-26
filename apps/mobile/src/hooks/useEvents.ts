@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { eventsService, CreateEventDto, UpdateEventDto, Event } from '../services/events';
 import { broadcastSync } from '../lib/group-sync';
 import { useAuthStore } from '../stores/auth';
+import { logEvent } from '../lib/firebase';
 
 export function useEvents(groupId: string) {
   return useQuery({
@@ -27,6 +28,7 @@ export function useCreateEvent(groupId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events', groupId] });
       broadcastSync(groupId, 'events');
+      logEvent('create_event').catch(() => {});
     },
   });
 }
@@ -97,6 +99,9 @@ export function useRespondEvent(groupId: string) {
       }
 
       return { previous };
+    },
+    onSuccess: (_data, vars) => {
+      logEvent('respond_event', { response: vars.status }).catch(() => {});
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) {
