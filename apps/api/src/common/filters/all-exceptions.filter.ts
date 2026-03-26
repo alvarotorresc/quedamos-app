@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import * as Sentry from '@sentry/nestjs';
 import { Response } from 'express';
 
 @Catch()
@@ -19,6 +20,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
+
+      if (status >= 500) {
+        Sentry.captureException(exception);
+      }
+
       response
         .status(status)
         .json(
@@ -28,6 +34,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         );
       return;
     }
+
+    Sentry.captureException(exception);
 
     this.logger.error(
       'Unhandled exception',
