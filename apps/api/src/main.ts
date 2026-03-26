@@ -1,3 +1,4 @@
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -14,7 +15,7 @@ async function bootstrap() {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'"],
-          connectSrc: ["'self'", 'https://*.supabase.co'],
+          connectSrc: ["'self'", 'https://*.supabase.co', 'https://*.ingest.sentry.io'],
         },
       },
     }),
