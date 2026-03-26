@@ -8,6 +8,7 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
 import { translateAuthError } from '../lib/auth-errors';
+import { useScreenView } from '../hooks/useAnalytics';
 
 const HCAPTCHA_SITEKEY = 'c7aee17a-5df0-43a6-ba90-397e25d83410';
 
@@ -26,7 +27,10 @@ function getPasswordChecks(password: string, t: TFunction): PasswordCheck[] {
   ];
 }
 
-function getStrength(checks: PasswordCheck[], t: TFunction): { level: number; label: string; color: string } {
+function getStrength(
+  checks: PasswordCheck[],
+  t: TFunction,
+): { level: number; label: string; color: string } {
   const passed = checks.filter((c) => c.ok).length;
   if (passed <= 1) return { level: 1, label: t('register.strength.weak'), color: 'bg-danger' };
   if (passed <= 2) return { level: 2, label: t('register.strength.fair'), color: 'bg-warning' };
@@ -35,6 +39,7 @@ function getStrength(checks: PasswordCheck[], t: TFunction): { level: number; la
 }
 
 export default function RegisterPage() {
+  useScreenView('Register');
   const { t } = useTranslation();
   const history = useHistory();
   const signUp = useAuthStore((s) => s.signUp);
@@ -97,12 +102,12 @@ export default function RegisterPage() {
             <h2 className="text-xl font-bold text-text">{t('register.success.title')}</h2>
             <p className="text-text-muted text-sm max-w-[300px] leading-relaxed mt-3">
               <Trans i18nKey="register.success.message" values={{ email }}>
-                Te hemos enviado un email de confirmación a <span className="text-primary font-medium">{{email} as any}</span>. Haz click en el enlace para activar tu cuenta.
+                Te hemos enviado un email de confirmación a{' '}
+                <span className="text-primary font-medium">{{ email } as any}</span>. Haz click en
+                el enlace para activar tu cuenta.
               </Trans>
             </p>
-            <p className="text-text-dark text-xs mt-3">
-              {t('register.success.spam')}
-            </p>
+            <p className="text-text-dark text-xs mt-3">{t('register.success.spam')}</p>
           </div>
         </IonContent>
       </IonPage>
@@ -113,131 +118,144 @@ export default function RegisterPage() {
     <IonPage>
       <IonContent className="ion-padding">
         <div className="flex items-center justify-center min-h-full px-6">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md w-full">
-          <button type="button" onClick={() => history.goBack()} className="self-start text-text-muted text-sm flex items-center gap-1 mb-2">
-            <span className="text-lg leading-none">&larr;</span> {t('common.back')}
-          </button>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-md w-full">
+            <button
+              type="button"
+              onClick={() => history.goBack()}
+              className="self-start text-text-muted text-sm flex items-center gap-1 mb-2"
+            >
+              <span className="text-lg leading-none">&larr;</span> {t('common.back')}
+            </button>
 
-          <h1 className="text-2xl font-bold text-text mb-2">{t('register.title')}</h1>
+            <h1 className="text-2xl font-bold text-text mb-2">{t('register.title')}</h1>
 
-          {error && (
-            <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label className="text-xs text-text-dark block mb-1">{t('register.nameLabel')}</label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
-              placeholder={t('register.namePlaceholder')}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs text-text-dark block mb-1">{t('common.email')}</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
-              placeholder={t('common.emailPlaceholder')}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-xs text-text-dark block mb-1">{t('common.password')}</label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
-                placeholder={t('common.passwordPlaceholder')}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? <HiOutlineEyeSlash size={20} /> : <HiOutlineEye size={20} />}
-              </button>
-            </div>
-
-            {password.length > 0 && (
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1 flex-1">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1 flex-1 rounded-full transition-colors ${
-                          i <= strength.level ? strength.color : 'bg-toggle-off'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-xs text-text-muted">{strength.label}</span>
-                </div>
-
-                <ul className="space-y-1">
-                  {checks.map((check) => (
-                    <li key={check.key} className={`text-xs flex items-center gap-1.5 ${check.ok ? 'text-success' : 'text-text-dark'}`}>
-                      <span>{check.ok ? '\u2713' : '\u2022'}</span>
-                      {check.label}
-                    </li>
-                  ))}
-                </ul>
+            {error && (
+              <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
+                {error}
               </div>
             )}
-          </div>
 
-          <div>
-            <label className="text-xs text-text-dark block mb-1">{t('register.confirmPasswordLabel')}</label>
-            <div className="relative">
+            <div>
+              <label className="text-xs text-text-dark block mb-1">{t('register.nameLabel')}</label>
               <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full bg-bg-input border rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
-                  confirmPassword.length > 0 && password !== confirmPassword
-                    ? 'border-danger/50'
-                    : 'border-strong'
-                }`}
-                placeholder={t('common.passwordPlaceholder')}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
+                placeholder={t('register.namePlaceholder')}
                 required
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
-                tabIndex={-1}
-              >
-                {showConfirmPassword ? <HiOutlineEyeSlash size={20} /> : <HiOutlineEye size={20} />}
-              </button>
             </div>
-            {confirmPassword.length > 0 && password !== confirmPassword && (
-              <p className="text-danger text-xs mt-1">{t('register.passwordsMismatch')}</p>
-            )}
-          </div>
 
-          <HCaptcha ref={captchaRef} sitekey={HCAPTCHA_SITEKEY} size="invisible" />
+            <div>
+              <label className="text-xs text-text-dark block mb-1">{t('common.email')}</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
+                placeholder={t('common.emailPlaceholder')}
+                required
+              />
+            </div>
 
-          <Button
-            type="submit"
-            disabled={loading || !allChecksPassed || password !== confirmPassword}
-            className="mt-2"
-          >
-            {loading ? t('register.submitting') : t('register.submit')}
-          </Button>
-        </form>
+            <div>
+              <label className="text-xs text-text-dark block mb-1">{t('common.password')}</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                  placeholder={t('common.passwordPlaceholder')}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <HiOutlineEyeSlash size={20} /> : <HiOutlineEye size={20} />}
+                </button>
+              </div>
+
+              {password.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1 flex-1">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1 flex-1 rounded-full transition-colors ${
+                            i <= strength.level ? strength.color : 'bg-toggle-off'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-text-muted">{strength.label}</span>
+                  </div>
+
+                  <ul className="space-y-1">
+                    {checks.map((check) => (
+                      <li
+                        key={check.key}
+                        className={`text-xs flex items-center gap-1.5 ${check.ok ? 'text-success' : 'text-text-dark'}`}
+                      >
+                        <span>{check.ok ? '\u2713' : '\u2022'}</span>
+                        {check.label}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-text-dark block mb-1">
+                {t('register.confirmPasswordLabel')}
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={`w-full bg-bg-input border rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
+                    confirmPassword.length > 0 && password !== confirmPassword
+                      ? 'border-danger/50'
+                      : 'border-strong'
+                  }`}
+                  placeholder={t('common.passwordPlaceholder')}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? (
+                    <HiOutlineEyeSlash size={20} />
+                  ) : (
+                    <HiOutlineEye size={20} />
+                  )}
+                </button>
+              </div>
+              {confirmPassword.length > 0 && password !== confirmPassword && (
+                <p className="text-danger text-xs mt-1">{t('register.passwordsMismatch')}</p>
+              )}
+            </div>
+
+            <HCaptcha ref={captchaRef} sitekey={HCAPTCHA_SITEKEY} size="invisible" />
+
+            <Button
+              type="submit"
+              disabled={loading || !allChecksPassed || password !== confirmPassword}
+              className="mt-2"
+            >
+              {loading ? t('register.submitting') : t('register.submit')}
+            </Button>
+          </form>
         </div>
       </IonContent>
     </IonPage>

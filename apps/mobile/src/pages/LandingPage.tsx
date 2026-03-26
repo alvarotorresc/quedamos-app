@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import logo from '../assets/logo.svg';
+import { useScreenView } from '../hooks/useAnalytics';
 import HeroSection from '../components/landing/HeroSection';
 import FeaturesSection from '../components/landing/FeaturesSection';
 import PhoneMockupSection from '../components/landing/PhoneMockupSection';
@@ -14,6 +15,7 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
+  useScreenView('Landing');
   const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
 
@@ -36,7 +38,9 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={logo} alt="¿Quedamos?" className="w-7 h-7" />
-            <span className="font-bold text-text text-base tracking-tight">{t('landing.brand')}</span>
+            <span className="font-bold text-text text-base tracking-tight">
+              {t('landing.brand')}
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <button
@@ -74,8 +78,7 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
       {/* Footer */}
       <footer className="py-10 text-center border-t border-[var(--app-border)]">
         <p className="text-text-dark text-sm">
-          {t('landing.footer.madeWith')}{' '}
-          <span className="text-red-400">❤️</span>{' '}
+          {t('landing.footer.madeWith')} <span className="text-red-400">❤️</span>{' '}
           {t('landing.footer.by')}{' '}
           <a
             href="https://github.com/alvarotorresc/"
@@ -86,7 +89,9 @@ export default function LandingPage({ onLogin, onRegister }: LandingPageProps) {
             Alvaro Torres
           </a>
         </p>
-        <p className="text-text-dark/50 text-xs mt-2 uppercase tracking-wide">¿Quedamos? &copy; 2026</p>
+        <p className="text-text-dark/50 text-xs mt-2 uppercase tracking-wide">
+          ¿Quedamos? &copy; 2026
+        </p>
       </footer>
     </div>
   );

@@ -18,6 +18,7 @@ import { useEvents, useDeleteEvent, useCancelEvent } from '../hooks/useEvents';
 import { useProposals, useVoteProposal, useCloseProposal } from '../hooks/useProposals';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupSync } from '../hooks/useGroupSync';
+import { useScreenView } from '../hooks/useAnalytics';
 import { useGroupWeather } from '../hooks/useWeather';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
@@ -33,6 +34,7 @@ import type { Proposal } from '../services/proposals';
 const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
 
 export default function PlansPage() {
+  useScreenView('Plans');
   const { t } = useTranslation();
   const history = useHistory();
   const location = useLocation();
