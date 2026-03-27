@@ -2,10 +2,25 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Button } from './Button';
 
-vi.mock('@ionic/react', () => ({
-  IonSpinner: ({ className }: { className?: string }) => (
-    <span data-testid="spinner" className={className} />
-  ),
+vi.mock('framer-motion', () => ({
+  motion: {
+    button: ({
+      children,
+      whileTap,
+      ...props
+    }: React.ComponentProps<'button'> & { whileTap?: unknown }) => (
+      <button {...props}>{children}</button>
+    ),
+    span: ({
+      children,
+      animate,
+      transition,
+      ...props
+    }: React.ComponentProps<'span'> & {
+      animate?: unknown;
+      transition?: unknown;
+    }) => <span {...props}>{children}</span>,
+  },
 }));
 
 describe('Button', () => {
@@ -22,14 +37,14 @@ describe('Button', () => {
   it('applies primary variant styles by default', () => {
     render(<Button>Primary</Button>);
     const button = screen.getByRole('button', { name: 'Primary' });
-    expect(button.className).toContain('bg-primary-dark');
+    expect(button.className).toContain('bg-gradient-to-br');
     expect(button.className).toContain('text-white');
   });
 
   it('applies secondary variant styles when variant is secondary', () => {
     render(<Button variant="secondary">Secondary</Button>);
     const button = screen.getByRole('button', { name: 'Secondary' });
-    expect(button.className).toContain('bg-bg-input');
+    expect(button.className).toContain('bg-bg-surface');
     expect(button.className).toContain('text-text-muted');
     expect(button.className).toContain('border');
   });
@@ -57,7 +72,7 @@ describe('Button', () => {
     render(<Button disabled>Disabled</Button>);
     const button = screen.getByRole('button', { name: 'Disabled' });
     expect(button).toBeDisabled();
-    expect(button.className).toContain('disabled:opacity-50');
+    expect(button.className).toContain('disabled:opacity-40');
   });
 
   it('applies custom className', () => {
@@ -71,8 +86,8 @@ describe('Button', () => {
     render(<Button>Base</Button>);
     const button = screen.getByRole('button', { name: 'Base' });
     expect(button.className).toContain('rounded-btn');
-    expect(button.className).toContain('font-semibold');
-    expect(button.className).toContain('transition-all');
+    expect(button.className).toContain('font-bold');
+    expect(button.className).toContain('transition-[filter]');
   });
 
   it('passes through native button attributes', () => {
@@ -94,7 +109,7 @@ describe('Button', () => {
 
   it('is disabled when loading is true', () => {
     render(<Button loading>Loading</Button>);
-    expect(screen.getByRole('button', { name: /Loading/i })).toBeDisabled();
+    expect(screen.getByRole('button')).toBeDisabled();
   });
 
   it('does not call onClick when loading', () => {
@@ -104,7 +119,7 @@ describe('Button', () => {
         Loading
       </Button>,
     );
-    fireEvent.click(screen.getByRole('button', { name: /Loading/i }));
+    fireEvent.click(screen.getByRole('button'));
     expect(handleClick).not.toHaveBeenCalled();
   });
 
@@ -114,7 +129,7 @@ describe('Button', () => {
         Button
       </Button>,
     );
-    expect(screen.getByRole('button', { name: /Button/i })).toBeDisabled();
+    expect(screen.getByRole('button')).toBeDisabled();
   });
 
   it('is not disabled when loading is false', () => {
