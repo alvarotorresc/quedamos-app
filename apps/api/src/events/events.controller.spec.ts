@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EventsController } from './events.controller';
 import { EventsService } from './events.service';
+import { CreateEventDto } from './dto/create-event.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { createTestEvent, createTestUser } from '../common/test-utils';
 
@@ -103,7 +104,7 @@ describe('EventsController', () => {
       };
       mockEventsService.create.mockResolvedValue(createTestEvent());
 
-      await controller.create('group-1', { id: 'user-1' }, dto as any);
+      await controller.create('group-1', { id: 'user-1' }, dto as unknown as CreateEventDto);
 
       const passedDto = mockEventsService.create.mock.calls[0][2];
       expect(passedDto.attendeeStatusMap).toBeUndefined();

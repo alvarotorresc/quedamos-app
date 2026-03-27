@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useGroupStore } from './group';
 
 describe('useGroupStore', () => {
@@ -38,7 +38,7 @@ describe('useGroupStore', () => {
   });
 
   it('should get persisted group id from localStorage', () => {
-    (localStorage.getItem as any).mockReturnValue('g1');
+    vi.mocked(localStorage.getItem).mockReturnValue('g1');
 
     const id = useGroupStore.getState().getPersistedGroupId();
 

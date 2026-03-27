@@ -45,7 +45,7 @@ export class EventsController {
     @Body() dto: CreateEventDto,
   ) {
     // Strip internal-only field to prevent external manipulation
-    delete (dto as any).attendeeStatusMap;
+    delete (dto as Partial<Pick<CreateEventDto, 'attendeeStatusMap'>>).attendeeStatusMap;
     return this.eventsService.create(groupId, user.id, dto);
   }
 

@@ -1,7 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useNotificationPreferences, useUpdateNotificationPreference } from './useNotificationPreferences';
-import { notificationPreferencesService } from '../services/notification-preferences';
+import {
+  useNotificationPreferences,
+  useUpdateNotificationPreference,
+} from './useNotificationPreferences';
+import {
+  notificationPreferencesService,
+  type NotificationPreference,
+} from '../services/notification-preferences';
 import { createWrapper } from '../test/test-utils';
 
 vi.mock('../services/notification-preferences', () => ({
@@ -17,11 +23,11 @@ describe('useNotificationPreferences', () => {
   });
 
   it('should fetch preferences', async () => {
-    const prefs = [
+    const prefs: NotificationPreference[] = [
       { type: 'new_event', enabled: true },
       { type: 'member_joined', enabled: false },
     ];
-    vi.mocked(notificationPreferencesService.getAll).mockResolvedValue(prefs as any);
+    vi.mocked(notificationPreferencesService.getAll).mockResolvedValue(prefs);
 
     const { result } = renderHook(() => useNotificationPreferences(), { wrapper: createWrapper() });
 
@@ -32,7 +38,10 @@ describe('useNotificationPreferences', () => {
 
 describe('useUpdateNotificationPreference', () => {
   it('should update preference', async () => {
-    vi.mocked(notificationPreferencesService.update).mockResolvedValue({} as any);
+    vi.mocked(notificationPreferencesService.update).mockResolvedValue({
+      type: 'new_event',
+      enabled: false,
+    });
     vi.mocked(notificationPreferencesService.getAll).mockResolvedValue([]);
 
     const { result } = renderHook(() => useUpdateNotificationPreference(), {
@@ -46,7 +55,10 @@ describe('useUpdateNotificationPreference', () => {
   });
 
   it('should update with enabled true', async () => {
-    vi.mocked(notificationPreferencesService.update).mockResolvedValue({} as any);
+    vi.mocked(notificationPreferencesService.update).mockResolvedValue({
+      type: 'member_left',
+      enabled: true,
+    });
     vi.mocked(notificationPreferencesService.getAll).mockResolvedValue([]);
 
     const { result } = renderHook(() => useUpdateNotificationPreference(), {

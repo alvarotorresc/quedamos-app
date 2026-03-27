@@ -1,4 +1,6 @@
 import { EventReminderService } from './event-reminder.service';
+import { NotificationsService } from './notifications.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import {
   createMockPrisma,
   createMockNotificationsService,
@@ -27,14 +29,19 @@ describe('EventReminderService', () => {
   beforeEach(() => {
     prisma = createMockPrisma();
     notifications = createMockNotificationsService();
-    service = new EventReminderService(prisma as any, notifications as any);
+    service = new EventReminderService(
+      prisma as unknown as PrismaService,
+      notifications as unknown as NotificationsService,
+    );
     prisma.event.update.mockResolvedValue({});
   });
 
   describe('combineDateTime', () => {
     // Access private method via bracket notation for testing
     const combine = (date: Date, time: string | null) =>
-      (service as any).combineDateTime(date, time);
+      (
+        service as unknown as { combineDateTime: (d: Date, t: string | null) => Date }
+      ).combineDateTime(date, time);
 
     it('should combine date and time correctly', () => {
       const date = new Date('2026-03-15T00:00:00.000Z');

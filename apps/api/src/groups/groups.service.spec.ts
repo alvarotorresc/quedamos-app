@@ -1,5 +1,7 @@
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { GroupsService } from './groups.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import {
   createMockPrisma,
   createMockNotificationsService,
@@ -16,7 +18,10 @@ describe('GroupsService', () => {
   beforeEach(() => {
     prisma = createMockPrisma();
     notifications = createMockNotificationsService();
-    service = new GroupsService(prisma as any, notifications as any);
+    service = new GroupsService(
+      prisma as unknown as PrismaService,
+      notifications as unknown as NotificationsService,
+    );
   });
 
   describe('create', () => {

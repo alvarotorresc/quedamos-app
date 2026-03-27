@@ -1,6 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { AvailabilityService } from './availability.service';
 import { GroupsService } from '../groups/groups.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createTestGroup } from '../common/test-utils';
 
 describe('AvailabilityService', () => {
@@ -11,7 +12,10 @@ describe('AvailabilityService', () => {
   beforeEach(() => {
     prisma = createMockPrisma();
     groupsService = { findById: jest.fn().mockResolvedValue(createTestGroup()) };
-    service = new AvailabilityService(prisma as any, groupsService as any);
+    service = new AvailabilityService(
+      prisma as unknown as PrismaService,
+      groupsService as unknown as GroupsService,
+    );
   });
 
   describe('findAllForGroup', () => {

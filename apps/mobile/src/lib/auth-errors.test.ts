@@ -12,7 +12,7 @@ import { translateAuthError } from './auth-errors';
 
 describe('translateAuthError', () => {
   beforeEach(() => {
-    vi.mocked(i18n.t).mockImplementation(((key: string) => key) as any);
+    vi.mocked(i18n.t).mockImplementation(((key: string) => key) as unknown as typeof i18n.t);
   });
 
   describe('known error messages', () => {
@@ -20,19 +20,10 @@ describe('translateAuthError', () => {
       ['Invalid login credentials', 'authErrors.invalidCredentials'],
       ['Email not confirmed', 'authErrors.emailNotConfirmed'],
       ['User already registered', 'authErrors.userAlreadyRegistered'],
-      [
-        'Password should be at least 6 characters',
-        'authErrors.passwordTooShort',
-      ],
-      [
-        'Unable to validate email address: invalid format',
-        'authErrors.invalidEmailFormat',
-      ],
+      ['Password should be at least 6 characters', 'authErrors.passwordTooShort'],
+      ['Unable to validate email address: invalid format', 'authErrors.invalidEmailFormat'],
       ['Signup requires a valid password', 'authErrors.passwordRequired'],
-      [
-        'To signup, please provide your email',
-        'authErrors.emailRequired',
-      ],
+      ['To signup, please provide your email', 'authErrors.emailRequired'],
       ['User not found', 'authErrors.userNotFound'],
       [
         'For security purposes, you can only request this once every 60 seconds',
@@ -41,16 +32,13 @@ describe('translateAuthError', () => {
       ['Email rate limit exceeded', 'authErrors.rateLimitExceeded'],
     ];
 
-    it.each(knownErrors)(
-      'should translate "%s" to "%s"',
-      (message, expectedKey) => {
-        const error = new Error(message);
+    it.each(knownErrors)('should translate "%s" to "%s"', (message, expectedKey) => {
+      const error = new Error(message);
 
-        translateAuthError(error);
+      translateAuthError(error);
 
-        expect(i18n.t).toHaveBeenCalledWith(expectedKey);
-      },
-    );
+      expect(i18n.t).toHaveBeenCalledWith(expectedKey);
+    });
   });
 
   describe('unknown error messages', () => {
@@ -108,9 +96,7 @@ describe('translateAuthError', () => {
   describe('partial matches', () => {
     it('should NOT match a partial substring of a known error', () => {
       // The map uses exact key matching, so partial matches return the raw message
-      const error = new Error(
-        'Invalid login credentials: account locked',
-      );
+      const error = new Error('Invalid login credentials: account locked');
 
       const result = translateAuthError(error);
 

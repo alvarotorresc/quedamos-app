@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useThemeStore } from './theme';
 
 describe('useThemeStore', () => {
@@ -28,7 +28,7 @@ describe('useThemeStore', () => {
   });
 
   it('should initialize from localStorage (light)', () => {
-    (localStorage.getItem as any).mockReturnValue('light');
+    vi.mocked(localStorage.getItem).mockReturnValue('light');
 
     useThemeStore.getState().initialize();
 
@@ -37,7 +37,7 @@ describe('useThemeStore', () => {
   });
 
   it('should initialize as dark when no saved preference', () => {
-    (localStorage.getItem as any).mockReturnValue(null);
+    vi.mocked(localStorage.getItem).mockReturnValue(null);
 
     useThemeStore.getState().initialize();
 

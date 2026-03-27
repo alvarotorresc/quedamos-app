@@ -1,4 +1,6 @@
 import { WeeklyReminderService } from './weekly-reminder.service';
+import { NotificationsService } from './notifications.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createMockNotificationsService } from '../common/test-utils';
 
 describe('WeeklyReminderService', () => {
@@ -9,7 +11,10 @@ describe('WeeklyReminderService', () => {
   beforeEach(() => {
     prisma = createMockPrisma();
     notifications = createMockNotificationsService();
-    service = new WeeklyReminderService(prisma as any, notifications as any);
+    service = new WeeklyReminderService(
+      prisma as unknown as PrismaService,
+      notifications as unknown as NotificationsService,
+    );
   });
 
   describe('getNextWeekRange', () => {

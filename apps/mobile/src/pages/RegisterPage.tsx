@@ -103,8 +103,8 @@ export default function RegisterPage() {
             <p className="text-text-muted text-sm max-w-[300px] leading-relaxed mt-3">
               <Trans i18nKey="register.success.message" values={{ email }}>
                 Te hemos enviado un email de confirmación a{' '}
-                <span className="text-primary font-medium">{{ email } as any}</span>. Haz click en
-                el enlace para activar tu cuenta.
+                <span className="text-primary font-medium">{'{{email}}'}</span>. Haz click en el
+                enlace para activar tu cuenta.
               </Trans>
             </p>
             <p className="text-text-dark text-xs mt-3">{t('register.success.spam')}</p>

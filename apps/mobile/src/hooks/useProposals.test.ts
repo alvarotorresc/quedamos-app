@@ -8,7 +8,7 @@ import {
   useConvertProposal,
   useCloseProposal,
 } from './useProposals';
-import { proposalsService } from '../services/proposals';
+import { proposalsService, type Proposal } from '../services/proposals';
 import { createWrapper } from '../test/test-utils';
 
 vi.mock('../services/proposals', () => ({
@@ -26,7 +26,7 @@ vi.mock('../lib/group-sync', () => ({
   broadcastSync: vi.fn(),
 }));
 
-function createTestProposal(overrides: Record<string, unknown> = {}) {
+function createTestProposal(overrides: Partial<Proposal> = {}): Proposal {
   return {
     id: 'proposal-1',
     groupId: 'group-1',
@@ -49,8 +49,11 @@ describe('useProposals', () => {
   });
 
   it('should fetch proposals for group', async () => {
-    const proposals = [createTestProposal(), createTestProposal({ id: 'proposal-2', title: 'Another' })];
-    vi.mocked(proposalsService.getAll).mockResolvedValue(proposals as any);
+    const proposals = [
+      createTestProposal(),
+      createTestProposal({ id: 'proposal-2', title: 'Another' }),
+    ];
+    vi.mocked(proposalsService.getAll).mockResolvedValue(proposals);
 
     const { result } = renderHook(() => useProposals('group-1'), { wrapper: createWrapper() });
 
@@ -80,7 +83,7 @@ describe('useCreateProposal', () => {
 
   it('should create proposal', async () => {
     const proposal = createTestProposal({ title: 'Beach Plan' });
-    vi.mocked(proposalsService.create).mockResolvedValue(proposal as any);
+    vi.mocked(proposalsService.create).mockResolvedValue(proposal);
 
     const { result } = renderHook(() => useCreateProposal('group-1'), { wrapper: createWrapper() });
 
@@ -91,7 +94,7 @@ describe('useCreateProposal', () => {
   });
 
   it('should create proposal with all optional fields', async () => {
-    vi.mocked(proposalsService.create).mockResolvedValue(createTestProposal() as any);
+    vi.mocked(proposalsService.create).mockResolvedValue(createTestProposal());
 
     const { result } = renderHook(() => useCreateProposal('group-1'), { wrapper: createWrapper() });
 
@@ -115,14 +118,16 @@ describe('useUpdateProposal', () => {
 
   it('should update proposal', async () => {
     const updated = createTestProposal({ title: 'Updated Title' });
-    vi.mocked(proposalsService.update).mockResolvedValue(updated as any);
+    vi.mocked(proposalsService.update).mockResolvedValue(updated);
 
     const { result } = renderHook(() => useUpdateProposal('group-1'), { wrapper: createWrapper() });
 
     result.current.mutate({ proposalId: 'proposal-1', data: { title: 'Updated Title' } });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(proposalsService.update).toHaveBeenCalledWith('group-1', 'proposal-1', { title: 'Updated Title' });
+    expect(proposalsService.update).toHaveBeenCalledWith('group-1', 'proposal-1', {
+      title: 'Updated Title',
+    });
   });
 });
 
@@ -133,7 +138,7 @@ describe('useVoteProposal', () => {
 
   it('should vote yes on proposal', async () => {
     const voted = createTestProposal({ votes: [{ userId: 'user-1', vote: 'yes' }] });
-    vi.mocked(proposalsService.vote).mockResolvedValue(voted as any);
+    vi.mocked(proposalsService.vote).mockResolvedValue(voted);
 
     const { result } = renderHook(() => useVoteProposal('group-1'), { wrapper: createWrapper() });
 
@@ -144,7 +149,7 @@ describe('useVoteProposal', () => {
   });
 
   it('should vote no on proposal', async () => {
-    vi.mocked(proposalsService.vote).mockResolvedValue(createTestProposal() as any);
+    vi.mocked(proposalsService.vote).mockResolvedValue(createTestProposal());
 
     const { result } = renderHook(() => useVoteProposal('group-1'), { wrapper: createWrapper() });
 
@@ -162,11 +167,16 @@ describe('useConvertProposal', () => {
 
   it('should convert proposal to event', async () => {
     const converted = createTestProposal({ status: 'converted', convertedEventId: 'event-1' });
-    vi.mocked(proposalsService.convert).mockResolvedValue(converted as any);
+    vi.mocked(proposalsService.convert).mockResolvedValue(converted);
 
-    const { result } = renderHook(() => useConvertProposal('group-1'), { wrapper: createWrapper() });
+    const { result } = renderHook(() => useConvertProposal('group-1'), {
+      wrapper: createWrapper(),
+    });
 
-    result.current.mutate({ proposalId: 'proposal-1', data: { date: '2026-07-15', time: '18:00' } });
+    result.current.mutate({
+      proposalId: 'proposal-1',
+      data: { date: '2026-07-15', time: '18:00' },
+    });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(proposalsService.convert).toHaveBeenCalledWith('group-1', 'proposal-1', {
@@ -183,7 +193,7 @@ describe('useCloseProposal', () => {
 
   it('should close proposal', async () => {
     const closed = createTestProposal({ status: 'closed' });
-    vi.mocked(proposalsService.close).mockResolvedValue(closed as any);
+    vi.mocked(proposalsService.close).mockResolvedValue(closed);
 
     const { result } = renderHook(() => useCloseProposal('group-1'), { wrapper: createWrapper() });
 

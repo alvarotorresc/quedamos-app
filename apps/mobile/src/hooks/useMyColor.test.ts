@@ -2,6 +2,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useMyColor } from './useMyColor';
 import { createWrapper } from '../test/test-utils';
+import type { useAuthStore } from '../stores/auth';
+import type { useGroup } from './useGroups';
+
+type AuthStoreState = ReturnType<typeof useAuthStore.getState>;
 
 vi.mock('../stores/auth', () => ({
   useAuthStore: vi.fn((selector) => selector({ user: { id: 'user-1' } })),
@@ -14,11 +18,7 @@ vi.mock('../stores/group', () => ({
 vi.mock('./useGroups', () => ({
   useGroup: vi.fn().mockReturnValue({
     data: {
-      members: [
-        { userId: 'user-1' },
-        { userId: 'user-2' },
-        { userId: 'user-3' },
-      ],
+      members: [{ userId: 'user-1' }, { userId: 'user-2' }, { userId: 'user-3' }],
     },
   }),
 }));
@@ -32,7 +32,7 @@ describe('useMyColor', () => {
   it('should return default color when no user', async () => {
     const { useAuthStore } = await import('../stores/auth');
     vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ user: null } as any),
+      selector({ user: null } as unknown as AuthStoreState),
     );
 
     const { result } = renderHook(() => useMyColor(), { wrapper: createWrapper() });
@@ -45,10 +45,10 @@ describe('useMyColor', () => {
       data: {
         members: Array.from({ length: 8 }, (_, i) => ({ userId: `user-${i}` })),
       },
-    } as any);
+    } as unknown as ReturnType<typeof useGroup>);
     const { useAuthStore } = await import('../stores/auth');
     vi.mocked(useAuthStore).mockImplementation((selector) =>
-      selector({ user: { id: 'user-7' } } as any),
+      selector({ user: { id: 'user-7' } } as unknown as AuthStoreState),
     );
 
     const { result } = renderHook(() => useMyColor(), { wrapper: createWrapper() });

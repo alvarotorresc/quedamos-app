@@ -19,7 +19,7 @@ describe('WeatherService', () => {
       ok: true,
       json: () => Promise.resolve(mockOpenMeteoResponse),
     });
-    service.setFetch(mockFetch as any);
+    service.setFetch(mockFetch as unknown as typeof fetch);
   });
 
   it('should fetch forecast from Open-Meteo', async () => {

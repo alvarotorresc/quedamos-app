@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useAvailability, useMyAvailability, useCreateAvailability, useDeleteAvailability } from './useAvailability';
-import { availabilityService } from '../services/availability';
+import {
+  useAvailability,
+  useMyAvailability,
+  useCreateAvailability,
+  useDeleteAvailability,
+} from './useAvailability';
+import { availabilityService, type Availability } from '../services/availability';
 import { createWrapper } from '../test/test-utils';
 
 vi.mock('../services/availability', () => ({
@@ -23,8 +28,8 @@ describe('useAvailability', () => {
   });
 
   it('should fetch all availability for group', async () => {
-    const items = [{ id: '1', date: '2026-03-01', type: 'day' }];
-    vi.mocked(availabilityService.getAll).mockResolvedValue(items as any);
+    const items = [{ id: '1', date: '2026-03-01', type: 'day' }] as unknown as Availability[];
+    vi.mocked(availabilityService.getAll).mockResolvedValue(items);
 
     const { result } = renderHook(() => useAvailability('g1'), { wrapper: createWrapper() });
 
@@ -40,8 +45,8 @@ describe('useAvailability', () => {
 
 describe('useMyAvailability', () => {
   it('should fetch my availability', async () => {
-    const items = [{ id: '1', date: '2026-03-01' }];
-    vi.mocked(availabilityService.getMine).mockResolvedValue(items as any);
+    const items = [{ id: '1', date: '2026-03-01' }] as unknown as Availability[];
+    vi.mocked(availabilityService.getMine).mockResolvedValue(items);
 
     const { result } = renderHook(() => useMyAvailability('g1'), { wrapper: createWrapper() });
 
@@ -52,14 +57,17 @@ describe('useMyAvailability', () => {
 
 describe('useCreateAvailability', () => {
   it('should create availability', async () => {
-    vi.mocked(availabilityService.create).mockResolvedValue({} as any);
+    vi.mocked(availabilityService.create).mockResolvedValue({} as unknown as Availability);
 
     const { result } = renderHook(() => useCreateAvailability('g1'), { wrapper: createWrapper() });
 
     result.current.mutate({ date: '2026-03-01', type: 'day' });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(availabilityService.create).toHaveBeenCalledWith('g1', { date: '2026-03-01', type: 'day' });
+    expect(availabilityService.create).toHaveBeenCalledWith('g1', {
+      date: '2026-03-01',
+      type: 'day',
+    });
   });
 });
 

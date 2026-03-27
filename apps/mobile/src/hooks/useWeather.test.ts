@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useGroupWeather, useForecast } from './useWeather';
-import { weatherService } from '../services/weather';
+import { weatherService, type WeatherData } from '../services/weather';
 import { createWrapper } from '../test/test-utils';
 
 vi.mock('../services/weather', () => ({
@@ -11,7 +11,7 @@ vi.mock('../services/weather', () => ({
   },
 }));
 
-function createWeatherData(overrides: Record<string, unknown> = {}) {
+function createWeatherData(overrides: Partial<WeatherData> = {}): WeatherData {
   return {
     city: 'Madrid',
     date: '2026-03-01',
@@ -30,7 +30,7 @@ describe('useGroupWeather', () => {
 
   it('should fetch weather for group', async () => {
     const weather = [createWeatherData(), createWeatherData({ date: '2026-03-02', tempMax: 20.1 })];
-    vi.mocked(weatherService.getGroupWeather).mockResolvedValue(weather as any);
+    vi.mocked(weatherService.getGroupWeather).mockResolvedValue(weather);
 
     const { result } = renderHook(() => useGroupWeather('group-1'), { wrapper: createWrapper() });
 
@@ -69,7 +69,7 @@ describe('useForecast', () => {
 
   it('should fetch forecast when all params are provided', async () => {
     const forecast = createWeatherData({ city: 'Barcelona' });
-    vi.mocked(weatherService.getForecast).mockResolvedValue(forecast as any);
+    vi.mocked(weatherService.getForecast).mockResolvedValue(forecast);
 
     const { result } = renderHook(() => useForecast('group-1', '2026-03-15', 41.38, 2.15), {
       wrapper: createWrapper(),
@@ -109,7 +109,7 @@ describe('useForecast', () => {
   });
 
   it('should handle null response gracefully', async () => {
-    vi.mocked(weatherService.getForecast).mockResolvedValue(null as any);
+    vi.mocked(weatherService.getForecast).mockResolvedValue(null);
 
     const { result } = renderHook(() => useForecast('group-1', '2026-03-15', 41.38, 2.15), {
       wrapper: createWrapper(),
