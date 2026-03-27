@@ -21,7 +21,6 @@ export function usePushNotifications() {
       try {
         setupPushListeners();
         setupWebForegroundHandler();
-        console.log('[Push] Registering for push notifications...');
         const { token, cleanup } = await registerForPush();
 
         // If the effect was cleaned up while we were awaiting, remove
@@ -34,15 +33,15 @@ export function usePushNotifications() {
         cleanupRef.current = cleanup;
 
         if (token) {
-          console.log('[Push] Token obtained:', token.slice(0, 20) + '...');
           await sendTokenToBackend(token);
-          console.log('[Push] Token registered in backend');
           registered.current = true;
-        } else {
+        } else if (import.meta.env.DEV) {
           console.warn('[Push] No token obtained (permission denied or unsupported)');
         }
       } catch (err) {
-        console.error('[Push] Error:', err);
+        if (import.meta.env.DEV) {
+          console.error('[Push] Error:', err);
+        }
         // Don't set registered = true so it retries on next mount
       }
     })();

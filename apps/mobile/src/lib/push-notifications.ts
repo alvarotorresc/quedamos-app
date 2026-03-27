@@ -60,7 +60,9 @@ async function registerNative(): Promise<{
   });
 
   const errorHandle = await PushNotifications.addListener('registrationError', (error) => {
-    console.error('[Push] Native registration error:', error);
+    if (import.meta.env.DEV) {
+      console.error('[Push] Native registration error:', error);
+    }
     resolveToken(null);
   });
 
@@ -123,15 +125,13 @@ export function setupPushListeners(): void {
   if (!Capacitor.isNativePlatform()) return;
   nativePushSetup = true;
 
-  PushNotifications.addListener('pushNotificationReceived', (notification) => {
-    console.log('[Push] Received in foreground:', notification);
+  PushNotifications.addListener('pushNotificationReceived', (_notification) => {
     // On Android, foreground notifications are not shown automatically.
     // The notification object contains title/body but needs a local notification
-    // plugin to display as a system notification. For now, we log it.
+    // plugin to display as a system notification. TODO: use LocalNotifications plugin.
   });
 
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-    console.log('[Push] Action performed:', action);
     const data = action.notification.data;
     if (!data?.type) return;
 
@@ -176,7 +176,6 @@ export function setupWebForegroundHandler(): void {
     if (!messaging) return;
 
     onMessage(messaging, (payload) => {
-      console.log('[Push] Web foreground message:', payload);
       const { title, body } = payload.notification ?? {};
       const data = payload.data as Record<string, string> | undefined;
       if (title && 'Notification' in window && Notification.permission === 'granted') {
