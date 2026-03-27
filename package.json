@@ -12,7 +12,7 @@
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "lefthook": "^1.13.6",
+    "lefthook": "^2.1.4",
     "prettier": "^3.4.2",
     "turbo": "^2.8.20",
     "typescript": "^5.7.2"
