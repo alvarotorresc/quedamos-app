@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { parseDateKey } from '../lib/date-utils';
+import { Card } from '../ui/Card';
 
 interface BestDayBannerProps {
   dateKey: string;
@@ -27,27 +28,24 @@ export function BestDayBanner({
   const isSecond = rank === 2;
 
   return (
-    <div
-      className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-2"
-      style={{
-        background: isSecond ? 'rgba(148,163,184,0.06)' : 'rgba(37,99,235,0.06)',
-        border: `1px solid ${isSecond ? 'rgba(148,163,184,0.1)' : 'rgba(96,165,250,0.1)'}`,
-        cursor: onClick ? 'pointer' : undefined,
-      }}
-      onClick={onClick}
-    >
-      <span className="text-base">{isSecond ? '⭐' : '✨'}</span>
-      <div className="flex-1 min-w-0">
-        <div
-          className="text-[9px] font-bold tracking-wider uppercase"
-          style={{ color: isSecond ? '#94A3B8' : undefined }}
-        >
-          {isSecond ? t('calendar.secondBestDay') : t('calendar.bestDay')}
-        </div>
-        <div className="text-text-muted text-xs mt-0.5 capitalize">
-          {label} · {availableCount}/{totalMembers}
+    <Card variant={isSecond ? 'default' : 'highlight'} className="cursor-pointer" onClick={onClick}>
+      <div className="flex items-center gap-2.5">
+        <span className="text-base">{isSecond ? '⭐' : '✨'}</span>
+        <div className="flex-1 min-w-0">
+          <div
+            className={`text-[9px] font-extrabold tracking-wider uppercase ${
+              isSecond
+                ? 'text-text-muted'
+                : 'bg-gradient-to-r from-[#A78BFA] to-[#F472B6] bg-clip-text text-transparent'
+            }`}
+          >
+            {isSecond ? t('calendar.secondBestDay') : t('calendar.bestDay')}
+          </div>
+          <div className="text-text-muted text-xs mt-0.5 capitalize">
+            {label} · {availableCount}/{totalMembers}
+          </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

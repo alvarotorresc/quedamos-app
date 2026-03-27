@@ -11,8 +11,8 @@ import { useMyColor } from '../hooks/useMyColor';
 import { Avatar } from '../ui/Avatar';
 import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { EmptyState } from '../ui';
+import { MEMBER_COLORS } from '../lib/constants';
 
 type FormMode = 'create' | 'join' | null;
 
@@ -114,18 +114,16 @@ export default function GroupPage() {
               <IonSpinner name="crescent" className="text-primary w-8 h-8" />
             </div>
           ) : !hasGroups && formMode === null ? (
-            /* Empty state */
-            <div className="text-center py-16">
-              <div className="text-5xl mb-4">👥</div>
-              <h2 className="text-lg font-bold text-text mb-1">{t('group.noGroup')}</h2>
-              <p className="text-sm text-text-muted mb-8">{t('group.noGroupSubtitle')}</p>
-              <div className="flex flex-col gap-3 max-w-[280px] mx-auto">
-                <Button onClick={() => toggleForm('create')}>{t('group.createGroup')}</Button>
-                <Button variant="secondary" onClick={() => toggleForm('join')}>
-                  {t('group.joinWithCode')}
-                </Button>
-              </div>
-            </div>
+            <EmptyState
+              emoji="👋"
+              title="¡Bienvenido a Quedamos!"
+              description="Crea un grupo con tus amigos o pide un código de invitación."
+              action="Crear grupo"
+              actionVariant="accent"
+              onAction={() => toggleForm('create')}
+              secondaryAction="Tengo un código"
+              onSecondaryAction={() => toggleForm('join')}
+            />
           ) : (
             <>
               {/* Groups list */}

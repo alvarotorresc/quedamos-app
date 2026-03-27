@@ -72,15 +72,11 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
         {/* Handle bar */}
         <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
-        <h3 className="text-[17px] font-bold text-text mb-3.5">
-          {t('plans.edit.title')}
-        </h3>
+        <h3 className="text-[17px] font-bold text-text mb-3.5">{t('plans.edit.title')}</h3>
 
         {/* Title */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.name')}
-          </label>
+          <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.name')}</label>
           <input
             type="text"
             value={title}
@@ -108,9 +104,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
 
         {/* Time */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.time')}
-          </label>
+          <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.time')}</label>
           <input
             type="time"
             value={time}
@@ -141,7 +135,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
         {/* Description */}
         <div className="mb-4">
           <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.name') === 'Titulo' ? 'Descripcion' : 'Description'}
+            {t('plans.create.description')}
           </label>
           <textarea
             value={description}
@@ -153,11 +147,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
         </div>
 
         {/* Submit */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="w-full"
-        >
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
           {isSaving ? t('plans.edit.saving') : t('plans.edit.submit')}
         </Button>
       </div>

@@ -12,9 +12,9 @@
     "typecheck": "turbo typecheck"
   },
   "devDependencies": {
-    "lefthook": "^1.13.6",
+    "lefthook": "^2.1.4",
     "prettier": "^3.4.2",
-    "turbo": "^2.3.0",
+    "turbo": "^2.8.20",
     "typescript": "^5.7.2"
   },
   "workspaces": [
@@ -40,7 +40,14 @@
       "tmp@<0.2.4": ">=0.2.4",
       "lodash@>=4.0.0 <4.17.23": ">=4.17.23",
       "js-yaml@>=4.0.0 <4.1.1": ">=4.1.1",
-      "@tootallnate/once@<3.0.1": ">=3.0.1"
+      "@tootallnate/once@<3.0.1": ">=3.0.1",
+      "node-forge@<1.4.0": ">=1.4.0",
+      "picomatch@<2.3.2": ">=2.3.2",
+      "picomatch@>=4.0.0 <4.0.4": ">=4.0.4",
+      "ajv@>=7.0.0-alpha.0 <8.18.0": ">=8.18.0",
+      "fast-xml-parser@>=4.0.0-beta.3 <=5.5.6": ">=5.5.7",
+      "handlebars@>=4.0.0 <4.7.9": ">=4.7.9",
+      "@eslint/plugin-kit@<0.3.4": ">=0.3.4"
     }
   }
 }

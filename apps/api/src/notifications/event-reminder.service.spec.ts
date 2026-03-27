@@ -1,9 +1,25 @@
 import { EventReminderService } from './event-reminder.service';
+import { NotificationsService } from './notifications.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import {
   createMockPrisma,
   createMockNotificationsService,
   createTestEvent,
 } from '../common/test-utils';
+
+/**
+ * Returns a date (midnight UTC) and time (HH:MM) that, when combined by
+ * combineDateTime, always fall exactly 12 hours from now — safely inside
+ * the service's "next 24h" reminder window regardless of when tests run.
+ */
+function eventIn12Hours(): { date: Date; time: string } {
+  const target = new Date(Date.now() + 12 * 60 * 60 * 1000);
+  const date = new Date(target);
+  date.setUTCHours(0, 0, 0, 0);
+  const hours = String(target.getUTCHours()).padStart(2, '0');
+  const minutes = String(target.getUTCMinutes()).padStart(2, '0');
+  return { date, time: `${hours}:${minutes}` };
+}
 
 describe('EventReminderService', () => {
   let service: EventReminderService;
@@ -13,14 +29,19 @@ describe('EventReminderService', () => {
   beforeEach(() => {
     prisma = createMockPrisma();
     notifications = createMockNotificationsService();
-    service = new EventReminderService(prisma as any, notifications as any);
+    service = new EventReminderService(
+      prisma as unknown as PrismaService,
+      notifications as unknown as NotificationsService,
+    );
     prisma.event.update.mockResolvedValue({});
   });
 
   describe('combineDateTime', () => {
     // Access private method via bracket notation for testing
     const combine = (date: Date, time: string | null) =>
-      (service as any).combineDateTime(date, time);
+      (
+        service as unknown as { combineDateTime: (d: Date, t: string | null) => Date }
+      ).combineDateTime(date, time);
 
     it('should combine date and time correctly', () => {
       const date = new Date('2026-03-15T00:00:00.000Z');
@@ -74,12 +95,10 @@ describe('EventReminderService', () => {
     });
 
     it('should send reminders to pending and confirmed attendees', async () => {
-      const tomorrow = new Date();
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
+      const { date, time } = eventIn12Hours();
 
       const event = {
-        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        ...createTestEvent({ date, time, reminderSentAt: null }),
         attendees: [
           { userId: 'user-1', status: 'pending' },
           { userId: 'user-2', status: 'confirmed' },
@@ -108,9 +127,7 @@ describe('EventReminderService', () => {
     });
 
     it('should await all notifications before marking reminderSentAt', async () => {
-      const tomorrow = new Date();
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
+      const { date, time } = eventIn12Hours();
 
       const callOrder: string[] = [];
       notifications.sendToUser.mockImplementation(async () => {
@@ -123,7 +140,7 @@ describe('EventReminderService', () => {
       });
 
       const event = {
-        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        ...createTestEvent({ date, time, reminderSentAt: null }),
         attendees: [{ userId: 'user-1', status: 'pending' }],
         group: { name: 'Test Group' },
       };
@@ -135,12 +152,10 @@ describe('EventReminderService', () => {
     });
 
     it('should mark reminderSentAt after sending', async () => {
-      const tomorrow = new Date();
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
+      const { date, time } = eventIn12Hours();
 
       const event = {
-        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        ...createTestEvent({ date, time, reminderSentAt: null }),
         attendees: [{ userId: 'user-1', status: 'pending' }],
         group: { name: 'Test Group' },
       };
@@ -155,16 +170,14 @@ describe('EventReminderService', () => {
     });
 
     it('should still mark reminderSentAt even if some notifications fail', async () => {
-      const tomorrow = new Date();
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
+      const { date, time } = eventIn12Hours();
 
       notifications.sendToUser
         .mockResolvedValueOnce({ sent: 1 })
         .mockRejectedValueOnce(new Error('FCM down'));
 
       const event = {
-        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        ...createTestEvent({ date, time, reminderSentAt: null }),
         attendees: [
           { userId: 'user-1', status: 'pending' },
           { userId: 'user-2', status: 'confirmed' },
@@ -183,12 +196,10 @@ describe('EventReminderService', () => {
     });
 
     it('should skip events with no attendees', async () => {
-      const tomorrow = new Date();
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
+      const { date, time } = eventIn12Hours();
 
       const event = {
-        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        ...createTestEvent({ date, time, reminderSentAt: null }),
         attendees: [],
         group: { name: 'Test Group' },
       };
@@ -232,12 +243,10 @@ describe('EventReminderService', () => {
     });
 
     it('should use event_reminder as notificationType', async () => {
-      const tomorrow = new Date();
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      tomorrow.setUTCHours(0, 0, 0, 0);
+      const { date, time } = eventIn12Hours();
 
       const event = {
-        ...createTestEvent({ date: tomorrow, time: '10:00', reminderSentAt: null }),
+        ...createTestEvent({ date, time, reminderSentAt: null }),
         attendees: [{ userId: 'user-1', status: 'confirmed' }],
         group: { name: 'Test Group' },
       };

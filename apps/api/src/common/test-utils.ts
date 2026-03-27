@@ -1,7 +1,110 @@
 /* Shared test utilities and mock factories for backend tests */
 
-export function createMockPrisma() {
-  const prisma: any = {
+type MockModel<T extends Record<string, jest.Mock>> = T;
+
+interface MockPrismaModels {
+  user: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  }>;
+  group: MockModel<{
+    findUnique: jest.Mock;
+    findUniqueOrThrow: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  }>;
+  groupMember: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+    deleteMany: jest.Mock;
+    count: jest.Mock;
+  }>;
+  availability: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    upsert: jest.Mock;
+    delete: jest.Mock;
+    deleteMany: jest.Mock;
+  }>;
+  event: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  }>;
+  eventAttendee: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    createMany: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+    deleteMany: jest.Mock;
+  }>;
+  pushToken: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    upsert: jest.Mock;
+    delete: jest.Mock;
+    deleteMany: jest.Mock;
+    count: jest.Mock;
+  }>;
+  notificationPreference: MockModel<{
+    findUnique: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    upsert: jest.Mock;
+  }>;
+  planProposal: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  }>;
+  planVote: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    upsert: jest.Mock;
+    delete: jest.Mock;
+  }>;
+  groupCity: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    delete: jest.Mock;
+  }>;
+}
+
+export interface MockPrisma extends MockPrismaModels {
+  $transaction: jest.Mock;
+}
+
+export function createMockPrisma(): MockPrisma {
+  const prisma: MockPrismaModels = {
     user: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
@@ -97,8 +200,10 @@ export function createMockPrisma() {
       delete: jest.fn(),
     },
   };
-  prisma.$transaction = jest.fn((fn: any) => fn(prisma));
-  return prisma;
+  return {
+    ...prisma,
+    $transaction: jest.fn((fn: (tx: MockPrismaModels) => unknown) => fn(prisma)),
+  };
 }
 
 export function createMockNotificationsService() {

@@ -13,13 +13,18 @@ import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { WeatherBadge, getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
 import type { Event } from '../services/events';
 import type { WeatherData } from '../services/weather';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: '#F59E0B',
+  pending: '#FBBF24',
   confirmed: '#34D399',
   cancelled: '#FB7185',
+};
+
+const STATUS_VARIANTS: Record<string, 'default' | 'success' | 'pending' | 'cancelled'> = {
+  pending: 'pending',
+  confirmed: 'success',
+  cancelled: 'cancelled',
 };
 
 interface EventCardProps {
@@ -87,7 +92,7 @@ export function EventCard({
   };
 
   return (
-    <Card className="!p-4">
+    <Card variant={STATUS_VARIANTS[event.status] ?? 'default'} className="!p-4">
       {/* Header: title + badge + edit */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <h4 className="text-[15px] font-bold text-text leading-snug flex-1">{event.title}</h4>

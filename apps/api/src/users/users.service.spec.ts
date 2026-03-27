@@ -1,4 +1,5 @@
 import { UsersService } from './users.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createTestUser } from '../common/test-utils';
 
 describe('UsersService', () => {
@@ -7,7 +8,7 @@ describe('UsersService', () => {
 
   beforeEach(() => {
     prisma = createMockPrisma();
-    service = new UsersService(prisma as any);
+    service = new UsersService(prisma as unknown as PrismaService);
   });
 
   describe('findById', () => {

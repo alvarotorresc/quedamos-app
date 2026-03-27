@@ -1,4 +1,6 @@
+import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createMockConfigService } from '../common/test-utils';
 
 // Mock firebase-admin
@@ -18,7 +20,8 @@ jest.mock('firebase-admin', () => {
 
 import * as admin from 'firebase-admin';
 
-const mockSendEachForMulticast = (admin as any).__mockSendEachForMulticast as jest.Mock;
+const mockSendEachForMulticast = (admin as unknown as { __mockSendEachForMulticast: jest.Mock })
+  .__mockSendEachForMulticast;
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
@@ -29,7 +32,10 @@ describe('NotificationsService', () => {
     jest.clearAllMocks();
     prisma = createMockPrisma();
     configService = createMockConfigService();
-    service = new NotificationsService(prisma as any, configService as any);
+    service = new NotificationsService(
+      prisma as unknown as PrismaService,
+      configService as unknown as ConfigService,
+    );
   });
 
   describe('onModuleInit', () => {
@@ -45,8 +51,11 @@ describe('NotificationsService', () => {
         FIREBASE_CLIENT_EMAIL: '',
         FIREBASE_PRIVATE_KEY: '',
       });
-      const svc = new NotificationsService(prisma as any, emptyConfig as any);
-      emptyConfig.get.mockReturnValue(undefined as any);
+      const svc = new NotificationsService(
+        prisma as unknown as PrismaService,
+        emptyConfig as unknown as ConfigService,
+      );
+      emptyConfig.get.mockReturnValue(undefined as unknown as string);
 
       svc.onModuleInit();
 

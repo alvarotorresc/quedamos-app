@@ -15,7 +15,7 @@ describe('AuthGuard', () => {
   function createMockContext(authHeader?: string) {
     const request = {
       headers: { authorization: authHeader },
-      user: undefined as any,
+      user: undefined as ReturnType<typeof createTestUser> | undefined,
     };
     return {
       switchToHttp: () => ({
@@ -27,7 +27,7 @@ describe('AuthGuard', () => {
 
   it('should allow request with valid token', async () => {
     const user = createTestUser();
-    authService.validateToken.mockResolvedValue(user as any);
+    authService.validateToken.mockResolvedValue(user);
     const ctx = createMockContext('Bearer valid-token');
 
     const result = await guard.canActivate(ctx);
@@ -38,12 +38,12 @@ describe('AuthGuard', () => {
 
   it('should set user on request', async () => {
     const user = createTestUser();
-    authService.validateToken.mockResolvedValue(user as any);
+    authService.validateToken.mockResolvedValue(user);
     const ctx = createMockContext('Bearer valid-token');
 
     await guard.canActivate(ctx);
 
-    expect((ctx as any).request.user).toEqual(user);
+    expect(ctx.request.user).toEqual(user);
   });
 
   it('should throw when no authorization header', async () => {

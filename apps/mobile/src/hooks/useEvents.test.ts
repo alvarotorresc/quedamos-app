@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useEvents, useCreateEvent, useRespondEvent } from './useEvents';
-import { eventsService } from '../services/events';
+import { eventsService, type Event } from '../services/events';
 import { createWrapper } from '../test/test-utils';
 
 vi.mock('../services/events', () => ({
@@ -18,9 +18,7 @@ vi.mock('../lib/group-sync', () => ({
 }));
 
 vi.mock('../stores/auth', () => ({
-  useAuthStore: vi.fn((selector) =>
-    selector({ user: { id: 'user-1' } }),
-  ),
+  useAuthStore: vi.fn((selector) => selector({ user: { id: 'user-1' } })),
 }));
 
 describe('useEvents', () => {
@@ -29,8 +27,8 @@ describe('useEvents', () => {
   });
 
   it('should fetch events for group', async () => {
-    const events = [{ id: 'e1', title: 'Test' }];
-    vi.mocked(eventsService.getAll).mockResolvedValue(events as any);
+    const events = [{ id: 'e1', title: 'Test' }] as unknown as Event[];
+    vi.mocked(eventsService.getAll).mockResolvedValue(events);
 
     const { result } = renderHook(() => useEvents('g1'), { wrapper: createWrapper() });
 
@@ -46,20 +44,23 @@ describe('useEvents', () => {
 
 describe('useCreateEvent', () => {
   it('should create event', async () => {
-    vi.mocked(eventsService.create).mockResolvedValue({ id: 'e1' } as any);
+    vi.mocked(eventsService.create).mockResolvedValue({ id: 'e1' } as unknown as Event);
 
     const { result } = renderHook(() => useCreateEvent('g1'), { wrapper: createWrapper() });
 
     result.current.mutate({ title: 'Test Event', date: '2026-03-01' });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(eventsService.create).toHaveBeenCalledWith('g1', { title: 'Test Event', date: '2026-03-01' });
+    expect(eventsService.create).toHaveBeenCalledWith('g1', {
+      title: 'Test Event',
+      date: '2026-03-01',
+    });
   });
 });
 
 describe('useRespondEvent', () => {
   it('should respond to event with confirmed', async () => {
-    vi.mocked(eventsService.respond).mockResolvedValue({ id: 'e1' } as any);
+    vi.mocked(eventsService.respond).mockResolvedValue({ id: 'e1' } as unknown as Event);
     vi.mocked(eventsService.getAll).mockResolvedValue([]);
 
     const { result } = renderHook(() => useRespondEvent('g1'), { wrapper: createWrapper() });
@@ -71,7 +72,7 @@ describe('useRespondEvent', () => {
   });
 
   it('should respond to event with declined', async () => {
-    vi.mocked(eventsService.respond).mockResolvedValue({ id: 'e1' } as any);
+    vi.mocked(eventsService.respond).mockResolvedValue({ id: 'e1' } as unknown as Event);
     vi.mocked(eventsService.getAll).mockResolvedValue([]);
 
     const { result } = renderHook(() => useRespondEvent('g1'), { wrapper: createWrapper() });

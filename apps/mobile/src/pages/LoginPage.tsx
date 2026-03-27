@@ -64,7 +64,9 @@ export default function LoginPage() {
               <span className="text-lg leading-none">&larr;</span> {t('common.back')}
             </button>
 
-            <h1 className="text-2xl font-bold text-text mb-2">{t('login.title')}</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-[#60A5FA] to-[#8B5CF6] bg-clip-text text-transparent mb-2">
+              {t('login.title')}
+            </h1>
 
             {error && (
               <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
@@ -78,7 +80,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
+                className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 text-text outline-none focus:border-primary"
                 placeholder={t('common.emailPlaceholder')}
                 required
               />
@@ -91,7 +93,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                  className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 pr-11 text-text outline-none focus:border-primary"
                   placeholder={t('common.passwordPlaceholder')}
                   required
                 />

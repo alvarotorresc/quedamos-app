@@ -103,8 +103,8 @@ export default function RegisterPage() {
             <p className="text-text-muted text-sm max-w-[300px] leading-relaxed mt-3">
               <Trans i18nKey="register.success.message" values={{ email }}>
                 Te hemos enviado un email de confirmación a{' '}
-                <span className="text-primary font-medium">{{ email } as any}</span>. Haz click en
-                el enlace para activar tu cuenta.
+                <span className="text-primary font-medium">{'{{email}}'}</span>. Haz click en el
+                enlace para activar tu cuenta.
               </Trans>
             </p>
             <p className="text-text-dark text-xs mt-3">{t('register.success.spam')}</p>
@@ -127,7 +127,9 @@ export default function RegisterPage() {
               <span className="text-lg leading-none">&larr;</span> {t('common.back')}
             </button>
 
-            <h1 className="text-2xl font-bold text-text mb-2">{t('register.title')}</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-[#60A5FA] to-[#8B5CF6] bg-clip-text text-transparent mb-2">
+              {t('register.title')}
+            </h1>
 
             {error && (
               <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
@@ -141,7 +143,7 @@ export default function RegisterPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
+                className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 text-text outline-none focus:border-primary"
                 placeholder={t('register.namePlaceholder')}
                 required
               />
@@ -153,7 +155,7 @@ export default function RegisterPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-text outline-none focus:border-primary"
+                className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 text-text outline-none focus:border-primary"
                 placeholder={t('common.emailPlaceholder')}
                 required
               />
@@ -166,7 +168,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                  className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 pr-11 text-text outline-none focus:border-primary"
                   placeholder={t('common.passwordPlaceholder')}
                   required
                 />
@@ -220,7 +222,7 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full bg-bg-input border rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
+                  className={`w-full bg-bg-input border rounded-md px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
                     confirmPassword.length > 0 && password !== confirmPassword
                       ? 'border-danger/50'
                       : 'border-strong'

@@ -6,8 +6,7 @@ import { AvatarStack } from '../ui/AvatarStack';
 import { openInMaps } from '../lib/maps-utils';
 import { apiDateToKey } from '../lib/date-utils';
 import type { Event } from '../services/events';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#F59E0B',

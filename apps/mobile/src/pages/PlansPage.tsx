@@ -10,7 +10,10 @@ import {
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
+import { EmptyState } from '../ui/EmptyState';
+import { SkeletonCard } from '../ui/SkeletonCard';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
@@ -30,8 +33,7 @@ import { EditProposalModal } from '../components/EditProposalModal';
 import { ConvertProposalModal } from '../components/ConvertProposalModal';
 import type { Event } from '../services/events';
 import type { Proposal } from '../services/proposals';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 export default function PlansPage() {
   useScreenView('Plans');
@@ -321,35 +323,32 @@ export default function PlansPage() {
 
           {/* Loading events */}
           {eventsLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <IonSpinner name="crescent" className="text-primary w-5 h-5" />
-            </div>
+            <>
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </>
           ) : !hasContent ? (
             /* Empty state */
-            <div className="text-center py-16 px-4">
-              <div className="text-4xl mb-3">{activeTab === 'plans' ? '📅' : '💡'}</div>
-              <p className="text-text-muted text-sm font-semibold">
-                {activeTab === 'plans' ? t('plans.empty') : t('proposals.empty')}
-              </p>
-              {activeTab === 'plans' ? (
-                <>
-                  <p className="text-text-dark text-xs mt-1">{t('plans.emptySubtitle')}</p>
-                  <button
-                    onClick={() => history.push('/tabs/calendar')}
-                    className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
-                  >
-                    {t('plans.goToCalendar')}
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setShowCreateProposal(true)}
-                  className="mt-4 px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
-                >
-                  + {t('proposals.create')}
-                </button>
-              )}
-            </div>
+            activeTab === 'plans' ? (
+              <EmptyState
+                emoji="🎉"
+                title={t('plans.empty')}
+                description={t('plans.emptySubtitle')}
+                action={t('plans.goToCalendar')}
+                actionVariant="success"
+                onAction={() => history.push('/tabs/calendar')}
+              />
+            ) : (
+              <EmptyState
+                emoji="💡"
+                title={t('proposals.empty')}
+                description={t('proposals.emptyDescription', { defaultValue: '' })}
+                action={`+ ${t('proposals.create')}`}
+                actionVariant="primary"
+                onAction={() => setShowCreateProposal(true)}
+              />
+            )
           ) : (
             <>
               {/* Tab: Quedadas */}
@@ -362,10 +361,13 @@ export default function PlansPage() {
                         {t('plans.upcoming')}
                       </h3>
                       <div className="space-y-2">
-                        {upcoming.map((ev) => (
-                          <div
+                        {upcoming.map((ev, i) => (
+                          <motion.div
                             key={ev.id}
                             id={`event-${ev.id}`}
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                             className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
                           >
                             <EventCard
@@ -379,7 +381,7 @@ export default function PlansPage() {
                               isDeleting={deletingEventId === ev.id}
                               isCancelling={cancellingEventId === ev.id}
                             />
-                          </div>
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -402,10 +404,17 @@ export default function PlansPage() {
                       </button>
                       {showPast && (
                         <div className="space-y-2 opacity-70">
-                          {past.map((ev) => (
-                            <div
+                          {past.map((ev, i) => (
+                            <motion.div
                               key={ev.id}
                               id={`event-${ev.id}`}
+                              initial={{ opacity: 0, y: 16 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{
+                                delay: i * 0.08,
+                                duration: 0.4,
+                                ease: [0.16, 1, 0.3, 1],
+                              }}
                               className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
                             >
                               <EventCard
@@ -414,7 +423,7 @@ export default function PlansPage() {
                                 memberColorMap={memberColorMap}
                                 weather={weatherByDate.get(apiDateToKey(ev.date))}
                               />
-                            </div>
+                            </motion.div>
                           ))}
                         </div>
                       )}
@@ -445,19 +454,27 @@ export default function PlansPage() {
                   {openProposals.length > 0 && (
                     <div className="mb-4">
                       <div className="space-y-2">
-                        {openProposals.map((p) => (
-                          <ProposalCard
+                        {openProposals.map((p, i) => (
+                          <motion.div
                             key={p.id}
-                            proposal={p}
-                            onVote={handleVote}
-                            onConvert={(proposal) => setConvertingProposal(proposal)}
-                            onClose={handleCloseProposal}
-                            onEdit={handleEditProposal}
-                            isVoting={votingProposalId === p.id}
-                            isClosing={closingProposalId === p.id}
-                            memberColorMap={memberColorMap}
-                            weather={p.proposedDate ? weatherByDate.get(p.proposedDate) : undefined}
-                          />
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                          >
+                            <ProposalCard
+                              proposal={p}
+                              onVote={handleVote}
+                              onConvert={(proposal) => setConvertingProposal(proposal)}
+                              onClose={handleCloseProposal}
+                              onEdit={handleEditProposal}
+                              isVoting={votingProposalId === p.id}
+                              isClosing={closingProposalId === p.id}
+                              memberColorMap={memberColorMap}
+                              weather={
+                                p.proposedDate ? weatherByDate.get(p.proposedDate) : undefined
+                              }
+                            />
+                          </motion.div>
                         ))}
                       </div>
                     </div>
@@ -482,19 +499,29 @@ export default function PlansPage() {
                       </button>
                       {showClosedProposals && (
                         <div className="space-y-2 opacity-70">
-                          {closedOrConvertedProposals.map((p) => (
-                            <ProposalCard
+                          {closedOrConvertedProposals.map((p, i) => (
+                            <motion.div
                               key={p.id}
-                              proposal={p}
-                              onVote={handleVote}
-                              onConvert={(proposal) => setConvertingProposal(proposal)}
-                              onClose={handleCloseProposal}
-                              onEdit={handleEditProposal}
-                              memberColorMap={memberColorMap}
-                              weather={
-                                p.proposedDate ? weatherByDate.get(p.proposedDate) : undefined
-                              }
-                            />
+                              initial={{ opacity: 0, y: 16 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{
+                                delay: i * 0.08,
+                                duration: 0.4,
+                                ease: [0.16, 1, 0.3, 1],
+                              }}
+                            >
+                              <ProposalCard
+                                proposal={p}
+                                onVote={handleVote}
+                                onConvert={(proposal) => setConvertingProposal(proposal)}
+                                onClose={handleCloseProposal}
+                                onEdit={handleEditProposal}
+                                memberColorMap={memberColorMap}
+                                weather={
+                                  p.proposedDate ? weatherByDate.get(p.proposedDate) : undefined
+                                }
+                              />
+                            </motion.div>
                           ))}
                         </div>
                       )}

@@ -111,7 +111,7 @@ export function WeekView({
           <div
             key={key}
             onClick={() => onSelectDay(isSel ? null : day)}
-            className="rounded-card mb-1 cursor-pointer"
+            className="rounded-card mb-1 cursor-pointer active:scale-[0.98] transition-transform"
             style={{
               padding: '12px 14px',
               border: `1px solid ${isSel ? 'rgba(96,165,250,0.25)' : 'var(--app-border)'}`,

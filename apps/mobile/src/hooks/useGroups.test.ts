@@ -12,7 +12,7 @@ import {
   useKickMember,
   useDeleteGroup,
 } from './useGroups';
-import { groupsService } from '../services/groups';
+import { groupsService, type GroupWithMembers } from '../services/groups';
 import { createWrapper } from '../test/test-utils';
 
 vi.mock('../services/groups', () => ({
@@ -40,8 +40,8 @@ describe('useGroups', () => {
   });
 
   it('should fetch groups', async () => {
-    const groups = [{ id: 'g1', name: 'Test' }];
-    vi.mocked(groupsService.getAll).mockResolvedValue(groups as any);
+    const groups = [{ id: 'g1', name: 'Test' }] as unknown as GroupWithMembers[];
+    vi.mocked(groupsService.getAll).mockResolvedValue(groups);
 
     const { result } = renderHook(() => useGroups(), { wrapper: createWrapper() });
 
@@ -60,8 +60,8 @@ describe('useGroups', () => {
 
 describe('useGroup', () => {
   it('should fetch single group', async () => {
-    const group = { id: 'g1', name: 'Test', members: [] };
-    vi.mocked(groupsService.getById).mockResolvedValue(group as any);
+    const group = { id: 'g1', name: 'Test', members: [] } as unknown as GroupWithMembers;
+    vi.mocked(groupsService.getById).mockResolvedValue(group);
 
     const { result } = renderHook(() => useGroup('g1'), { wrapper: createWrapper() });
 
@@ -77,22 +77,25 @@ describe('useGroup', () => {
 
 describe('useCreateGroup', () => {
   it('should create group', async () => {
-    const group = { id: 'g1', name: 'New' };
-    vi.mocked(groupsService.create).mockResolvedValue(group as any);
+    const group = { id: 'g1', name: 'New' } as unknown as GroupWithMembers;
+    vi.mocked(groupsService.create).mockResolvedValue(group);
 
     const { result } = renderHook(() => useCreateGroup(), { wrapper: createWrapper() });
 
     result.current.mutate({ name: 'New', emoji: '🎉' });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(groupsService.create).toHaveBeenCalledWith({ name: 'New', emoji: '🎉' }, expect.anything());
+    expect(groupsService.create).toHaveBeenCalledWith(
+      { name: 'New', emoji: '🎉' },
+      expect.anything(),
+    );
   });
 });
 
 describe('useJoinGroup', () => {
   it('should join group by code', async () => {
-    const group = { id: 'g1', name: 'Joined' };
-    vi.mocked(groupsService.join).mockResolvedValue(group as any);
+    const group = { id: 'g1', name: 'Joined' } as unknown as GroupWithMembers;
+    vi.mocked(groupsService.join).mockResolvedValue(group);
 
     const { result } = renderHook(() => useJoinGroup(), { wrapper: createWrapper() });
 
@@ -135,7 +138,7 @@ describe('useRefreshInvite', () => {
 
   it('should refresh invite code', async () => {
     const newInvite = { inviteCode: 'NEW12345', inviteUrl: 'https://.../join/NEW12345' };
-    vi.mocked(groupsService.refreshInvite).mockResolvedValue(newInvite as any);
+    vi.mocked(groupsService.refreshInvite).mockResolvedValue(newInvite);
 
     const { result } = renderHook(() => useRefreshInvite(), { wrapper: createWrapper() });
 
@@ -152,7 +155,7 @@ describe('useUpdateMemberRole', () => {
   });
 
   it('should promote member to admin', async () => {
-    vi.mocked(groupsService.updateMemberRole).mockResolvedValue({ role: 'admin' } as any);
+    vi.mocked(groupsService.updateMemberRole).mockResolvedValue({ role: 'admin' });
 
     const { result } = renderHook(() => useUpdateMemberRole('g1'), { wrapper: createWrapper() });
 
@@ -163,7 +166,7 @@ describe('useUpdateMemberRole', () => {
   });
 
   it('should demote admin to member', async () => {
-    vi.mocked(groupsService.updateMemberRole).mockResolvedValue({ role: 'member' } as any);
+    vi.mocked(groupsService.updateMemberRole).mockResolvedValue({ role: 'member' });
 
     const { result } = renderHook(() => useUpdateMemberRole('g1'), { wrapper: createWrapper() });
 
@@ -180,7 +183,7 @@ describe('useKickMember', () => {
   });
 
   it('should kick member from group', async () => {
-    vi.mocked(groupsService.kickMember).mockResolvedValue({ success: true } as any);
+    vi.mocked(groupsService.kickMember).mockResolvedValue({ success: true });
 
     const { result } = renderHook(() => useKickMember('g1'), { wrapper: createWrapper() });
 
@@ -197,7 +200,7 @@ describe('useDeleteGroup', () => {
   });
 
   it('should delete group', async () => {
-    vi.mocked(groupsService.deleteGroup).mockResolvedValue({ success: true } as any);
+    vi.mocked(groupsService.deleteGroup).mockResolvedValue({ success: true });
 
     const { result } = renderHook(() => useDeleteGroup(), { wrapper: createWrapper() });
 

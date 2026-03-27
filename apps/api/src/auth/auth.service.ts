@@ -83,9 +83,9 @@ export class AuthService {
             avatarEmoji,
           },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         // Unique constraint violation — another concurrent request already created the user
-        if (error?.code === 'P2002') {
+        if (error instanceof Object && 'code' in error && error.code === 'P2002') {
           dbUser = await this.prisma.user.findUnique({
             where: { id: payload.sub },
           });

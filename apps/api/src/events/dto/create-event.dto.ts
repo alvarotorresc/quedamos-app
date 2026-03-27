@@ -2,6 +2,7 @@ import {
   IsString,
   IsOptional,
   MaxLength,
+  MinLength,
   Matches,
   IsNotEmpty,
   IsArray,
@@ -19,11 +20,13 @@ export class CreateEventDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(1000)
   description?: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(200)
   location?: string;
 

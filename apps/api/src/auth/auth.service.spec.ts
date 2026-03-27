@@ -1,5 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createMockConfigService, createTestUser } from '../common/test-utils';
 
 // Mock jwks-rsa
@@ -26,7 +28,10 @@ describe('AuthService', () => {
   beforeEach(() => {
     prisma = createMockPrisma();
     configService = createMockConfigService();
-    service = new AuthService(configService as any, prisma as any);
+    service = new AuthService(
+      configService as unknown as ConfigService,
+      prisma as unknown as PrismaService,
+    );
   });
 
   describe('validateToken', () => {

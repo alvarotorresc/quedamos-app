@@ -2,6 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuthStore } from './auth';
 import { supabase } from '../lib/supabase';
 
+type GetSessionResult = Awaited<ReturnType<typeof supabase.auth.getSession>>;
+type SignInResult = Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
+type UpdateUserResult = Awaited<ReturnType<typeof supabase.auth.updateUser>>;
+
 vi.mock('../lib/push-notifications', () => ({
   unregisterFromBackend: vi.fn().mockResolvedValue(undefined),
 }));
@@ -46,10 +50,10 @@ describe('useAuthStore', () => {
               email: 'test@test.com',
               user_metadata: { name: 'Test User', avatarEmoji: '🎉' },
             },
-          } as any,
+          },
         },
         error: null,
-      });
+      } as unknown as GetSessionResult);
 
       await useAuthStore.getState().initialize();
 
@@ -79,9 +83,9 @@ describe('useAuthStore', () => {
   describe('signIn', () => {
     it('should call supabase signInWithPassword', async () => {
       vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
-        data: {} as any,
+        data: {},
         error: null,
-      });
+      } as unknown as SignInResult);
 
       await useAuthStore.getState().signIn('test@test.com', 'pass', 'captcha');
 
@@ -94,9 +98,9 @@ describe('useAuthStore', () => {
 
     it('should throw on error', async () => {
       vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
-        data: {} as any,
-        error: { message: 'Invalid credentials' } as any,
-      });
+        data: {},
+        error: { message: 'Invalid credentials' },
+      } as unknown as SignInResult);
 
       await expect(
         useAuthStore.getState().signIn('bad@test.com', 'wrong', 'captcha'),
@@ -124,9 +128,9 @@ describe('useAuthStore', () => {
         user: { id: '1', email: 'a@b.com', name: 'Old', avatarEmoji: '😊' },
       });
       vi.mocked(supabase.auth.updateUser).mockResolvedValue({
-        data: {} as any,
+        data: {},
         error: null,
-      });
+      } as unknown as UpdateUserResult);
 
       await useAuthStore.getState().updateName('New Name');
 

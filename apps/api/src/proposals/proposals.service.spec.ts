@@ -2,6 +2,8 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { ProposalsService } from './proposals.service';
 import { GroupsService } from '../groups/groups.service';
 import { EventsService } from '../events/events.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { PrismaService } from '../common/prisma/prisma.service';
 import {
   createMockPrisma,
   createMockNotificationsService,
@@ -47,10 +49,10 @@ describe('ProposalsService', () => {
     };
     notifications = createMockNotificationsService();
     service = new ProposalsService(
-      prisma as any,
-      groupsService as any,
-      notifications as any,
-      eventsService as any,
+      prisma as unknown as PrismaService,
+      groupsService as unknown as GroupsService,
+      notifications as unknown as NotificationsService,
+      eventsService as unknown as EventsService,
     );
   });
 
