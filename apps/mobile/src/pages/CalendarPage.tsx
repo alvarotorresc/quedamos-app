@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonSpinner } from '@ionic/react';
+import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
+import { EmptyState, SkeletonCard } from '../ui';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
@@ -205,8 +206,10 @@ export default function CalendarPage() {
           </IonToolbar>
         </IonHeader>
         <IonContent className="ion-padding">
-          <div className="flex items-center justify-center py-20">
-            <IonSpinner name="crescent" className="text-primary w-6 h-6" />
+          <div className="max-w-md mx-auto px-4 pt-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         </IonContent>
       </IonPage>
@@ -324,8 +327,10 @@ export default function CalendarPage() {
 
           {/* Loading availability */}
           {availLoading ? (
-            <div className="flex items-center justify-center py-10">
-              <IonSpinner name="crescent" className="text-primary w-5 h-5" />
+            <div className="py-4">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
             </div>
           ) : (
             <>
@@ -386,6 +391,17 @@ export default function CalendarPage() {
                     setCalView('week');
                   }}
                   weatherByDate={weatherByDate}
+                />
+              )}
+
+              {/* Empty state — no one has marked availability yet */}
+              {availabilityByDate.size === 0 && (
+                <EmptyState
+                  emoji="📅"
+                  title="¿Cuándo puedes?"
+                  description="Toca un día para marcar cuándo estás disponible. Tu grupo verá cuándo coincidís."
+                  action="Estoy disponible"
+                  onAction={handleMarkAvailability}
                 />
               )}
 

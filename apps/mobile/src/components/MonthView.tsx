@@ -116,7 +116,7 @@ export function MonthView({
             <div
               key={key}
               onClick={() => onSelectDay(isSel ? null : day)}
-              className="text-center py-2.5 px-1 rounded-[10px] cursor-pointer aspect-square flex flex-col items-center justify-center"
+              className="text-center py-2.5 px-1 rounded-[10px] cursor-pointer aspect-square flex flex-col items-center justify-center active:scale-90 transition-transform"
               style={{
                 background: isSel
                   ? 'rgba(37,99,235,0.18)'
