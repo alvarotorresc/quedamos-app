@@ -1,23 +1,29 @@
-/** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Nunito', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+      },
       colors: {
         bg: 'var(--app-bg)',
         'bg-light': 'var(--app-bg-light)',
+        'bg-surface': 'var(--app-bg-surface)',
         'bg-card': 'var(--app-bg-card)',
         'bg-input': 'var(--app-bg-input)',
         'bg-hover': 'var(--app-bg-hover)',
+        'bg-glass': 'var(--app-bg-glass)',
         'toggle-off': 'var(--app-toggle-off)',
-        primary: '#60A5FA',
-        'primary-dark': '#2563EB',
+        primary: 'var(--app-primary)',
+        'primary-dark': 'var(--app-primary-solid)',
+        'primary-hover': 'var(--app-primary-hover)',
+        accent: 'var(--app-accent)',
         text: 'var(--app-text)',
         'text-muted': 'var(--app-text-muted)',
         'text-dark': 'var(--app-text-dark)',
-        success: '#34D399',
-        warning: '#F59E0B',
-        danger: '#FB7185',
+        success: 'var(--app-success)',
+        warning: 'var(--app-warning)',
+        danger: 'var(--app-error)',
         member: {
           blue: '#60A5FA',
           orange: '#F59E0B',
@@ -32,8 +38,12 @@ export default {
         strong: 'var(--app-border-strong)',
       },
       borderRadius: {
+        sm: '8px',
+        md: '12px',
         card: '14px',
-        btn: '11px',
+        lg: '16px',
+        btn: '12px',
+        xl: '20px',
       },
     },
   },

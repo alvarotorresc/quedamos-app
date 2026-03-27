@@ -3,45 +3,139 @@
 @tailwind utilities;
 
 :root {
-  --ion-background-color: #080e1a;
-  --ion-text-color: #e2e8f0;
-  --ion-toolbar-background: #080e1a;
-  --ion-tab-bar-background: rgba(8, 14, 26, 0.92);
+  --ion-background-color: #0c0f1a;
+  --ion-text-color: #f1f5f9;
+  --ion-toolbar-background: #0c0f1a;
+  --ion-tab-bar-background: rgba(12, 15, 26, 0.92);
   --ion-safe-area-top: env(safe-area-inset-top);
   --ion-safe-area-bottom: env(safe-area-inset-bottom);
 
-  --app-bg: #080e1a;
-  --app-bg-light: #0f1729;
-  --app-text: #e2e8f0;
+  --app-bg: #0c0f1a;
+  --app-bg-light: #141829;
+  --app-bg-surface: #1c2035;
+  --app-bg-card: rgba(28, 32, 53, 0.6);
+  --app-bg-input: #1c2035;
+  --app-bg-hover: rgba(255, 255, 255, 0.04);
+  --app-bg-glass: rgba(28, 32, 53, 0.6);
+  --app-bg-overlay: rgba(12, 15, 26, 0.85);
+  --app-toggle-off: rgba(255, 255, 255, 0.1);
+  --app-tab-bar: rgba(12, 15, 26, 0.92);
+
+  --app-text: #f1f5f9;
   --app-text-muted: #94a3b8;
   --app-text-dark: #4b5c75;
-  --app-border: rgba(255, 255, 255, 0.05);
-  --app-border-strong: rgba(255, 255, 255, 0.1);
-  --app-bg-card: rgba(255, 255, 255, 0.025);
-  --app-bg-input: rgba(255, 255, 255, 0.05);
-  --app-bg-hover: rgba(255, 255, 255, 0.04);
-  --app-toggle-off: rgba(255, 255, 255, 0.1);
-  --app-tab-bar: rgba(8, 14, 26, 0.92);
+
+  --app-border: rgba(255, 255, 255, 0.06);
+  --app-border-strong: rgba(255, 255, 255, 0.12);
+
+  --app-primary: #60a5fa;
+  --app-primary-solid: #2563eb;
+  --app-primary-hover: #4f46e5;
+
+  --app-accent: #8b5cf6;
+
+  --app-success: #34d399;
+  --app-warning: #fbbf24;
+  --app-error: #fb7185;
 }
 
 .light {
-  --ion-background-color: #f8fafc;
-  --ion-text-color: #1e293b;
-  --ion-toolbar-background: #f8fafc;
-  --ion-tab-bar-background: rgba(248, 250, 252, 0.92);
+  --ion-background-color: #e0d9d1;
+  --ion-text-color: #1a1d2e;
+  --ion-toolbar-background: #e0d9d1;
+  --ion-tab-bar-background: rgba(224, 217, 209, 0.92);
 
-  --app-bg: #f8fafc;
-  --app-bg-light: #f1f5f9;
-  --app-text: #1e293b;
-  --app-text-muted: #64748b;
-  --app-text-dark: #94a3b8;
-  --app-border: rgba(0, 0, 0, 0.08);
-  --app-border-strong: rgba(0, 0, 0, 0.12);
-  --app-bg-card: rgba(0, 0, 0, 0.03);
-  --app-bg-input: rgba(0, 0, 0, 0.04);
+  --app-bg: #e0d9d1;
+  --app-bg-light: #fff9f2;
+  --app-bg-surface: #cec7bf;
+  --app-bg-card: #fff9f2;
+  --app-bg-input: #cec7bf;
   --app-bg-hover: rgba(0, 0, 0, 0.03);
+  --app-bg-glass: rgba(255, 249, 242, 0.85);
+  --app-bg-overlay: rgba(224, 217, 209, 0.85);
   --app-toggle-off: rgba(0, 0, 0, 0.1);
-  --app-tab-bar: rgba(248, 250, 252, 0.92);
+  --app-tab-bar: rgba(224, 217, 209, 0.92);
+
+  --app-text: #1a1d2e;
+  --app-text-muted: #5b6178;
+  --app-text-dark: #8890a5;
+
+  --app-border: rgba(0, 0, 0, 0.06);
+  --app-border-strong: rgba(0, 0, 0, 0.1);
+
+  --app-primary: #2563eb;
+  --app-primary-solid: #2563eb;
+  --app-primary-hover: #4338ca;
+
+  --app-accent: #7c3aed;
+
+  --app-success: #16a34a;
+  --app-warning: #d97706;
+  --app-error: #e11d48;
+}
+
+/* Gradient mesh background */
+body {
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(96, 165, 250, 0.03) 0%, transparent 50%);
+}
+
+/* Light theme card overrides */
+.light .card-glass {
+  background: var(--app-bg-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1.5px solid var(--app-border-strong) !important;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Skeleton shimmer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--app-bg-surface) 25%,
+    var(--app-bg-light) 50%,
+    var(--app-bg-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Avatar glow pulse */
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 8px var(--glow-color, transparent);
+  }
+  50% {
+    box-shadow:
+      0 0 20px var(--glow-color, transparent),
+      0 0 36px var(--glow-soft, transparent);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .light ion-alert .alert-wrapper {
@@ -66,7 +160,12 @@
 }
 
 body {
-  font-family: -apple-system, 'SF Pro Display', system-ui, sans-serif;
+  font-family:
+    'Nunito',
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
   background-color: var(--app-bg);
   color: var(--app-text);
 }
