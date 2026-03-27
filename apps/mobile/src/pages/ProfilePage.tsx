@@ -15,6 +15,7 @@ import { LanguageSelector } from '../ui/LanguageSelector';
 import { translateAuthError } from '../lib/auth-errors';
 import { broadcastSync } from '../lib/group-sync';
 import { useGroups } from '../hooks/useGroups';
+import { MEMBER_COLORS, MEMBER_GRADIENTS, MEMBER_GLOWS } from '../lib/constants';
 import { HiOutlineBell, HiOutlineChevronRight } from 'react-icons/hi2';
 
 type ExpandedSection = 'name' | 'email' | 'password' | null;
@@ -55,6 +56,13 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const { data: groups } = useGroups();
+
+  const colorIndex = MEMBER_COLORS.indexOf(myColor as (typeof MEMBER_COLORS)[number]);
+  const myGradient =
+    colorIndex >= 0
+      ? MEMBER_GRADIENTS[colorIndex]
+      : `linear-gradient(135deg, ${myColor}, ${myColor})`;
+  const myGlow = colorIndex >= 0 ? MEMBER_GLOWS[colorIndex] : `${myColor}4D`;
 
   const toggleSection = (section: ExpandedSection) => {
     setError('');
@@ -154,7 +162,15 @@ export default function ProfilePage() {
         <div className="max-w-md mx-auto px-4 pt-2">
           {/* Avatar + User Info */}
           <div className="flex flex-col items-center py-6">
-            <Avatar name={user?.name ?? '?'} color={myColor} size={72} />
+            <div
+              className="rounded-full p-[3px]"
+              style={{
+                background: myGradient,
+                boxShadow: `0 0 20px ${myGlow}, 0 0 40px ${myGlow.replace('0.3', '0.1')}`,
+              }}
+            >
+              <Avatar name={user?.name ?? '?'} color={myColor} size={72} />
+            </div>
             <h2 className="text-lg font-bold text-text mt-3">{user?.name}</h2>
             <p className="text-sm text-text-muted">{user?.email}</p>
           </div>
@@ -325,11 +341,7 @@ export default function ProfilePage() {
 
           {/* Sign out */}
           <div className="mt-8 mb-8">
-            <Button
-              variant="secondary"
-              onClick={handleSignOut}
-              className="w-full text-danger border-danger/20"
-            >
+            <Button variant="danger" onClick={handleSignOut} className="w-full">
               {t('profile.logout')}
             </Button>
           </div>
