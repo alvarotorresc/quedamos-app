@@ -3,6 +3,8 @@ import { IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { HiOutlineCheck, HiOutlineXMark, HiOutlinePencil } from 'react-icons/hi2';
 import { useAuthStore } from '../stores/auth';
+import { Card } from '../ui/Card';
+import { Badge } from '../ui/Badge';
 import { AvatarStack } from '../ui/AvatarStack';
 import { WeatherBadge } from './WeatherWidget';
 import type { Proposal } from '../services/proposals';
@@ -80,13 +82,7 @@ export function ProposalCard({
         : '#60A5FA';
 
   return (
-    <div
-      className="rounded-[14px] p-3.5 mb-2"
-      style={{
-        background: 'var(--app-bg-card)',
-        border: '1px solid var(--app-border)',
-      }}
-    >
+    <Card variant="default" className="!p-3.5">
       {/* Header */}
       <div className="flex items-start justify-between mb-1.5">
         <div className="flex-1 min-w-0">
@@ -107,12 +103,7 @@ export function ProposalCard({
             {proposal.createdBy.name} · {t(`proposals.status.${proposal.status}`)}
           </p>
         </div>
-        <span
-          className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-          style={{ background: `${statusColor}20`, color: statusColor }}
-        >
-          {t(`proposals.status.${proposal.status}`)}
-        </span>
+        <Badge color={statusColor}>{t(`proposals.status.${proposal.status}`)}</Badge>
       </div>
 
       {/* Description */}
@@ -264,6 +255,6 @@ export function ProposalCard({
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
