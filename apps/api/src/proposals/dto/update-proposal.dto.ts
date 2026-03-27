@@ -1,18 +1,21 @@
-import { IsString, IsOptional, MaxLength, Matches } from 'class-validator';
+import { IsString, IsOptional, MaxLength, MinLength, Matches } from 'class-validator';
 
 export class UpdateProposalDto {
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(200)
   title?: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(1000)
   description?: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(200)
   location?: string;
 

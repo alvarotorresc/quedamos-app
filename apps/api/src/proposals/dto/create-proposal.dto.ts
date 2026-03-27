@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, MaxLength, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, MaxLength, MinLength, Matches } from 'class-validator';
 
 export class CreateProposalDto {
   @IsString()
@@ -8,11 +8,13 @@ export class CreateProposalDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(1000)
   description?: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(200)
   location?: string;
 

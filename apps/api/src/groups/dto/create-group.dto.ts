@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, MaxLength, MinLength, IsNotEmpty } from 'class-validator';
 
 export class CreateGroupDto {
   @IsString()
@@ -8,6 +8,7 @@ export class CreateGroupDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(10)
   emoji?: string;
 }

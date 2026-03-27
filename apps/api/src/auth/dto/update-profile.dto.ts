@@ -9,6 +9,7 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(10)
   avatarEmoji?: string;
 }

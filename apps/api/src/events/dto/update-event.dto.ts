@@ -1,18 +1,30 @@
-import { IsString, IsOptional, MaxLength, Matches, IsNumber, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  MaxLength,
+  MinLength,
+  Matches,
+  IsNumber,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class UpdateEventDto {
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(200)
   title?: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(1000)
   description?: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(1)
   @MaxLength(200)
   location?: string;
 
