@@ -3,7 +3,6 @@ import { renderHook } from '@testing-library/react';
 import { useMyColor } from './useMyColor';
 import { createWrapper } from '../test/test-utils';
 import type { useAuthStore } from '../stores/auth';
-import type { useGroup } from './useGroups';
 
 type AuthStoreState = ReturnType<typeof useAuthStore.getState>;
 
