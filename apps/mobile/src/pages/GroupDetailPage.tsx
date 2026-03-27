@@ -34,8 +34,7 @@ import { useGroupWeather } from '../hooks/useWeather';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
 import { searchCities, type GeocodingResult } from '../services/weather';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 function formatCode(code: string): string {
   return code.slice(0, 4) + '-' + code.slice(4);

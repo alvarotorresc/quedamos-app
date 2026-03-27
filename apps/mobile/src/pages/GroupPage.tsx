@@ -11,8 +11,7 @@ import { useMyColor } from '../hooks/useMyColor';
 import { Avatar } from '../ui/Avatar';
 import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 type FormMode = 'create' | 'join' | null;
 

@@ -1,8 +1,7 @@
 import { useGroupStore } from '../stores/group';
 import { useGroup } from './useGroups';
 import { useAuthStore } from '../stores/auth';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 export function useMyColor(): string {
   const user = useAuthStore((s) => s.user);

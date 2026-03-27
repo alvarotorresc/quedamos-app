@@ -7,8 +7,7 @@ import { AvatarStack } from '../ui/AvatarStack';
 import { WeatherBadge } from './WeatherWidget';
 import type { Proposal } from '../services/proposals';
 import type { WeatherData } from '../services/weather';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 interface ProposalCardProps {
   proposal: Proposal;

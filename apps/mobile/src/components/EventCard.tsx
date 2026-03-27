@@ -13,8 +13,7 @@ import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { WeatherBadge, getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
 import type { Event } from '../services/events';
 import type { WeatherData } from '../services/weather';
-
-const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+import { MEMBER_COLORS } from '../lib/constants';
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#F59E0B',
