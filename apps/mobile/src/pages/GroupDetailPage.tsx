@@ -26,6 +26,7 @@ import {
 import { useGroupSync } from '../hooks/useGroupSync';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
+import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
@@ -34,7 +35,7 @@ import { useGroupWeather } from '../hooks/useWeather';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
 import { searchCities, type GeocodingResult } from '../services/weather';
-import { MEMBER_COLORS } from '../lib/constants';
+import { MEMBER_COLORS, MEMBER_GRADIENTS, MEMBER_GLOWS } from '../lib/constants';
 
 function formatCode(code: string): string {
   return code.slice(0, 4) + '-' + code.slice(4);
@@ -221,45 +222,49 @@ export default function GroupDetailPage() {
               {t('group.members')} ({group.members.length})
             </h3>
             <div className="flex flex-col gap-2">
-              {group.members.map((member, index) => (
-                <div
+              {group.members.map((member, i) => (
+                <motion.div
                   key={member.userId}
-                  className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06, duration: 0.35 }}
                 >
-                  <Avatar
-                    name={member.user.name}
-                    color={MEMBER_COLORS[index % MEMBER_COLORS.length]}
-                    size={36}
-                  />
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <span className="text-sm text-text truncate">{member.user.name}</span>
-                    {member.userId === group.createdById && (
-                      <Badge color="#F59E0B">{t('group.creator')}</Badge>
-                    )}
-                    {member.role === 'admin' && member.userId !== group.createdById && (
-                      <Badge color="#60A5FA">{t('group.admin')}</Badge>
-                    )}
-                    {member.userId === currentUserId && (
-                      <span className="text-xs text-text-muted">{t('group.memberYou')}</span>
-                    )}
+                  <div className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3">
+                    <Avatar
+                      name={member.user.name}
+                      color={MEMBER_COLORS[i % MEMBER_COLORS.length]}
+                      size={36}
+                    />
+                    <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <span className="text-sm text-text truncate">{member.user.name}</span>
+                      {member.userId === group.createdById && (
+                        <Badge color="#F59E0B">{t('group.creator')}</Badge>
+                      )}
+                      {member.role === 'admin' && member.userId !== group.createdById && (
+                        <Badge color="#60A5FA">{t('group.admin')}</Badge>
+                      )}
+                      {member.userId === currentUserId && (
+                        <span className="text-xs text-text-muted">{t('group.memberYou')}</span>
+                      )}
+                    </div>
+                    {isAdmin &&
+                      member.userId !== currentUserId &&
+                      member.userId !== group.createdById && (
+                        <button
+                          onClick={() =>
+                            setActionMember({
+                              userId: member.userId,
+                              name: member.user.name,
+                              role: member.role,
+                            })
+                          }
+                          className="text-text-dark hover:text-text text-lg px-1 border-none bg-transparent shrink-0"
+                        >
+                          &#x22EF;
+                        </button>
+                      )}
                   </div>
-                  {isAdmin &&
-                    member.userId !== currentUserId &&
-                    member.userId !== group.createdById && (
-                      <button
-                        onClick={() =>
-                          setActionMember({
-                            userId: member.userId,
-                            name: member.user.name,
-                            role: member.role,
-                          })
-                        }
-                        className="text-text-dark hover:text-text text-lg px-1 border-none bg-transparent shrink-0"
-                      >
-                        &#x22EF;
-                      </button>
-                    )}
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
