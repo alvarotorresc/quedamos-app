@@ -188,6 +188,19 @@ describe('WeeklyReminderService', () => {
       jest.useRealTimers();
     });
 
+    it('should process users in batches to limit concurrent DB connections', async () => {
+      // Create 25 users to force multiple batches (BATCH_SIZE = 10)
+      const members = Array.from({ length: 25 }, (_, i) => ({
+        userId: `user-${i + 1}`,
+      }));
+      prisma.groupMember.findMany.mockResolvedValue(members);
+      prisma.availability.findMany.mockResolvedValue([]);
+
+      await service.sendWeeklyReminders();
+
+      expect(notifications.sendToUser).toHaveBeenCalledTimes(25);
+    });
+
     it('should handle notification failures gracefully with Promise.allSettled', async () => {
       prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
       prisma.availability.findMany.mockResolvedValue([]);

@@ -51,22 +51,26 @@ export class EventReminderService {
       const attendeeUserIds = event.attendees.map((a) => a.userId);
       if (attendeeUserIds.length === 0) continue;
 
-      // Await all notifications before marking as sent
-      const results = await Promise.allSettled(
-        attendeeUserIds.map((userId) =>
-          this.notificationsService.sendToUser(
-            userId,
-            'Recordatorio',
-            `"${event.title}" es mañana`,
-            { type: 'event_reminder', eventId: event.id, groupId: event.groupId },
-            'event_reminder',
+      // Process in batches to avoid exhausting the database connection pool
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < attendeeUserIds.length; i += BATCH_SIZE) {
+        const batch = attendeeUserIds.slice(i, i + BATCH_SIZE);
+        const results = await Promise.allSettled(
+          batch.map((userId) =>
+            this.notificationsService.sendToUser(
+              userId,
+              'Recordatorio',
+              `"${event.title}" es mañana`,
+              { type: 'event_reminder', eventId: event.id, groupId: event.groupId },
+              'event_reminder',
+            ),
           ),
-        ),
-      );
+        );
 
-      for (const result of results) {
-        if (result.status === 'rejected') {
-          this.logger.error(`Failed to send reminder for event ${event.id}`, result.reason);
+        for (const result of results) {
+          if (result.status === 'rejected') {
+            this.logger.error(`Failed to send reminder for event ${event.id}`, result.reason);
+          }
         }
       }
 

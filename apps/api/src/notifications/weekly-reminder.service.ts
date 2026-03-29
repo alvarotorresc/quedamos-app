@@ -48,8 +48,8 @@ export class WeeklyReminderService {
       `Sending weekly reminders to ${usersToNotify.length} user(s) without availability`,
     );
 
-    // Process in batches to avoid unbounded concurrency
-    const BATCH_SIZE = 50;
+    // Process in batches to avoid exhausting the database connection pool
+    const BATCH_SIZE = 10;
     for (let i = 0; i < usersToNotify.length; i += BATCH_SIZE) {
       const batch = usersToNotify.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(

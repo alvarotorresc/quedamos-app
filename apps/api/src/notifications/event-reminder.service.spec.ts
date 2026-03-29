@@ -242,6 +242,36 @@ describe('EventReminderService', () => {
       );
     });
 
+    it('should process attendees in batches to limit concurrent DB connections', async () => {
+      const { date, time } = eventIn12Hours();
+
+      // Create 25 attendees to force multiple batches (BATCH_SIZE = 10)
+      const attendees = Array.from({ length: 25 }, (_, i) => ({
+        userId: `user-${i + 1}`,
+        status: 'confirmed',
+      }));
+
+      const callOrder: number[] = [];
+      let callCount = 0;
+      notifications.sendToUser.mockImplementation(async () => {
+        callCount++;
+        callOrder.push(callCount);
+        return { sent: 1 };
+      });
+
+      const event = {
+        ...createTestEvent({ date, time, reminderSentAt: null }),
+        attendees,
+        group: { name: 'Test Group' },
+      };
+      prisma.event.findMany.mockResolvedValue([event]);
+
+      await service.sendReminders();
+
+      // All 25 attendees should receive notifications
+      expect(notifications.sendToUser).toHaveBeenCalledTimes(25);
+    });
+
     it('should use event_reminder as notificationType', async () => {
       const { date, time } = eventIn12Hours();
 
