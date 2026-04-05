@@ -75,7 +75,4 @@ export class CreateEventDto {
   @IsArray()
   @IsUUID('4', { each: true })
   attendeeIds?: string[];
-
-  @IsOptional()
-  attendeeStatusMap?: Record<string, 'confirmed' | 'declined'>;
 }

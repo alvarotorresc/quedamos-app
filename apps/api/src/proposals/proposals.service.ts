@@ -211,18 +211,22 @@ export class ProposalsService {
       attendeeStatusMap[vote.userId] = vote.vote === 'yes' ? 'confirmed' : 'declined';
     }
 
-    // Create event using EventsService
-    const event = await this.eventsService.create(groupId, userId, {
-      title: proposal.title,
-      description: proposal.description ?? undefined,
-      location: proposal.location ?? undefined,
-      isOnline: proposal.isOnline,
-      meetingUrl: proposal.meetingUrl ?? undefined,
-      date: dto.date,
-      time: dto.time,
-      endTime: dto.endTime,
+    // Create event using EventsService (status map passed as internal param, not in DTO)
+    const event = await this.eventsService.create(
+      groupId,
+      userId,
+      {
+        title: proposal.title,
+        description: proposal.description ?? undefined,
+        location: proposal.location ?? undefined,
+        isOnline: proposal.isOnline,
+        meetingUrl: proposal.meetingUrl ?? undefined,
+        date: dto.date,
+        time: dto.time,
+        endTime: dto.endTime,
+      },
       attendeeStatusMap,
-    });
+    );
 
     // Mark proposal as converted
     const updated = await this.prisma.planProposal.update({

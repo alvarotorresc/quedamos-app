@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { EventsService } from './events.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -39,13 +40,12 @@ export class EventsController {
   }
 
   @Post()
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   create(
     @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
     @Body() dto: CreateEventDto,
   ) {
-    // Strip internal-only field to prevent external manipulation
-    delete (dto as Partial<Pick<CreateEventDto, 'attendeeStatusMap'>>).attendeeStatusMap;
     return this.eventsService.create(groupId, user.id, dto);
   }
 

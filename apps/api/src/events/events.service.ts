@@ -58,7 +58,12 @@ export class EventsService {
     return event;
   }
 
-  async create(groupId: string, userId: string, dto: CreateEventDto) {
+  async create(
+    groupId: string,
+    userId: string,
+    dto: CreateEventDto,
+    internalStatusMap?: Record<string, 'confirmed' | 'declined'>,
+  ) {
     await this.groupsService.findById(groupId, userId);
 
     const now = new Date();
@@ -110,8 +115,8 @@ export class EventsService {
         attendees: {
           create: targetMemberIds.map((id) => ({
             userId: id,
-            status: id === userId ? 'confirmed' : (dto.attendeeStatusMap?.[id] ?? 'pending'),
-            ...(dto.attendeeStatusMap?.[id] ? { respondedAt: new Date() } : {}),
+            status: id === userId ? 'confirmed' : (internalStatusMap?.[id] ?? 'pending'),
+            ...(internalStatusMap?.[id] ? { respondedAt: new Date() } : {}),
           })),
         },
       },
@@ -124,9 +129,9 @@ export class EventsService {
     });
 
     // Auto-confirm event when all attendees are already confirmed (e.g. from proposals)
-    if (dto.attendeeStatusMap) {
+    if (internalStatusMap) {
       const allConfirmed = targetMemberIds.every(
-        (id) => id === userId || dto.attendeeStatusMap?.[id] === 'confirmed',
+        (id) => id === userId || internalStatusMap?.[id] === 'confirmed',
       );
       if (allConfirmed) {
         await this.prisma.event.update({

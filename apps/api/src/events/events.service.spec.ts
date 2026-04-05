@@ -212,7 +212,7 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
-    it('should use attendeeStatusMap for pre-set attendee statuses', async () => {
+    it('should use internalStatusMap for pre-set attendee statuses', async () => {
       const event = {
         ...createTestEvent(),
         createdBy: createTestUser(),
@@ -223,13 +223,12 @@ describe('EventsService', () => {
       };
       prisma.event.create.mockResolvedValue(event);
 
-      await service.create('group-1', 'user-1', {
-        title: 'From Proposal',
-        date: '2026-12-01',
-        attendeeStatusMap: {
-          'user-2': 'declined',
-        },
-      });
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'From Proposal', date: '2026-12-01' },
+        { 'user-2': 'declined' },
+      );
 
       expect(prisma.event.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -257,13 +256,12 @@ describe('EventsService', () => {
       prisma.event.create.mockResolvedValue(event);
       prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
 
-      const result = await service.create('group-1', 'user-1', {
-        title: 'All Confirmed',
-        date: '2026-12-01',
-        attendeeStatusMap: {
-          'user-2': 'confirmed',
-        },
-      });
+      const result = await service.create(
+        'group-1',
+        'user-1',
+        { title: 'All Confirmed', date: '2026-12-01' },
+        { 'user-2': 'confirmed' },
+      );
 
       expect(prisma.event.update).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -284,13 +282,12 @@ describe('EventsService', () => {
       };
       prisma.event.create.mockResolvedValue(event);
 
-      await service.create('group-1', 'user-1', {
-        title: 'Partial',
-        date: '2026-12-01',
-        attendeeStatusMap: {
-          'user-2': 'declined',
-        },
-      });
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'Partial', date: '2026-12-01' },
+        { 'user-2': 'declined' },
+      );
 
       expect(prisma.event.update).not.toHaveBeenCalled();
     });

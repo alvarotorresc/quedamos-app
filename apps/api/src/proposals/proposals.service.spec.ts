@@ -287,12 +287,14 @@ describe('ProposalsService', () => {
         'group-1',
         'user-1',
         expect.objectContaining({
-          attendeeStatusMap: {
-            'user-1': 'confirmed',
-            'user-2': 'confirmed',
-            'user-3': 'declined',
-          },
+          date: '2026-12-01',
+          time: '18:00',
         }),
+        {
+          'user-1': 'confirmed',
+          'user-2': 'confirmed',
+          'user-3': 'declined',
+        },
       );
     });
 
@@ -569,6 +571,7 @@ describe('ProposalsService', () => {
           isOnline: true,
           meetingUrl: 'https://meet.google.com/abc',
         }),
+        { 'user-1': 'confirmed' },
       );
     });
   });
