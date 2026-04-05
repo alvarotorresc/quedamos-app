@@ -1,6 +1,8 @@
 import {
   IsString,
   IsOptional,
+  IsBoolean,
+  IsUrl,
   MaxLength,
   MinLength,
   Matches,
@@ -55,6 +57,19 @@ export class CreateEventDto {
   @IsString()
   @Matches(/^\d{2}:\d{2}$/)
   endTime?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnline?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @IsUrl(
+    { require_protocol: true, protocols: ['http', 'https'] },
+    { message: 'meetingUrl must be a valid URL (http or https)' },
+  )
+  @MaxLength(500)
+  meetingUrl?: string;
 
   @IsOptional()
   @IsArray()

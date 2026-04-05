@@ -1,4 +1,12 @@
-import { IsString, IsOptional, MaxLength, MinLength, Matches } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsUrl,
+  MaxLength,
+  MinLength,
+  Matches,
+} from 'class-validator';
 
 export class UpdateProposalDto {
   @IsOptional()
@@ -23,4 +31,17 @@ export class UpdateProposalDto {
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'proposedDate must be in YYYY-MM-DD format' })
   proposedDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isOnline?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @IsUrl(
+    { require_protocol: true, protocols: ['http', 'https'] },
+    { message: 'meetingUrl must be a valid URL (http or https)' },
+  )
+  @MaxLength(500)
+  meetingUrl?: string;
 }
