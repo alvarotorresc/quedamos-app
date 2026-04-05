@@ -20,6 +20,8 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
   const [proposedDate, setProposedDate] = useState('');
+  const [isOnline, setIsOnline] = useState(false);
+  const [meetingUrl, setMeetingUrl] = useState('');
 
   const isSaving = updateProposal.isPending;
   const canSubmit = title.trim() && !isSaving;
@@ -30,6 +32,8 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
       setDescription(proposal.description ?? '');
       setLocation(proposal.location ?? '');
       setProposedDate(proposal.proposedDate ?? '');
+      setIsOnline(proposal.isOnline ?? false);
+      setMeetingUrl(proposal.meetingUrl ?? '');
     }
   }, [isOpen, proposal]);
 
@@ -58,6 +62,17 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
     const originalDate = proposal.proposedDate ?? '';
     if (proposedDate !== originalDate) {
       changes.proposedDate = proposedDate;
+    }
+
+    const originalIsOnline = proposal.isOnline ?? false;
+    if (isOnline !== originalIsOnline) {
+      changes.isOnline = isOnline;
+    }
+
+    const originalMeetingUrl = proposal.meetingUrl ?? '';
+    const trimmedMeetingUrl = meetingUrl.trim();
+    if (trimmedMeetingUrl !== originalMeetingUrl) {
+      changes.meetingUrl = trimmedMeetingUrl;
     }
 
     if (Object.keys(changes).length === 0) {
@@ -93,15 +108,11 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
         {/* Handle bar */}
         <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
-        <h3 className="text-[17px] font-bold text-text mb-3.5">
-          {t('proposals.edit')}
-        </h3>
+        <h3 className="text-[17px] font-bold text-text mb-3.5">{t('proposals.edit')}</h3>
 
         {/* Title */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.name')}
-          </label>
+          <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.name')}</label>
           <input
             type="text"
             value={title}
@@ -127,20 +138,55 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
           />
         </div>
 
-        {/* Location */}
+        {/* Online toggle */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.location')}
-          </label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder={t('plans.create.locationPlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+          <div
+            className="flex items-center justify-between rounded-[10px] px-3 py-2.5"
             style={inputStyle}
-          />
+          >
+            <span className="text-sm text-text">{t('online.toggle')}</span>
+            <button
+              type="button"
+              onClick={() => setIsOnline(!isOnline)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary' : 'bg-[#2a3142]'}`}
+            >
+              <div
+                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOnline ? 'left-5' : 'left-0.5'}`}
+              />
+            </button>
+          </div>
         </div>
+
+        {/* Location or Meeting URL */}
+        {isOnline ? (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('online.meetingUrl')}
+            </label>
+            <input
+              type="url"
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+              placeholder={t('online.meetingUrlPlaceholder')}
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              style={inputStyle}
+            />
+          </div>
+        ) : (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('plans.create.location')}
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder={t('plans.create.locationPlaceholder')}
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              style={inputStyle}
+            />
+          </div>
+        )}
 
         {/* Proposed Date */}
         <div className="mb-4">
@@ -157,11 +203,7 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
         </div>
 
         {/* Submit */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="w-full"
-        >
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
           {isSaving ? t('proposals.editSaving') : t('proposals.edit')}
         </Button>
       </div>

@@ -23,11 +23,18 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
   const [locationLat, setLocationLat] = useState<number | null>(null);
   const [locationLon, setLocationLon] = useState<number | null>(null);
   const [proposedDate, setProposedDate] = useState('');
+  const [isOnline, setIsOnline] = useState(false);
+  const [meetingUrl, setMeetingUrl] = useState('');
 
   const isCreating = createProposal.isPending;
   const canSubmit = title.trim() && !isCreating;
 
-  const forecast = useForecast(groupId, proposedDate || null, locationLat, locationLon);
+  const forecast = useForecast(
+    groupId,
+    !isOnline && proposedDate ? proposedDate : null,
+    locationLat,
+    locationLon,
+  );
 
   const weatherToShow =
     locationLat !== null && locationLon !== null && proposedDate
@@ -44,6 +51,8 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
       setLocationLat(null);
       setLocationLon(null);
       setProposedDate('');
+      setIsOnline(false);
+      setMeetingUrl('');
     }
   }, [isOpen]);
 
@@ -52,8 +61,10 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
     await createProposal.mutateAsync({
       title: title.trim(),
       ...(description.trim() && { description: description.trim() }),
-      ...(location.trim() && { location: location.trim() }),
+      ...(!isOnline && location.trim() && { location: location.trim() }),
       ...(proposedDate && { proposedDate }),
+      ...(isOnline && { isOnline: true }),
+      ...(isOnline && meetingUrl.trim() && { meetingUrl: meetingUrl.trim() }),
     });
     onClose();
   };
@@ -65,6 +76,8 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
     setLocationLat(null);
     setLocationLon(null);
     setProposedDate('');
+    setIsOnline(false);
+    setMeetingUrl('');
     onClose();
   };
 
@@ -116,33 +129,69 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
           />
         </div>
 
-        {/* Location */}
+        {/* Online toggle */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.location')}
-            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
-          </label>
-          <LocationSearch
-            value={location}
-            placeholder={t('plans.create.locationPlaceholder')}
+          <div
+            className="flex items-center justify-between rounded-[10px] px-3 py-2.5"
             style={inputStyle}
-            onChange={(text) => {
-              setLocation(text);
-              setLocationLat(null);
-              setLocationLon(null);
-            }}
-            onSelect={(name, lat, lon) => {
-              setLocation(name);
-              setLocationLat(lat);
-              setLocationLon(lon);
-            }}
-            onClear={() => {
-              setLocation('');
-              setLocationLat(null);
-              setLocationLon(null);
-            }}
-          />
+          >
+            <span className="text-sm text-text">{t('online.toggle')}</span>
+            <button
+              type="button"
+              onClick={() => setIsOnline(!isOnline)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary' : 'bg-[#2a3142]'}`}
+            >
+              <div
+                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOnline ? 'left-5' : 'left-0.5'}`}
+              />
+            </button>
+          </div>
         </div>
+
+        {/* Location or Meeting URL */}
+        {isOnline ? (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('online.meetingUrl')}
+              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+            </label>
+            <input
+              type="url"
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+              placeholder={t('online.meetingUrlPlaceholder')}
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              style={inputStyle}
+            />
+          </div>
+        ) : (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('plans.create.location')}
+              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+            </label>
+            <LocationSearch
+              value={location}
+              placeholder={t('plans.create.locationPlaceholder')}
+              style={inputStyle}
+              onChange={(text) => {
+                setLocation(text);
+                setLocationLat(null);
+                setLocationLon(null);
+              }}
+              onSelect={(name, lat, lon) => {
+                setLocation(name);
+                setLocationLat(lat);
+                setLocationLon(lon);
+              }}
+              onClear={() => {
+                setLocation('');
+                setLocationLat(null);
+                setLocationLon(null);
+              }}
+            />
+          </div>
+        )}
 
         {/* Proposed Date */}
         <div className="mb-2">
@@ -160,7 +209,7 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
         </div>
 
         {/* Weather badge */}
-        {weatherToShow && weatherToShow.length > 0 && (
+        {!isOnline && weatherToShow && weatherToShow.length > 0 && (
           <div className="flex items-center gap-1.5 mb-4">
             {weatherToShow.map((w) => (
               <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />
@@ -168,7 +217,7 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
           </div>
         )}
 
-        {!weatherToShow && <div className="mb-4" />}
+        {(!weatherToShow || isOnline) && <div className="mb-4" />}
 
         {/* Submit */}
         <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
