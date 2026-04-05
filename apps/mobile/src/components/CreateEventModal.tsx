@@ -54,13 +54,20 @@ export function CreateEventModal({
   const [date, setDate] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
   const [showMemberSelector, setShowMemberSelector] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
+  const [meetingUrl, setMeetingUrl] = useState('');
 
   const isCreating = createEvent.isPending;
   const endTimeError = !!(endTime && time && endTime <= time);
   const resolvedDate = prefill?.date ?? date;
   const canSubmit = title.trim() && resolvedDate && !isCreating && !endTimeError;
 
-  const forecast = useForecast(groupId, resolvedDate || null, locationLat, locationLon);
+  const forecast = useForecast(
+    groupId,
+    !isOnline && resolvedDate ? resolvedDate : null,
+    locationLat,
+    locationLon,
+  );
 
   const weatherToShow: WeatherData[] | null =
     locationLat !== null && locationLon !== null && resolvedDate
@@ -85,6 +92,8 @@ export function CreateEventModal({
       setDate('');
       setSelectedMemberIds(new Set());
       setShowMemberSelector(false);
+      setIsOnline(false);
+      setMeetingUrl('');
     }
   }, [isOpen, prefill]);
 
@@ -108,9 +117,11 @@ export function CreateEventModal({
       ...(time && { time }),
       ...(endTime && { endTime }),
       ...(description.trim() && { description: description.trim() }),
-      ...(location.trim() && { location: location.trim() }),
-      ...(locationLat != null && locationLon != null && { locationLat, locationLon }),
+      ...(!isOnline && location.trim() && { location: location.trim() }),
+      ...(!isOnline && locationLat != null && locationLon != null && { locationLat, locationLon }),
       ...(selectedMemberIds.size > 0 && { attendeeIds: [...selectedMemberIds] }),
+      ...(isOnline && { isOnline: true }),
+      ...(isOnline && meetingUrl.trim() && { meetingUrl: meetingUrl.trim() }),
     });
     resetAndClose();
   };
@@ -126,6 +137,8 @@ export function CreateEventModal({
     setDate('');
     setSelectedMemberIds(new Set());
     setShowMemberSelector(false);
+    setIsOnline(false);
+    setMeetingUrl('');
     onClose();
   };
 
@@ -155,7 +168,7 @@ export function CreateEventModal({
             <p className="text-xs text-text-dark capitalize">
               {prefill.dateLabel} · {prefill.availableCount} {t('plans.create.available')}
             </p>
-            {weatherToShow && weatherToShow.length > 0 && (
+            {!isOnline && weatherToShow && weatherToShow.length > 0 && (
               <div className="flex items-center gap-1.5">
                 {weatherToShow.map((w) => (
                   <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />
@@ -197,36 +210,72 @@ export function CreateEventModal({
           />
         </div>
 
-        {/* Location */}
+        {/* Online toggle */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.location')}
-            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
-          </label>
-          <LocationSearch
-            value={location}
-            placeholder={t('plans.create.locationPlaceholder')}
+          <div
+            className="flex items-center justify-between rounded-[10px] px-3 py-2.5"
             style={inputStyle}
-            onChange={(text) => {
-              setLocation(text);
-              setLocationLat(null);
-              setLocationLon(null);
-            }}
-            onSelect={(name, lat, lon) => {
-              setLocation(name);
-              setLocationLat(lat);
-              setLocationLon(lon);
-            }}
-            onClear={() => {
-              setLocation('');
-              setLocationLat(null);
-              setLocationLon(null);
-            }}
-          />
+          >
+            <span className="text-sm text-text">{t('online.toggle')}</span>
+            <button
+              type="button"
+              onClick={() => setIsOnline(!isOnline)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary' : 'bg-[#2a3142]'}`}
+            >
+              <div
+                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOnline ? 'left-5' : 'left-0.5'}`}
+              />
+            </button>
+          </div>
         </div>
 
+        {/* Location or Meeting URL */}
+        {isOnline ? (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('online.meetingUrl')}
+              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+            </label>
+            <input
+              type="url"
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+              placeholder={t('online.meetingUrlPlaceholder')}
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              style={inputStyle}
+            />
+          </div>
+        ) : (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('plans.create.location')}
+              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+            </label>
+            <LocationSearch
+              value={location}
+              placeholder={t('plans.create.locationPlaceholder')}
+              style={inputStyle}
+              onChange={(text) => {
+                setLocation(text);
+                setLocationLat(null);
+                setLocationLon(null);
+              }}
+              onSelect={(name, lat, lon) => {
+                setLocation(name);
+                setLocationLat(lat);
+                setLocationLon(lon);
+              }}
+              onClear={() => {
+                setLocation('');
+                setLocationLat(null);
+                setLocationLon(null);
+              }}
+            />
+          </div>
+        )}
+
         {/* Weather badge for direct open (no prefill) with date selected */}
-        {!prefill && weatherToShow && weatherToShow.length > 0 && (
+        {!isOnline && !prefill && weatherToShow && weatherToShow.length > 0 && (
           <div className="flex items-center gap-1.5 mb-2">
             {weatherToShow.map((w) => (
               <WeatherBadge key={w.city} weatherCode={w.weatherCode} tempMax={w.tempMax} />

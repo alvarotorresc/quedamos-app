@@ -137,4 +137,122 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState().user?.name).toBe('New Name');
     });
   });
+
+  describe('updateTimeSlots', () => {
+    it('should update timeSlots in store after supabase update', async () => {
+      useAuthStore.setState({
+        user: { id: '1', email: 'a@b.com', name: 'Test', avatarEmoji: '😊' },
+      });
+      vi.mocked(supabase.auth.updateUser).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as UpdateUserResult);
+
+      const slots = {
+        morningStart: '07:00',
+        morningEnd: '12:00',
+        afternoonStart: '13:00',
+        afternoonEnd: '19:00',
+        nightStart: '20:00',
+        nightEnd: '00:00',
+      };
+      await useAuthStore.getState().updateTimeSlots(slots);
+
+      expect(supabase.auth.updateUser).toHaveBeenCalledWith({ data: { timeSlots: slots } });
+      expect(useAuthStore.getState().user?.timeSlots).toEqual(slots);
+    });
+
+    it('should throw on supabase error', async () => {
+      useAuthStore.setState({
+        user: { id: '1', email: 'a@b.com', name: 'Test', avatarEmoji: '😊' },
+      });
+      vi.mocked(supabase.auth.updateUser).mockResolvedValue({
+        data: {},
+        error: { message: 'Server error' },
+      } as unknown as UpdateUserResult);
+
+      await expect(
+        useAuthStore.getState().updateTimeSlots({
+          morningStart: '08:00',
+          morningEnd: '14:00',
+          afternoonStart: '14:00',
+          afternoonEnd: '20:00',
+          nightStart: '20:00',
+          nightEnd: '00:00',
+        }),
+      ).rejects.toBeDefined();
+    });
+
+    it('should throw on invalid time slots without calling supabase', async () => {
+      useAuthStore.setState({
+        user: { id: '1', email: 'a@b.com', name: 'Test', avatarEmoji: '😊' },
+      });
+      const spy = vi.mocked(supabase.auth.updateUser).mockClear();
+
+      await expect(
+        useAuthStore.getState().updateTimeSlots({
+          morningStart: '14:00',
+          morningEnd: '08:00',
+          afternoonStart: '14:00',
+          afternoonEnd: '20:00',
+          nightStart: '20:00',
+          nightEnd: '00:00',
+        }),
+      ).rejects.toThrow('Invalid time slots');
+
+      expect(spy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('initialize with timeSlots', () => {
+    it('should read valid timeSlots from user_metadata', async () => {
+      const slots = {
+        morningStart: '09:00',
+        morningEnd: '13:00',
+        afternoonStart: '14:00',
+        afternoonEnd: '19:00',
+        nightStart: '20:00',
+        nightEnd: '23:00',
+      };
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'user-1',
+              email: 'test@test.com',
+              user_metadata: { name: 'Test', avatarEmoji: '😊', timeSlots: slots },
+            },
+          },
+        },
+        error: null,
+      } as unknown as GetSessionResult);
+
+      await useAuthStore.getState().initialize();
+
+      expect(useAuthStore.getState().user?.timeSlots).toEqual(slots);
+    });
+
+    it('should set timeSlots to undefined for corrupted metadata', async () => {
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'user-1',
+              email: 'test@test.com',
+              user_metadata: {
+                name: 'Test',
+                avatarEmoji: '😊',
+                timeSlots: { morningStart: 'bad' },
+              },
+            },
+          },
+        },
+        error: null,
+      } as unknown as GetSessionResult);
+
+      await useAuthStore.getState().initialize();
+
+      expect(useAuthStore.getState().user?.timeSlots).toBeUndefined();
+    });
+  });
 });

@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 import { IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
-import { HiOutlineCheck, HiOutlineXMark, HiOutlinePencil } from 'react-icons/hi2';
+import {
+  HiOutlineCheck,
+  HiOutlineXMark,
+  HiOutlinePencil,
+  HiOutlineVideoCamera,
+} from 'react-icons/hi2';
 import { useAuthStore } from '../stores/auth';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
@@ -10,6 +15,7 @@ import { WeatherBadge } from './WeatherWidget';
 import type { Proposal } from '../services/proposals';
 import type { WeatherData } from '../services/weather';
 import { MEMBER_COLORS } from '../lib/constants';
+import { sanitizeUrl } from '../lib/url-utils';
 
 interface ProposalCardProps {
   proposal: Proposal;
@@ -87,7 +93,12 @@ export function ProposalCard({
       <div className="flex items-start justify-between mb-1.5">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h4 className="text-sm font-bold text-text truncate">{proposal.title}</h4>
+            <h4 className="text-sm font-bold text-text truncate flex items-center gap-1">
+              {proposal.title}
+              {proposal.isOnline && (
+                <HiOutlineVideoCamera className="w-3.5 h-3.5 text-primary shrink-0" />
+              )}
+            </h4>
             {isCreator && isOpen && onEdit && (
               <button
                 onClick={() => onEdit(proposal)}
@@ -111,16 +122,29 @@ export function ProposalCard({
         <p className="text-xs text-text-muted mb-2">{proposal.description}</p>
       )}
 
-      {/* Location */}
-      {proposal.location && (
-        <p className="text-[11px] text-text-dark mb-2">📍 {proposal.location}</p>
+      {/* Location or Meeting URL */}
+      {proposal.isOnline && sanitizeUrl(proposal.meetingUrl) ? (
+        <a
+          href={sanitizeUrl(proposal.meetingUrl)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1 text-[11px] text-primary mb-2 underline-offset-2 hover:underline"
+        >
+          <HiOutlineVideoCamera className="w-3.5 h-3.5 shrink-0" />
+          <span>{t('online.meetingLink')}</span>
+        </a>
+      ) : (
+        !proposal.isOnline &&
+        proposal.location && (
+          <p className="text-[11px] text-text-dark mb-2">📍 {proposal.location}</p>
+        )
       )}
 
       {/* Proposed Date + Weather */}
       {proposal.proposedDate && (
         <div className="flex items-center gap-2 text-[11px] text-text-dark mb-2">
           <span>📅 {formattedProposedDate}</span>
-          {weather && weather.length > 0 && (
+          {!proposal.isOnline && weather && weather.length > 0 && (
             <WeatherBadge weatherCode={weather[0].weatherCode} tempMax={weather[0].tempMax} />
           )}
         </div>

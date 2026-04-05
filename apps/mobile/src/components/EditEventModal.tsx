@@ -21,6 +21,8 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
   const [time, setTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [description, setDescription] = useState('');
+  const [isOnline, setIsOnline] = useState(false);
+  const [meetingUrl, setMeetingUrl] = useState('');
 
   const isSaving = updateEvent.isPending;
   const endTimeError = !!(endTime && time && endTime <= time);
@@ -33,6 +35,8 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
       setTime(event.time?.slice(0, 5) ?? '');
       setEndTime(event.endTime?.slice(0, 5) ?? '');
       setDescription(event.description ?? '');
+      setIsOnline(event.isOnline ?? false);
+      setMeetingUrl(event.meetingUrl ?? '');
     }
   }, [isOpen, event]);
 
@@ -42,10 +46,12 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
       eventId: event.id,
       data: {
         title: title.trim(),
-        ...(location.trim() ? { location: location.trim() } : { location: '' }),
+        ...(!isOnline && location.trim() ? { location: location.trim() } : { location: '' }),
         ...(time ? { time } : {}),
         ...(endTime ? { endTime } : {}),
         ...(description.trim() ? { description: description.trim() } : { description: '' }),
+        isOnline,
+        ...(isOnline && meetingUrl.trim() ? { meetingUrl: meetingUrl.trim() } : {}),
       },
     });
     onClose();
@@ -87,20 +93,55 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
           />
         </div>
 
-        {/* Location */}
+        {/* Online toggle */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.location')}
-          </label>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder={t('plans.create.locationPlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+          <div
+            className="flex items-center justify-between rounded-[10px] px-3 py-2.5"
             style={inputStyle}
-          />
+          >
+            <span className="text-sm text-text">{t('online.toggle')}</span>
+            <button
+              type="button"
+              onClick={() => setIsOnline(!isOnline)}
+              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary' : 'bg-[#2a3142]'}`}
+            >
+              <div
+                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOnline ? 'left-5' : 'left-0.5'}`}
+              />
+            </button>
+          </div>
         </div>
+
+        {/* Location or Meeting URL */}
+        {isOnline ? (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('online.meetingUrl')}
+            </label>
+            <input
+              type="url"
+              value={meetingUrl}
+              onChange={(e) => setMeetingUrl(e.target.value)}
+              placeholder={t('online.meetingUrlPlaceholder')}
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              style={inputStyle}
+            />
+          </div>
+        ) : (
+          <div className="mb-2">
+            <label className="block text-[10px] text-text-dark mb-1">
+              {t('plans.create.location')}
+            </label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder={t('plans.create.locationPlaceholder')}
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              style={inputStyle}
+            />
+          </div>
+        )}
 
         {/* Time */}
         <div className="mb-2">

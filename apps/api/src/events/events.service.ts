@@ -58,7 +58,12 @@ export class EventsService {
     return event;
   }
 
-  async create(groupId: string, userId: string, dto: CreateEventDto) {
+  async create(
+    groupId: string,
+    userId: string,
+    dto: CreateEventDto,
+    internalStatusMap?: Record<string, 'confirmed' | 'declined'>,
+  ) {
     await this.groupsService.findById(groupId, userId);
 
     const now = new Date();
@@ -98,9 +103,11 @@ export class EventsService {
         createdById: userId,
         title: dto.title,
         description: dto.description,
-        location: dto.location,
-        locationLat: dto.locationLat,
-        locationLon: dto.locationLon,
+        location: dto.isOnline ? null : dto.location,
+        locationLat: dto.isOnline ? null : dto.locationLat,
+        locationLon: dto.isOnline ? null : dto.locationLon,
+        isOnline: dto.isOnline ?? false,
+        meetingUrl: dto.isOnline ? dto.meetingUrl : null,
         date: new Date(dto.date + 'T00:00:00Z'),
         time: dto.time,
         endTime: dto.endTime,
@@ -108,8 +115,8 @@ export class EventsService {
         attendees: {
           create: targetMemberIds.map((id) => ({
             userId: id,
-            status: id === userId ? 'confirmed' : (dto.attendeeStatusMap?.[id] ?? 'pending'),
-            ...(dto.attendeeStatusMap?.[id] ? { respondedAt: new Date() } : {}),
+            status: id === userId ? 'confirmed' : (internalStatusMap?.[id] ?? 'pending'),
+            ...(internalStatusMap?.[id] ? { respondedAt: new Date() } : {}),
           })),
         },
       },
@@ -122,9 +129,9 @@ export class EventsService {
     });
 
     // Auto-confirm event when all attendees are already confirmed (e.g. from proposals)
-    if (dto.attendeeStatusMap) {
+    if (internalStatusMap) {
       const allConfirmed = targetMemberIds.every(
-        (id) => id === userId || dto.attendeeStatusMap?.[id] === 'confirmed',
+        (id) => id === userId || internalStatusMap?.[id] === 'confirmed',
       );
       if (allConfirmed) {
         await this.prisma.event.update({
@@ -186,21 +193,44 @@ export class EventsService {
       throw new BadRequestException('End time must be after start time');
     }
 
+    // Resolve the effective isOnline state: use dto value if provided, else current DB value
+    const effectiveIsOnline = dto.isOnline ?? event.isOnline;
+
     const data: Record<string, unknown> = {};
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
-    if (dto.location !== undefined) {
-      data.location = dto.location;
-      if (!dto.location) {
-        data.locationLat = null;
-        data.locationLon = null;
-      }
-    }
-    if (dto.locationLat !== undefined) data.locationLat = dto.locationLat;
-    if (dto.locationLon !== undefined) data.locationLon = dto.locationLon;
     if (dto.date !== undefined) data.date = new Date(dto.date + 'T00:00:00Z');
     if (dto.time !== undefined) data.time = dto.time;
     if (dto.endTime !== undefined) data.endTime = dto.endTime;
+
+    if (dto.isOnline !== undefined) {
+      data.isOnline = dto.isOnline;
+      if (dto.isOnline === true) {
+        data.location = null;
+        data.locationLat = null;
+        data.locationLon = null;
+      } else {
+        data.meetingUrl = null;
+      }
+    }
+
+    // Only allow location/coordinate changes when NOT online
+    if (!effectiveIsOnline) {
+      if (dto.location !== undefined) {
+        data.location = dto.location;
+        if (!dto.location) {
+          data.locationLat = null;
+          data.locationLon = null;
+        }
+      }
+      if (dto.locationLat !== undefined) data.locationLat = dto.locationLat;
+      if (dto.locationLon !== undefined) data.locationLon = dto.locationLon;
+    }
+
+    // Only allow meetingUrl changes when online (and don't override the null set above)
+    if (dto.meetingUrl !== undefined && effectiveIsOnline && data.meetingUrl === undefined) {
+      data.meetingUrl = dto.meetingUrl;
+    }
 
     const updated = await this.prisma.event.update({
       where: { id: eventId },
@@ -275,6 +305,40 @@ export class EventsService {
         'event_cancelled',
       )
       .catch((err) => this.logger.error('Failed to send event_cancelled notification', err));
+
+    return updated;
+  }
+
+  async confirm(groupId: string, eventId: string, userId: string) {
+    const event = await this.findById(groupId, eventId, userId);
+
+    if (event.createdById !== userId) {
+      throw new ForbiddenException('Only the creator can confirm this event');
+    }
+
+    if (event.status !== 'pending') {
+      throw new BadRequestException('Only pending events can be confirmed');
+    }
+
+    const updated = await this.prisma.event.update({
+      where: { id: eventId },
+      data: { status: 'confirmed' },
+      include: {
+        attendees: { include: { user: { select: PUBLIC_USER_SELECT } } },
+        createdBy: { select: PUBLIC_USER_SELECT },
+      },
+    });
+
+    this.notificationsService
+      .sendToEventAttendees(
+        eventId,
+        'Quedada confirmada',
+        `"${event.title}" ha sido confirmada`,
+        userId,
+        { type: 'event_confirmed', eventId, groupId },
+        'event_confirmed',
+      )
+      .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
 
     return updated;
   }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
+import { HiOutlineVideoCamera } from 'react-icons/hi2';
 import { useConvertProposal } from '../hooks/useProposals';
 import { Button } from '../ui/Button';
 import type { Proposal } from '../services/proposals';
@@ -12,7 +13,12 @@ interface ConvertProposalModalProps {
   proposal: Proposal | null;
 }
 
-export function ConvertProposalModal({ isOpen, onClose, groupId, proposal }: ConvertProposalModalProps) {
+export function ConvertProposalModal({
+  isOpen,
+  onClose,
+  groupId,
+  proposal,
+}: ConvertProposalModalProps) {
   const { t } = useTranslation();
   const convertProposal = useConvertProposal(groupId);
 
@@ -71,14 +77,15 @@ export function ConvertProposalModal({ isOpen, onClose, groupId, proposal }: Con
         {/* Handle bar */}
         <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
-        <h3 className="text-[17px] font-bold text-text mb-0.5">
-          {t('proposals.convert')}
-        </h3>
-        {proposal && (
-          <p className="text-xs text-text-dark mb-3.5">
-            {proposal.title}
-          </p>
+        <h3 className="text-[17px] font-bold text-text mb-0.5">{t('proposals.convert')}</h3>
+        {proposal && <p className="text-xs text-text-dark mb-1">{proposal.title}</p>}
+        {proposal?.isOnline && (
+          <div className="flex items-center gap-1.5 text-xs text-primary mb-2">
+            <HiOutlineVideoCamera className="w-3.5 h-3.5" />
+            <span>{t('online.badge')}</span>
+          </div>
         )}
+        {!proposal?.isOnline && <div className="mb-2" />}
 
         {/* Date */}
         <div className="mb-2">
@@ -97,9 +104,7 @@ export function ConvertProposalModal({ isOpen, onClose, groupId, proposal }: Con
 
         {/* Time */}
         <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
-            {t('plans.create.time')}
-          </label>
+          <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.time')}</label>
           <input
             type="time"
             value={time}
@@ -128,11 +133,7 @@ export function ConvertProposalModal({ isOpen, onClose, groupId, proposal }: Con
         </div>
 
         {/* Submit */}
-        <Button
-          onClick={handleSubmit}
-          disabled={!canSubmit}
-          className="w-full"
-        >
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
           {isConverting ? t('proposals.converting') : t('proposals.convert')}
         </Button>
       </div>

@@ -218,4 +218,55 @@ describe('CreateEventDto', () => {
       expect(lonError!.constraints).toHaveProperty('max');
     });
   });
+
+  describe('online event fields', () => {
+    it('should accept valid isOnline boolean', async () => {
+      const dto = createDto({ ...validPayload, isOnline: true });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+    });
+
+    it('should reject non-boolean isOnline', async () => {
+      const dto = createDto({ ...validPayload, isOnline: 'yes' });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      const onlineError = errors.find((e) => e.property === 'isOnline');
+      expect(onlineError).toBeDefined();
+      expect(onlineError!.constraints).toHaveProperty('isBoolean');
+    });
+
+    it('should accept valid URL for meetingUrl', async () => {
+      const dto = createDto({
+        ...validPayload,
+        isOnline: true,
+        meetingUrl: 'https://meet.google.com/abc-defg-hij',
+      });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+    });
+
+    it('should reject invalid URL for meetingUrl', async () => {
+      const dto = createDto({
+        ...validPayload,
+        meetingUrl: 'not-a-url',
+      });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      const urlError = errors.find((e) => e.property === 'meetingUrl');
+      expect(urlError).toBeDefined();
+      expect(urlError!.constraints).toHaveProperty('isUrl');
+    });
+
+    it('should reject meetingUrl longer than 500 chars', async () => {
+      const dto = createDto({
+        ...validPayload,
+        meetingUrl: 'https://meet.google.com/' + 'a'.repeat(500),
+      });
+      const errors = await validate(dto);
+      expect(errors.length).toBeGreaterThan(0);
+      const urlError = errors.find((e) => e.property === 'meetingUrl');
+      expect(urlError).toBeDefined();
+      expect(urlError!.constraints).toHaveProperty('maxLength');
+    });
+  });
 });

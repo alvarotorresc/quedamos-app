@@ -70,6 +70,18 @@ export function useCancelEvent(groupId: string) {
   });
 }
 
+export function useConfirmEvent(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (eventId: string) => eventsService.confirm(groupId, eventId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events', groupId] });
+      broadcastSync(groupId, 'events');
+    },
+  });
+}
+
 export function useRespondEvent(groupId: string) {
   const queryClient = useQueryClient();
   const userId = useAuthStore((s) => s.user?.id);

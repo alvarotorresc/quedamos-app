@@ -17,7 +17,7 @@ import { SkeletonCard } from '../ui/SkeletonCard';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
-import { useEvents, useDeleteEvent, useCancelEvent } from '../hooks/useEvents';
+import { useEvents, useDeleteEvent, useCancelEvent, useConfirmEvent } from '../hooks/useEvents';
 import { useProposals, useVoteProposal, useCloseProposal } from '../hooks/useProposals';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupSync } from '../hooks/useGroupSync';
@@ -91,10 +91,13 @@ export default function PlansPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
   const [cancellingEvent, setCancellingEvent] = useState<Event | null>(null);
+  const [confirmingEvent, setConfirmingEvent] = useState<Event | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
+  const [confirmingEventId, setConfirmingEventId] = useState<string | null>(null);
   const deleteEvent = useDeleteEvent(groupId);
   const cancelEvent = useCancelEvent(groupId);
+  const confirmEvent = useConfirmEvent(groupId);
 
   // Proposals state
   const { data: proposals } = useProposals(groupId);
@@ -111,6 +114,10 @@ export default function PlansPage() {
   type PlansTab = 'plans' | 'proposals';
   const [activeTab, setActiveTab] = useState<PlansTab>('plans');
 
+  // Online filter
+  type OnlineFilter = 'all' | 'online' | 'inPerson';
+  const [onlineFilter, setOnlineFilter] = useState<OnlineFilter>('all');
+
   // Collapsible sections
   const [showPast, setShowPast] = useState(false);
   const [showClosedProposals, setShowClosedProposals] = useState(false);
@@ -124,7 +131,7 @@ export default function PlansPage() {
     return map;
   }, [members]);
 
-  // Split events into upcoming and past
+  // Split events into upcoming and past, applying online filter
   const { upcoming, past } = useMemo(() => {
     if (!events) return { upcoming: [], past: [] };
 
@@ -133,6 +140,9 @@ export default function PlansPage() {
     const pa: Event[] = [];
 
     for (const ev of events) {
+      if (onlineFilter === 'online' && !ev.isOnline) continue;
+      if (onlineFilter === 'inPerson' && ev.isOnline) continue;
+
       const dateKey = apiDateToKey(ev.date);
       if (dateKey >= today) {
         up.push(ev);
@@ -145,7 +155,20 @@ export default function PlansPage() {
     pa.sort((a, b) => apiDateToKey(b.date).localeCompare(apiDateToKey(a.date)));
 
     return { upcoming: up, past: pa };
-  }, [events]);
+  }, [events, onlineFilter]);
+
+  const filteredProposals = useMemo(() => {
+    if (!proposals) return [];
+    return proposals.filter((p) => {
+      if (onlineFilter === 'online' && !p.isOnline) return false;
+      if (onlineFilter === 'inPerson' && p.isOnline) return false;
+      return true;
+    });
+  }, [proposals, onlineFilter]);
+
+  const openProposals = filteredProposals.filter((p) => p.status === 'open');
+  const closedOrConvertedProposals = filteredProposals.filter((p) => p.status !== 'open');
+  const allProposals = [...openProposals, ...closedOrConvertedProposals];
 
   // Scroll to event when navigated from push notification
   useEffect(() => {
@@ -234,6 +257,10 @@ export default function PlansPage() {
     setCancellingEvent(ev);
   };
 
+  const handleConfirm = (ev: Event) => {
+    setConfirmingEvent(ev);
+  };
+
   const handleVote = (proposalId: string, vote: 'yes' | 'no') => {
     setVotingProposalId(proposalId);
     voteProposal.mutate(
@@ -256,9 +283,6 @@ export default function PlansPage() {
     setShowEditProposalModal(true);
   };
 
-  const openProposals = proposals?.filter((p) => p.status === 'open') ?? [];
-  const closedOrConvertedProposals = proposals?.filter((p) => p.status !== 'open') ?? [];
-  const allProposals = [...openProposals, ...closedOrConvertedProposals];
   const hasEvents = upcoming.length > 0 || past.length > 0;
   const hasProposals = allProposals.length > 0;
   const hasContent = activeTab === 'plans' ? hasEvents : hasProposals;
@@ -305,7 +329,7 @@ export default function PlansPage() {
           )}
 
           {/* Tab bar */}
-          <div className="flex gap-1 mb-3">
+          <div className="flex gap-1 mb-2">
             {(['plans', 'proposals'] as const).map((tab) => (
               <button
                 key={tab}
@@ -317,6 +341,24 @@ export default function PlansPage() {
                 }}
               >
                 {t(`plans.tabs.${tab}`)}
+              </button>
+            ))}
+          </div>
+
+          {/* Online filter bar */}
+          <div className="flex gap-1 mb-3">
+            {(['all', 'online', 'inPerson'] as const).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setOnlineFilter(filter)}
+                className="flex-1 py-1.5 rounded-btn text-[11px] font-semibold border-none"
+                style={{
+                  background:
+                    onlineFilter === filter ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
+                  color: onlineFilter === filter ? '#60A5FA' : '#4B5C75',
+                }}
+              >
+                {t(`plans.filter.${filter}`)}
               </button>
             ))}
           </div>
@@ -378,8 +420,10 @@ export default function PlansPage() {
                               onEdit={handleEdit}
                               onDelete={handleDelete}
                               onCancel={handleCancel}
+                              onConfirm={handleConfirm}
                               isDeleting={deletingEventId === ev.id}
                               isCancelling={cancellingEventId === ev.id}
+                              isConfirming={confirmingEventId === ev.id}
                             />
                           </motion.div>
                         ))}
@@ -609,6 +653,28 @@ export default function PlansPage() {
                 setCancellingEventId(cancellingEvent.id);
                 cancelEvent.mutate(cancellingEvent.id, {
                   onSettled: () => setCancellingEventId(null),
+                });
+              }
+            },
+          },
+        ]}
+      />
+
+      {/* Confirm event confirmation */}
+      <IonAlert
+        isOpen={!!confirmingEvent}
+        onDidDismiss={() => setConfirmingEvent(null)}
+        header={t('plans.confirmEvent')}
+        message={t('plans.confirmEventConfirm')}
+        buttons={[
+          { text: t('common.cancel'), role: 'cancel' },
+          {
+            text: t('plans.confirmEvent'),
+            handler: () => {
+              if (confirmingEvent) {
+                setConfirmingEventId(confirmingEvent.id);
+                confirmEvent.mutate(confirmingEvent.id, {
+                  onSettled: () => setConfirmingEventId(null),
                 });
               }
             },

@@ -1,9 +1,16 @@
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
-import { HiOutlineMapPin, HiOutlineClock } from 'react-icons/hi2';
+import {
+  HiOutlineMapPin,
+  HiOutlineClock,
+  HiOutlineVideoCamera,
+  HiOutlineArrowDownTray,
+} from 'react-icons/hi2';
 import { Badge } from '../ui/Badge';
 import { AvatarStack } from '../ui/AvatarStack';
 import { openInMaps } from '../lib/maps-utils';
+import { sanitizeUrl } from '../lib/url-utils';
+import { downloadICS } from '../lib/ics-utils';
 import { apiDateToKey } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { MEMBER_COLORS } from '../lib/constants';
@@ -61,7 +68,17 @@ export function EventDetailModal({
         <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
 
         <div className="flex items-start justify-between gap-2 mb-3">
-          <h3 className="text-[17px] font-bold text-text">{event.title}</h3>
+          <h3 className="text-[17px] font-bold text-text flex items-center gap-1.5">
+            {event.title}
+            {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
+          </h3>
+          <button
+            onClick={() => downloadICS(event)}
+            className="p-1 rounded-md border-none bg-transparent"
+            title={t('calendar.eventDetail.download')}
+          >
+            <HiOutlineArrowDownTray className="w-4 h-4 text-text-muted" />
+          </button>
           <Badge color={STATUS_COLORS[event.status]}>{t(`plans.status.${event.status}`)}</Badge>
         </div>
 
@@ -75,15 +92,27 @@ export function EventDetailModal({
           )}
         </div>
 
-        {event.location && (
-          <button
-            onClick={() => openInMaps(event.location!)}
-            className="flex items-center gap-1 text-xs text-primary mb-2 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
-          >
-            <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
-            <span>{event.location}</span>
-          </button>
-        )}
+        {event.isOnline
+          ? sanitizeUrl(event.meetingUrl) && (
+              <a
+                href={sanitizeUrl(event.meetingUrl)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-xs text-primary mb-2 underline-offset-2 hover:underline"
+              >
+                <HiOutlineVideoCamera className="w-3.5 h-3.5 shrink-0" />
+                <span>{t('online.joinMeeting')}</span>
+              </a>
+            )
+          : event.location && (
+              <button
+                onClick={() => openInMaps(event.location!)}
+                className="flex items-center gap-1 text-xs text-primary mb-2 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
+              >
+                <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
+                <span>{event.location}</span>
+              </button>
+            )}
 
         {event.description && <p className="text-xs text-text-dark mb-3">{event.description}</p>}
 

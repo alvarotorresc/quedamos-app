@@ -75,6 +75,8 @@ Table events {
   location String
   locationLat Float
   locationLon Float
+  isOnline Boolean [not null, default: false]
+  meetingUrl String
   date DateTime [not null]
   time String
   endTime String
@@ -141,6 +143,8 @@ Table plan_proposals {
   title String [not null]
   description String
   location String
+  isOnline Boolean [not null, default: false]
+  meetingUrl String
   proposedDate String
   createdById String [not null]
   status String [not null, default: 'open']

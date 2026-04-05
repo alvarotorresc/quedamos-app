@@ -289,7 +289,11 @@ export function createTestEvent(
     groupId: string;
     title: string;
     description: string;
-    location: string;
+    location: string | null;
+    locationLat: number | null;
+    locationLon: number | null;
+    isOnline: boolean;
+    meetingUrl: string | null;
     date: Date;
     time: string;
     endTime: string;
@@ -306,6 +310,10 @@ export function createTestEvent(
     title: 'Test Event',
     description: null,
     location: null,
+    locationLat: null,
+    locationLon: null,
+    isOnline: false,
+    meetingUrl: null,
     date: new Date('2026-03-01'),
     time: '18:00',
     endTime: null,

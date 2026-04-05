@@ -120,11 +120,8 @@
       "typeSlots": "Franja",
       "typeRange": "De hora a hora",
       "morning": "Mañana",
-      "morningHours": "8:00 – 14:00",
       "afternoon": "Tarde",
-      "afternoonHours": "14:00 – 20:00",
       "night": "Noche",
-      "nightHours": "20:00 – 00:00",
       "from": "Desde",
       "to": "Hasta",
       "save": "Guardar",
@@ -137,7 +134,8 @@
       "title": "Disponibilidad del día"
     },
     "eventDetail": {
-      "createdBy": "Creada por {{name}}"
+      "createdBy": "Creada por {{name}}",
+      "download": "Descargar para calendario"
     }
   },
   "plans": {
@@ -160,6 +158,8 @@
     "deleteConfirm": "Esta accion no se puede deshacer",
     "cancelEvent": "Marcar como cancelada",
     "cancelConfirm": "Cancelar esta quedada?",
+    "confirmEvent": "Confirmar quedada",
+    "confirmEventConfirm": "Marcar esta quedada como confirmada?",
     "openInMaps": "Abrir en mapas",
     "edit": {
       "title": "Editar quedada",
@@ -169,6 +169,11 @@
     "tabs": {
       "plans": "Quedadas",
       "proposals": "Propuestas"
+    },
+    "filter": {
+      "all": "Todas",
+      "online": "Online",
+      "inPerson": "Presencial"
     },
     "tapToChange": "Toca para cambiar",
     "status": {
@@ -274,6 +279,8 @@
     "sending": "Enviando...",
     "emailSent": "Revisa tu nuevo email para confirmar el cambio",
     "sameEmailError": "El nuevo email debe ser diferente al actual",
+    "confirmEmail": "Confirmar nuevo email",
+    "emailsMismatch": "Los emails no coinciden",
     "nameUpdated": "Nombre actualizado",
     "passwordUpdated": "Contrase\u00f1a actualizada",
     "passwordsMismatch": "Las contrase\u00f1as no coinciden",
@@ -303,6 +310,20 @@
       "memberKicked": "Fuiste eliminado de un grupo",
       "groupDeleted": "Grupo eliminado",
       "weeklyReminder": "Recordatorio semanal de disponibilidad"
+    },
+    "timeSlots": {
+      "title": "Franjas horarias",
+      "morning": "Mañana",
+      "afternoon": "Tarde",
+      "night": "Noche",
+      "updated": "Franjas horarias actualizadas",
+      "formatInvalid": "Formato de hora no válido",
+      "morningInvalid": "La hora de inicio de mañana debe ser anterior a la de fin",
+      "afternoonInvalid": "La hora de inicio de tarde debe ser anterior a la de fin",
+      "nightInvalid": "La hora de inicio de noche debe ser anterior a la de fin",
+      "morningOverlapsAfternoon": "La mañana no puede terminar después de que empiece la tarde",
+      "afternoonOverlapsNight": "La tarde no puede terminar después de que empiece la noche",
+      "resetDefaults": "Restaurar"
     },
     "reportBug": "Reportar error",
     "logout": "Cerrar sesión"
@@ -421,6 +442,14 @@
       "madeWith": "Hecho con",
       "by": "por"
     }
+  },
+  "online": {
+    "toggle": "Quedada online",
+    "meetingUrl": "Enlace de reunión",
+    "meetingUrlPlaceholder": "https://meet.google.com/...",
+    "badge": "Online",
+    "joinMeeting": "Unirse a la reunión",
+    "meetingLink": "Enlace de reunión"
   },
   "weather": {
     "title": "Clima",

@@ -1,6 +1,8 @@
 import {
   IsString,
   IsOptional,
+  IsBoolean,
+  IsUrl,
   MaxLength,
   MinLength,
   Matches,
@@ -57,10 +59,20 @@ export class CreateEventDto {
   endTime?: string;
 
   @IsOptional()
+  @IsBoolean()
+  isOnline?: boolean;
+
+  @IsOptional()
+  @IsString()
+  @IsUrl(
+    { require_protocol: true, protocols: ['http', 'https'] },
+    { message: 'meetingUrl must be a valid URL (http or https)' },
+  )
+  @MaxLength(500)
+  meetingUrl?: string;
+
+  @IsOptional()
   @IsArray()
   @IsUUID('4', { each: true })
   attendeeIds?: string[];
-
-  @IsOptional()
-  attendeeStatusMap?: Record<string, 'confirmed' | 'declined'>;
 }

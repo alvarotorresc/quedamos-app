@@ -120,11 +120,8 @@
       "typeSlots": "Time slot",
       "typeRange": "Hour range",
       "morning": "Morning",
-      "morningHours": "8:00 – 14:00",
       "afternoon": "Afternoon",
-      "afternoonHours": "14:00 – 20:00",
       "night": "Night",
-      "nightHours": "20:00 – 00:00",
       "from": "From",
       "to": "To",
       "save": "Save",
@@ -137,7 +134,8 @@
       "title": "Day availability"
     },
     "eventDetail": {
-      "createdBy": "Created by {{name}}"
+      "createdBy": "Created by {{name}}",
+      "download": "Download for calendar"
     }
   },
   "plans": {
@@ -160,6 +158,8 @@
     "deleteConfirm": "This action cannot be undone",
     "cancelEvent": "Mark as cancelled",
     "cancelConfirm": "Cancel this plan?",
+    "confirmEvent": "Confirm plan",
+    "confirmEventConfirm": "Mark this plan as confirmed?",
     "openInMaps": "Open in maps",
     "edit": {
       "title": "Edit plan",
@@ -169,6 +169,11 @@
     "tabs": {
       "plans": "Plans",
       "proposals": "Proposals"
+    },
+    "filter": {
+      "all": "All",
+      "online": "Online",
+      "inPerson": "In-person"
     },
     "tapToChange": "Tap to change",
     "status": {
@@ -274,6 +279,8 @@
     "sending": "Sending...",
     "emailSent": "Check your new email to confirm the change",
     "sameEmailError": "New email must be different from current email",
+    "confirmEmail": "Confirm new email",
+    "emailsMismatch": "Emails do not match",
     "nameUpdated": "Name updated",
     "passwordUpdated": "Password updated",
     "passwordsMismatch": "Passwords do not match",
@@ -303,6 +310,20 @@
       "memberKicked": "You were removed from a group",
       "groupDeleted": "Group was deleted",
       "weeklyReminder": "Weekly availability reminder"
+    },
+    "timeSlots": {
+      "title": "Time slots",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "night": "Night",
+      "updated": "Time slots updated",
+      "formatInvalid": "Invalid time format",
+      "morningInvalid": "Morning start must be before end",
+      "afternoonInvalid": "Afternoon start must be before end",
+      "nightInvalid": "Night start must be before end",
+      "morningOverlapsAfternoon": "Morning cannot end after afternoon starts",
+      "afternoonOverlapsNight": "Afternoon cannot end after night starts",
+      "resetDefaults": "Reset"
     },
     "reportBug": "Report bug",
     "logout": "Sign out"
@@ -421,6 +442,14 @@
       "madeWith": "Made with",
       "by": "by"
     }
+  },
+  "online": {
+    "toggle": "Online event",
+    "meetingUrl": "Meeting link",
+    "meetingUrlPlaceholder": "https://meet.google.com/...",
+    "badge": "Online",
+    "joinMeeting": "Join meeting",
+    "meetingLink": "Meeting link"
   },
   "weather": {
     "title": "Weather",

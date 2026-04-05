@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException } from '@nestjs/common';
 import { WeatherController } from './weather.controller';
 import { WeatherService, WeatherData } from './weather.service';
 import { GroupsService } from '../groups/groups.service';
@@ -102,9 +101,7 @@ describe('WeatherController', () => {
       const result = await controller.getForecast(
         'group-1',
         { id: 'user-1' },
-        '2026-03-15',
-        '40.42',
-        '-3.70',
+        { date: '2026-03-15', lat: 40.42, lon: -3.7 },
       );
 
       expect(result).toEqual(weather);
@@ -117,54 +114,32 @@ describe('WeatherController', () => {
       const result = await controller.getForecast(
         'group-1',
         { id: 'user-1' },
-        '2026-12-01',
-        '40.42',
-        '-3.70',
+        { date: '2026-12-01', lat: 40.42, lon: -3.7 },
       );
 
       expect(result).toBeNull();
     });
 
-    it('should throw BadRequestException for invalid date format', async () => {
-      await expect(
-        controller.getForecast('group-1', { id: 'user-1' }, 'invalid', '40.42', '-3.70'),
-      ).rejects.toThrow(BadRequestException);
-    });
+    it('should check group membership', async () => {
+      mockWeatherService.getForDate.mockResolvedValue(createWeatherData());
 
-    it('should throw BadRequestException for missing date', async () => {
-      await expect(
-        controller.getForecast('group-1', { id: 'user-1' }, '', '40.42', '-3.70'),
-      ).rejects.toThrow(BadRequestException);
-    });
+      await controller.getForecast(
+        'group-1',
+        { id: 'user-1' },
+        { date: '2026-03-15', lat: 40.42, lon: -3.7 },
+      );
 
-    it('should throw BadRequestException for invalid latitude', async () => {
-      await expect(
-        controller.getForecast('group-1', { id: 'user-1' }, '2026-03-15', '100', '-3.70'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for non-numeric latitude', async () => {
-      await expect(
-        controller.getForecast('group-1', { id: 'user-1' }, '2026-03-15', 'abc', '-3.70'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for invalid longitude', async () => {
-      await expect(
-        controller.getForecast('group-1', { id: 'user-1' }, '2026-03-15', '40.42', '200'),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should throw BadRequestException for non-numeric longitude', async () => {
-      await expect(
-        controller.getForecast('group-1', { id: 'user-1' }, '2026-03-15', '40.42', 'abc'),
-      ).rejects.toThrow(BadRequestException);
+      expect(mockGroupsService.findById).toHaveBeenCalledWith('group-1', 'user-1');
     });
 
     it('should accept boundary coordinate values', async () => {
       mockWeatherService.getForDate.mockResolvedValue(createWeatherData());
 
-      await controller.getForecast('group-1', { id: 'user-1' }, '2026-03-15', '90', '180');
+      await controller.getForecast(
+        'group-1',
+        { id: 'user-1' },
+        { date: '2026-03-15', lat: 90, lon: 180 },
+      );
 
       expect(mockWeatherService.getForDate).toHaveBeenCalledWith('', 90, 180, '2026-03-15');
     });
@@ -172,7 +147,11 @@ describe('WeatherController', () => {
     it('should accept negative boundary coordinate values', async () => {
       mockWeatherService.getForDate.mockResolvedValue(createWeatherData());
 
-      await controller.getForecast('group-1', { id: 'user-1' }, '2026-03-15', '-90', '-180');
+      await controller.getForecast(
+        'group-1',
+        { id: 'user-1' },
+        { date: '2026-03-15', lat: -90, lon: -180 },
+      );
 
       expect(mockWeatherService.getForDate).toHaveBeenCalledWith('', -90, -180, '2026-03-15');
     });

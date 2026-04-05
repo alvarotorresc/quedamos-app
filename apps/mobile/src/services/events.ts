@@ -22,6 +22,8 @@ export interface Event {
   location?: string;
   locationLat?: number;
   locationLon?: number;
+  isOnline: boolean;
+  meetingUrl?: string;
   date: string;
   time?: string;
   endTime?: string;
@@ -39,6 +41,8 @@ export interface CreateEventDto {
   location?: string;
   locationLat?: number;
   locationLon?: number;
+  isOnline?: boolean;
+  meetingUrl?: string;
   date: string;
   time?: string;
   endTime?: string;
@@ -51,6 +55,8 @@ export interface UpdateEventDto {
   location?: string;
   locationLat?: number;
   locationLon?: number;
+  isOnline?: boolean;
+  meetingUrl?: string;
   date?: string;
   time?: string;
   endTime?: string;
@@ -76,4 +82,7 @@ export const eventsService = {
 
   cancel: (groupId: string, eventId: string) =>
     api.post<Event>(`/groups/${groupId}/events/${eventId}/cancel`, {}),
+
+  confirm: (groupId: string, eventId: string) =>
+    api.post<Event>(`/groups/${groupId}/events/${eventId}/confirm`, {}),
 };

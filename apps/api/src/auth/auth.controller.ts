@@ -1,5 +1,6 @@
 import { Controller, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -19,6 +20,7 @@ export class AuthController {
 
   @Patch('me')
   @UseGuards(AuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   updateProfile(@CurrentUser() user: { id: string }, @Body() dto: UpdateProfileDto) {
     return this.authService.updateProfile(user.id, dto);
   }
