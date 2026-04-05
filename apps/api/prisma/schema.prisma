@@ -97,6 +97,8 @@ model Event {
   location    String?
   locationLat  Float?   @map("location_lat")
   locationLon  Float?   @map("location_lon")
+  isOnline     Boolean  @default(false) @map("is_online")
+  meetingUrl   String?  @map("meeting_url")
   date        DateTime @db.Date
   time        String?
   endTime     String?  @map("end_time")
@@ -174,6 +176,8 @@ model PlanProposal {
   title            String
   description      String?
   location         String?
+  isOnline         Boolean  @default(false) @map("is_online")
+  meetingUrl       String?  @map("meeting_url")
   proposedDate     String?  @map("proposed_date")
   createdById      String   @map("created_by") @db.Uuid
   status           String   @default("open") // 'open' | 'closed' | 'converted'
