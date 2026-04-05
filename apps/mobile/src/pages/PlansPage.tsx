@@ -111,6 +111,10 @@ export default function PlansPage() {
   type PlansTab = 'plans' | 'proposals';
   const [activeTab, setActiveTab] = useState<PlansTab>('plans');
 
+  // Online filter
+  type OnlineFilter = 'all' | 'online' | 'inPerson';
+  const [onlineFilter, setOnlineFilter] = useState<OnlineFilter>('all');
+
   // Collapsible sections
   const [showPast, setShowPast] = useState(false);
   const [showClosedProposals, setShowClosedProposals] = useState(false);
@@ -124,7 +128,7 @@ export default function PlansPage() {
     return map;
   }, [members]);
 
-  // Split events into upcoming and past
+  // Split events into upcoming and past, applying online filter
   const { upcoming, past } = useMemo(() => {
     if (!events) return { upcoming: [], past: [] };
 
@@ -133,6 +137,9 @@ export default function PlansPage() {
     const pa: Event[] = [];
 
     for (const ev of events) {
+      if (onlineFilter === 'online' && !ev.isOnline) continue;
+      if (onlineFilter === 'inPerson' && ev.isOnline) continue;
+
       const dateKey = apiDateToKey(ev.date);
       if (dateKey >= today) {
         up.push(ev);
@@ -145,7 +152,20 @@ export default function PlansPage() {
     pa.sort((a, b) => apiDateToKey(b.date).localeCompare(apiDateToKey(a.date)));
 
     return { upcoming: up, past: pa };
-  }, [events]);
+  }, [events, onlineFilter]);
+
+  const filteredProposals = useMemo(() => {
+    if (!proposals) return [];
+    return proposals.filter((p) => {
+      if (onlineFilter === 'online' && !p.isOnline) return false;
+      if (onlineFilter === 'inPerson' && p.isOnline) return false;
+      return true;
+    });
+  }, [proposals, onlineFilter]);
+
+  const openProposals = filteredProposals.filter((p) => p.status === 'open');
+  const closedOrConvertedProposals = filteredProposals.filter((p) => p.status !== 'open');
+  const allProposals = [...openProposals, ...closedOrConvertedProposals];
 
   // Scroll to event when navigated from push notification
   useEffect(() => {
@@ -256,9 +276,6 @@ export default function PlansPage() {
     setShowEditProposalModal(true);
   };
 
-  const openProposals = proposals?.filter((p) => p.status === 'open') ?? [];
-  const closedOrConvertedProposals = proposals?.filter((p) => p.status !== 'open') ?? [];
-  const allProposals = [...openProposals, ...closedOrConvertedProposals];
   const hasEvents = upcoming.length > 0 || past.length > 0;
   const hasProposals = allProposals.length > 0;
   const hasContent = activeTab === 'plans' ? hasEvents : hasProposals;
@@ -305,7 +322,7 @@ export default function PlansPage() {
           )}
 
           {/* Tab bar */}
-          <div className="flex gap-1 mb-3">
+          <div className="flex gap-1 mb-2">
             {(['plans', 'proposals'] as const).map((tab) => (
               <button
                 key={tab}
@@ -317,6 +334,24 @@ export default function PlansPage() {
                 }}
               >
                 {t(`plans.tabs.${tab}`)}
+              </button>
+            ))}
+          </div>
+
+          {/* Online filter bar */}
+          <div className="flex gap-1 mb-3">
+            {(['all', 'online', 'inPerson'] as const).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setOnlineFilter(filter)}
+                className="flex-1 py-1.5 rounded-btn text-[11px] font-semibold border-none"
+                style={{
+                  background:
+                    onlineFilter === filter ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
+                  color: onlineFilter === filter ? '#60A5FA' : '#4B5C75',
+                }}
+              >
+                {t(`plans.filter.${filter}`)}
               </button>
             ))}
           </div>
