@@ -5,11 +5,17 @@ import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
-import { HiOutlineMapPin, HiOutlineClock, HiOutlinePencil } from 'react-icons/hi2';
+import {
+  HiOutlineMapPin,
+  HiOutlineClock,
+  HiOutlinePencil,
+  HiOutlineVideoCamera,
+} from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
 import { useAuthStore } from '../stores/auth';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
 import { openInMaps, hasCoordinates } from '../lib/maps-utils';
+import { sanitizeUrl } from '../lib/url-utils';
 import { WeatherBadge, getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
 import type { Event } from '../services/events';
 import type { WeatherData } from '../services/weather';
@@ -95,7 +101,10 @@ export function EventCard({
     <Card variant={STATUS_VARIANTS[event.status] ?? 'default'} className="!p-4">
       {/* Header: title + badge + edit */}
       <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="text-[15px] font-bold text-text leading-snug flex-1">{event.title}</h4>
+        <h4 className="text-[15px] font-bold text-text leading-snug flex-1 flex items-center gap-1.5">
+          {event.title}
+          {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
+        </h4>
         <div className="flex items-center gap-1.5">
           {isCreator && onEdit && (
             <button
@@ -119,7 +128,7 @@ export function EventCard({
             {formattedTime}
           </span>
         )}
-        {weather && weather.length > 0 && (
+        {!event.isOnline && weather && weather.length > 0 && (
           <button
             onClick={() => setShowWeatherDetail((prev) => !prev)}
             className="inline-flex items-center gap-0.5 text-[10px] text-text-muted bg-transparent border-none p-0 cursor-pointer"
@@ -132,7 +141,7 @@ export function EventCard({
       </div>
 
       {/* Weather detail panel (all cities) */}
-      {showWeatherDetail && weather && weather.length > 0 && (
+      {!event.isOnline && showWeatherDetail && weather && weather.length > 0 && (
         <div
           className="rounded-[10px] px-2.5 py-2 mb-1.5 space-y-0.5"
           style={{
@@ -153,22 +162,34 @@ export function EventCard({
         </div>
       )}
 
-      {/* Location */}
-      {event.location &&
-        (hasCoordinates(event.locationLat, event.locationLon) ? (
-          <button
-            onClick={() => openInMaps(event.location!, event.locationLat, event.locationLon)}
-            className="flex items-center gap-1 text-xs text-primary mb-1.5 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
-          >
-            <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
-            <span>{event.location}</span>
-          </button>
-        ) : (
-          <div className="flex items-center gap-1 text-xs text-text-muted mb-1.5">
-            <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
-            <span>{event.location}</span>
-          </div>
-        ))}
+      {/* Location or Meeting URL */}
+      {event.isOnline
+        ? sanitizeUrl(event.meetingUrl) && (
+            <a
+              href={sanitizeUrl(event.meetingUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-primary mb-1.5 underline-offset-2 hover:underline"
+            >
+              <HiOutlineVideoCamera className="w-3.5 h-3.5 shrink-0" />
+              <span>{t('online.joinMeeting')}</span>
+            </a>
+          )
+        : event.location &&
+          (hasCoordinates(event.locationLat, event.locationLon) ? (
+            <button
+              onClick={() => openInMaps(event.location!, event.locationLat, event.locationLon)}
+              className="flex items-center gap-1 text-xs text-primary mb-1.5 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
+            >
+              <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
+              <span>{event.location}</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-1 text-xs text-text-muted mb-1.5">
+              <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
+              <span>{event.location}</span>
+            </div>
+          ))}
 
       {/* Description */}
       {event.description && (
