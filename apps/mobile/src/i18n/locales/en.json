@@ -282,6 +282,8 @@
     "sending": "Sending...",
     "emailSent": "Check your new email to confirm the change",
     "sameEmailError": "New email must be different from current email",
+    "confirmEmail": "Confirm new email",
+    "emailsMismatch": "Emails do not match",
     "nameUpdated": "Name updated",
     "passwordUpdated": "Password updated",
     "passwordsMismatch": "Passwords do not match",

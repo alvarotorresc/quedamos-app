@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/react';
 import { useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -13,15 +13,13 @@ import { Avatar } from '../ui/Avatar';
 import { Button } from '../ui/Button';
 import { LanguageSelector } from '../ui/LanguageSelector';
 import { translateAuthError } from '../lib/auth-errors';
+import { getPasswordChecks, getStrength } from '../lib/password-utils';
 import { broadcastSync } from '../lib/group-sync';
 import { useGroups } from '../hooks/useGroups';
 import { MEMBER_COLORS, MEMBER_GRADIENTS, MEMBER_GLOWS } from '../lib/constants';
 import { HiOutlineBell, HiOutlineChevronRight } from 'react-icons/hi2';
 
 type ExpandedSection = 'name' | 'email' | 'password' | null;
-
-// Supabase enforces a minimum password length of 6 characters
-const SUPABASE_MIN_PASSWORD_LENGTH = 6;
 
 export default function ProfilePage() {
   useScreenView('Profile');
@@ -52,10 +50,16 @@ export default function ProfilePage() {
   // Form fields
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [confirmEmail, setConfirmEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const { data: groups } = useGroups();
+
+  // Password strength
+  const passwordChecks = useMemo(() => getPasswordChecks(newPassword, t), [newPassword, t]);
+  const passwordStrength = useMemo(() => getStrength(passwordChecks, t), [passwordChecks, t]);
+  const allChecksPassed = passwordChecks.every((c) => c.ok);
 
   const colorIndex = MEMBER_COLORS.indexOf(myColor as (typeof MEMBER_COLORS)[number]);
   const myGradient =
@@ -72,7 +76,10 @@ export default function ProfilePage() {
     } else {
       setExpanded(section);
       if (section === 'name') setNewName(user?.name ?? '');
-      if (section === 'email') setNewEmail('');
+      if (section === 'email') {
+        setNewEmail('');
+        setConfirmEmail('');
+      }
       if (section === 'password') {
         setNewPassword('');
         setConfirmPassword('');
@@ -102,12 +109,16 @@ export default function ProfilePage() {
 
   const handleUpdateEmail = async () => {
     if (!newEmail.trim()) return;
+    setError('');
     if (newEmail.trim().toLowerCase() === user?.email?.toLowerCase()) {
       setError(t('profile.sameEmailError'));
       return;
     }
+    if (newEmail.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()) {
+      setError(t('profile.emailsMismatch'));
+      return;
+    }
     setLoading(true);
-    setError('');
     try {
       await updateEmail(newEmail.trim());
       setSuccessMessage(t('profile.emailSent'));
@@ -121,8 +132,8 @@ export default function ProfilePage() {
 
   const handleUpdatePassword = async () => {
     setError('');
-    if (newPassword.length < SUPABASE_MIN_PASSWORD_LENGTH) {
-      setError(t('profile.minLengthError'));
+    if (!allChecksPassed) {
+      setError(t('register.passwordRequirementsError'));
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -236,7 +247,30 @@ export default function ProfilePage() {
                     placeholder={t('profile.newEmail')}
                     className={inputClass}
                   />
-                  <Button onClick={handleUpdateEmail} disabled={loading || !newEmail.trim()}>
+                  <input
+                    type="email"
+                    value={confirmEmail}
+                    onChange={(e) => setConfirmEmail(e.target.value)}
+                    placeholder={t('profile.confirmEmail')}
+                    className={`${inputClass} ${
+                      confirmEmail.length > 0 &&
+                      newEmail.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()
+                        ? '!border-danger/50'
+                        : ''
+                    }`}
+                  />
+                  {confirmEmail.length > 0 &&
+                    newEmail.trim().toLowerCase() !== confirmEmail.trim().toLowerCase() && (
+                      <p className="text-danger text-xs -mt-1">{t('profile.emailsMismatch')}</p>
+                    )}
+                  <Button
+                    onClick={handleUpdateEmail}
+                    disabled={
+                      loading ||
+                      !newEmail.trim() ||
+                      newEmail.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()
+                    }
+                  >
                     {loading ? t('profile.sending') : t('profile.sendConfirmation')}
                   </Button>
                 </div>
@@ -262,16 +296,53 @@ export default function ProfilePage() {
                     placeholder={t('profile.newPassword')}
                     className={inputClass}
                   />
+                  {newPassword.length > 0 && (
+                    <div className="space-y-2 -mt-1">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1 flex-1">
+                          {[1, 2, 3, 4].map((i) => (
+                            <div
+                              key={i}
+                              className={`h-1 flex-1 rounded-full transition-colors ${
+                                i <= passwordStrength.level
+                                  ? passwordStrength.color
+                                  : 'bg-toggle-off'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-text-muted">{passwordStrength.label}</span>
+                      </div>
+                      <ul className="space-y-1">
+                        {passwordChecks.map((check) => (
+                          <li
+                            key={check.key}
+                            className={`text-xs flex items-center gap-1.5 ${check.ok ? 'text-success' : 'text-text-dark'}`}
+                          >
+                            <span>{check.ok ? '\u2713' : '\u2022'}</span>
+                            {check.label}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder={t('profile.confirmPassword')}
-                    className={inputClass}
+                    className={`${inputClass} ${
+                      confirmPassword.length > 0 && newPassword !== confirmPassword
+                        ? '!border-danger/50'
+                        : ''
+                    }`}
                   />
+                  {confirmPassword.length > 0 && newPassword !== confirmPassword && (
+                    <p className="text-danger text-xs -mt-1">{t('profile.passwordsMismatch')}</p>
+                  )}
                   <Button
                     onClick={handleUpdatePassword}
-                    disabled={loading || !newPassword || !confirmPassword}
+                    disabled={loading || !allChecksPassed || newPassword !== confirmPassword}
                   >
                     {loading ? t('profile.saving') : t('profile.save')}
                   </Button>
