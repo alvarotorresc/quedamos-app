@@ -304,6 +304,40 @@ export class EventsService {
     return updated;
   }
 
+  async confirm(groupId: string, eventId: string, userId: string) {
+    const event = await this.findById(groupId, eventId, userId);
+
+    if (event.createdById !== userId) {
+      throw new ForbiddenException('Only the creator can confirm this event');
+    }
+
+    if (event.status !== 'pending') {
+      throw new BadRequestException('Only pending events can be confirmed');
+    }
+
+    const updated = await this.prisma.event.update({
+      where: { id: eventId },
+      data: { status: 'confirmed' },
+      include: {
+        attendees: { include: { user: { select: PUBLIC_USER_SELECT } } },
+        createdBy: { select: PUBLIC_USER_SELECT },
+      },
+    });
+
+    this.notificationsService
+      .sendToEventAttendees(
+        eventId,
+        'Quedada confirmada',
+        `"${event.title}" ha sido confirmada`,
+        userId,
+        { type: 'event_confirmed', eventId, groupId },
+        'event_confirmed',
+      )
+      .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+
+    return updated;
+  }
+
   async respond(groupId: string, eventId: string, userId: string, dto: RespondEventDto) {
     const event = await this.findById(groupId, eventId, userId);
 

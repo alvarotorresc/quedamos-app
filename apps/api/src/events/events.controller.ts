@@ -77,6 +77,15 @@ export class EventsController {
     return this.eventsService.cancel(groupId, eventId, user.id);
   }
 
+  @Post(':eventId/confirm')
+  confirm(
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Param('eventId', ParseUUIDPipe) eventId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.eventsService.confirm(groupId, eventId, user.id);
+  }
+
   @Post(':eventId/respond')
   respond(
     @Param('groupId', ParseUUIDPipe) groupId: string,

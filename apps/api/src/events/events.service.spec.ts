@@ -847,6 +847,101 @@ describe('EventsService', () => {
     });
   });
 
+  describe('confirm', () => {
+    it('should confirm pending event as creator', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      const result = await service.confirm('group-1', 'event-1', 'user-1');
+
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { status: 'confirmed' },
+        }),
+      );
+    });
+
+    it('should reject confirm from non-creator', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+
+      await expect(service.confirm('group-1', 'event-1', 'user-2')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should reject confirm for non-pending event', async () => {
+      const event = {
+        ...createTestEvent({ status: 'confirmed' }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+
+      await expect(service.confirm('group-1', 'event-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject confirm for cancelled event', async () => {
+      const event = {
+        ...createTestEvent({ status: 'cancelled' }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+
+      await expect(service.confirm('group-1', 'event-1', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should send notification on confirm', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      await service.confirm('group-1', 'event-1', 'user-1');
+
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Quedada confirmada',
+        expect.stringContaining('Test Event'),
+        'user-1',
+        expect.objectContaining({ type: 'event_confirmed' }),
+        'event_confirmed',
+      );
+    });
+
+    it('should return updated event with confirmed status', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      const confirmed = { ...event, status: 'confirmed' };
+      prisma.event.update.mockResolvedValue(confirmed);
+
+      const result = await service.confirm('group-1', 'event-1', 'user-1');
+
+      expect(result.status).toBe('confirmed');
+    });
+  });
+
   describe('online events', () => {
     it('should create online event with null location fields', async () => {
       const event = {
