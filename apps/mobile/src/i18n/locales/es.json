@@ -161,6 +161,8 @@
     "deleteConfirm": "Esta accion no se puede deshacer",
     "cancelEvent": "Marcar como cancelada",
     "cancelConfirm": "Cancelar esta quedada?",
+    "confirmEvent": "Confirmar quedada",
+    "confirmEventConfirm": "Marcar esta quedada como confirmada?",
     "openInMaps": "Abrir en mapas",
     "edit": {
       "title": "Editar quedada",

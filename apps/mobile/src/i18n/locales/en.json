@@ -161,6 +161,8 @@
     "deleteConfirm": "This action cannot be undone",
     "cancelEvent": "Mark as cancelled",
     "cancelConfirm": "Cancel this plan?",
+    "confirmEvent": "Confirm plan",
+    "confirmEventConfirm": "Mark this plan as confirmed?",
     "openInMaps": "Open in maps",
     "edit": {
       "title": "Edit plan",

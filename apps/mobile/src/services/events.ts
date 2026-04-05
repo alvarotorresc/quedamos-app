@@ -82,4 +82,7 @@ export const eventsService = {
 
   cancel: (groupId: string, eventId: string) =>
     api.post<Event>(`/groups/${groupId}/events/${eventId}/cancel`, {}),
+
+  confirm: (groupId: string, eventId: string) =>
+    api.post<Event>(`/groups/${groupId}/events/${eventId}/confirm`, {}),
 };

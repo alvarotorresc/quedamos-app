@@ -17,7 +17,7 @@ import { SkeletonCard } from '../ui/SkeletonCard';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
-import { useEvents, useDeleteEvent, useCancelEvent } from '../hooks/useEvents';
+import { useEvents, useDeleteEvent, useCancelEvent, useConfirmEvent } from '../hooks/useEvents';
 import { useProposals, useVoteProposal, useCloseProposal } from '../hooks/useProposals';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupSync } from '../hooks/useGroupSync';
@@ -91,10 +91,13 @@ export default function PlansPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState<Event | null>(null);
   const [cancellingEvent, setCancellingEvent] = useState<Event | null>(null);
+  const [confirmingEvent, setConfirmingEvent] = useState<Event | null>(null);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [cancellingEventId, setCancellingEventId] = useState<string | null>(null);
+  const [confirmingEventId, setConfirmingEventId] = useState<string | null>(null);
   const deleteEvent = useDeleteEvent(groupId);
   const cancelEvent = useCancelEvent(groupId);
+  const confirmEvent = useConfirmEvent(groupId);
 
   // Proposals state
   const { data: proposals } = useProposals(groupId);
@@ -252,6 +255,10 @@ export default function PlansPage() {
 
   const handleCancel = (ev: Event) => {
     setCancellingEvent(ev);
+  };
+
+  const handleConfirm = (ev: Event) => {
+    setConfirmingEvent(ev);
   };
 
   const handleVote = (proposalId: string, vote: 'yes' | 'no') => {
@@ -413,8 +420,10 @@ export default function PlansPage() {
                               onEdit={handleEdit}
                               onDelete={handleDelete}
                               onCancel={handleCancel}
+                              onConfirm={handleConfirm}
                               isDeleting={deletingEventId === ev.id}
                               isCancelling={cancellingEventId === ev.id}
+                              isConfirming={confirmingEventId === ev.id}
                             />
                           </motion.div>
                         ))}
@@ -644,6 +653,28 @@ export default function PlansPage() {
                 setCancellingEventId(cancellingEvent.id);
                 cancelEvent.mutate(cancellingEvent.id, {
                   onSettled: () => setCancellingEventId(null),
+                });
+              }
+            },
+          },
+        ]}
+      />
+
+      {/* Confirm event confirmation */}
+      <IonAlert
+        isOpen={!!confirmingEvent}
+        onDidDismiss={() => setConfirmingEvent(null)}
+        header={t('plans.confirmEvent')}
+        message={t('plans.confirmEventConfirm')}
+        buttons={[
+          { text: t('common.cancel'), role: 'cancel' },
+          {
+            text: t('plans.confirmEvent'),
+            handler: () => {
+              if (confirmingEvent) {
+                setConfirmingEventId(confirmingEvent.id);
+                confirmEvent.mutate(confirmingEvent.id, {
+                  onSettled: () => setConfirmingEventId(null),
                 });
               }
             },
