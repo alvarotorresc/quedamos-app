@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AvailabilityService } from './availability.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -33,6 +34,7 @@ export class AvailabilityController {
   }
 
   @Post()
+  @Throttle({ default: { ttl: 60000, limit: 20 } })
   create(
     @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },

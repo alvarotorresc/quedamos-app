@@ -1,5 +1,6 @@
 import { Controller, Post, Delete, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -15,6 +16,7 @@ export class NotificationsController {
   constructor(private notificationsService: NotificationsService) {}
 
   @Post('register-token')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   registerToken(@CurrentUser() user: { id: string }, @Body() dto: RegisterTokenDto) {
     return this.notificationsService.registerToken(user.id, dto);
   }

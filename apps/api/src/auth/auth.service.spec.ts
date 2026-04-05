@@ -185,14 +185,24 @@ describe('AuthService', () => {
   });
 
   describe('getProfile', () => {
-    it('should return user profile', async () => {
+    it('should return user profile with explicit select', async () => {
       const user = createTestUser();
       prisma.user.findUnique.mockResolvedValue(user);
 
       const result = await service.getProfile('user-1');
 
       expect(result).toEqual(user);
-      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: 'user-1' } });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatarEmoji: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
     });
 
     it('should return null for non-existent user', async () => {
