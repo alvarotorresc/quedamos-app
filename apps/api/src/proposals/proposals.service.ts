@@ -35,7 +35,9 @@ export class ProposalsService {
         createdById: userId,
         title: dto.title,
         description: dto.description,
-        location: dto.location,
+        location: dto.isOnline ? null : dto.location,
+        isOnline: dto.isOnline ?? false,
+        meetingUrl: dto.isOnline ? dto.meetingUrl : null,
         proposedDate: dto.proposedDate,
         votes: {
           create: { userId, vote: 'yes' },
@@ -93,11 +95,32 @@ export class ProposalsService {
       throw new ForbiddenException('Cannot edit a closed or converted proposal');
     }
 
+    // Resolve the effective isOnline state: use dto value if provided, else current DB value
+    const effectiveIsOnline = dto.isOnline ?? proposal.isOnline;
+
     const data: Record<string, unknown> = {};
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.description !== undefined) data.description = dto.description;
-    if (dto.location !== undefined) data.location = dto.location;
     if (dto.proposedDate !== undefined) data.proposedDate = dto.proposedDate;
+
+    if (dto.isOnline !== undefined) {
+      data.isOnline = dto.isOnline;
+      if (dto.isOnline === true) {
+        data.location = null;
+      } else {
+        data.meetingUrl = null;
+      }
+    }
+
+    // Only allow location changes when NOT online
+    if (dto.location !== undefined && !effectiveIsOnline) {
+      data.location = dto.location;
+    }
+
+    // Only allow meetingUrl changes when online (and don't override the null set above)
+    if (dto.meetingUrl !== undefined && effectiveIsOnline && data.meetingUrl === undefined) {
+      data.meetingUrl = dto.meetingUrl;
+    }
 
     return this.prisma.planProposal.update({
       where: { id: proposalId },
@@ -193,6 +216,8 @@ export class ProposalsService {
       title: proposal.title,
       description: proposal.description ?? undefined,
       location: proposal.location ?? undefined,
+      isOnline: proposal.isOnline,
+      meetingUrl: proposal.meetingUrl ?? undefined,
       date: dto.date,
       time: dto.time,
       endTime: dto.endTime,
