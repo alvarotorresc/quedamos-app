@@ -9,6 +9,8 @@ export interface Event {
   location?: string;
   locationLat?: number;
   locationLon?: number;
+  isOnline: boolean;
+  meetingUrl?: string;
   date: string; // YYYY-MM-DD
   time?: string; // HH:mm
   endTime?: string; // HH:mm
@@ -35,6 +37,8 @@ export interface CreateEventDto {
   location?: string;
   locationLat?: number;
   locationLon?: number;
+  isOnline?: boolean;
+  meetingUrl?: string;
   date: string;
   time?: string;
   endTime?: string;
