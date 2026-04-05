@@ -18,6 +18,8 @@ function createTestProposal(overrides: Record<string, unknown> = {}) {
     title: 'Test Proposal',
     description: null,
     location: null,
+    isOnline: false,
+    meetingUrl: null,
     proposedDate: null,
     createdById: 'user-1',
     status: 'open',
@@ -418,6 +420,156 @@ describe('ProposalsService', () => {
       await expect(
         service.update('group-1', 'proposal-1', 'user-1', { title: 'Nope' }),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('online proposals', () => {
+    it('should create online proposal with meetingUrl', async () => {
+      const proposal = {
+        ...createTestProposal({ isOnline: true, meetingUrl: 'https://meet.google.com/abc' }),
+        createdBy: createTestUser(),
+        votes: [],
+      };
+      prisma.planProposal.create.mockResolvedValue(proposal);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Online Meeting',
+        isOnline: true,
+        meetingUrl: 'https://meet.google.com/abc',
+      });
+
+      expect(prisma.planProposal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isOnline: true,
+            meetingUrl: 'https://meet.google.com/abc',
+          }),
+        }),
+      );
+    });
+
+    it('should clear meetingUrl when creating presencial proposal', async () => {
+      const proposal = {
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      };
+      prisma.planProposal.create.mockResolvedValue(proposal);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Presencial',
+        isOnline: false,
+        meetingUrl: 'https://meet.google.com/abc',
+      });
+
+      expect(prisma.planProposal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isOnline: false,
+            meetingUrl: null,
+          }),
+        }),
+      );
+    });
+
+    it('should clear location when creating online proposal', async () => {
+      const proposal = {
+        ...createTestProposal({ isOnline: true }),
+        createdBy: createTestUser(),
+        votes: [],
+      };
+      prisma.planProposal.create.mockResolvedValue(proposal);
+
+      await service.create('group-1', 'user-1', {
+        title: 'Online',
+        isOnline: true,
+        location: 'Madrid',
+      });
+
+      expect(prisma.planProposal.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isOnline: true,
+            location: null,
+          }),
+        }),
+      );
+    });
+
+    it('should switch to online and clear location on update', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal({ location: 'Madrid' }));
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ isOnline: true, location: null }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.update('group-1', 'proposal-1', 'user-1', {
+        isOnline: true,
+      });
+
+      expect(prisma.planProposal.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isOnline: true,
+            location: null,
+          }),
+        }),
+      );
+    });
+
+    it('should switch to presencial and clear meetingUrl on update', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(
+        createTestProposal({ isOnline: true, meetingUrl: 'https://meet.google.com/abc' }),
+      );
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ isOnline: false, meetingUrl: null }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.update('group-1', 'proposal-1', 'user-1', {
+        isOnline: false,
+      });
+
+      expect(prisma.planProposal.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isOnline: false,
+            meetingUrl: null,
+          }),
+        }),
+      );
+    });
+
+    it('should propagate isOnline and meetingUrl when converting proposal to event', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal({
+          isOnline: true,
+          meetingUrl: 'https://meet.google.com/abc',
+        }),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'yes' }],
+      });
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(eventsService.create).toHaveBeenCalledWith(
+        'group-1',
+        'user-1',
+        expect.objectContaining({
+          isOnline: true,
+          meetingUrl: 'https://meet.google.com/abc',
+        }),
+      );
     });
   });
 });
