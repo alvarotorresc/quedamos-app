@@ -170,6 +170,11 @@
       "plans": "Plans",
       "proposals": "Proposals"
     },
+    "filter": {
+      "all": "All",
+      "online": "Online",
+      "inPerson": "In-person"
+    },
     "tapToChange": "Tap to change",
     "status": {
       "pending": "Pending",
@@ -421,6 +426,14 @@
       "madeWith": "Made with",
       "by": "by"
     }
+  },
+  "online": {
+    "toggle": "Online event",
+    "meetingUrl": "Meeting link",
+    "meetingUrlPlaceholder": "https://meet.google.com/...",
+    "badge": "Online",
+    "joinMeeting": "Join meeting",
+    "meetingLink": "Meeting link"
   },
   "weather": {
     "title": "Weather",

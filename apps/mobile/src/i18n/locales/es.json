@@ -170,6 +170,11 @@
       "plans": "Quedadas",
       "proposals": "Propuestas"
     },
+    "filter": {
+      "all": "Todas",
+      "online": "Online",
+      "inPerson": "Presencial"
+    },
     "tapToChange": "Toca para cambiar",
     "status": {
       "pending": "Pendiente",
@@ -421,6 +426,14 @@
       "madeWith": "Hecho con",
       "by": "por"
     }
+  },
+  "online": {
+    "toggle": "Quedada online",
+    "meetingUrl": "Enlace de reunión",
+    "meetingUrlPlaceholder": "https://meet.google.com/...",
+    "badge": "Online",
+    "joinMeeting": "Unirse a la reunión",
+    "meetingLink": "Enlace de reunión"
   },
   "weather": {
     "title": "Clima",

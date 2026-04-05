@@ -17,6 +17,8 @@ export interface Proposal {
   title: string;
   description?: string | null;
   location?: string | null;
+  isOnline: boolean;
+  meetingUrl?: string | null;
   proposedDate?: string | null;
   status: 'open' | 'closed' | 'converted';
   convertedEventId?: string | null;
@@ -32,6 +34,8 @@ export interface CreateProposalDto {
   title: string;
   description?: string;
   location?: string;
+  isOnline?: boolean;
+  meetingUrl?: string;
   proposedDate?: string;
 }
 
@@ -43,6 +47,8 @@ export interface UpdateProposalDto {
   title?: string;
   description?: string;
   location?: string;
+  isOnline?: boolean;
+  meetingUrl?: string;
   proposedDate?: string;
 }
 
@@ -53,8 +59,7 @@ export interface ConvertProposalDto {
 }
 
 export const proposalsService = {
-  getAll: (groupId: string) =>
-    api.get<Proposal[]>(`/groups/${groupId}/proposals`),
+  getAll: (groupId: string) => api.get<Proposal[]>(`/groups/${groupId}/proposals`),
 
   create: (groupId: string, data: CreateProposalDto) =>
     api.post<Proposal>(`/groups/${groupId}/proposals`, data),
