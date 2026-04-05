@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { api } from '../lib/api';
 import { unregisterFromBackend } from '../lib/push-notifications';
+import {
+  sanitizeTimeSlots,
+  validateTimeSlots,
+  type TimeSlotPreferences,
+} from '../lib/time-slot-utils';
 import i18n from '../i18n';
 
 let authSubscription: { unsubscribe: () => void } | null = null;
@@ -11,6 +16,7 @@ interface User {
   email: string;
   name: string;
   avatarEmoji: string;
+  timeSlots?: TimeSlotPreferences;
 }
 
 interface AuthState {
@@ -26,6 +32,7 @@ interface AuthState {
   updatePassword: (password: string) => Promise<void>;
   updateName: (name: string) => Promise<void>;
   updateEmail: (email: string) => Promise<void>;
+  updateTimeSlots: (timeSlots: TimeSlotPreferences) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -63,7 +70,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
     if (session?.user) {
       set({
@@ -72,6 +81,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           email: session.user.email ?? '',
           name: session.user.user_metadata?.name ?? i18n.t('auth.defaultName'),
           avatarEmoji: session.user.user_metadata?.avatarEmoji ?? '😊',
+          timeSlots: sanitizeTimeSlots(session.user.user_metadata?.timeSlots),
         },
         isLoading: false,
       });
@@ -90,6 +100,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             email: session.user.email ?? '',
             name: session.user.user_metadata?.name ?? i18n.t('auth.defaultName'),
             avatarEmoji: session.user.user_metadata?.avatarEmoji ?? '😊',
+            timeSlots: sanitizeTimeSlots(session.user.user_metadata?.timeSlots),
           },
         });
       } else {
@@ -127,5 +138,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       { emailRedirectTo: `${window.location.origin}/tabs/profile` },
     );
     if (error) throw error;
+  },
+
+  updateTimeSlots: async (timeSlots) => {
+    const validationError = validateTimeSlots(timeSlots);
+    if (validationError) throw new Error(`Invalid time slots: ${validationError}`);
+    const { error } = await supabase.auth.updateUser({ data: { timeSlots } });
+    if (error) throw error;
+    set((state) => ({
+      user: state.user ? { ...state.user, timeSlots } : null,
+    }));
   },
 }));

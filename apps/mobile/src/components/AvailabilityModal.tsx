@@ -3,6 +3,8 @@ import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { formatDateKey } from '../lib/date-utils';
 import { useCreateAvailability, useDeleteAvailability } from '../hooks/useAvailability';
+import { useAuthStore } from '../stores/auth';
+import { DEFAULT_TIME_SLOTS, getSlotHours } from '../lib/time-slot-utils';
 import type { Availability, AvailabilityType, TimeSlot } from '../services/availability';
 import { Button } from '../ui/Button';
 
@@ -25,6 +27,7 @@ export function AvailabilityModal({
   existingAvailability,
 }: AvailabilityModalProps) {
   const { t, i18n } = useTranslation();
+  const userTimeSlots = useAuthStore((s) => s.user?.timeSlots) ?? DEFAULT_TIME_SLOTS;
   const createAvailability = useCreateAvailability(groupId);
   const deleteAvailability = useDeleteAvailability(groupId);
 
@@ -53,7 +56,7 @@ export function AvailabilityModal({
 
   const toggleSlot = (slot: TimeSlot) => {
     setSelectedSlots((prev) =>
-      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]
+      prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot],
     );
   };
 
@@ -81,10 +84,11 @@ export function AvailabilityModal({
     onClose();
   };
 
-  const dateLabel = selectedDay?.toLocaleDateString(
-    i18n.language === 'es' ? 'es-ES' : 'en-US',
-    { weekday: 'long', day: 'numeric', month: 'long' }
-  );
+  const dateLabel = selectedDay?.toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
 
   const isSaving = createAvailability.isPending;
   const isDeleting = deleteAvailability.isPending;
@@ -148,7 +152,7 @@ export function AvailabilityModal({
               >
                 {t(`calendar.availability.${SLOT_KEYS[idx]}`)}
                 <div className="text-[9px] text-text-dark mt-0.5">
-                  {t(`calendar.availability.${SLOT_KEYS[idx]}Hours`)}
+                  {getSlotHours(SLOT_KEYS[idx], userTimeSlots)}
                 </div>
               </button>
             ))}
@@ -168,7 +172,11 @@ export function AvailabilityModal({
                   const newFrom = e.target.value;
                   setFromTime(newFrom);
                   if (toTime <= newFrom) {
-                    const idx = Math.floor((parseInt(newFrom.split(':')[0]) * 2 + (newFrom.split(':')[1] === '30' ? 1 : 0)) + 1);
+                    const idx = Math.floor(
+                      parseInt(newFrom.split(':')[0]) * 2 +
+                        (newFrom.split(':')[1] === '30' ? 1 : 0) +
+                        1,
+                    );
                     const h = String(Math.floor(idx / 2)).padStart(2, '0');
                     const m = idx % 2 === 0 ? '00' : '30';
                     setToTime(idx < 48 ? `${h}:${m}` : '23:59');
@@ -228,9 +236,7 @@ export function AvailabilityModal({
           disabled={isSaving || (type === 'slots' && selectedSlots.length === 0)}
           className="w-full mb-1.5"
         >
-          {isSaving
-            ? t('calendar.availability.saving')
-            : t('calendar.availability.save')}
+          {isSaving ? t('calendar.availability.saving') : t('calendar.availability.save')}
         </Button>
 
         {/* Delete button */}
@@ -245,9 +251,7 @@ export function AvailabilityModal({
               border: '1px solid rgba(251,113,133,0.15)',
             }}
           >
-            {isDeleting
-              ? t('calendar.availability.deleting')
-              : t('calendar.availability.delete')}
+            {isDeleting ? t('calendar.availability.deleting') : t('calendar.availability.delete')}
           </button>
         )}
       </div>

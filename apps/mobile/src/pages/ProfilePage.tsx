@@ -14,12 +14,33 @@ import { Button } from '../ui/Button';
 import { LanguageSelector } from '../ui/LanguageSelector';
 import { translateAuthError } from '../lib/auth-errors';
 import { getPasswordChecks, getStrength } from '../lib/password-utils';
+import {
+  DEFAULT_TIME_SLOTS,
+  validateTimeSlots,
+  type TimeSlotPreferences,
+  type TimeSlotError,
+} from '../lib/time-slot-utils';
 import { broadcastSync } from '../lib/group-sync';
 import { useGroups } from '../hooks/useGroups';
 import { MEMBER_COLORS, MEMBER_GRADIENTS, MEMBER_GLOWS } from '../lib/constants';
 import { HiOutlineBell, HiOutlineChevronRight } from 'react-icons/hi2';
 
-type ExpandedSection = 'name' | 'email' | 'password' | null;
+type ExpandedSection = 'name' | 'email' | 'password' | 'timeSlots' | null;
+
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, '0');
+  const m = i % 2 === 0 ? '00' : '30';
+  return `${h}:${m}`;
+});
+
+const SLOT_ERROR_KEYS: Record<NonNullable<TimeSlotError>, string> = {
+  format_invalid: 'formatInvalid',
+  morning_invalid: 'morningInvalid',
+  afternoon_invalid: 'afternoonInvalid',
+  night_invalid: 'nightInvalid',
+  morning_overlaps_afternoon: 'morningOverlapsAfternoon',
+  afternoon_overlaps_night: 'afternoonOverlapsNight',
+};
 
 export default function ProfilePage() {
   useScreenView('Profile');
@@ -30,6 +51,7 @@ export default function ProfilePage() {
   const updateName = useAuthStore((s) => s.updateName);
   const updateEmail = useAuthStore((s) => s.updateEmail);
   const updatePassword = useAuthStore((s) => s.updatePassword);
+  const updateTimeSlots = useAuthStore((s) => s.updateTimeSlots);
   const myColor = useMyColor();
   const darkMode = useThemeStore((s) => s.darkMode);
   const toggleTheme = useThemeStore((s) => s.toggle);
@@ -53,6 +75,7 @@ export default function ProfilePage() {
   const [confirmEmail, setConfirmEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [slotPrefs, setSlotPrefs] = useState<TimeSlotPreferences>({ ...DEFAULT_TIME_SLOTS });
 
   const { data: groups } = useGroups();
 
@@ -60,6 +83,7 @@ export default function ProfilePage() {
   const passwordChecks = useMemo(() => getPasswordChecks(newPassword, t), [newPassword, t]);
   const passwordStrength = useMemo(() => getStrength(passwordChecks, t), [passwordChecks, t]);
   const allChecksPassed = passwordChecks.every((c) => c.ok);
+  const slotValidationError = useMemo(() => validateTimeSlots(slotPrefs), [slotPrefs]);
 
   const colorIndex = MEMBER_COLORS.indexOf(myColor as (typeof MEMBER_COLORS)[number]);
   const myGradient =
@@ -83,6 +107,9 @@ export default function ProfilePage() {
       if (section === 'password') {
         setNewPassword('');
         setConfirmPassword('');
+      }
+      if (section === 'timeSlots') {
+        setSlotPrefs(user?.timeSlots ? { ...user.timeSlots } : { ...DEFAULT_TIME_SLOTS });
       }
     }
   };
@@ -152,6 +179,32 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpdateTimeSlots = async () => {
+    setError('');
+    if (slotValidationError) {
+      setError(t(`profile.timeSlots.${SLOT_ERROR_KEYS[slotValidationError]}`));
+      return;
+    }
+    setLoading(true);
+    try {
+      await updateTimeSlots(slotPrefs);
+      setSuccessMessage(t('profile.timeSlots.updated'));
+      setExpanded(null);
+    } catch (e) {
+      setError(translateAuthError(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetTimeSlots = () => {
+    setSlotPrefs({ ...DEFAULT_TIME_SLOTS });
+  };
+
+  const updateSlotField = (field: keyof TimeSlotPreferences, value: string) => {
+    setSlotPrefs((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSignOut = async () => {
@@ -346,6 +399,145 @@ export default function ProfilePage() {
                   >
                     {loading ? t('profile.saving') : t('profile.save')}
                   </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Time Slots */}
+            <div className="bg-bg-card border border-subtle rounded-btn overflow-hidden">
+              <button
+                type="button"
+                onClick={() => toggleSection('timeSlots')}
+                className="w-full flex items-center justify-between px-4 py-3.5 text-sm text-text"
+              >
+                <span>{t('profile.timeSlots.title')}</span>
+                <span className="text-text-dark">{expanded === 'timeSlots' ? '−' : '+'}</span>
+              </button>
+              {expanded === 'timeSlots' && (
+                <div className="px-4 pb-4 flex flex-col gap-3">
+                  {/* Morning */}
+                  <div>
+                    <label className="text-xs text-text-dark block mb-1.5">
+                      {t('profile.timeSlots.morning')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={slotPrefs.morningStart}
+                        onChange={(e) => updateSlotField('morningStart', e.target.value)}
+                        className={inputClass}
+                      >
+                        {TIME_OPTIONS.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-text-dark text-xs shrink-0">–</span>
+                      <select
+                        value={slotPrefs.morningEnd}
+                        onChange={(e) => updateSlotField('morningEnd', e.target.value)}
+                        className={inputClass}
+                      >
+                        {TIME_OPTIONS.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Afternoon */}
+                  <div>
+                    <label className="text-xs text-text-dark block mb-1.5">
+                      {t('profile.timeSlots.afternoon')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={slotPrefs.afternoonStart}
+                        onChange={(e) => updateSlotField('afternoonStart', e.target.value)}
+                        className={inputClass}
+                      >
+                        {TIME_OPTIONS.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-text-dark text-xs shrink-0">–</span>
+                      <select
+                        value={slotPrefs.afternoonEnd}
+                        onChange={(e) => updateSlotField('afternoonEnd', e.target.value)}
+                        className={inputClass}
+                      >
+                        {TIME_OPTIONS.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Night */}
+                  <div>
+                    <label className="text-xs text-text-dark block mb-1.5">
+                      {t('profile.timeSlots.night')}
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={slotPrefs.nightStart}
+                        onChange={(e) => updateSlotField('nightStart', e.target.value)}
+                        className={inputClass}
+                      >
+                        {TIME_OPTIONS.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-text-dark text-xs shrink-0">–</span>
+                      <select
+                        value={slotPrefs.nightEnd}
+                        onChange={(e) => updateSlotField('nightEnd', e.target.value)}
+                        className={inputClass}
+                      >
+                        {TIME_OPTIONS.map((time) => (
+                          <option key={time} value={time}>
+                            {time}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Real-time validation warning */}
+                  {slotValidationError && (
+                    <p className="text-danger text-xs">
+                      {t(`profile.timeSlots.${SLOT_ERROR_KEYS[slotValidationError]}`)}
+                    </p>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleResetTimeSlots}
+                      className="px-3 py-2.5 rounded-btn text-xs font-semibold text-text-dark"
+                      style={{
+                        background: 'var(--app-bg-hover)',
+                        border: '1px solid var(--app-border)',
+                      }}
+                    >
+                      {t('profile.timeSlots.resetDefaults')}
+                    </button>
+                    <Button
+                      onClick={handleUpdateTimeSlots}
+                      disabled={loading || slotValidationError !== null}
+                      className="flex-1"
+                    >
+                      {loading ? t('profile.saving') : t('profile.save')}
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>

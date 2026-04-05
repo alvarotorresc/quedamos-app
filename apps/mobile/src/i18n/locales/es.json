@@ -120,11 +120,8 @@
       "typeSlots": "Franja",
       "typeRange": "De hora a hora",
       "morning": "Mañana",
-      "morningHours": "8:00 – 14:00",
       "afternoon": "Tarde",
-      "afternoonHours": "14:00 – 20:00",
       "night": "Noche",
-      "nightHours": "20:00 – 00:00",
       "from": "Desde",
       "to": "Hasta",
       "save": "Guardar",
@@ -313,6 +310,20 @@
       "memberKicked": "Fuiste eliminado de un grupo",
       "groupDeleted": "Grupo eliminado",
       "weeklyReminder": "Recordatorio semanal de disponibilidad"
+    },
+    "timeSlots": {
+      "title": "Franjas horarias",
+      "morning": "Mañana",
+      "afternoon": "Tarde",
+      "night": "Noche",
+      "updated": "Franjas horarias actualizadas",
+      "formatInvalid": "Formato de hora no válido",
+      "morningInvalid": "La hora de inicio de mañana debe ser anterior a la de fin",
+      "afternoonInvalid": "La hora de inicio de tarde debe ser anterior a la de fin",
+      "nightInvalid": "La hora de inicio de noche debe ser anterior a la de fin",
+      "morningOverlapsAfternoon": "La mañana no puede terminar después de que empiece la tarde",
+      "afternoonOverlapsNight": "La tarde no puede terminar después de que empiece la noche",
+      "resetDefaults": "Restaurar"
     },
     "reportBug": "Reportar error",
     "logout": "Cerrar sesión"
