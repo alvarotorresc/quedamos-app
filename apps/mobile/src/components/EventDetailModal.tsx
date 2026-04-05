@@ -1,10 +1,16 @@
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
-import { HiOutlineMapPin, HiOutlineClock, HiOutlineVideoCamera } from 'react-icons/hi2';
+import {
+  HiOutlineMapPin,
+  HiOutlineClock,
+  HiOutlineVideoCamera,
+  HiOutlineArrowDownTray,
+} from 'react-icons/hi2';
 import { Badge } from '../ui/Badge';
 import { AvatarStack } from '../ui/AvatarStack';
 import { openInMaps } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
+import { downloadICS } from '../lib/ics-utils';
 import { apiDateToKey } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { MEMBER_COLORS } from '../lib/constants';
@@ -66,6 +72,13 @@ export function EventDetailModal({
             {event.title}
             {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
           </h3>
+          <button
+            onClick={() => downloadICS(event)}
+            className="p-1 rounded-md border-none bg-transparent"
+            title={t('calendar.eventDetail.download')}
+          >
+            <HiOutlineArrowDownTray className="w-4 h-4 text-text-muted" />
+          </button>
           <Badge color={STATUS_COLORS[event.status]}>{t(`plans.status.${event.status}`)}</Badge>
         </div>
 

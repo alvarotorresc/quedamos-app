@@ -137,7 +137,8 @@
       "title": "Disponibilidad del día"
     },
     "eventDetail": {
-      "createdBy": "Creada por {{name}}"
+      "createdBy": "Creada por {{name}}",
+      "download": "Descargar para calendario"
     }
   },
   "plans": {

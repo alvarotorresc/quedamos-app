@@ -137,7 +137,8 @@
       "title": "Day availability"
     },
     "eventDetail": {
-      "createdBy": "Created by {{name}}"
+      "createdBy": "Created by {{name}}",
+      "download": "Download for calendar"
     }
   },
   "plans": {
