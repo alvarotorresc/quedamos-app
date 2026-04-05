@@ -32,6 +32,7 @@ vi.mock('react-icons/hi2', () => ({
   HiOutlineMapPin: () => <span data-testid="icon-map" />,
   HiOutlineClock: () => <span data-testid="icon-clock" />,
   HiOutlinePencil: () => <span data-testid="icon-pencil" />,
+  HiOutlineVideoCamera: () => <span data-testid="icon-video" />,
 }));
 
 // Mock WeatherWidget
@@ -54,6 +55,8 @@ function createEvent(overrides: Partial<Event> = {}): Event {
     title: 'Cena en el centro',
     date: '2026-04-15',
     status: 'pending',
+    isOnline: false,
+    meetingUrl: undefined,
     attendees: [],
     createdBy: { id: CREATOR_ID, name: 'Creator' },
     ...overrides,
@@ -201,5 +204,57 @@ describe('EventCard', () => {
     expect(screen.getByText('2/3')).toBeInTheDocument();
     // 1 declined out of 3 total
     expect(screen.getByText('1/3')).toBeInTheDocument();
+  });
+
+  describe('online events', () => {
+    it('should show video icon for online events', () => {
+      const event = createEvent({ isOnline: true });
+
+      render(<EventCard event={event} {...defaultProps} />);
+
+      expect(screen.getAllByTestId('icon-video').length).toBeGreaterThan(0);
+    });
+
+    it('should show meeting link for online events with meetingUrl', () => {
+      const event = createEvent({
+        isOnline: true,
+        meetingUrl: 'https://meet.google.com/abc',
+      });
+
+      render(<EventCard event={event} {...defaultProps} />);
+
+      expect(screen.getByText('online.joinMeeting')).toBeInTheDocument();
+      const link = screen.getByText('online.joinMeeting').closest('a');
+      expect(link).toHaveAttribute('href', 'https://meet.google.com/abc');
+    });
+
+    it('should not show weather for online events', () => {
+      const event = createEvent({ isOnline: true });
+      const weather = [
+        {
+          city: 'Madrid',
+          date: '2026-12-01',
+          weatherCode: 0,
+          tempMax: 25,
+          tempMin: 15,
+          description: 'Clear sky',
+        },
+      ];
+
+      render(<EventCard event={event} {...defaultProps} weather={weather} />);
+
+      expect(screen.queryByTestId('weather-badge')).not.toBeInTheDocument();
+    });
+
+    it('should show location for presencial events', () => {
+      const event = createEvent({
+        isOnline: false,
+        location: 'Retiro Park',
+      });
+
+      render(<EventCard event={event} {...defaultProps} />);
+
+      expect(screen.getByText('Retiro Park')).toBeInTheDocument();
+    });
   });
 });
