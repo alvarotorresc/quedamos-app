@@ -398,30 +398,33 @@ export default function GroupDetailPage() {
             </div>
           </section>
 
-          {/* Leave */}
-          <section className="mb-4">
-            <Button
-              variant="ghost"
-              onClick={() => setShowLeaveAlert(true)}
-              disabled={leaveGroup.isPending}
-              className="w-full !bg-danger/10 !text-danger border border-danger/20"
-            >
-              {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
-            </Button>
-          </section>
+          {/* Danger zone */}
+          <section className="mb-8 rounded-xl border border-danger/20 p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-danger/70">
+              {t('group.dangerZone')}
+            </h3>
 
-          {/* Delete group (admin only) */}
-          {isAdmin && (
-            <section className="mb-8">
+            <div className="flex flex-col gap-3">
               <Button
-                variant="ghost"
-                onClick={() => setShowDeleteGroupAlert(true)}
-                className="w-full !text-danger/50 !font-normal"
+                variant="danger"
+                onClick={() => setShowLeaveAlert(true)}
+                disabled={leaveGroup.isPending}
+                className="w-full"
               >
-                {t('group.deleteGroup')}
+                {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
               </Button>
-            </section>
-          )}
+
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowDeleteGroupAlert(true)}
+                  className="w-full !bg-danger/10 !text-danger border border-danger/20"
+                >
+                  {t('group.deleteGroup')}
+                </Button>
+              )}
+            </div>
+          </section>
 
           {/* Alerts */}
           <IonAlert
