@@ -10,6 +10,7 @@ import {
   IonSpinner,
   IonAlert,
   IonActionSheet,
+  IonLoading,
 } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useParams, useHistory } from 'react-router-dom';
@@ -36,6 +37,7 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
 import { searchCities, type GeocodingResult } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
+import { HiOutlineArrowPath } from 'react-icons/hi2';
 
 function formatCode(code: string): string {
   return code.slice(0, 4) + '-' + code.slice(4);
@@ -68,6 +70,7 @@ export default function GroupDetailPage() {
     role: string;
   } | null>(null);
   const [showDeleteGroupAlert, setShowDeleteGroupAlert] = useState(false);
+  const [showKickAlert, setShowKickAlert] = useState(false);
 
   // Weather & Cities
   const { data: cities } = useGroupCities(id);
@@ -167,7 +170,7 @@ export default function GroupDetailPage() {
       buttons.push({
         text: t('group.kickMember'),
         role: 'destructive',
-        handler: () => handleKick(actionMember.userId),
+        handler: () => setShowKickAlert(true),
       });
     } else if (actionMember.role === 'admin') {
       buttons.push({
@@ -368,52 +371,55 @@ export default function GroupDetailPage() {
                 {invite ? formatCode(invite.inviteCode) : '····-····'}
               </p>
               <div className="flex gap-2">
+                <Button variant="primary" onClick={handleShare} className="flex-1">
+                  {t('group.share')}
+                </Button>
                 <Button variant="secondary" onClick={handleCopy} className="flex-1">
                   {copied ? t('group.codeCopied') : t('group.copyCode')}
                 </Button>
-                <Button variant="secondary" onClick={handleShare} className="flex-1">
-                  {t('group.share')}
-                </Button>
               </div>
               {isAdmin && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => setShowRegenerateAlert(true)}
                   disabled={refreshInvite.isPending}
-                  className="w-full mt-3 text-xs text-text-muted hover:text-text transition-colors py-2"
+                  className="w-full mt-3 !text-xs !py-2 !font-normal text-text-muted"
                 >
-                  {regeneratedFeedback
-                    ? t('group.codeRegenerated')
-                    : refreshInvite.isPending
-                      ? t('group.regenerating')
-                      : t('group.regenerateCode')}
-                </button>
+                  <span className="inline-flex items-center gap-1">
+                    <HiOutlineArrowPath className="w-3 h-3" />
+                    {regeneratedFeedback
+                      ? t('group.codeRegenerated')
+                      : refreshInvite.isPending
+                        ? t('group.regenerating')
+                        : t('group.regenerateCode')}
+                  </span>
+                </Button>
               )}
             </div>
           </section>
 
           {/* Leave */}
           <section className="mb-4">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => setShowLeaveAlert(true)}
               disabled={leaveGroup.isPending}
-              className="w-full bg-danger/10 border border-danger/20 rounded-btn px-4 py-3.5 text-sm text-danger font-semibold"
+              className="w-full !bg-danger/10 !text-danger border border-danger/20"
             >
               {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
-            </button>
+            </Button>
           </section>
 
           {/* Delete group (admin only) */}
           {isAdmin && (
             <section className="mb-8">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 onClick={() => setShowDeleteGroupAlert(true)}
-                className="w-full bg-danger/5 border border-danger/10 rounded-btn px-4 py-3.5 text-sm text-danger/70 font-semibold"
+                className="w-full !text-danger/50 !font-normal"
               >
                 {t('group.deleteGroup')}
-              </button>
+              </Button>
             </section>
           )}
 
@@ -439,8 +445,10 @@ export default function GroupDetailPage() {
             ]}
           />
           <IonActionSheet
-            isOpen={actionMember !== null}
-            onDidDismiss={() => setActionMember(null)}
+            isOpen={actionMember !== null && !showKickAlert}
+            onDidDismiss={() => {
+              if (!showKickAlert) setActionMember(null);
+            }}
             header={actionMember?.name}
             buttons={getActionButtons()}
           />
@@ -454,6 +462,26 @@ export default function GroupDetailPage() {
               { text: t('group.deleteGroup'), role: 'destructive', handler: handleDeleteGroup },
             ]}
           />
+          <IonAlert
+            isOpen={showKickAlert}
+            onDidDismiss={() => {
+              setShowKickAlert(false);
+              setActionMember(null);
+            }}
+            header={t('group.kickConfirm', { name: actionMember?.name })}
+            message={t('group.kickMessage')}
+            buttons={[
+              { text: t('group.cancel'), role: 'cancel' },
+              {
+                text: t('group.kickMember'),
+                role: 'destructive',
+                handler: () => {
+                  if (actionMember) handleKick(actionMember.userId);
+                },
+              },
+            ]}
+          />
+          <IonLoading isOpen={kickMember.isPending} message={t('group.kickMember')} />
         </div>
       </IonContent>
     </IonPage>
