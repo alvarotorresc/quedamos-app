@@ -249,6 +249,14 @@ export class GroupsService {
     });
   }
 
+  async findByInviteCode(code: string): Promise<boolean> {
+    const group = await this.prisma.group.findUnique({
+      where: { inviteCode: code },
+      select: { id: true },
+    });
+    return !!group;
+  }
+
   async getInviteInfo(groupId: string, userId: string) {
     // Verify membership first
     await this.findById(groupId, userId);
@@ -261,7 +269,7 @@ export class GroupsService {
 
     return {
       inviteCode: group.inviteCode,
-      inviteUrl: `${process.env.APP_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${group.inviteCode}`,
+      inviteUrl: `${process.env.FRONTEND_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${group.inviteCode}`,
     };
   }
 
@@ -482,7 +490,7 @@ export class GroupsService {
 
     return {
       inviteCode: newCode,
-      inviteUrl: `${process.env.APP_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${newCode}`,
+      inviteUrl: `${process.env.FRONTEND_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${newCode}`,
     };
   }
 }

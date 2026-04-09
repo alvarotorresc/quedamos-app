@@ -92,7 +92,7 @@ export function useKickMember(groupId: string) {
   return useMutation({
     mutationFn: (userId: string) => groupsService.kickMember(groupId, userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groups', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
       broadcastSync(groupId, 'groups');
     },
   });

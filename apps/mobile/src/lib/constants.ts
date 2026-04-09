@@ -25,14 +25,22 @@ export const MEMBER_GLOWS = [
   'rgba(251, 113, 133, 0.3)',
 ] as const;
 
-export function getMemberColor(index: number): string {
-  return MEMBER_COLORS[index % MEMBER_COLORS.length];
+function hashUserId(userId: string): number {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash + userId.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash);
 }
 
-export function getMemberGradient(index: number): string {
-  return MEMBER_GRADIENTS[index % MEMBER_GRADIENTS.length];
+export function getMemberColorByUserId(userId: string): string {
+  return MEMBER_COLORS[hashUserId(userId) % MEMBER_COLORS.length];
 }
 
-export function getMemberGlow(index: number): string {
-  return MEMBER_GLOWS[index % MEMBER_GLOWS.length];
+export function getMemberGradientByUserId(userId: string): string {
+  return MEMBER_GRADIENTS[hashUserId(userId) % MEMBER_GRADIENTS.length];
+}
+
+export function getMemberGlowByUserId(userId: string): string {
+  return MEMBER_GLOWS[hashUserId(userId) % MEMBER_GLOWS.length];
 }

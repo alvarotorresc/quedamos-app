@@ -33,7 +33,7 @@ import { EditProposalModal } from '../components/EditProposalModal';
 import { ConvertProposalModal } from '../components/ConvertProposalModal';
 import type { Event } from '../services/events';
 import type { Proposal } from '../services/proposals';
-import { MEMBER_COLORS } from '../lib/constants';
+import { getMemberColorByUserId } from '../lib/constants';
 
 export default function PlansPage() {
   useScreenView('Plans');
@@ -125,8 +125,8 @@ export default function PlansPage() {
   // Member color map (userId -> color)
   const memberColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    members.forEach((m, i) => {
-      map.set(m.userId, MEMBER_COLORS[i % MEMBER_COLORS.length]);
+    members.forEach((m) => {
+      map.set(m.userId, getMemberColorByUserId(m.userId));
     });
     return map;
   }, [members]);

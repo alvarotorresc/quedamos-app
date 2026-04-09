@@ -97,6 +97,10 @@ interface MockPrismaModels {
     create: jest.Mock;
     delete: jest.Mock;
   }>;
+  notificationLog: MockModel<{
+    findMany: jest.Mock;
+    create: jest.Mock;
+  }>;
 }
 
 export interface MockPrisma extends MockPrismaModels {
@@ -199,6 +203,10 @@ export function createMockPrisma(): MockPrisma {
       create: jest.fn(),
       delete: jest.fn(),
     },
+    notificationLog: {
+      findMany: jest.fn(),
+      create: jest.fn(),
+    },
   };
   return {
     ...prisma,
@@ -217,6 +225,8 @@ export function createMockNotificationsService() {
     getPreferences: jest.fn(),
     updatePreference: jest.fn(),
     onModuleInit: jest.fn(),
+    sendTestNotification: jest.fn().mockResolvedValue({ sent: 1 }),
+    getDebugInfo: jest.fn().mockResolvedValue({ tokens: [], preferences: [], recentLogs: [] }),
   };
 }
 

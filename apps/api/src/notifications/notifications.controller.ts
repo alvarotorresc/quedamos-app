@@ -7,6 +7,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { RegisterTokenDto } from './dto/register-token.dto';
 import { UnregisterTokenDto } from './dto/unregister-token.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
+import { SendTestNotificationDto } from './dto/send-test-notification.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -34,5 +35,16 @@ export class NotificationsController {
   @Put('preferences')
   updatePreference(@CurrentUser() user: { id: string }, @Body() dto: UpdatePreferenceDto) {
     return this.notificationsService.updatePreference(user.id, dto);
+  }
+
+  @Post('test')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  sendTestNotification(@CurrentUser() user: { id: string }, @Body() dto: SendTestNotificationDto) {
+    return this.notificationsService.sendTestNotification(user.id, dto);
+  }
+
+  @Get('debug')
+  getDebugInfo(@CurrentUser() user: { id: string }) {
+    return this.notificationsService.getDebugInfo(user.id);
   }
 }

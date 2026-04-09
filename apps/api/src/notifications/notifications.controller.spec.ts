@@ -8,6 +8,8 @@ const mockNotificationsService = {
   unregisterToken: jest.fn(),
   getPreferences: jest.fn(),
   updatePreference: jest.fn(),
+  sendTestNotification: jest.fn(),
+  getDebugInfo: jest.fn(),
 };
 
 const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -115,6 +117,44 @@ describe('NotificationsController', () => {
       await controller.updatePreference({ id: 'user-1' }, dto);
 
       expect(mockNotificationsService.updatePreference).toHaveBeenCalledWith('user-1', dto);
+    });
+  });
+
+  describe('sendTestNotification', () => {
+    it('should call notificationsService.sendTestNotification with userId and dto', async () => {
+      const dto = { title: 'Test', body: 'Hello' };
+      mockNotificationsService.sendTestNotification.mockResolvedValue({ sent: 1 });
+
+      const result = await controller.sendTestNotification({ id: 'user-1' }, dto);
+
+      expect(result).toEqual({ sent: 1 });
+      expect(mockNotificationsService.sendTestNotification).toHaveBeenCalledWith('user-1', dto);
+      expect(mockNotificationsService.sendTestNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it('should work with empty dto (defaults)', async () => {
+      mockNotificationsService.sendTestNotification.mockResolvedValue({ sent: 1 });
+
+      await controller.sendTestNotification({ id: 'user-1' }, {});
+
+      expect(mockNotificationsService.sendTestNotification).toHaveBeenCalledWith('user-1', {});
+    });
+  });
+
+  describe('getDebugInfo', () => {
+    it('should call notificationsService.getDebugInfo with userId', async () => {
+      const debugInfo = {
+        tokens: [{ id: 'pt-1', token: 'tok', platform: 'android', createdAt: new Date() }],
+        preferences: [{ type: 'new_event', enabled: true }],
+        recentLogs: [],
+      };
+      mockNotificationsService.getDebugInfo.mockResolvedValue(debugInfo);
+
+      const result = await controller.getDebugInfo({ id: 'user-1' });
+
+      expect(result).toEqual(debugInfo);
+      expect(mockNotificationsService.getDebugInfo).toHaveBeenCalledWith('user-1');
+      expect(mockNotificationsService.getDebugInfo).toHaveBeenCalledTimes(1);
     });
   });
 });
