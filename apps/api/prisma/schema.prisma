@@ -30,6 +30,7 @@ model User {
   eventResponses          EventAttendee[]
   pushTokens              PushToken[]
   notificationPreferences NotificationPreference[]
+  notificationLogs        NotificationLog[]
   createdProposals        PlanProposal[]           @relation("CreatedProposals")
   proposalVotes           PlanVote[]
 
@@ -155,6 +156,25 @@ model NotificationPreference {
 
   @@id([userId, type])
   @@map("notification_preferences")
+}
+
+model NotificationLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  type        String?  // notification type (e.g. 'new_event', 'event_reminder')
+  title       String
+  body        String
+  data        Json?    @db.JsonB
+  tokenCount  Int      @map("token_count")
+  sentCount   Int      @map("sent_count")
+  failedCount Int      @map("failed_count")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notification_logs")
 }
 
 model GroupCity {

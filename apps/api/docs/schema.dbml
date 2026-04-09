@@ -16,6 +16,7 @@ Table users {
   eventResponses event_attendees [not null]
   pushTokens push_tokens [not null]
   notificationPreferences notification_preferences [not null]
+  notificationLogs notification_logs [not null]
   createdProposals plan_proposals [not null]
   proposalVotes plan_votes [not null]
 }
@@ -128,6 +129,20 @@ Table notification_preferences {
   }
 }
 
+Table notification_logs {
+  id String [pk]
+  userId String [not null]
+  type String
+  title String [not null]
+  body String [not null]
+  data Json
+  tokenCount Int [not null]
+  sentCount Int [not null]
+  failedCount Int [not null]
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+}
+
 Table group_cities {
   id String [pk]
   groupId String [not null]
@@ -191,6 +206,8 @@ Ref: event_attendees.userId > users.id [delete: Cascade]
 Ref: push_tokens.userId > users.id [delete: Cascade]
 
 Ref: notification_preferences.userId > users.id [delete: Cascade]
+
+Ref: notification_logs.userId > users.id [delete: Cascade]
 
 Ref: group_cities.groupId > groups.id [delete: Cascade]
 
