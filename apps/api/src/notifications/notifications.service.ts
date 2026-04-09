@@ -134,12 +134,58 @@ export class NotificationsService implements OnModuleInit {
 
     if (tokens.length === 0) return { sent: 0 };
 
-    return this.sendToTokens(
+    const result = await this.sendToTokens(
       tokens.map((t) => t.token),
       title,
       body,
       data,
     );
+
+    await this.logNotification(userId, title, body, data, notificationType, result);
+
+    return { sent: result.sent };
+  }
+
+  async sendTestNotification(
+    userId: string,
+    dto: { type?: NotificationType; title?: string; body?: string },
+  ): Promise<{ sent: number }> {
+    const title = dto.title ?? 'Test notification';
+    const body = dto.body ?? 'If you see this, notifications are working!';
+    const data: Record<string, string> = { type: 'test' };
+
+    const tokens = await this.prisma.pushToken.findMany({
+      where: { userId },
+    });
+
+    if (tokens.length === 0) return { sent: 0 };
+
+    const result = await this.sendToTokens(
+      tokens.map((t) => t.token),
+      title,
+      body,
+      data,
+    );
+
+    await this.logNotification(userId, title, body, data, dto.type, result);
+
+    return { sent: result.sent };
+  }
+
+  async getDebugInfo(userId: string) {
+    const [tokens, preferences, recentLogs] = await Promise.all([
+      this.prisma.pushToken.findMany({
+        where: { userId },
+      }),
+      this.getPreferences(userId),
+      this.prisma.notificationLog.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+      }),
+    ]);
+
+    return { tokens, preferences, recentLogs };
   }
 
   async sendToGroup(
@@ -234,12 +280,12 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
-  ): Promise<{ sent: number }> {
+  ): Promise<SendResult> {
     if (!this.firebaseInitialized) {
       this.logger.debug(
         `Would send "${title}" to ${tokens.length} devices (Firebase not initialized)`,
       );
-      return { sent: 0 };
+      return { sent: 0, failed: 0, tokenCount: tokens.length };
     }
 
     const message: admin.messaging.MulticastMessage = {
@@ -290,10 +336,46 @@ export class NotificationsService implements OnModuleInit {
       this.logger.debug(
         `Sent "${title}" — ${response.successCount} ok, ${response.failureCount} failed`,
       );
-      return { sent: response.successCount };
+      return {
+        sent: response.successCount,
+        failed: response.failureCount,
+        tokenCount: tokens.length,
+      };
     } catch (error) {
       this.logger.error('FCM multicast error', error);
-      return { sent: 0 };
+      return { sent: 0, failed: tokens.length, tokenCount: tokens.length };
     }
   }
+
+  private async logNotification(
+    userId: string,
+    title: string,
+    body: string,
+    data: Record<string, string> | undefined,
+    notificationType: NotificationType | undefined,
+    result: SendResult,
+  ): Promise<void> {
+    try {
+      await this.prisma.notificationLog.create({
+        data: {
+          userId,
+          type: notificationType ?? null,
+          title,
+          body,
+          data: data ?? undefined,
+          tokenCount: result.tokenCount,
+          sentCount: result.sent,
+          failedCount: result.failed,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to create notification log', error);
+    }
+  }
+}
+
+interface SendResult {
+  sent: number;
+  failed: number;
+  tokenCount: number;
 }
