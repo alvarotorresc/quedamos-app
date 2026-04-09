@@ -11,7 +11,7 @@ import { WeatherBadge } from './WeatherWidget';
 import { LocationSearch } from './LocationSearch';
 import { formatDateKey } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
-import { MEMBER_COLORS } from '../lib/constants';
+import { getMemberColorByUserId } from '../lib/constants';
 
 export interface EventPrefill {
   date: string;
@@ -365,9 +365,9 @@ export function CreateEventModal({
                     {t('plans.create.allMembersDefault')}
                   </p>
                 )}
-                {otherMembers.map((m, i) => {
+                {otherMembers.map((m) => {
                   const isSelected = selectedMemberIds.has(m.userId);
-                  const color = MEMBER_COLORS[i % MEMBER_COLORS.length];
+                  const color = getMemberColorByUserId(m.userId);
                   return (
                     <button
                       key={m.userId}
@@ -393,8 +393,7 @@ export function CreateEventModal({
               <div className="flex gap-1 flex-wrap">
                 {[...selectedMemberIds].map((id) => {
                   const m = members.find((mem) => mem.userId === id);
-                  const idx = members.findIndex((mem) => mem.userId === id);
-                  const color = MEMBER_COLORS[idx % MEMBER_COLORS.length];
+                  const color = getMemberColorByUserId(id);
                   return (
                     <div
                       key={id}
