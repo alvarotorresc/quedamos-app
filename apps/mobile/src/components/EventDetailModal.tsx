@@ -74,10 +74,11 @@ export function EventDetailModal({
           </h3>
           <button
             onClick={() => downloadICS(event)}
-            className="p-1 rounded-md border-none bg-transparent"
+            className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-white/5 transition-colors"
             title={t('calendar.eventDetail.download')}
+            aria-label={t('calendar.eventDetail.download')}
           >
-            <HiOutlineArrowDownTray className="w-4 h-4 text-text-muted" />
+            <HiOutlineArrowDownTray className="w-5 h-5 text-text-muted" />
           </button>
           <Badge color={STATUS_COLORS[event.status]}>{t(`plans.status.${event.status}`)}</Badge>
         </div>
