@@ -10,12 +10,14 @@ import {
   HiOutlineClock,
   HiOutlinePencil,
   HiOutlineVideoCamera,
+  HiOutlineArrowDownTray,
 } from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
 import { useAuthStore } from '../stores/auth';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
 import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
+import { downloadICS } from '../lib/ics-utils';
 import { WeatherBadge, getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
 import type { Event } from '../services/events';
 import type { WeatherData } from '../services/weather';
@@ -109,12 +111,21 @@ export function EventCard({
           {event.title}
           {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
         </h4>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => downloadICS(event)}
+            className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-white/5 transition-colors"
+            title={t('calendar.eventDetail.download')}
+            aria-label={t('calendar.eventDetail.download')}
+          >
+            <HiOutlineArrowDownTray className="w-4 h-4 text-text-muted" />
+          </button>
           {isCreator && onEdit && (
             <button
               onClick={() => onEdit(event)}
-              className="p-1 rounded-md border-none bg-transparent"
+              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-white/5 transition-colors"
               title={t('plans.editButton')}
+              aria-label={t('plans.editButton')}
             >
               <HiOutlinePencil className="w-4 h-4 text-text-muted" />
             </button>
