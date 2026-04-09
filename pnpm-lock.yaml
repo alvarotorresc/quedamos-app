@@ -185,6 +185,9 @@ importers:
       '@capacitor/core':
         specifier: ^7.0.1
         version: 7.6.1
+      '@capacitor/filesystem':
+        specifier: ^8.1.2
+        version: 8.1.2(@capacitor/core@7.6.1)
       '@capacitor/haptics':
         specifier: ^7.0.0
         version: 7.0.4(@capacitor/core@7.6.1)
@@ -1452,6 +1455,14 @@ packages:
         integrity: sha512-nsNouCMxgYenyemy20sZwZYMtFi93LSZVWm2KqHTYIPIDgwx24+PzwHIdRQBZdK7hpvD5jQEhWuo/QyLLnAyBQ==,
       }
 
+  '@capacitor/filesystem@8.1.2':
+    resolution:
+      {
+        integrity: sha512-doaaMfGoFR2hWU6aV6u83I+5ZsGyJVq+Gz4r9lMpJzUKMm1eMu0hLnFdV1aXZlU9FlK/RndFrVD8oRZfNOqWgQ==,
+      }
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
   '@capacitor/haptics@7.0.4':
     resolution:
       {
@@ -1491,6 +1502,12 @@ packages:
       }
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
+
+  '@capacitor/synapse@1.0.4':
+    resolution:
+      {
+        integrity: sha512-/C1FUo8/OkKuAT4nCIu/34ny9siNHr9qtFezu4kxm6GY1wNFxrCFWjfYx5C1tUhVGz3fxBABegupkpjXvjCHrw==,
+      }
 
   '@colors/colors@1.5.0':
     resolution:
@@ -13201,6 +13218,11 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
+  '@capacitor/filesystem@8.1.2(@capacitor/core@7.6.1)':
+    dependencies:
+      '@capacitor/core': 7.6.1
+      '@capacitor/synapse': 1.0.4
+
   '@capacitor/haptics@7.0.4(@capacitor/core@7.6.1)':
     dependencies:
       '@capacitor/core': 7.6.1
@@ -13220,6 +13242,8 @@ snapshots:
   '@capacitor/status-bar@7.0.6(@capacitor/core@7.6.1)':
     dependencies:
       '@capacitor/core': 7.6.1
+
+  '@capacitor/synapse@1.0.4': {}
 
   '@colors/colors@1.5.0':
     optional: true

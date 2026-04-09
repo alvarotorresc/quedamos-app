@@ -226,6 +226,7 @@
     "regenerateCode": "Regenerate code",
     "regenerateConfirm": "Regenerate invite code? The current code will stop working.",
     "regenerating": "Regenerating...",
+    "dangerZone": "Danger zone",
     "leaveGroup": "Leave group",
     "leaveConfirm": "Are you sure you want to leave this group?",
     "leaving": "Leaving...",

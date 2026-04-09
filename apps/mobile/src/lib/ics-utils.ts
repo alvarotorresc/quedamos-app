@@ -1,4 +1,5 @@
 import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import type { Event } from '../services/events';
 
@@ -105,18 +106,17 @@ export async function downloadICS(event: Event): Promise<void> {
   const filename = `quedamos-${slugify(event.title)}.ics`;
 
   if (Capacitor.isNativePlatform()) {
-    // On native, use Share to let the user choose where to save/open
-    const blob = new Blob([icsContent], { type: 'text/calendar' });
-    const reader = new FileReader();
-
-    const dataUrl = await new Promise<string>((resolve) => {
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
+    // Write to cache directory first — Share requires a real file URI, not a data URL
+    const base64Content = btoa(unescape(encodeURIComponent(icsContent)));
+    const result = await Filesystem.writeFile({
+      path: filename,
+      data: base64Content,
+      directory: Directory.Cache,
     });
 
     await Share.share({
       title: event.title,
-      url: dataUrl,
+      url: result.uri,
       dialogTitle: filename,
     });
   } else {

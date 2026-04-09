@@ -1,6 +1,28 @@
-import { describe, it, expect } from 'vitest';
-import { generateICS } from './ics-utils';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { generateICS, downloadICS } from './ics-utils';
 import type { Event } from '../services/events';
+
+// Mock Capacitor modules
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    isNativePlatform: vi.fn(() => false),
+  },
+}));
+
+vi.mock('@capacitor/filesystem', () => ({
+  Filesystem: {
+    writeFile: vi.fn(() => Promise.resolve({ uri: 'file:///cache/quedamos-test.ics' })),
+  },
+  Directory: {
+    Cache: 'CACHE',
+  },
+}));
+
+vi.mock('@capacitor/share', () => ({
+  Share: {
+    share: vi.fn(() => Promise.resolve()),
+  },
+}));
 
 function createEvent(overrides: Partial<Event> = {}): Event {
   return {
@@ -129,5 +151,80 @@ describe('generateICS', () => {
 
     expect(ics).toContain('DTSTART;TZID=Europe/Madrid:20260415T233000');
     expect(ics).toContain('DTEND;TZID=Europe/Madrid:20260415T003000');
+  });
+});
+
+describe('downloadICS', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should create blob link and trigger click on web', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/fake');
+
+    const clickSpy = vi.fn();
+    const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue({
+      href: '',
+      download: '',
+      click: clickSpy,
+    } as unknown as HTMLAnchorElement);
+    const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
+    const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+    const revokeUrlSpy = vi.fn();
+    globalThis.URL.revokeObjectURL = revokeUrlSpy;
+
+    await downloadICS(createEvent({ time: '18:00' }));
+
+    expect(createElementSpy).toHaveBeenCalledWith('a');
+    expect(clickSpy).toHaveBeenCalled();
+    expect(appendSpy).toHaveBeenCalled();
+    expect(removeSpy).toHaveBeenCalled();
+    expect(revokeUrlSpy).toHaveBeenCalled();
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
+  it('should write file and share on native', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+    const { Filesystem } = await import('@capacitor/filesystem');
+    const { Share } = await import('@capacitor/share');
+
+    await downloadICS(createEvent({ title: 'Test Event', time: '18:00' }));
+
+    expect(Filesystem.writeFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: 'quedamos-test-event.ics',
+        directory: 'CACHE',
+      }),
+    );
+
+    expect(Share.share).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Test Event',
+        url: 'file:///cache/quedamos-test.ics',
+      }),
+    );
+  });
+
+  it('should slugify filename correctly', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+    const { Filesystem } = await import('@capacitor/filesystem');
+
+    await downloadICS(createEvent({ title: 'Cena con amigos!!!' }));
+
+    expect(Filesystem.writeFile).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: 'quedamos-cena-con-amigos.ics',
+      }),
+    );
   });
 });

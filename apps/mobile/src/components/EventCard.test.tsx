@@ -33,6 +33,12 @@ vi.mock('react-icons/hi2', () => ({
   HiOutlineClock: () => <span data-testid="icon-clock" />,
   HiOutlinePencil: () => <span data-testid="icon-pencil" />,
   HiOutlineVideoCamera: () => <span data-testid="icon-video" />,
+  HiOutlineArrowDownTray: () => <span data-testid="icon-download" />,
+}));
+
+// Mock ics-utils
+vi.mock('../lib/ics-utils', () => ({
+  downloadICS: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock WeatherWidget

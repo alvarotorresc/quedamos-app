@@ -237,7 +237,8 @@ ion-action-sheet .action-sheet-button {
 }
 
 ion-action-sheet .action-sheet-button.ion-color-danger,
-ion-action-sheet .action-sheet-button[role='destructive'] {
+ion-action-sheet .action-sheet-button[role='destructive'],
+ion-action-sheet .action-sheet-destructive .action-sheet-button-inner {
   color: #fb7185 !important;
 }
 
@@ -254,7 +255,8 @@ ion-action-sheet .action-sheet-cancel .action-sheet-button-inner {
 }
 
 .light ion-action-sheet .action-sheet-button.ion-color-danger,
-.light ion-action-sheet .action-sheet-button[role='destructive'] {
+.light ion-action-sheet .action-sheet-button[role='destructive'],
+.light ion-action-sheet .action-sheet-destructive .action-sheet-button-inner {
   color: #e11d48 !important;
 }
 
