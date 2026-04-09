@@ -28,7 +28,7 @@ import { EventDetailModal } from '../components/EventDetailModal';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
-import { MEMBER_COLORS } from '../lib/constants';
+import { getMemberColorByUserId } from '../lib/constants';
 
 type CalView = 'week' | 'month' | 'list';
 
@@ -84,8 +84,8 @@ export default function CalendarPage() {
   // Member color map (userId -> color)
   const memberColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    members.forEach((m, i) => {
-      map.set(m.userId, MEMBER_COLORS[i % MEMBER_COLORS.length]);
+    members.forEach((m) => {
+      map.set(m.userId, getMemberColorByUserId(m.userId));
     });
     return map;
   }, [members]);

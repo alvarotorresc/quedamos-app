@@ -12,7 +12,7 @@ import { Avatar } from '../ui/Avatar';
 import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui';
-import { MEMBER_COLORS } from '../lib/constants';
+import { getMemberColorByUserId } from '../lib/constants';
 
 type FormMode = 'create' | 'join' | null;
 
@@ -130,9 +130,9 @@ export default function GroupPage() {
               {hasGroups && (
                 <div className="flex flex-col gap-2 mb-6">
                   {groups.map((group) => {
-                    const memberAvatars = group.members.map((m, i) => ({
+                    const memberAvatars = group.members.map((m) => ({
                       name: m.user.name,
-                      color: MEMBER_COLORS[i % MEMBER_COLORS.length],
+                      color: getMemberColorByUserId(m.userId),
                     }));
 
                     return (
