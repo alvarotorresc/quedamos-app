@@ -35,7 +35,7 @@ import { useGroupWeather } from '../hooks/useWeather';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
 import { searchCities, type GeocodingResult } from '../services/weather';
-import { MEMBER_COLORS } from '../lib/constants';
+import { getMemberColorByUserId } from '../lib/constants';
 
 function formatCode(code: string): string {
   return code.slice(0, 4) + '-' + code.slice(4);
@@ -232,7 +232,7 @@ export default function GroupDetailPage() {
                   <div className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3">
                     <Avatar
                       name={member.user.name}
-                      color={MEMBER_COLORS[i % MEMBER_COLORS.length]}
+                      color={getMemberColorByUserId(member.userId)}
                       size={36}
                     />
                     <div className="flex-1 min-w-0 flex items-center gap-2">
