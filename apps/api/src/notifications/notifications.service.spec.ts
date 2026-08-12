@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -60,6 +61,50 @@ describe('NotificationsService', () => {
       svc.onModuleInit();
 
       expect(admin.initializeApp).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to the raw PEM when the key is not base64', () => {
+      const rawPemWithEscapes =
+        '-----BEGIN PRIVATE KEY-----\\nMIIBfake\\n-----END PRIVATE KEY-----\\n';
+      const config = createMockConfigService({ FIREBASE_PRIVATE_KEY: rawPemWithEscapes });
+      const svc = new NotificationsService(
+        prisma as unknown as PrismaService,
+        config as unknown as ConfigService,
+      );
+
+      svc.onModuleInit();
+
+      expect(admin.credential.cert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          privateKey: '-----BEGIN PRIVATE KEY-----\nMIIBfake\n-----END PRIVATE KEY-----\n',
+        }),
+      );
+      expect(admin.initializeApp).toHaveBeenCalledTimes(1);
+      expect(svc.isFirebaseInitialized()).toBe(true);
+    });
+
+    it('should log an error and stay uninitialized when the key is not a valid PEM', () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+      const config = createMockConfigService({
+        FIREBASE_PRIVATE_KEY: Buffer.from('not-a-key').toString('base64'),
+      });
+      const svc = new NotificationsService(
+        prisma as unknown as PrismaService,
+        config as unknown as ConfigService,
+      );
+
+      svc.onModuleInit();
+
+      expect(admin.initializeApp).not.toHaveBeenCalled();
+      expect(svc.isFirebaseInitialized()).toBe(false);
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('FIREBASE_PRIVATE_KEY'));
+      errorSpy.mockRestore();
+    });
+
+    it('should report initialized after a successful init with a base64 key', () => {
+      service.onModuleInit();
+
+      expect(service.isFirebaseInitialized()).toBe(true);
     });
   });
 
