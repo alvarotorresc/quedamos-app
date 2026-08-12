@@ -225,6 +225,7 @@ export function createMockNotificationsService() {
     getPreferences: jest.fn(),
     updatePreference: jest.fn(),
     onModuleInit: jest.fn(),
+    isFirebaseInitialized: jest.fn().mockReturnValue(false),
     sendTestNotification: jest.fn().mockResolvedValue({ sent: 1 }),
     getDebugInfo: jest.fn().mockResolvedValue({ tokens: [], preferences: [], recentLogs: [] }),
   };
