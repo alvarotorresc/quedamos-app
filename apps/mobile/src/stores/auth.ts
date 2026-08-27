@@ -19,6 +19,32 @@ interface User {
   timeSlots?: TimeSlotPreferences;
 }
 
+export function mapSessionUser(sessionUser: {
+  id: string;
+  email?: string | null;
+  user_metadata?: { name?: string; avatarEmoji?: string; timeSlots?: unknown };
+}): User {
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email ?? '',
+    name: sessionUser.user_metadata?.name ?? i18n.t('auth.defaultName'),
+    avatarEmoji: sessionUser.user_metadata?.avatarEmoji ?? '😊',
+    timeSlots: sanitizeTimeSlots(sessionUser.user_metadata?.timeSlots),
+  };
+}
+
+export function usersEqual(a: User | null, b: User | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return (
+    a.id === b.id &&
+    a.email === b.email &&
+    a.name === b.name &&
+    a.avatarEmoji === b.avatarEmoji &&
+    JSON.stringify(a.timeSlots ?? null) === JSON.stringify(b.timeSlots ?? null)
+  );
+}
+
 interface AuthState {
   user: User | null;
   isLoading: boolean;
@@ -75,16 +101,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } = await supabase.auth.getSession();
 
     if (session?.user) {
-      set({
-        user: {
-          id: session.user.id,
-          email: session.user.email ?? '',
-          name: session.user.user_metadata?.name ?? i18n.t('auth.defaultName'),
-          avatarEmoji: session.user.user_metadata?.avatarEmoji ?? '😊',
-          timeSlots: sanitizeTimeSlots(session.user.user_metadata?.timeSlots),
-        },
-        isLoading: false,
-      });
+      set({ user: mapSessionUser(session.user), isLoading: false });
     } else {
       set({ user: null, isLoading: false });
     }
@@ -93,19 +110,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       authSubscription.unsubscribe();
     }
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        set({
-          user: {
-            id: session.user.id,
-            email: session.user.email ?? '',
-            name: session.user.user_metadata?.name ?? i18n.t('auth.defaultName'),
-            avatarEmoji: session.user.user_metadata?.avatarEmoji ?? '😊',
-            timeSlots: sanitizeTimeSlots(session.user.user_metadata?.timeSlots),
-          },
-        });
-      } else {
-        set({ user: null });
-      }
+      const next = session?.user ? mapSessionUser(session.user) : null;
+      set((state) => (usersEqual(state.user, next) ? state : { user: next }));
     });
     authSubscription = data.subscription;
   },

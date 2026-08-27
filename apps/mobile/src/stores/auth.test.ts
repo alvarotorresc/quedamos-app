@@ -204,6 +204,35 @@ describe('useAuthStore', () => {
     });
   });
 
+  it('keeps the same user object reference across repeated auth events', async () => {
+    let captured: ((event: string, session: unknown) => void) | null = null;
+    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((cb) => {
+      captured = cb as never;
+      return { data: { subscription: { unsubscribe: vi.fn() } } } as never;
+    });
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: null },
+      error: null,
+    } as never);
+
+    await useAuthStore.getState().initialize();
+
+    const session = {
+      user: {
+        id: 'user-1',
+        email: 'a@b.com',
+        user_metadata: { name: 'A', avatarEmoji: '😊' },
+      },
+    };
+    captured!('TOKEN_REFRESHED', session);
+    const first = useAuthStore.getState().user;
+    captured!('TOKEN_REFRESHED', session);
+    const second = useAuthStore.getState().user;
+
+    expect(first).not.toBeNull();
+    expect(Object.is(first, second)).toBe(true);
+  });
+
   describe('initialize with timeSlots', () => {
     it('should read valid timeSlots from user_metadata', async () => {
       const slots = {
