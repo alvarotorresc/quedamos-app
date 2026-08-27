@@ -405,6 +405,39 @@ describe('EventsService', () => {
       expect(notifications.sendToGroup).not.toHaveBeenCalled();
       expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
     });
+
+    it('should still send event_confirmed when converting a proposal with skipNewEventNotification', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'From Proposal', date: '2026-12-01' },
+        { 'user-2': 'confirmed' },
+        { skipNewEventNotification: true },
+      );
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Quedada confirmada',
+        expect.stringContaining('Test Event'),
+        undefined,
+        expect.objectContaining({ type: 'event_confirmed' }),
+        'event_confirmed',
+        'confirmed',
+      );
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('respond', () => {
