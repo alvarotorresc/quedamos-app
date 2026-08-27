@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { IonPage, IonContent, IonSpinner } from '@ionic/react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,8 @@ export default function JoinGroupPage() {
   const [status, setStatus] = useState<'joining' | 'success' | 'error'>('joining');
   const [errorMessage, setErrorMessage] = useState('');
 
+  const joinedCodeRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!user) {
       history.replace(`/login?redirect=/join/${code}`);
@@ -32,11 +34,17 @@ export default function JoinGroupPage() {
       return;
     }
 
+    // Guard against duplicate joins: re-runs for the same code (StrictMode
+    // double-invoke, or any lingering user re-render) must not fire twice.
+    if (joinedCodeRef.current === cleanCode) return;
+    joinedCodeRef.current = cleanCode;
+
+    let navTimeout: ReturnType<typeof setTimeout> | undefined;
     joinGroup
       .mutateAsync(cleanCode)
       .then((group) => {
         setStatus('success');
-        setTimeout(() => {
+        navTimeout = setTimeout(() => {
           history.replace(`/tabs/group/${group.id}`);
         }, 1000);
       })
@@ -49,6 +57,10 @@ export default function JoinGroupPage() {
           setErrorMessage(t('joinGroup.error'));
         }
       });
+
+    return () => {
+      if (navTimeout) clearTimeout(navTimeout);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, code]);
 
