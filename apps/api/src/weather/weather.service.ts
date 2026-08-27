@@ -10,7 +10,7 @@ export interface WeatherData {
 }
 
 interface CacheEntry {
-  data: WeatherData[];
+  data: Omit<WeatherData, 'city'>[];
   timestamp: number;
 }
 
@@ -67,7 +67,9 @@ export class WeatherService {
     const cached = this.cache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached.data;
+      // The cache never stores the city name: it is stamped per caller so a
+      // request with an empty/different name cannot poison other callers.
+      return cached.data.map((d) => ({ ...d, city: cityName }));
     }
 
     const url = new URL('https://api.open-meteo.com/v1/forecast');
@@ -85,8 +87,7 @@ export class WeatherService {
     const json = await response.json();
     const daily = json.daily;
 
-    const data: WeatherData[] = daily.time.map((date: string, i: number) => ({
-      city: cityName,
+    const data: Omit<WeatherData, 'city'>[] = daily.time.map((date: string, i: number) => ({
       date,
       tempMax: daily.temperature_2m_max[i],
       tempMin: daily.temperature_2m_min[i],
@@ -101,7 +102,7 @@ export class WeatherService {
       if (firstKey) this.cache.delete(firstKey);
     }
 
-    return data;
+    return data.map((d) => ({ ...d, city: cityName }));
   }
 
   async getForDate(

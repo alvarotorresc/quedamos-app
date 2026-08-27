@@ -46,6 +46,21 @@ describe('WeatherService', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
+  it('should not serve a cached city name to a caller with a different name', async () => {
+    await service.getForecast('Madrid', 40.42, -3.7);
+    const result = await service.getForecast('', 40.42, -3.7);
+
+    expect(mockFetch).toHaveBeenCalledTimes(1); // still served from cache
+    expect(result[0].city).toBe(''); // but stamped with the caller's name
+  });
+
+  it('should stamp the requested city name on cached data', async () => {
+    await service.getForecast('', 40.42, -3.7);
+    const result = await service.getForecast('Madrid', 40.42, -3.7);
+
+    expect(result[0].city).toBe('Madrid');
+  });
+
   it('should return weather for specific date', async () => {
     const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-03-02');
 
