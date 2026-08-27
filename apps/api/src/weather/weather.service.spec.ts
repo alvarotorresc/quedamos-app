@@ -123,4 +123,22 @@ describe('WeatherService', () => {
       'Open-Meteo API error: 500',
     );
   });
+
+  it('should pass an abort signal with a timeout to fetch', async () => {
+    await service.getForecast('Madrid', 40.42, -3.7);
+
+    const options = mockFetch.mock.calls[0][1] as RequestInit | undefined;
+    expect(options?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('should translate fetch timeouts into a readable error', async () => {
+    const timeoutError = Object.assign(new Error('The operation was aborted'), {
+      name: 'TimeoutError',
+    });
+    mockFetch.mockRejectedValue(timeoutError);
+
+    await expect(service.getForecast('Madrid', 40.42, -3.7)).rejects.toThrow(
+      'Open-Meteo request timed out',
+    );
+  });
 });

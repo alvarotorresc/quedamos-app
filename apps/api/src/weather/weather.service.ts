@@ -16,6 +16,7 @@ interface CacheEntry {
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_FORECAST_DAYS = 16; // Open-Meteo forecast_days upper bound
+const REQUEST_TIMEOUT_MS = 10_000;
 
 const WEATHER_DESCRIPTIONS: Record<number, string> = {
   0: 'Clear sky',
@@ -80,7 +81,15 @@ export class WeatherService {
     url.searchParams.set('timezone', 'auto');
     url.searchParams.set('forecast_days', String(days));
 
-    const response = await this.fetchFn(url);
+    let response: Response;
+    try {
+      response = await this.fetchFn(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+    } catch (error) {
+      if ((error as { name?: string } | null)?.name === 'TimeoutError') {
+        throw new Error('Open-Meteo request timed out');
+      }
+      throw error;
+    }
     if (!response.ok) {
       throw new Error(`Open-Meteo API error: ${response.status}`);
     }
