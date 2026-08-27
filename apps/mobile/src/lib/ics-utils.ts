@@ -1,6 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
+import { apiDateToKey } from './date-utils';
 import type { Event } from '../services/events';
 
 const TIMEZONE = 'Europe/Madrid';
@@ -35,7 +36,10 @@ function formatTimeICS(time: string): string {
 }
 
 export function generateICS(event: Event): string {
-  const dateStr = formatDateICS(event.date);
+  // API sends full ISO ("2026-04-15T00:00:00.000Z"); normalize to YYYY-MM-DD
+  // using the same helper the rest of the app uses (timezone-safe).
+  const dateOnly = apiDateToKey(event.date);
+  const dateStr = formatDateICS(dateOnly);
   const hasTime = !!event.time;
 
   let dtStart: string;
@@ -48,7 +52,7 @@ export function generateICS(event: Event): string {
     dtEnd = `DTEND;TZID=${TIMEZONE}:${dateStr}T${formatTimeICS(endTime)}`;
   } else {
     // All-day event: DTEND is the next day (exclusive)
-    const nextDay = new Date(event.date + 'T00:00:00');
+    const nextDay = new Date(dateOnly + 'T00:00:00');
     nextDay.setDate(nextDay.getDate() + 1);
     const nextDayStr = `${nextDay.getFullYear()}${padTwo(nextDay.getMonth() + 1)}${padTwo(nextDay.getDate())}`;
     dtStart = `DTSTART;VALUE=DATE:${dateStr}`;
