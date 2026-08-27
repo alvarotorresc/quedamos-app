@@ -385,6 +385,26 @@ describe('EventsService', () => {
 
       expect(result).toBeDefined();
     });
+
+    it('should not send new_event notification when skipNewEventNotification is set', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'From Proposal', date: '2026-12-01' },
+        undefined,
+        { skipNewEventNotification: true },
+      );
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
   });
 
   describe('respond', () => {

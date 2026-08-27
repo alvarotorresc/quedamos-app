@@ -215,7 +215,9 @@ export class ProposalsService {
       attendeeStatusMap[vote.userId] = vote.vote === 'yes' ? 'confirmed' : 'declined';
     }
 
-    // Create event using EventsService (status map passed as internal param, not in DTO)
+    // Create event using EventsService (status map passed as internal param, not in DTO).
+    // skipNewEventNotification: the group already gets the more specific
+    // proposal_converted push below — avoid the duplicate new_event push.
     const event = await this.eventsService.create(
       groupId,
       userId,
@@ -230,6 +232,7 @@ export class ProposalsService {
         endTime: dto.endTime,
       },
       attendeeStatusMap,
+      { skipNewEventNotification: true },
     );
 
     // Mark proposal as converted

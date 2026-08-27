@@ -63,6 +63,7 @@ export class EventsService {
     userId: string,
     dto: CreateEventDto,
     internalStatusMap?: Record<string, 'confirmed' | 'declined'>,
+    options?: { skipNewEventNotification?: boolean },
   ) {
     await this.groupsService.findById(groupId, userId);
 
@@ -155,28 +156,30 @@ export class EventsService {
       }
     }
 
-    if (dto.attendeeIds && dto.attendeeIds.length > 0) {
-      this.notificationsService
-        .sendToEventAttendees(
-          event.id,
-          'Nueva quedada',
-          `${event.createdBy.name} ha creado "${event.title}"`,
-          userId,
-          { type: 'new_event', eventId: event.id, groupId },
-          'new_event',
-        )
-        .catch((err) => this.logger.error('Failed to send new_event notification', err));
-    } else {
-      this.notificationsService
-        .sendToGroup(
-          groupId,
-          'Nueva quedada',
-          `${event.createdBy.name} ha creado "${event.title}"`,
-          userId,
-          { type: 'new_event', eventId: event.id, groupId },
-          'new_event',
-        )
-        .catch((err) => this.logger.error('Failed to send new_event notification', err));
+    if (!options?.skipNewEventNotification) {
+      if (dto.attendeeIds && dto.attendeeIds.length > 0) {
+        this.notificationsService
+          .sendToEventAttendees(
+            event.id,
+            'Nueva quedada',
+            `${event.createdBy.name} ha creado "${event.title}"`,
+            userId,
+            { type: 'new_event', eventId: event.id, groupId },
+            'new_event',
+          )
+          .catch((err) => this.logger.error('Failed to send new_event notification', err));
+      } else {
+        this.notificationsService
+          .sendToGroup(
+            groupId,
+            'Nueva quedada',
+            `${event.createdBy.name} ha creado "${event.title}"`,
+            userId,
+            { type: 'new_event', eventId: event.id, groupId },
+            'new_event',
+          )
+          .catch((err) => this.logger.error('Failed to send new_event notification', err));
+      }
     }
 
     return event;

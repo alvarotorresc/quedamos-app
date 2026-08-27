@@ -295,6 +295,7 @@ describe('ProposalsService', () => {
           'user-2': 'confirmed',
           'user-3': 'declined',
         },
+        { skipNewEventNotification: true },
       );
     });
 
@@ -373,6 +374,32 @@ describe('ProposalsService', () => {
       await expect(
         service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-12-01' }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should skip the internal new_event push when converting (only proposal_converted)', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(eventsService.create).toHaveBeenCalledWith(
+        'group-1',
+        'user-1',
+        expect.any(Object),
+        expect.any(Object),
+        { skipNewEventNotification: true },
+      );
     });
   });
 
@@ -606,6 +633,7 @@ describe('ProposalsService', () => {
           meetingUrl: 'https://meet.google.com/abc',
         }),
         { 'user-1': 'confirmed' },
+        { skipNewEventNotification: true },
       );
     });
   });
