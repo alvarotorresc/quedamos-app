@@ -295,6 +295,7 @@ describe('ProposalsService', () => {
           'user-2': 'confirmed',
           'user-3': 'declined',
         },
+        { skipNewEventNotification: true },
       );
     });
 
@@ -349,6 +350,57 @@ describe('ProposalsService', () => {
         service.convert('group-1', 'proposal-1', 'user-2', { date: '2026-12-01' }),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('should reject convert when proposal is not open', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-12-01' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(eventsService.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject convert when proposal is closed', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal({ status: 'closed' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-12-01' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should skip the internal new_event push when converting (only proposal_converted)', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(eventsService.create).toHaveBeenCalledWith(
+        'group-1',
+        'user-1',
+        expect.any(Object),
+        expect.any(Object),
+        { skipNewEventNotification: true },
+      );
+    });
   });
 
   describe('close', () => {
@@ -383,6 +435,15 @@ describe('ProposalsService', () => {
       await expect(service.close('group-1', 'proposal-1', 'user-1')).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it('should reject close when proposal is not open', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal({ status: 'converted' }));
+
+      await expect(service.close('group-1', 'proposal-1', 'user-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(prisma.planProposal.update).not.toHaveBeenCalled();
     });
   });
 
@@ -572,6 +633,7 @@ describe('ProposalsService', () => {
           meetingUrl: 'https://meet.google.com/abc',
         }),
         { 'user-1': 'confirmed' },
+        { skipNewEventNotification: true },
       );
     });
   });

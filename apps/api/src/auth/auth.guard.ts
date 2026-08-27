@@ -14,8 +14,15 @@ export class AuthGuard implements CanActivate {
     }
 
     const token = authHeader.substring(7);
-    request.user = await this.authService.validateToken(token);
+    const user = await this.authService.validateToken(token);
 
+    // Defence in depth: validateToken must never return a falsy user, but if it
+    // ever does, fail with 401 instead of letting request.user = null through.
+    if (!user) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    request.user = user;
     return true;
   }
 }

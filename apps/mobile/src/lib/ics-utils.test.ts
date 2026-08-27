@@ -29,7 +29,7 @@ function createEvent(overrides: Partial<Event> = {}): Event {
     id: 'event-1',
     groupId: 'group-1',
     title: 'Cena en el centro',
-    date: '2026-04-15',
+    date: '2026-04-15T00:00:00.000Z',
     status: 'pending',
     isOnline: false,
     attendees: [],
@@ -151,6 +151,14 @@ describe('generateICS', () => {
 
     expect(ics).toContain('DTSTART;TZID=Europe/Madrid:20260415T233000');
     expect(ics).toContain('DTEND;TZID=Europe/Madrid:20260415T003000');
+  });
+
+  it('should also handle a plain YYYY-MM-DD date string', () => {
+    const ics = generateICS(createEvent({ date: '2026-04-15', time: '18:00' }));
+
+    expect(ics).toContain('DTSTART;TZID=Europe/Madrid:20260415T180000');
+    expect(ics).toContain('DTEND;TZID=Europe/Madrid:20260415T190000');
+    expect(ics).not.toContain('T00:00:00.000Z');
   });
 });
 

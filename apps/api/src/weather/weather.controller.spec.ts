@@ -120,6 +120,33 @@ describe('WeatherController', () => {
       expect(result).toBeNull();
     });
 
+    it('should resolve the real city name from the saved group cities', async () => {
+      prisma.groupCity.findFirst.mockResolvedValue({
+        id: 'city-1',
+        groupId: 'group-1',
+        name: 'Madrid',
+        lat: 40.42,
+        lon: -3.7,
+      });
+      mockWeatherService.getForDate.mockResolvedValue(createWeatherData());
+
+      await controller.getForecast(
+        'group-1',
+        { id: 'user-1' },
+        { date: '2026-03-15', lat: 40.42, lon: -3.7 },
+      );
+
+      expect(prisma.groupCity.findFirst).toHaveBeenCalledWith({
+        where: { groupId: 'group-1', lat: 40.42, lon: -3.7 },
+      });
+      expect(mockWeatherService.getForDate).toHaveBeenCalledWith(
+        'Madrid',
+        40.42,
+        -3.7,
+        '2026-03-15',
+      );
+    });
+
     it('should check group membership', async () => {
       mockWeatherService.getForDate.mockResolvedValue(createWeatherData());
 

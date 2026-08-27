@@ -225,6 +225,7 @@ export function createMockNotificationsService() {
     getPreferences: jest.fn(),
     updatePreference: jest.fn(),
     onModuleInit: jest.fn(),
+    isFirebaseInitialized: jest.fn().mockReturnValue(false),
     sendTestNotification: jest.fn().mockResolvedValue({ sent: 1 }),
     getDebugInfo: jest.fn().mockResolvedValue({ tokens: [], preferences: [], recentLogs: [] }),
   };
@@ -236,7 +237,9 @@ export function createMockConfigService(overrides: Record<string, string> = {}) 
     SUPABASE_JWT_SECRET: 'test-secret',
     FIREBASE_PROJECT_ID: 'test-project',
     FIREBASE_CLIENT_EMAIL: 'test@test.iam.gserviceaccount.com',
-    FIREBASE_PRIVATE_KEY: Buffer.from('test-key').toString('base64'),
+    FIREBASE_PRIVATE_KEY: Buffer.from(
+      '-----BEGIN PRIVATE KEY-----\nMIIBfake\n-----END PRIVATE KEY-----\n',
+    ).toString('base64'),
     ...overrides,
   };
   return {

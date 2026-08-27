@@ -106,6 +106,13 @@ export class AuthService {
       }
     }
 
+    if (!dbUser) {
+      // P2002 retry found nothing (user deleted concurrently) — reject cleanly
+      // instead of letting a null user reach request handlers as a 500.
+      this.logger.warn(`validateToken: user ${payload.sub} vanished after P2002 retry`);
+      throw new UnauthorizedException('User not found');
+    }
+
     return dbUser;
   }
 

@@ -29,19 +29,50 @@ export class NotificationsService implements OnModuleInit {
       return;
     }
 
+    const pem = this.resolvePrivateKey(privateKey);
+    if (!pem) {
+      this.logger.error(
+        'FIREBASE_PRIVATE_KEY is neither a base64-encoded PEM nor a raw PEM — push notifications disabled. ' +
+          'Provide the service account private_key base64-encoded (recommended) or as raw PEM.',
+      );
+      return;
+    }
+
     try {
       admin.initializeApp({
         credential: admin.credential.cert({
           projectId,
           clientEmail,
-          privateKey: Buffer.from(privateKey, 'base64').toString('utf-8'),
+          privateKey: pem,
         }),
       });
       this.firebaseInitialized = true;
       this.logger.log('Firebase Admin SDK initialized');
     } catch (error) {
-      this.logger.error('Failed to initialize Firebase Admin SDK', error);
+      this.logger.error(
+        'Failed to initialize Firebase Admin SDK — push notifications disabled',
+        error,
+      );
     }
+  }
+
+  private resolvePrivateKey(rawValue: string): string | null {
+    const decoded = Buffer.from(rawValue, 'base64').toString('utf-8');
+    if (decoded.startsWith('-----BEGIN')) {
+      return decoded;
+    }
+
+    const unescaped = rawValue.replace(/\\n/g, '\n');
+    if (unescaped.startsWith('-----BEGIN')) {
+      this.logger.warn('FIREBASE_PRIVATE_KEY is not base64 — falling back to raw PEM value');
+      return unescaped;
+    }
+
+    return null;
+  }
+
+  isFirebaseInitialized(): boolean {
+    return this.firebaseInitialized;
   }
 
   private static readonly MAX_TOKENS_PER_USER = 10;
@@ -167,7 +198,10 @@ export class NotificationsService implements OnModuleInit {
       data,
     );
 
-    await this.logNotification(userId, title, body, data, dto.type, result);
+    // Prefix the persisted type so test sends are distinguishable from real
+    // notifications in notification_logs / getDebugInfo.
+    const loggedType = dto.type ? `test:${dto.type}` : 'test';
+    await this.logNotification(userId, title, body, data, loggedType, result);
 
     return { sent: result.sent };
   }
@@ -352,7 +386,7 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data: Record<string, string> | undefined,
-    notificationType: NotificationType | undefined,
+    notificationType: string | undefined,
     result: SendResult,
   ): Promise<void> {
     try {
