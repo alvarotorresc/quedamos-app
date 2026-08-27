@@ -139,6 +139,19 @@ export class EventsService {
           data: { status: 'confirmed' },
         });
         event.status = 'confirmed';
+
+        // Coherence with respond(): an event born confirmed also notifies event_confirmed
+        this.notificationsService
+          .sendToEventAttendees(
+            event.id,
+            'Quedada confirmada',
+            `Todos han confirmado "${event.title}"`,
+            undefined,
+            { type: 'event_confirmed', eventId: event.id, groupId },
+            'event_confirmed',
+            'confirmed',
+          )
+          .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
       }
     }
 

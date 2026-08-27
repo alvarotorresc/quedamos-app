@@ -271,6 +271,57 @@ describe('EventsService', () => {
       expect(result.status).toBe('confirmed');
     });
 
+    it('should send event_confirmed when event is auto-confirmed on create', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'All Confirmed', date: '2026-12-01' },
+        { 'user-2': 'confirmed' },
+      );
+
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Quedada confirmada',
+        expect.stringContaining('Test Event'),
+        undefined,
+        expect.objectContaining({ type: 'event_confirmed' }),
+        'event_confirmed',
+        'confirmed',
+      );
+    });
+
+    it('should not send event_confirmed when auto-confirm does not apply', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'declined' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'Partial', date: '2026-12-01' },
+        { 'user-2': 'declined' },
+      );
+
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
     it('should not auto-confirm when some attendees are not confirmed', async () => {
       const event = {
         ...createTestEvent(),
