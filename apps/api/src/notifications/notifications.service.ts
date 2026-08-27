@@ -198,7 +198,10 @@ export class NotificationsService implements OnModuleInit {
       data,
     );
 
-    await this.logNotification(userId, title, body, data, dto.type, result);
+    // Prefix the persisted type so test sends are distinguishable from real
+    // notifications in notification_logs / getDebugInfo.
+    const loggedType = dto.type ? `test:${dto.type}` : 'test';
+    await this.logNotification(userId, title, body, data, loggedType, result);
 
     return { sent: result.sent };
   }
@@ -383,7 +386,7 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data: Record<string, string> | undefined,
-    notificationType: NotificationType | undefined,
+    notificationType: string | undefined,
     result: SendResult,
   ): Promise<void> {
     try {
