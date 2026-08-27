@@ -43,13 +43,12 @@ describe('EventReminderService', () => {
         service as unknown as { combineDateTime: (d: Date, t: string | null) => Date }
       ).combineDateTime(date, time);
 
-    it('should combine date and time correctly', () => {
+    it('should combine date and time correctly (Madrid wall-clock)', () => {
       const date = new Date('2026-03-15T00:00:00.000Z');
       const result = combine(date, '14:30');
 
-      expect(result.getUTCHours()).toBe(14);
-      expect(result.getUTCMinutes()).toBe(30);
-      expect(result.getUTCSeconds()).toBe(0);
+      // 14:30 Madrid (CET, UTC+1) === 13:30 UTC
+      expect(result.toISOString()).toBe('2026-03-15T13:30:00.000Z');
     });
 
     it('should default to midnight when time is null', () => {
@@ -64,16 +63,16 @@ describe('EventReminderService', () => {
       const date = new Date('2026-03-15T00:00:00.000Z');
       const result = combine(date, '23:59');
 
-      expect(result.getUTCHours()).toBe(23);
-      expect(result.getUTCMinutes()).toBe(59);
+      // 23:59 Madrid (CET) === 22:59 UTC same day
+      expect(result.toISOString()).toBe('2026-03-15T22:59:00.000Z');
     });
 
     it('should handle early morning time', () => {
       const date = new Date('2026-03-15T00:00:00.000Z');
       const result = combine(date, '00:00');
 
-      expect(result.getUTCHours()).toBe(0);
-      expect(result.getUTCMinutes()).toBe(0);
+      // 00:00 Madrid (CET) === 23:00 UTC of the previous day
+      expect(result.toISOString()).toBe('2026-03-14T23:00:00.000Z');
     });
 
     it('should not mutate the original date', () => {
@@ -82,6 +81,20 @@ describe('EventReminderService', () => {
       combine(date, '14:30');
 
       expect(date.getTime()).toBe(original);
+    });
+
+    it('should interpret time as Europe/Madrid wall-clock in winter (CET, UTC+1)', () => {
+      const date = new Date('2026-01-15T00:00:00.000Z');
+      const result = combine(date, '18:00');
+
+      expect(result.toISOString()).toBe('2026-01-15T17:00:00.000Z');
+    });
+
+    it('should interpret time as Europe/Madrid wall-clock in summer (CEST, UTC+2)', () => {
+      const date = new Date('2026-07-15T00:00:00.000Z');
+      const result = combine(date, '18:00');
+
+      expect(result.toISOString()).toBe('2026-07-15T16:00:00.000Z');
     });
   });
 
