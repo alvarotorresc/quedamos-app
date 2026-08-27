@@ -57,4 +57,12 @@ describe('AuthGuard', () => {
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
   });
+
+  it('should throw UnauthorizedException when validateToken resolves to null', async () => {
+    authService.validateToken.mockResolvedValue(null);
+    const ctx = createMockContext('Bearer valid-token');
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow(UnauthorizedException);
+    expect(ctx.request.user).toBeUndefined();
+  });
 });
