@@ -349,6 +349,31 @@ describe('ProposalsService', () => {
         service.convert('group-1', 'proposal-1', 'user-2', { date: '2026-12-01' }),
       ).rejects.toThrow(ForbiddenException);
     });
+
+    it('should reject convert when proposal is not open', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-12-01' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(eventsService.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject convert when proposal is closed', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal({ status: 'closed' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-12-01' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
   });
 
   describe('close', () => {
@@ -383,6 +408,15 @@ describe('ProposalsService', () => {
       await expect(service.close('group-1', 'proposal-1', 'user-1')).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it('should reject close when proposal is not open', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal({ status: 'converted' }));
+
+      await expect(service.close('group-1', 'proposal-1', 'user-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(prisma.planProposal.update).not.toHaveBeenCalled();
     });
   });
 
