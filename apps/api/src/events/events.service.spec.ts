@@ -462,6 +462,50 @@ describe('EventsService', () => {
       );
     });
 
+    it('should not resend event_confirmed when re-confirming an already confirmed event', async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent({ status: 'confirmed' }),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-2',
+        status: 'confirmed',
+      });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.event.update.mockResolvedValue({});
+      prisma.event.findUnique.mockResolvedValue(createTestEvent({ status: 'confirmed' }));
+
+      await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
+
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
+    it('should take the all-confirmed decision inside the transaction (single attendee read)', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-2' });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.event.update.mockResolvedValue({});
+      prisma.event.findUnique.mockResolvedValue(createTestEvent());
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
+
+      expect(prisma.eventAttendee.findMany).toHaveBeenCalledTimes(1);
+    });
+
     it('should keep event pending when someone declines', async () => {
       prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-2' });
       prisma.eventAttendee.update.mockResolvedValue({});

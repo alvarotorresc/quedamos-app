@@ -360,8 +360,17 @@ export class EventsService {
       throw new NotFoundException('Not invited to this event');
     }
 
-    // Transaction to atomically update attendee + check/update event status
-    await this.prisma.$transaction(async (tx) => {
+    // Transaction to atomically update attendee + check/update event status.
+    // The "all confirmed" decision is taken INSIDE the transaction by comparing
+    // the pre-update status with the post-update result, so concurrent responds
+    // or re-confirmations on an already confirmed event never re-send the
+    // event_confirmed notification.
+    const { justReachedAllConfirmed, eventTitle } = await this.prisma.$transaction(async (tx) => {
+      const preEvent = await tx.event.findUnique({
+        where: { id: eventId },
+        select: { status: true, title: true },
+      });
+
       await tx.eventAttendee.update({
         where: { eventId_userId: { eventId, userId } },
         data: {
@@ -388,41 +397,36 @@ export class EventsService {
           data: { status: 'pending' },
         });
       }
+
+      return {
+        justReachedAllConfirmed: allConfirmed && preEvent?.status !== 'confirmed',
+        eventTitle: preEvent?.title ?? event.title,
+      };
     });
 
     // Notifications outside transaction (fire-and-forget)
-    if (dto.status === 'confirmed') {
-      const allAttendees = await this.prisma.eventAttendee.findMany({ where: { eventId } });
-      const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
-      if (allConfirmed) {
-        const event = await this.prisma.event.findUnique({ where: { id: eventId } });
-        if (event) {
-          this.notificationsService
-            .sendToEventAttendees(
-              eventId,
-              'Quedada confirmada',
-              `Todos han confirmado "${event.title}"`,
-              undefined,
-              { type: 'event_confirmed', eventId, groupId },
-              'event_confirmed',
-              'confirmed',
-            )
-            .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
-        }
-      }
+    if (dto.status === 'confirmed' && justReachedAllConfirmed) {
+      this.notificationsService
+        .sendToEventAttendees(
+          eventId,
+          'Quedada confirmada',
+          `Todos han confirmado "${eventTitle}"`,
+          undefined,
+          { type: 'event_confirmed', eventId, groupId },
+          'event_confirmed',
+          'confirmed',
+        )
+        .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
     }
 
     if (dto.status === 'declined') {
-      const [user, declinedEvent] = await Promise.all([
-        this.prisma.user.findUnique({ where: { id: userId } }),
-        this.prisma.event.findUnique({ where: { id: eventId } }),
-      ]);
-      if (user && declinedEvent) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (user) {
         this.notificationsService
           .sendToEventAttendees(
             eventId,
             'Asistencia rechazada',
-            `${user.name} ha rechazado "${declinedEvent.title}"`,
+            `${user.name} ha rechazado "${eventTitle}"`,
             userId,
             { type: 'event_declined', eventId, groupId },
             'event_declined',
