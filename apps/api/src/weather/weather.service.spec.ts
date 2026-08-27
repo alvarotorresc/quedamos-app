@@ -14,12 +14,17 @@ describe('WeatherService', () => {
   let mockFetch: jest.Mock;
 
   beforeEach(() => {
+    jest.useFakeTimers({ now: new Date('2026-03-01T10:00:00Z') });
     service = new WeatherService();
     mockFetch = jest.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve(mockOpenMeteoResponse),
     });
     service.setFetch(mockFetch as unknown as typeof fetch);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   it('should fetch forecast from Open-Meteo', async () => {
@@ -73,6 +78,42 @@ describe('WeatherService', () => {
     const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-04-01');
 
     expect(result).toBeNull();
+  });
+
+  it('should request enough forecast days to cover dates beyond the 7-day default', async () => {
+    // 2026-03-11 is 10 days after the frozen "today" (2026-03-01) -> needs 11 days
+    await service.getForDate('Madrid', 40.42, -3.7, '2026-03-11');
+
+    const calledUrl = mockFetch.mock.calls[0][0] as URL;
+    expect(calledUrl.searchParams.get('forecast_days')).toBe('11');
+  });
+
+  it('should return null without calling the API for dates beyond 16 days', async () => {
+    const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-03-20');
+
+    expect(result).toBeNull();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should return null without calling the API for past dates', async () => {
+    const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-02-20');
+
+    expect(result).toBeNull();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('should not reuse a shorter cached forecast for a longer request', async () => {
+    await service.getForecast('Madrid', 40.42, -3.7, 7);
+    await service.getForecast('Madrid', 40.42, -3.7, 11);
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('should return null without calling the API for a regex-valid but unreal date', async () => {
+    const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-13-01');
+
+    expect(result).toBeNull();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it('should throw on API error', async () => {

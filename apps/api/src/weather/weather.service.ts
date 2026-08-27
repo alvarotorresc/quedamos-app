@@ -15,6 +15,7 @@ interface CacheEntry {
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const MAX_FORECAST_DAYS = 16; // Open-Meteo forecast_days upper bound
 
 const WEATHER_DESCRIPTIONS: Record<number, string> = {
   0: 'Clear sky',
@@ -63,7 +64,7 @@ export class WeatherService {
     lon: number,
     days: number = 7,
   ): Promise<WeatherData[]> {
-    const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+    const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)},${days}`;
     const cached = this.cache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -111,7 +112,18 @@ export class WeatherService {
     lon: number,
     date: string,
   ): Promise<WeatherData | null> {
-    const forecast = await this.getForecast(cityName, lat, lon);
+    const target = new Date(date + 'T00:00:00Z');
+    const now = new Date();
+    const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const diffDays = Math.round((target.getTime() - todayUtc) / (24 * 60 * 60 * 1000));
+
+    // Open-Meteo covers today + 15 days at most; anything else has no forecast.
+    if (Number.isNaN(diffDays) || diffDays < 0 || diffDays >= MAX_FORECAST_DAYS) {
+      return null;
+    }
+
+    const days = Math.max(diffDays + 1, 7);
+    const forecast = await this.getForecast(cityName, lat, lon, days);
     return forecast.find((d) => d.date === date) ?? null;
   }
 }
