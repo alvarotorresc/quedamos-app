@@ -153,6 +153,22 @@ describe('AuthService', () => {
       expect(prisma.user.findUnique).toHaveBeenCalledTimes(2);
     });
 
+    it('should throw UnauthorizedException when P2002 retry finds no user', async () => {
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'test@test.com',
+          user_metadata: { name: 'Test User', avatarEmoji: '😊' },
+        });
+      });
+      prisma.user.findUnique
+        .mockResolvedValueOnce(null) // first lookup: user not found
+        .mockResolvedValueOnce(null); // retry after P2002: still not found
+      prisma.user.create.mockRejectedValue({ code: 'P2002' });
+
+      await expect(service.validateToken('valid-token')).rejects.toThrow(UnauthorizedException);
+    });
+
     it('should rethrow non-P2002 errors during user creation', async () => {
       (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
         cb(null, {

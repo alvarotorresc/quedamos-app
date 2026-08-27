@@ -10,11 +10,13 @@ export interface WeatherData {
 }
 
 interface CacheEntry {
-  data: WeatherData[];
+  data: Omit<WeatherData, 'city'>[];
   timestamp: number;
 }
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const MAX_FORECAST_DAYS = 16; // Open-Meteo forecast_days upper bound
+const REQUEST_TIMEOUT_MS = 10_000;
 
 const WEATHER_DESCRIPTIONS: Record<number, string> = {
   0: 'Clear sky',
@@ -63,11 +65,13 @@ export class WeatherService {
     lon: number,
     days: number = 7,
   ): Promise<WeatherData[]> {
-    const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+    const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)},${days}`;
     const cached = this.cache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return cached.data;
+      // The cache never stores the city name: it is stamped per caller so a
+      // request with an empty/different name cannot poison other callers.
+      return cached.data.map((d) => ({ ...d, city: cityName }));
     }
 
     const url = new URL('https://api.open-meteo.com/v1/forecast');
@@ -77,7 +81,15 @@ export class WeatherService {
     url.searchParams.set('timezone', 'auto');
     url.searchParams.set('forecast_days', String(days));
 
-    const response = await this.fetchFn(url);
+    let response: Response;
+    try {
+      response = await this.fetchFn(url, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+    } catch (error) {
+      if ((error as { name?: string } | null)?.name === 'TimeoutError') {
+        throw new Error('Open-Meteo request timed out');
+      }
+      throw error;
+    }
     if (!response.ok) {
       throw new Error(`Open-Meteo API error: ${response.status}`);
     }
@@ -85,8 +97,7 @@ export class WeatherService {
     const json = await response.json();
     const daily = json.daily;
 
-    const data: WeatherData[] = daily.time.map((date: string, i: number) => ({
-      city: cityName,
+    const data: Omit<WeatherData, 'city'>[] = daily.time.map((date: string, i: number) => ({
       date,
       tempMax: daily.temperature_2m_max[i],
       tempMin: daily.temperature_2m_min[i],
@@ -101,7 +112,7 @@ export class WeatherService {
       if (firstKey) this.cache.delete(firstKey);
     }
 
-    return data;
+    return data.map((d) => ({ ...d, city: cityName }));
   }
 
   async getForDate(
@@ -110,7 +121,18 @@ export class WeatherService {
     lon: number,
     date: string,
   ): Promise<WeatherData | null> {
-    const forecast = await this.getForecast(cityName, lat, lon);
+    const target = new Date(date + 'T00:00:00Z');
+    const now = new Date();
+    const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+    const diffDays = Math.round((target.getTime() - todayUtc) / (24 * 60 * 60 * 1000));
+
+    // Open-Meteo covers today + 15 days at most; anything else has no forecast.
+    if (Number.isNaN(diffDays) || diffDays < 0 || diffDays >= MAX_FORECAST_DAYS) {
+      return null;
+    }
+
+    const days = Math.max(diffDays + 1, 7);
+    const forecast = await this.getForecast(cityName, lat, lon, days);
     return forecast.find((d) => d.date === date) ?? null;
   }
 }

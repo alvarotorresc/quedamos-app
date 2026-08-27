@@ -271,6 +271,57 @@ describe('EventsService', () => {
       expect(result.status).toBe('confirmed');
     });
 
+    it('should send event_confirmed when event is auto-confirmed on create', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'All Confirmed', date: '2026-12-01' },
+        { 'user-2': 'confirmed' },
+      );
+
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Quedada confirmada',
+        expect.stringContaining('Test Event'),
+        undefined,
+        expect.objectContaining({ type: 'event_confirmed' }),
+        'event_confirmed',
+        'confirmed',
+      );
+    });
+
+    it('should not send event_confirmed when auto-confirm does not apply', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'declined' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'Partial', date: '2026-12-01' },
+        { 'user-2': 'declined' },
+      );
+
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
     it('should not auto-confirm when some attendees are not confirmed', async () => {
       const event = {
         ...createTestEvent(),
@@ -333,6 +384,59 @@ describe('EventsService', () => {
       });
 
       expect(result).toBeDefined();
+    });
+
+    it('should not send new_event notification when skipNewEventNotification is set', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.create.mockResolvedValue(event);
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'From Proposal', date: '2026-12-01' },
+        undefined,
+        { skipNewEventNotification: true },
+      );
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
+    it('should still send event_confirmed when converting a proposal with skipNewEventNotification', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      await service.create(
+        'group-1',
+        'user-1',
+        { title: 'From Proposal', date: '2026-12-01' },
+        { 'user-2': 'confirmed' },
+        { skipNewEventNotification: true },
+      );
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Quedada confirmada',
+        expect.stringContaining('Test Event'),
+        undefined,
+        expect.objectContaining({ type: 'event_confirmed' }),
+        'event_confirmed',
+        'confirmed',
+      );
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -460,6 +564,50 @@ describe('EventsService', () => {
         'event_confirmed',
         'confirmed',
       );
+    });
+
+    it('should not resend event_confirmed when re-confirming an already confirmed event', async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent({ status: 'confirmed' }),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-2',
+        status: 'confirmed',
+      });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.event.update.mockResolvedValue({});
+      prisma.event.findUnique.mockResolvedValue(createTestEvent({ status: 'confirmed' }));
+
+      await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
+
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
+    it('should take the all-confirmed decision inside the transaction (single attendee read)', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-2' });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.event.update.mockResolvedValue({});
+      prisma.event.findUnique.mockResolvedValue(createTestEvent());
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
+
+      expect(prisma.eventAttendee.findMany).toHaveBeenCalledTimes(1);
     });
 
     it('should keep event pending when someone declines', async () => {

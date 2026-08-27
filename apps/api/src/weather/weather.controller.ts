@@ -45,6 +45,14 @@ export class WeatherController {
     @Query() query: GetForecastQueryDto,
   ): Promise<WeatherData | null> {
     await this.groupsService.findById(groupId, user.id);
-    return this.weatherService.getForDate('', query.lat, query.lon, query.date);
+
+    // Resolve the real city name when the coords match a saved group city.
+    // The frontend sends the exact lat/lon it got from the API, so the float
+    // equality match works; fall back to '' for ad-hoc coordinates.
+    const city = await this.prisma.groupCity.findFirst({
+      where: { groupId, lat: query.lat, lon: query.lon },
+    });
+
+    return this.weatherService.getForDate(city?.name ?? '', query.lat, query.lon, query.date);
   }
 }

@@ -475,6 +475,40 @@ describe('NotificationsService', () => {
 
       expect(result).toEqual({ sent: 0 });
     });
+
+    it('should persist test logs with a test-prefixed type', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([{ token: 'tok-1' }]);
+      prisma.notificationLog.create.mockResolvedValue({});
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+
+      await service.sendTestNotification('user-1', { type: 'new_event' });
+
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ type: 'test:new_event' }),
+      });
+    });
+
+    it("should persist type 'test' when no type is provided", async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([{ token: 'tok-1' }]);
+      prisma.notificationLog.create.mockResolvedValue({});
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+
+      await service.sendTestNotification('user-1', {});
+
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ type: 'test' }),
+      });
+    });
   });
 
   describe('getDebugInfo', () => {
