@@ -143,6 +143,11 @@ ion-tab-bar {
   border-top: 1px solid var(--app-border);
 }
 
+ion-tab-button {
+  --color: var(--app-text-muted);
+  --color-selected: var(--app-text);
+}
+
 ion-alert {
   --background: var(--app-bg-light);
   --backdrop-opacity: 0.6;

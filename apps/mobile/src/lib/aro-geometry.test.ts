@@ -37,6 +37,12 @@ describe('aroStrokeWidth', () => {
     expect(aroStrokeWidth(12, 16)).toBe(2.8);
     expect(aroStrokeWidth(20, 16)).toBe(2.2);
   });
+
+  it('radio grande (>20, rama GroupRing): degrada igual pero con trazos más gruesos', () => {
+    expect(aroStrokeWidth(6, 66)).toBe(9);
+    expect(aroStrokeWidth(12, 66)).toBe(7);
+    expect(aroStrokeWidth(20, 66)).toBe(5.5);
+  });
 });
 
 describe('slotCenter', () => {
@@ -47,5 +53,41 @@ describe('slotCenter', () => {
     const c1 = slotCenter(6, 1, 66);
     expect(c1.x).toBeCloseTo(66 * Math.sin(Math.PI / 3), 3);
     expect(c1.y).toBeCloseTo(-66 * Math.cos(Math.PI / 3), 3);
+  });
+});
+
+describe('aroArc con radio grande (>20, cobertura GroupRing — deferred de Task 3)', () => {
+  it('n=6 r=66 strokeWidth=5: gapVisible se satura en el cap de 13 (rama radio grande)', () => {
+    const { dasharray, rotate } = aroArc(6, 0, 66, { strokeWidth: 5 });
+    const [dash] = dasharray.split(' ').map(Number);
+    const C = 2 * Math.PI * 66; // ≈ 414.69
+    const slot = C / 6; // ≈ 69.115
+    const gapVisible = Math.min(slot * 0.3, 13); // radio > 20 ⇒ cap 13 (no 3.8)
+    expect(gapVisible).toBeCloseTo(13, 5);
+    const expectedDash = slot - 5 - gapVisible; // ≈ 51.115
+    expect(dash).toBeCloseTo(expectedDash, 1);
+    expect(dash).toBeCloseTo(51.11, 1);
+    const expectedHalfArcDeg = (expectedDash / C) * 180; // ≈ 22.19
+    expect(rotate).toBeCloseTo(-90 - expectedHalfArcDeg, 1);
+    expect(rotate).toBeCloseTo(-112.19, 1);
+  });
+
+  it('slotCenter y aroArc comparten el ángulo de slot (n=6, i=1): centro del arco == centro del slot', () => {
+    const n = 6;
+    const i = 1;
+    const r = 66;
+    const { dasharray, rotate } = aroArc(n, i, r, { strokeWidth: 5 });
+    const [dash] = dasharray.split(' ').map(Number);
+    const C = 2 * Math.PI * r;
+    const halfArcDeg = (dash / C) * 180; // derivado del dasharray devuelto, no recalculado a mano
+    const arcCenterAngle = rotate + halfArcDeg;
+
+    const p = slotCenter(n, i, r);
+    const slotAngle = (Math.atan2(p.y, p.x) * 180) / Math.PI;
+
+    expect(slotAngle).toBeCloseTo(-30, 5);
+    // dasharray se serializa con 2 decimales (toFixed), así que re-derivar halfArc
+    // desde el string introduce un error de redondeo del orden de una milésima de grado.
+    expect(arcCenterAngle).toBeCloseTo(slotAngle, 2);
   });
 });
