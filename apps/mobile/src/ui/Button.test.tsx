@@ -37,15 +37,15 @@ describe('Button', () => {
   it('applies primary variant styles by default', () => {
     render(<Button>Primary</Button>);
     const button = screen.getByRole('button', { name: 'Primary' });
-    expect(button.className).toContain('bg-gradient-to-br');
-    expect(button.className).toContain('text-white');
+    expect(button.className).toContain('bg-primary-solid');
+    expect(button.className).toContain('text-on-primary');
   });
 
   it('applies secondary variant styles when variant is secondary', () => {
     render(<Button variant="secondary">Secondary</Button>);
     const button = screen.getByRole('button', { name: 'Secondary' });
-    expect(button.className).toContain('bg-bg-surface');
-    expect(button.className).toContain('text-text-muted');
+    expect(button.className).toContain('bg-transparent');
+    expect(button.className).toContain('text-text');
     expect(button.className).toContain('border');
   });
 
@@ -85,7 +85,7 @@ describe('Button', () => {
   it('applies base styles regardless of variant', () => {
     render(<Button>Base</Button>);
     const button = screen.getByRole('button', { name: 'Base' });
-    expect(button.className).toContain('rounded-btn');
+    expect(button.className).toContain('rounded-pill');
     expect(button.className).toContain('font-bold');
     expect(button.className).toContain('transition-[filter]');
   });

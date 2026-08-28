@@ -17,6 +17,7 @@ export default {
         'toggle-off': 'var(--app-toggle-off)',
         primary: 'var(--app-primary)',
         'primary-dark': 'var(--app-primary-solid)',
+        'primary-solid': 'var(--app-primary-solid)',
         'primary-hover': 'var(--app-primary-hover)',
         accent: 'var(--app-accent)',
         text: 'var(--app-text)',
@@ -28,6 +29,7 @@ export default {
         success: 'var(--app-success)',
         warning: 'var(--app-warning)',
         danger: 'var(--app-error)',
+        error: 'var(--app-error)',
         member: {
           blue: '#60A5FA',
           orange: '#F59E0B',
