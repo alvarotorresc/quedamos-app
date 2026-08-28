@@ -20,6 +20,18 @@ vi.mock('../stores/auth', () => ({
   ),
 }));
 
+// Mock react-i18next locally (overrides the global setup.ts mock for this file) so we can
+// assert on the exact key + interpolation params passed to t(), not just the rendered key text.
+const mockT = vi.fn((key: string) => key);
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: mockT,
+    i18n: { language: 'es', changeLanguage: vi.fn() },
+  }),
+  Trans: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: { type: '3rdParty', init: vi.fn() },
+}));
+
 // Mock Ionic
 vi.mock('@ionic/react', () => ({
   IonSpinner: ({ className }: { className?: string }) => (
@@ -195,7 +207,7 @@ describe('EventCard', () => {
     expect(screen.getByText('Partido de padel')).toBeInTheDocument();
   });
 
-  it('should show attendee counts', () => {
+  it('should show attendee counts via the attendee ring and going-count line', () => {
     const event = createEvent({
       attendees: [
         createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'),
@@ -206,10 +218,78 @@ describe('EventCard', () => {
 
     render(<EventCard event={event} {...defaultProps} />);
 
-    // 2 confirmed out of 3 total
-    expect(screen.getByText('2/3')).toBeInTheDocument();
-    // 1 declined out of 3 total
-    expect(screen.getByText('1/3')).toBeInTheDocument();
+    // Ring: 1 base track circle + 1 arc per confirmed member (2 confirmed of 3 members)
+    const ring = screen.getByTestId('attendee-ring');
+    expect(ring.querySelectorAll('circle')).toHaveLength(3);
+
+    // Going-count line uses the new i18n key (mocked t() returns the key itself)
+    expect(screen.getByText('plans.goingCount')).toBeInTheDocument();
+  });
+
+  it('should compute the going-count line against invited attendees, not the whole group', () => {
+    // Group has 4 members, but only 2 (Alvaro, Misa) are invited to this event and both
+    // confirmed. missing must be 0 (invite-list-relative), not 2 (full-group-relative).
+    const fourMemberColorMap = new Map<string, string>([
+      [CURRENT_USER_ID, '#60A5FA'],
+      [OTHER_USER_ID, '#F59E0B'],
+      [CREATOR_ID, '#34D399'],
+      ['user-4', '#A78BFA'],
+    ]);
+    const event = createEvent({
+      attendees: [
+        createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'),
+        createAttendee(OTHER_USER_ID, 'confirmed', 'Misa'),
+      ],
+    });
+
+    render(<EventCard event={event} groupId="group-1" memberColorMap={fourMemberColorMap} />);
+
+    expect(mockT).toHaveBeenCalledWith('plans.goingCount', { confirmed: 2, missing: 0 });
+  });
+
+  it('should render an attendee ring in the header', () => {
+    const event = createEvent();
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    expect(screen.getByTestId('attendee-ring')).toBeInTheDocument();
+  });
+
+  it('should show the confirmed status in a bg-success badge', () => {
+    const event = createEvent({ status: 'confirmed' });
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    const badge = screen.getByText('plans.status.confirmed');
+    expect(badge.className).toContain('bg-success');
+  });
+
+  it('should overlay a check mark on the ring when the event is confirmed', () => {
+    const event = createEvent({ status: 'confirmed' });
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    expect(screen.getByTestId('attendee-ring-check')).toBeInTheDocument();
+  });
+
+  it('should not overlay a check mark on the ring when the event is not confirmed', () => {
+    const event = createEvent({ status: 'pending' });
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    expect(screen.queryByTestId('attendee-ring-check')).not.toBeInTheDocument();
+  });
+
+  it('should render as a hairline block instead of a card', () => {
+    const event = createEvent();
+
+    const { container } = render(<EventCard event={event} {...defaultProps} />);
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('border-t');
+    expect(root.className).toContain('border-subtle');
+    expect(root.className).not.toContain('bg-bg-light');
+    expect(root.className).not.toContain('rounded-lg');
   });
 
   describe('online events', () => {

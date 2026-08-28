@@ -165,8 +165,9 @@
     "confirmed": "confirmed",
     "confirm": "Confirm",
     "decline": "Decline",
-    "youConfirmed": "You confirmed attendance",
+    "youConfirmed": "You're in. Noted.",
     "youDeclined": "You declined this event",
+    "goingCount": "{{confirmed}} going, {{missing}} to go",
     "editButton": "Edit",
     "deleteEvent": "Delete plan",
     "deleteConfirm": "This action cannot be undone",
@@ -191,7 +192,7 @@
     },
     "tapToChange": "Tap to change",
     "status": {
-      "pending": "Pending",
+      "pending": "Up in the air",
       "confirmed": "Confirmed",
       "cancelled": "Cancelled"
     },

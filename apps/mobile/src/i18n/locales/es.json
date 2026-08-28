@@ -165,8 +165,9 @@
     "confirmed": "confirmados",
     "confirm": "Confirmar",
     "decline": "Rechazar",
-    "youConfirmed": "Has confirmado asistencia",
+    "youConfirmed": "Vas. Que conste.",
     "youDeclined": "Has rechazado esta quedada",
+    "goingCount": "van {{confirmed}}, faltan {{missing}}",
     "editButton": "Editar",
     "deleteEvent": "Eliminar quedada",
     "deleteConfirm": "Esta accion no se puede deshacer",
@@ -191,7 +192,7 @@
     },
     "tapToChange": "Toca para cambiar",
     "status": {
-      "pending": "Pendiente",
+      "pending": "En el aire",
       "confirmed": "Confirmada",
       "cancelled": "Cancelada"
     },

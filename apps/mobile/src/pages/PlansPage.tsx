@@ -14,6 +14,7 @@ import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { EmptyState } from '../ui/EmptyState';
 import { SkeletonCard } from '../ui/SkeletonCard';
+import { SegmentedPills } from '../ui/SegmentedPills';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
@@ -114,10 +115,6 @@ export default function PlansPage() {
   type PlansTab = 'plans' | 'proposals';
   const [activeTab, setActiveTab] = useState<PlansTab>('plans');
 
-  // Online filter
-  type OnlineFilter = 'all' | 'online' | 'inPerson';
-  const [onlineFilter, setOnlineFilter] = useState<OnlineFilter>('all');
-
   // Collapsible sections
   const [showPast, setShowPast] = useState(false);
   const [showClosedProposals, setShowClosedProposals] = useState(false);
@@ -125,7 +122,7 @@ export default function PlansPage() {
   // Member color map (userId -> color), by join order within the group
   const memberColorMap = useMemo(() => buildMemberColorMap(members), [members]);
 
-  // Split events into upcoming and past, applying online filter
+  // Split events into upcoming and past
   const { upcoming, past } = useMemo(() => {
     if (!events) return { upcoming: [], past: [] };
 
@@ -134,9 +131,6 @@ export default function PlansPage() {
     const pa: Event[] = [];
 
     for (const ev of events) {
-      if (onlineFilter === 'online' && !ev.isOnline) continue;
-      if (onlineFilter === 'inPerson' && ev.isOnline) continue;
-
       const dateKey = apiDateToKey(ev.date);
       if (dateKey >= today) {
         up.push(ev);
@@ -149,19 +143,10 @@ export default function PlansPage() {
     pa.sort((a, b) => apiDateToKey(b.date).localeCompare(apiDateToKey(a.date)));
 
     return { upcoming: up, past: pa };
-  }, [events, onlineFilter]);
+  }, [events]);
 
-  const filteredProposals = useMemo(() => {
-    if (!proposals) return [];
-    return proposals.filter((p) => {
-      if (onlineFilter === 'online' && !p.isOnline) return false;
-      if (onlineFilter === 'inPerson' && p.isOnline) return false;
-      return true;
-    });
-  }, [proposals, onlineFilter]);
-
-  const openProposals = filteredProposals.filter((p) => p.status === 'open');
-  const closedOrConvertedProposals = filteredProposals.filter((p) => p.status !== 'open');
+  const openProposals = (proposals ?? []).filter((p) => p.status === 'open');
+  const closedOrConvertedProposals = (proposals ?? []).filter((p) => p.status !== 'open');
   const allProposals = [...openProposals, ...closedOrConvertedProposals];
 
   // Scroll to event when navigated from push notification
@@ -323,38 +308,15 @@ export default function PlansPage() {
           )}
 
           {/* Tab bar */}
-          <div className="flex gap-1 mb-2">
-            {(['plans', 'proposals'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className="flex-1 py-2 rounded-btn text-xs font-semibold border-none"
-                style={{
-                  background: activeTab === tab ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
-                  color: activeTab === tab ? '#60A5FA' : '#4B5C75',
-                }}
-              >
-                {t(`plans.tabs.${tab}`)}
-              </button>
-            ))}
-          </div>
-
-          {/* Online filter bar */}
-          <div className="flex gap-1 mb-3">
-            {(['all', 'online', 'inPerson'] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setOnlineFilter(filter)}
-                className="flex-1 py-1.5 rounded-btn text-[11px] font-semibold border-none"
-                style={{
-                  background:
-                    onlineFilter === filter ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
-                  color: onlineFilter === filter ? '#60A5FA' : '#4B5C75',
-                }}
-              >
-                {t(`plans.filter.${filter}`)}
-              </button>
-            ))}
+          <div className="mb-3">
+            <SegmentedPills
+              options={[
+                { value: 'plans', label: t('plans.tabs.plans') },
+                { value: 'proposals', label: t('plans.tabs.proposals') },
+              ]}
+              value={activeTab}
+              onChange={setActiveTab}
+            />
           </div>
 
           {/* Loading events */}
@@ -396,7 +358,7 @@ export default function PlansPage() {
                       <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
                         {t('plans.upcoming')}
                       </h3>
-                      <div className="space-y-2">
+                      <div>
                         {upcoming.map((ev, i) => (
                           <motion.div
                             key={ev.id}
@@ -404,7 +366,7 @@ export default function PlansPage() {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                            className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
+                            className={`transition-all duration-500 ${i === upcoming.length - 1 ? 'border-b border-subtle' : ''} ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
                           >
                             <EventCard
                               event={ev}
@@ -441,7 +403,7 @@ export default function PlansPage() {
                         {t('plans.past')} ({past.length})
                       </button>
                       {showPast && (
-                        <div className="space-y-2 opacity-70">
+                        <div className="opacity-70">
                           {past.map((ev, i) => (
                             <motion.div
                               key={ev.id}
@@ -453,7 +415,7 @@ export default function PlansPage() {
                                 duration: 0.4,
                                 ease: [0.16, 1, 0.3, 1],
                               }}
-                              className={`transition-all duration-500 rounded-[14px] ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
+                              className={`transition-all duration-500 ${i === past.length - 1 ? 'border-b border-subtle' : ''} ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
                             >
                               <EventCard
                                 event={ev}
@@ -491,13 +453,14 @@ export default function PlansPage() {
                   {/* Open proposals — shown directly without header */}
                   {openProposals.length > 0 && (
                     <div className="mb-4">
-                      <div className="space-y-2">
+                      <div>
                         {openProposals.map((p, i) => (
                           <motion.div
                             key={p.id}
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                            className={i === openProposals.length - 1 ? 'border-b border-subtle' : ''}
                           >
                             <ProposalCard
                               proposal={p}
@@ -536,7 +499,7 @@ export default function PlansPage() {
                         {t('proposals.closed')} ({closedOrConvertedProposals.length})
                       </button>
                       {showClosedProposals && (
-                        <div className="space-y-2 opacity-70">
+                        <div className="opacity-70">
                           {closedOrConvertedProposals.map((p, i) => (
                             <motion.div
                               key={p.id}
@@ -547,6 +510,11 @@ export default function PlansPage() {
                                 duration: 0.4,
                                 ease: [0.16, 1, 0.3, 1],
                               }}
+                              className={
+                                i === closedOrConvertedProposals.length - 1
+                                  ? 'border-b border-subtle'
+                                  : ''
+                              }
                             >
                               <ProposalCard
                                 proposal={p}
