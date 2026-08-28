@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { getWeekDays, formatDateKey, isSameDay, isToday } from '../lib/date-utils';
+import { availabilityLabel } from '../lib/availability-label';
 import { AvatarStack } from '../ui/AvatarStack';
 import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
@@ -98,13 +99,7 @@ export function WeekView({
         // User's availability label
         let availLabel: string | null = null;
         if (myAvail) {
-          if (myAvail.type === 'day') {
-            availLabel = t('calendar.allDay');
-          } else if (myAvail.type === 'slots' && myAvail.slots) {
-            availLabel = myAvail.slots.join(', ');
-          } else if (myAvail.type === 'range' && myAvail.startTime && myAvail.endTime) {
-            availLabel = `${myAvail.startTime.slice(0, 5)} – ${myAvail.endTime.slice(0, 5)}`;
-          }
+          availLabel = availabilityLabel(myAvail, t);
         }
 
         return (
