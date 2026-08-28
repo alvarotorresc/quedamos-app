@@ -90,6 +90,21 @@ describe('Button', () => {
     expect(button.className).toContain('transition-[filter]');
   });
 
+  it('applies md size styles by default', () => {
+    render(<Button>Default size</Button>);
+    const button = screen.getByRole('button', { name: 'Default size' });
+    expect(button.className).toContain('py-3');
+    expect(button.className).toContain('text-sm');
+  });
+
+  it('applies sm size styles when size is sm', () => {
+    render(<Button size="sm">Small</Button>);
+    const button = screen.getByRole('button', { name: 'Small' });
+    expect(button.className).toContain('py-2');
+    expect(button.className).toContain('text-xs');
+    expect(button.className).not.toContain('py-3');
+  });
+
   it('passes through native button attributes', () => {
     render(<Button type="submit">Submit</Button>);
     const button = screen.getByRole('button', { name: 'Submit' });

@@ -3,7 +3,7 @@ import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/rea
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
-import { EmptyState, SkeletonCard } from '../ui';
+import { EmptyState, SkeletonCard, SegmentedPills } from '../ui';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
@@ -13,13 +13,12 @@ import { useGroupWeather } from '../hooks/useWeather';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
-import { formatDateKey, apiDateToKey, parseDateKey } from '../lib/date-utils';
+import { formatDateKey, apiDateToKey, getWeekDays } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
 import { WeekView } from '../components/WeekView';
 import { MonthView } from '../components/MonthView';
 import { ListView } from '../components/ListView';
-import { BestDayBanner } from '../components/BestDayBanner';
 import { MonthSummary } from '../components/MonthSummary';
 import { AvailabilityModal } from '../components/AvailabilityModal';
 import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
@@ -83,6 +82,19 @@ export default function CalendarPage() {
 
   // Member color map (userId -> color), by join order within the group
   const memberColorMap = useMemo(() => buildMemberColorMap(members), [members]);
+
+  const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
+
+  // Header month kicker — follows the active view's own navigation offset
+  const headerMonthLabel = useMemo(() => {
+    const base =
+      calView === 'month'
+        ? new Date(new Date().getFullYear(), new Date().getMonth() + monthOffset, 1)
+        : calView === 'week'
+          ? getWeekDays(new Date(), weekOffset)[0]
+          : new Date();
+    return base.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+  }, [calView, weekOffset, monthOffset, locale]);
 
   // Index availability by date — use apiDateToKey to handle ISO dates safely
   const availabilityByDate = useMemo(() => {
@@ -171,7 +183,6 @@ export default function CalendarPage() {
 
     const suggestion = suggestBestTime(dayAvail);
 
-    const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
     const dateLabel = day.toLocaleDateString(locale, {
       weekday: 'long',
       day: 'numeric',
@@ -271,6 +282,16 @@ export default function CalendarPage() {
       </IonHeader>
       <IonContent className="ion-padding">
         <div className="max-w-md mx-auto px-4 pt-2">
+          {/* Page header */}
+          <div className="mb-3">
+            <h1 className="text-[27px] font-extrabold tracking-tight text-text">
+              {t('calendar.title')}
+            </h1>
+            <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-text-muted">
+              {headerMonthLabel}
+            </p>
+          </div>
+
           {/* Group selector */}
           {groups.length > 1 && (
             <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar">
@@ -300,23 +321,19 @@ export default function CalendarPage() {
           )}
 
           {/* View toggle */}
-          <div className="flex gap-1 mb-3">
-            {(['week', 'month', 'list'] as const).map((view) => (
-              <button
-                key={view}
-                onClick={() => {
-                  setCalView(view);
-                  setSelectedDay(null);
-                }}
-                className="flex-1 py-2 rounded-btn text-xs font-semibold border-none"
-                style={{
-                  background: calView === view ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
-                  color: calView === view ? '#60A5FA' : '#4B5C75',
-                }}
-              >
-                {t(`calendar.${view}`)}
-              </button>
-            ))}
+          <div className="mb-3">
+            <SegmentedPills
+              options={[
+                { value: 'week', label: t('calendar.week') },
+                { value: 'month', label: t('calendar.month') },
+                { value: 'list', label: t('calendar.list') },
+              ]}
+              value={calView}
+              onChange={(v) => {
+                setCalView(v);
+                setSelectedDay(null);
+              }}
+            />
           </div>
 
           {/* Loading availability */}
@@ -392,34 +409,14 @@ export default function CalendarPage() {
               {availabilityByDate.size === 0 && (
                 <EmptyState
                   emoji="📅"
-                  title="¿Cuándo puedes?"
-                  description="Toca un día para marcar cuándo estás disponible. Tu grupo verá cuándo coincidís."
-                  action="Estoy disponible"
+                  title={t('calendar.emptyTitle')}
+                  description={t('calendar.emptyDescription')}
+                  action={t('calendar.emptyAction')}
                   onAction={handleMarkAvailability}
                 />
               )}
 
               {/* Bottom section — varies by view */}
-              {calView === 'week' && bestDay && (
-                <div className="mt-6">
-                  <BestDayBanner
-                    dateKey={bestDay.dateKey}
-                    availableCount={bestDay.count}
-                    totalMembers={members.length}
-                    rank={1}
-                    onClick={() => handleCreateEvent(parseDateKey(bestDay.dateKey))}
-                  />
-                  {secondBestDay && (
-                    <BestDayBanner
-                      dateKey={secondBestDay.dateKey}
-                      availableCount={secondBestDay.count}
-                      totalMembers={members.length}
-                      rank={2}
-                      onClick={() => handleCreateEvent(parseDateKey(secondBestDay.dateKey))}
-                    />
-                  )}
-                </div>
-              )}
               {calView === 'month' && (
                 <MonthSummary
                   monthOffset={monthOffset}
