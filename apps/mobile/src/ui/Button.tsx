@@ -1,5 +1,6 @@
 import { ButtonHTMLAttributes } from 'react';
 import { motion } from 'framer-motion';
+import { spring, useMotionSafe } from '../lib/motion';
 import { DotLoader } from './DotLoader';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -31,9 +32,11 @@ export function Button({
   disabled,
   ...props
 }: ButtonProps) {
+  const motionSafe = useMotionSafe();
   return (
     <motion.button
-      whileTap={{ scale: 0.96 }}
+      whileTap={motionSafe ? { scale: 0.96 } : undefined}
+      transition={spring.snappy}
       className={`
         relative overflow-hidden rounded-pill
         font-bold

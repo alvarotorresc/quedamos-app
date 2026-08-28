@@ -2,66 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { EmptyState } from './EmptyState';
 
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({
-      children,
-      initial,
-      animate,
-      transition,
-      ...props
-    }: React.ComponentProps<'div'> & {
-      initial?: unknown;
-      animate?: unknown;
-      transition?: unknown;
-    }) => <div {...props}>{children}</div>,
-    h3: ({
-      children,
-      initial,
-      animate,
-      transition,
-      ...props
-    }: React.ComponentProps<'h3'> & {
-      initial?: unknown;
-      animate?: unknown;
-      transition?: unknown;
-    }) => <h3 {...props}>{children}</h3>,
-    p: ({
-      children,
-      initial,
-      animate,
-      transition,
-      ...props
-    }: React.ComponentProps<'p'> & {
-      initial?: unknown;
-      animate?: unknown;
-      transition?: unknown;
-    }) => <p {...props}>{children}</p>,
-    button: ({
-      children,
-      initial,
-      animate,
-      transition,
-      whileTap,
-      ...props
-    }: React.ComponentProps<'button'> & {
-      initial?: unknown;
-      animate?: unknown;
-      transition?: unknown;
-      whileTap?: unknown;
-    }) => <button {...props}>{children}</button>,
-    span: ({
-      children,
-      animate,
-      transition,
-      ...props
-    }: React.ComponentProps<'span'> & {
-      animate?: unknown;
-      transition?: unknown;
-    }) => <span {...props}>{children}</span>,
-  },
-}));
-
 describe('EmptyState', () => {
   const defaultProps = {
     emoji: '📅',

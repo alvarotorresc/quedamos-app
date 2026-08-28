@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '../ui/Badge';
@@ -11,6 +12,7 @@ import {
   HiOutlineArrowDownTray,
 } from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
+import { spring, useMotionSafe } from '../lib/motion';
 import { useAuthStore } from '../stores/auth';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
 import { openInMaps, hasCoordinates } from '../lib/maps-utils';
@@ -56,7 +58,9 @@ export function EventCard({
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const respondEvent = useRespondEvent(groupId);
+  const motionSafe = useMotionSafe();
   const [showWeatherDetail, setShowWeatherDetail] = useState(false);
+  const [justConfirmed, setJustConfirmed] = useState(false);
 
   const isResponding = respondEvent.isPending;
 
@@ -97,7 +101,16 @@ export function EventCard({
   }));
 
   const handleRespond = (status: 'confirmed' | 'declined') => {
-    respondEvent.mutate({ eventId: event.id, status });
+    respondEvent.mutate(
+      { eventId: event.id, status },
+      {
+        onSuccess: () => {
+          if (status === 'confirmed') {
+            setJustConfirmed(true);
+          }
+        },
+      },
+    );
   };
 
   return (
@@ -105,23 +118,28 @@ export function EventCard({
       {/* Header: attendee ring + title + meta + badge/actions */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-start gap-3 min-w-0 flex-1">
-          <Aro data-testid="attendee-ring" members={attendeeRing} size={42}>
-            {event.status === 'confirmed' ? (
-              <svg
-                data-testid="attendee-ring-check"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={3}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4 text-success"
-                aria-hidden="true"
-              >
-                <polyline points="4 12 9 17 20 6" />
-              </svg>
-            ) : undefined}
-          </Aro>
+          <motion.div
+            animate={motionSafe && justConfirmed ? { scale: [1, 1.06, 1] } : undefined}
+            transition={spring.bouncy}
+          >
+            <Aro data-testid="attendee-ring" members={attendeeRing} size={42}>
+              {event.status === 'confirmed' ? (
+                <svg
+                  data-testid="attendee-ring-check"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 text-success"
+                  aria-hidden="true"
+                >
+                  <polyline points="4 12 9 17 20 6" />
+                </svg>
+              ) : undefined}
+            </Aro>
+          </motion.div>
           <div className="min-w-0 flex-1">
             <h4 className="text-[17px] font-bold text-text leading-snug flex items-center gap-1.5">
               <span className="truncate">{event.title}</span>

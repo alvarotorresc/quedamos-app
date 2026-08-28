@@ -2,27 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Button } from './Button';
 
-vi.mock('framer-motion', () => ({
-  motion: {
-    button: ({
-      children,
-      whileTap,
-      ...props
-    }: React.ComponentProps<'button'> & { whileTap?: unknown }) => (
-      <button {...props}>{children}</button>
-    ),
-    span: ({
-      children,
-      animate,
-      transition,
-      ...props
-    }: React.ComponentProps<'span'> & {
-      animate?: unknown;
-      transition?: unknown;
-    }) => <span {...props}>{children}</span>,
-  },
-}));
-
 describe('Button', () => {
   it('renders children text correctly', () => {
     render(<Button>Click me</Button>);
