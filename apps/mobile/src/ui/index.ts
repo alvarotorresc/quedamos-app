@@ -6,3 +6,5 @@ export { Badge } from './Badge';
 export { EmptyState } from './EmptyState';
 export { SkeletonCard } from './SkeletonCard';
 export { DotLoader } from './DotLoader';
+export { Aro } from './Aro';
+export type { AroMember } from './Aro';
