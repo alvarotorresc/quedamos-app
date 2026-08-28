@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   IonPage,
   IonContent,
@@ -37,6 +37,7 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
 import { searchCities, type GeocodingResult } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
 import { HiOutlineArrowPath } from 'react-icons/hi2';
 
 function formatCode(code: string): string {
@@ -80,6 +81,9 @@ export default function GroupDetailPage() {
   const [citySearch, setCitySearch] = useState('');
   const [cityResults, setCityResults] = useState<GeocodingResult[]>([]);
   const [showCitySearch, setShowCitySearch] = useState(false);
+
+  // Member color map (userId -> color), by join order within the group
+  const colorMap = useMemo(() => buildMemberColorMap(group?.members ?? []), [group?.members]);
 
   const handleCopy = async () => {
     if (!invite?.inviteCode) return;
@@ -235,7 +239,7 @@ export default function GroupDetailPage() {
                   <div className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3">
                     <Avatar
                       name={member.user.name}
-                      color={getMemberColorByUserId(member.userId)}
+                      color={colorMap.get(member.userId) ?? getMemberColorByUserId(member.userId)}
                       size={36}
                     />
                     <div className="flex-1 min-w-0 flex items-center gap-2">

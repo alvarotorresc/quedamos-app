@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useCreateEvent } from '../hooks/useEvents';
@@ -12,6 +12,7 @@ import { LocationSearch } from './LocationSearch';
 import { formatDateKey } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
 
 export interface EventPrefill {
   date: string;
@@ -149,6 +150,9 @@ export function CreateEventModal({
 
   // Other members (excluding current user)
   const otherMembers = members.filter((m) => m.userId !== user?.id);
+
+  // Member color map (userId -> color), by join order within the group
+  const colorMap = useMemo(() => buildMemberColorMap(members), [members]);
 
   return (
     <IonModal
@@ -367,7 +371,7 @@ export function CreateEventModal({
                 )}
                 {otherMembers.map((m) => {
                   const isSelected = selectedMemberIds.has(m.userId);
-                  const color = getMemberColorByUserId(m.userId);
+                  const color = colorMap.get(m.userId) ?? getMemberColorByUserId(m.userId);
                   return (
                     <button
                       key={m.userId}
@@ -393,7 +397,7 @@ export function CreateEventModal({
               <div className="flex gap-1 flex-wrap">
                 {[...selectedMemberIds].map((id) => {
                   const m = members.find((mem) => mem.userId === id);
-                  const color = getMemberColorByUserId(id);
+                  const color = colorMap.get(id) ?? getMemberColorByUserId(id);
                   return (
                     <div
                       key={id}

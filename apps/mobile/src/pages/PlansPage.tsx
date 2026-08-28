@@ -33,7 +33,7 @@ import { EditProposalModal } from '../components/EditProposalModal';
 import { ConvertProposalModal } from '../components/ConvertProposalModal';
 import type { Event } from '../services/events';
 import type { Proposal } from '../services/proposals';
-import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
 
 export default function PlansPage() {
   useScreenView('Plans');
@@ -122,14 +122,8 @@ export default function PlansPage() {
   const [showPast, setShowPast] = useState(false);
   const [showClosedProposals, setShowClosedProposals] = useState(false);
 
-  // Member color map (userId -> color)
-  const memberColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    members.forEach((m) => {
-      map.set(m.userId, getMemberColorByUserId(m.userId));
-    });
-    return map;
-  }, [members]);
+  // Member color map (userId -> color), by join order within the group
+  const memberColorMap = useMemo(() => buildMemberColorMap(members), [members]);
 
   // Split events into upcoming and past, applying online filter
   const { upcoming, past } = useMemo(() => {

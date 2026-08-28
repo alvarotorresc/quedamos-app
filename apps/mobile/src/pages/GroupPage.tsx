@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
@@ -13,6 +13,7 @@ import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui';
 import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
 
 type FormMode = 'create' | 'join' | null;
 
@@ -25,6 +26,15 @@ export default function GroupPage() {
   const { data: groups, isLoading } = useGroups();
   const createGroup = useCreateGroup();
   const joinGroup = useJoinGroup();
+
+  // Per-group member color map (userId -> color), by join order within each group
+  const groupColorMaps = useMemo(() => {
+    const byGroup = new Map<string, Map<string, string>>();
+    (groups ?? []).forEach((group) => {
+      byGroup.set(group.id, buildMemberColorMap(group.members));
+    });
+    return byGroup;
+  }, [groups]);
 
   const [formMode, setFormMode] = useState<FormMode>(null);
   const [groupName, setGroupName] = useState('');
@@ -130,9 +140,10 @@ export default function GroupPage() {
               {hasGroups && (
                 <div className="flex flex-col gap-2 mb-6">
                   {groups.map((group) => {
+                    const colorMap = groupColorMaps.get(group.id);
                     const memberAvatars = group.members.map((m) => ({
                       name: m.user.name,
-                      color: getMemberColorByUserId(m.userId),
+                      color: colorMap?.get(m.userId) ?? getMemberColorByUserId(m.userId),
                     }));
 
                     return (

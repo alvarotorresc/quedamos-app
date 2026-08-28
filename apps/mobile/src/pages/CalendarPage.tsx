@@ -28,7 +28,7 @@ import { EventDetailModal } from '../components/EventDetailModal';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
-import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
 
 type CalView = 'week' | 'month' | 'list';
 
@@ -81,14 +81,8 @@ export default function CalendarPage() {
   const [createEventPrefill, setCreateEventPrefill] = useState<EventPrefill | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
-  // Member color map (userId -> color)
-  const memberColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    members.forEach((m) => {
-      map.set(m.userId, getMemberColorByUserId(m.userId));
-    });
-    return map;
-  }, [members]);
+  // Member color map (userId -> color), by join order within the group
+  const memberColorMap = useMemo(() => buildMemberColorMap(members), [members]);
 
   // Index availability by date — use apiDateToKey to handle ISO dates safely
   const availabilityByDate = useMemo(() => {
