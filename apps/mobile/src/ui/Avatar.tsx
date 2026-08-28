@@ -1,13 +1,13 @@
-import { MEMBER_COLORS, MEMBER_GRADIENTS, MEMBER_GLOWS } from '../lib/constants';
-
-interface AvatarProps {
+interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
   name: string;
   color: string;
   size?: number;
   onClick?: () => void;
-  className?: string;
+  /** @deprecated rediseño 1A: sin glow visual */
   pulse?: boolean;
 }
+
+const INK = '#33302A'; // tinta de día en AMBAS luces (spec §5.1): 4.8–6.8:1 sobre los 6 colores
 
 export function Avatar({
   name,
@@ -15,7 +15,8 @@ export function Avatar({
   size = 32,
   onClick,
   className = '',
-  pulse = false,
+  pulse: _pulse,
+  ...rest
 }: AvatarProps) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const initials =
@@ -23,40 +24,26 @@ export function Avatar({
       ? (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase()
       : name.slice(0, 2).toUpperCase();
 
-  const colorIndex = MEMBER_COLORS.indexOf(color as (typeof MEMBER_COLORS)[number]);
-  const gradient =
-    colorIndex >= 0 ? MEMBER_GRADIENTS[colorIndex] : `linear-gradient(135deg, ${color}, ${color})`;
-  const glow = colorIndex >= 0 ? MEMBER_GLOWS[colorIndex] : `${color}4D`;
-
   const isClickable = !!onClick;
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
 
   return (
     <div
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
       onClick={onClick}
-      className={`
-        flex items-center justify-center font-bold shrink-0 select-none
-        transition-transform duration-150
-        ${isClickable ? 'cursor-pointer active:scale-[0.92]' : ''}
-        ${pulse ? 'animate-[glow-pulse_2.5s_ease-in-out_infinite]' : ''}
-        ${className}
-      `
-        .trim()
-        .replace(/\s+/g, ' ')}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: '50%',
-        background: gradient,
-        fontSize: size * 0.35,
-        color: 'white',
-        boxShadow: pulse ? undefined : `0 0 8px ${glow}`,
-        ...({
-          '--glow-color': glow,
-          '--glow-soft': glow.replace('0.3', '0.12'),
-        } as React.CSSProperties),
-      }}
+      onKeyDown={handleKeyDown}
+      className={`rounded-full flex items-center justify-center font-extrabold shrink-0 ${
+        isClickable ? 'cursor-pointer active:scale-[0.92] transition-transform duration-150 select-none' : ''
+      } ${className}`}
+      style={{ width: size, height: size, background: color, color: INK, fontSize: size * 0.38 }}
+      {...rest}
     >
       {initials}
     </div>
