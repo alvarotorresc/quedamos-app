@@ -205,7 +205,7 @@ export default function ProfilePage() {
   };
 
   const inputClass =
-    'w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40';
+    'w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary';
 
   return (
     <IonPage>
@@ -225,14 +225,14 @@ export default function ProfilePage() {
 
           {/* Success message */}
           {successMessage && (
-            <div className="bg-success/10 border border-success/20 rounded-btn p-3 text-success text-sm mb-4">
+            <div className="bg-success-tint border border-subtle rounded-btn p-3 text-success text-sm mb-4">
               {successMessage}
             </div>
           )}
 
           {/* Error message */}
           {error && (
-            <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm mb-4">
+            <div className="bg-error-tint border border-subtle rounded-btn p-3 text-danger text-sm mb-4">
               {error}
             </div>
           )}
@@ -292,7 +292,7 @@ export default function ProfilePage() {
                     className={`${inputClass} ${
                       confirmEmail.length > 0 &&
                       newEmail.trim().toLowerCase() !== confirmEmail.trim().toLowerCase()
-                        ? '!border-danger/50'
+                        ? '!border-error'
                         : ''
                     }`}
                   />
@@ -370,7 +370,7 @@ export default function ProfilePage() {
                     placeholder={t('profile.confirmPassword')}
                     className={`${inputClass} ${
                       confirmPassword.length > 0 && newPassword !== confirmPassword
-                        ? '!border-danger/50'
+                        ? '!border-error'
                         : ''
                     }`}
                   />
@@ -541,7 +541,7 @@ export default function ProfilePage() {
           >
             <span className="text-sm text-text">{t('profile.theme')}</span>
             <div
-              className={`w-10 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary/30' : 'bg-toggle-off'}`}
+              className={`w-10 h-6 rounded-full relative transition-colors ${darkMode ? 'bg-primary-tint' : 'bg-toggle-off'}`}
             >
               <div
                 className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${darkMode ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`}

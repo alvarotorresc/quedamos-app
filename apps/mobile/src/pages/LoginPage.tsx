@@ -69,7 +69,7 @@ export default function LoginPage() {
             </h1>
 
             {error && (
-              <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
+              <div className="bg-error-tint border border-subtle rounded-btn p-3 text-danger text-sm">
                 {error}
               </div>
             )}

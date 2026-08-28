@@ -40,4 +40,14 @@ describe('WeekView rediseñada', () => {
     render(<WeekView {...buildProps()} />);
     expect(screen.getByText('calendar.allCan')).toBeInTheDocument();
   });
+  it('el mejor día con una quedada ya creada se pinta como fila normal, no como panel', () => {
+    const props = buildProps();
+    const eventsByDate = new Map([
+      [props.bestDayKey!, [{ id: 'e1', title: 'Cena', time: '21:00:00' }] as never[]],
+    ]);
+    render(<WeekView {...props} eventsByDate={eventsByDate} />);
+    expect(screen.queryByTestId('best-day-panel')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('day-row')).toHaveLength(7);
+    expect(screen.getByText(/Cena/)).toBeInTheDocument();
+  });
 });

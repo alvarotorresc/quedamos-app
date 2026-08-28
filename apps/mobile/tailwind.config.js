@@ -30,6 +30,10 @@ export default {
         warning: 'var(--app-warning)',
         danger: 'var(--app-error)',
         error: 'var(--app-error)',
+        'primary-tint': 'var(--app-primary-tint)',
+        'success-tint': 'var(--app-success-tint)',
+        'warning-tint': 'var(--app-warning-tint)',
+        'error-tint': 'var(--app-error-tint)',
         member: {
           blue: '#60A5FA',
           orange: '#F59E0B',

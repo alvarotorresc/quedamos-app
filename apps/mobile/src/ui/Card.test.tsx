@@ -28,8 +28,8 @@ describe('Card', () => {
       </Card>,
     );
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('border-primary/25');
-    expect(card.className).toContain('bg-primary-dark/10');
+    expect(card.className).toContain('border-subtle');
+    expect(card.className).toContain('bg-primary-tint');
   });
 
   it('applies unselected styles when selected is false', () => {

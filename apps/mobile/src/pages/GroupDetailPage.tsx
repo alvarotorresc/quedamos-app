@@ -407,8 +407,8 @@ export default function GroupDetailPage() {
           </section>
 
           {/* Danger zone */}
-          <section className="mb-8 rounded-xl border border-danger/20 p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-danger/70">
+          <section className="mb-8 rounded-xl border border-subtle p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-error">
               {t('group.dangerZone')}
             </h3>
 
@@ -426,7 +426,7 @@ export default function GroupDetailPage() {
                 <Button
                   variant="ghost"
                   onClick={() => setShowDeleteGroupAlert(true)}
-                  className="w-full !bg-danger/10 !text-danger border border-danger/20"
+                  className="w-full !bg-error-tint !text-danger border border-subtle"
                 >
                   {t('group.deleteGroup')}
                 </Button>

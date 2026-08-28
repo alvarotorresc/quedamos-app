@@ -18,7 +18,7 @@ export function LanguageSelector() {
           onClick={() => i18n.changeLanguage(code)}
           className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-btn text-sm font-medium transition-colors ${
             current === code
-              ? 'bg-primary/15 border border-primary/30 text-primary'
+              ? 'bg-primary-tint border border-strong text-primary'
               : 'bg-bg-input border border-strong text-text-muted'
           }`}
         >

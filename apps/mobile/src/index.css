@@ -35,6 +35,10 @@
   --app-success: #7FA98B;
   --app-warning: #C98D6B;
   --app-error: #D06A5C;
+  --app-primary-tint: rgba(242, 239, 231, 0.10);
+  --app-success-tint: rgba(127, 169, 139, 0.14);
+  --app-warning-tint: rgba(201, 141, 107, 0.14);
+  --app-error-tint: rgba(208, 106, 92, 0.14);
 }
 
 .light {
@@ -68,6 +72,10 @@
   --app-success: #3E7350;
   --app-warning: #8F6226;
   --app-error: #B04436;
+  --app-primary-tint: rgba(51, 48, 42, 0.08);
+  --app-success-tint: rgba(62, 115, 80, 0.12);
+  --app-warning-tint: rgba(143, 98, 38, 0.12);
+  --app-error-tint: rgba(176, 68, 54, 0.12);
 }
 
 

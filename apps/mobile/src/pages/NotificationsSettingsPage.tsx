@@ -95,7 +95,7 @@ export default function NotificationsSettingsPage() {
                     >
                       <span className="text-sm text-text">{t(labelKey)}</span>
                       <div
-                        className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary/30' : 'bg-toggle-off'}`}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary-tint' : 'bg-toggle-off'}`}
                       >
                         <div
                           className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${enabled ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`}

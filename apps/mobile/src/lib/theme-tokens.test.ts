@@ -21,6 +21,10 @@ describe('tokens un mundo, dos luces (spec §5.1)', () => {
     expect(rootBlock).toContain('--app-on-primary: #14120E');
     expect(rootBlock).toContain('--app-success: #7FA98B');
     expect(rootBlock).toContain('--app-error: #D06A5C');
+    expect(rootBlock).toContain('--app-primary-tint: rgba(242, 239, 231, 0.10)');
+    expect(rootBlock).toContain('--app-success-tint: rgba(127, 169, 139, 0.14)');
+    expect(rootBlock).toContain('--app-warning-tint: rgba(201, 141, 107, 0.14)');
+    expect(rootBlock).toContain('--app-error-tint: rgba(208, 106, 92, 0.14)');
   });
   it('día es papel (.light)', () => {
     expect(lightBlock).toContain('--app-bg: #F5F1E8');
@@ -32,6 +36,10 @@ describe('tokens un mundo, dos luces (spec §5.1)', () => {
     expect(lightBlock).toContain('--app-on-primary: #F5F1E8');
     expect(lightBlock).toContain('--app-success: #3E7350');
     expect(lightBlock).toContain('--app-error: #B04436');
+    expect(lightBlock).toContain('--app-primary-tint: rgba(51, 48, 42, 0.08)');
+    expect(lightBlock).toContain('--app-success-tint: rgba(62, 115, 80, 0.12)');
+    expect(lightBlock).toContain('--app-warning-tint: rgba(143, 98, 38, 0.12)');
+    expect(lightBlock).toContain('--app-error-tint: rgba(176, 68, 54, 0.12)');
   });
   it('el azul ya no es token de UI', () => {
     expect(rootBlock).not.toContain('#60a5fa');

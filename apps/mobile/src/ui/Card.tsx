@@ -25,7 +25,7 @@ export function Card({
   className = '',
   ...props
 }: CardProps) {
-  const borderClass = selected ? 'border-primary/25 bg-primary-dark/10' : variantBorders[variant];
+  const borderClass = selected ? 'border-subtle bg-primary-tint' : variantBorders[variant];
 
   return (
     <div

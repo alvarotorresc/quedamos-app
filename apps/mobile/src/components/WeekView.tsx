@@ -96,7 +96,7 @@ export function WeekView({
                 ? t('calendar.canCountOne')
                 : t('calendar.canCount', { count: availCount });
 
-        if (key === bestDayKey && availCount === totalMembers) {
+        if (key === bestDayKey && availCount === totalMembers && dayEvents.length === 0) {
           return (
             <div
               key={key}
