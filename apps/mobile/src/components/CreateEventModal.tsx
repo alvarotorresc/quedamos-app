@@ -17,9 +17,10 @@ import { buildMemberColorMap } from '../lib/member-colors';
 export interface EventPrefill {
   date: string;
   dateLabel: string;
+  weekday: string;
   suggestedTime: string | null;
   suggestedSlot: string | null;
-  availableMembers: { name: string; color: string }[];
+  availableMembers: { userId: string; name: string; color: string }[];
   availableCount: number;
   weather?: WeatherData[] | null;
 }
@@ -83,7 +84,7 @@ export function CreateEventModal({
 
   useEffect(() => {
     if (isOpen) {
-      setTitle('');
+      setTitle(prefill ? t('plans.create.defaultTitle', { weekday: prefill.weekday }) : '');
       setDescription('');
       setLocation('');
       setLocationLat(null);
@@ -91,11 +92,14 @@ export function CreateEventModal({
       setTime(prefill?.suggestedTime ?? '');
       setEndTime('');
       setDate('');
-      setSelectedMemberIds(new Set());
+      setSelectedMemberIds(
+        prefill ? new Set(prefill.availableMembers.map((m) => m.userId)) : new Set(),
+      );
       setShowMemberSelector(false);
       setIsOnline(false);
       setMeetingUrl('');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, prefill]);
 
   const toggleMember = (memberId: string) => {
@@ -143,9 +147,16 @@ export function CreateEventModal({
     onClose();
   };
 
-  const inputStyle = {
-    background: 'var(--app-bg-hover)',
-    border: '1px solid var(--app-border-strong)',
+  const fieldLabelClass =
+    'block font-mono text-[10px] tracking-[0.14em] uppercase text-text-muted mb-1.5';
+  const underlineInputClass =
+    'w-full bg-transparent border-0 border-b-[1.5px] border-strong text-sm text-text outline-none placeholder:text-text-dark py-2';
+  const underlineFieldStyle: React.CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1.5px solid var(--app-border-strong)',
+    borderRadius: 0,
+    padding: '8px 0',
   };
 
   // Other members (excluding current user)
@@ -153,6 +164,14 @@ export function CreateEventModal({
 
   // Member color map (userId -> color), by join order within the group
   const colorMap = useMemo(() => buildMemberColorMap(members), [members]);
+
+  // Whether the live selection still exactly matches the prefill's "who can" set —
+  // used to decide whether the chips summary would just duplicate the whoCan row above.
+  const prefillIds = new Set((prefill?.availableMembers ?? []).map((m) => m.userId));
+  const selectionMatchesPrefill =
+    prefill != null &&
+    selectedMemberIds.size === prefillIds.size &&
+    [...selectedMemberIds].every((id) => prefillIds.has(id));
 
   return (
     <IonModal
@@ -186,40 +205,33 @@ export function CreateEventModal({
 
         {/* Date — only shown when not coming from calendar */}
         {!prefill && (
-          <div className="mb-2">
-            <label className="block text-[10px] text-text-dark mb-1">
-              {t('plans.create.date')}
-            </label>
+          <div className="mb-3">
+            <label className={fieldLabelClass}>{t('plans.create.date')}</label>
             <input
               type="date"
               value={date}
               min={today}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
-              style={inputStyle}
+              className={underlineInputClass}
             />
           </div>
         )}
 
         {/* Title */}
-        <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.name')}</label>
+        <div className="mb-3">
+          <label className={fieldLabelClass}>{t('plans.create.name')}</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('plans.create.namePlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
-            style={inputStyle}
+            className={underlineInputClass}
           />
         </div>
 
         {/* Online toggle */}
-        <div className="mb-2">
-          <div
-            className="flex items-center justify-between rounded-[10px] px-3 py-2.5"
-            style={inputStyle}
-          >
+        <div className="mb-3">
+          <div className="flex items-center justify-between border-b-[1.5px] border-strong py-2">
             <span className="text-sm text-text">{t('online.toggle')}</span>
             <button
               type="button"
@@ -235,30 +247,26 @@ export function CreateEventModal({
 
         {/* Location or Meeting URL */}
         {isOnline ? (
-          <div className="mb-2">
-            <label className="block text-[10px] text-text-dark mb-1">
+          <div className="mb-3">
+            <label className={fieldLabelClass}>
               {t('online.meetingUrl')}
-              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+              <span className="ml-1 normal-case opacity-60">({t('common.optional')})</span>
             </label>
             <input
               type="url"
               value={meetingUrl}
               onChange={(e) => setMeetingUrl(e.target.value)}
               placeholder={t('online.meetingUrlPlaceholder')}
-              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
-              style={inputStyle}
+              className={underlineInputClass}
             />
           </div>
         ) : (
-          <div className="mb-2">
-            <label className="block text-[10px] text-text-dark mb-1">
-              {t('plans.create.location')}
-              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
-            </label>
+          <div className="mb-3">
+            <label className={fieldLabelClass}>{t('plans.create.location')}</label>
             <LocationSearch
               value={location}
-              placeholder={t('plans.create.locationPlaceholder')}
-              style={inputStyle}
+              placeholder={t('plans.create.locationOptional')}
+              style={underlineFieldStyle}
               onChange={(text) => {
                 setLocation(text);
                 setLocationLat(null);
@@ -288,30 +296,29 @@ export function CreateEventModal({
         )}
 
         {/* Description */}
-        <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
+        <div className="mb-3">
+          <label className={fieldLabelClass}>
             {t('plans.create.description')}
-            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+            <span className="ml-1 normal-case opacity-60">({t('common.optional')})</span>
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('plans.create.descriptionPlaceholder')}
             rows={2}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark resize-none"
-            style={inputStyle}
+            className={`${underlineInputClass} resize-none`}
           />
         </div>
 
         {/* Time */}
-        <div className="mb-2">
-          <label className="block text-[10px] text-text-dark mb-1">
+        <div className="mb-3">
+          <label className={fieldLabelClass}>
             {t('plans.create.time')}
             {!prefill?.suggestedTime && (
-              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+              <span className="ml-1 normal-case opacity-60">({t('common.optional')})</span>
             )}
             {prefill?.suggestedTime && prefill?.suggestedSlot && (
-              <span className="ml-1.5 text-primary">
+              <span className="ml-1.5 normal-case text-primary">
                 · {t('plans.create.suggested')}:{' '}
                 {t(`calendar.availability.${prefill.suggestedSlot}`)}
               </span>
@@ -321,39 +328,52 @@ export function CreateEventModal({
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
-            style={inputStyle}
+            className={underlineInputClass}
           />
         </div>
 
         {/* End Time */}
-        <div className="mb-3">
-          <label className="block text-[10px] text-text-dark mb-1">
+        <div className="mb-4">
+          <label className={fieldLabelClass}>
             {t('plans.create.endTime')}
-            <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+            <span className="ml-1 normal-case opacity-60">({t('common.optional')})</span>
           </label>
           <input
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             min={time || undefined}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
-            style={inputStyle}
+            className={underlineInputClass}
           />
           {endTimeError && (
             <p className="text-[10px] text-danger mt-1">{t('plans.create.endTimeError')}</p>
           )}
         </div>
 
-        {/* Member selector */}
+        {/* "Who can" row — display-only preview of who marked themselves available
+            for this day. Editing who actually gets invited still happens below,
+            via the group member selector (shared selectedMemberIds). */}
+        {prefill && prefill.availableMembers.length > 0 && (
+          <div className="mb-4">
+            <label className={fieldLabelClass}>{t('plans.create.whoCan')}</label>
+            <div className="flex items-center gap-2 flex-wrap">
+              {prefill.availableMembers.map((m) => (
+                <Avatar key={m.userId} name={m.name} color={m.color} size={30} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Member selector — lets you customize attendees beyond the "who can" default,
+            including inviting members who haven't marked availability yet. */}
         {otherMembers.length > 0 && (
           <div className="mb-4">
             <button
               onClick={() => setShowMemberSelector(!showMemberSelector)}
-              className="flex items-center gap-1.5 text-[10px] text-text-dark mb-1.5 bg-transparent border-none p-0 cursor-pointer"
+              className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-text-muted mb-1.5 bg-transparent border-none p-0 cursor-pointer"
             >
               <span>{t('plans.create.selectAttendees')}</span>
-              <span className="ml-1 text-text-dark opacity-60">({t('common.optional')})</span>
+              <span className="ml-1 normal-case opacity-60">({t('common.optional')})</span>
               <span
                 className="transition-transform text-[8px]"
                 style={{ transform: showMemberSelector ? 'rotate(90deg)' : 'rotate(0deg)' }}
@@ -393,7 +413,9 @@ export function CreateEventModal({
               </div>
             )}
 
-            {selectedMemberIds.size > 0 && !showMemberSelector && (
+            {(!prefill || !selectionMatchesPrefill) &&
+              selectedMemberIds.size > 0 &&
+              !showMemberSelector && (
               <div className="flex gap-1 flex-wrap">
                 {[...selectedMemberIds].map((id) => {
                   const m = members.find((mem) => mem.userId === id);
@@ -417,32 +439,8 @@ export function CreateEventModal({
           </div>
         )}
 
-        {/* Prefill attendees (from calendar) - informational only */}
-        {prefill && prefill.availableMembers.length > 0 && selectedMemberIds.size === 0 && (
-          <div className="mb-4">
-            <label className="block text-[10px] text-text-dark mb-1.5">
-              {t('plans.create.attendees')}
-            </label>
-            <div className="flex gap-1 flex-wrap">
-              {prefill.availableMembers.map((m, i) => (
-                <div
-                  key={`${m.name}-${i}`}
-                  className="flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5"
-                  style={{
-                    background: 'var(--app-bg-card)',
-                    border: '1px solid var(--app-border)',
-                  }}
-                >
-                  <Avatar name={m.name} color={m.color} size={20} />
-                  <span className="text-[11px] text-text-muted">{m.name}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Submit */}
-        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
+        <Button variant="primary" onClick={handleSubmit} disabled={!canSubmit} className="w-full">
           {isCreating ? t('plans.create.creating') : t('plans.create.submit')}
         </Button>
       </div>

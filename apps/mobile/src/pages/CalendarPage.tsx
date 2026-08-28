@@ -177,6 +177,7 @@ export default function CalendarPage() {
     const dayAvail = availabilityByDate.get(dateKey) ?? [];
 
     const availMembers = dayAvail.map((a) => ({
+      userId: a.userId,
       name: a.user?.name ?? '?',
       color: memberColorMap.get(a.userId) ?? '#60A5FA',
     }));
@@ -188,10 +189,12 @@ export default function CalendarPage() {
       day: 'numeric',
       month: 'long',
     });
+    const weekday = day.toLocaleDateString(locale, { weekday: 'long' });
 
     setCreateEventPrefill({
       date: dateKey,
       dateLabel,
+      weekday,
       suggestedTime: suggestion?.time ?? null,
       suggestedSlot: suggestion?.slot ?? null,
       availableMembers: availMembers,
