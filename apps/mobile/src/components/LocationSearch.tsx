@@ -93,7 +93,7 @@ export function LocationSearch({
         <div
           className="absolute z-50 w-full mt-1 rounded-[10px] overflow-hidden shadow-lg"
           style={{
-            background: 'var(--app-bg-light, #0F1729)',
+            background: 'var(--app-bg-light)',
             border: '1px solid var(--app-border-strong)',
           }}
         >

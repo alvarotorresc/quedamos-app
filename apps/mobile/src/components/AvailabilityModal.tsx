@@ -124,9 +124,12 @@ export function AvailabilityModal({
               onClick={() => setType(key)}
               className="flex-1 py-2 rounded-[9px] text-xs font-semibold transition-colors"
               style={{
-                background: type === key ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
-                color: type === key ? '#60A5FA' : '#4B5C75',
-                border: `1px solid ${type === key ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
+                background:
+                  type === key
+                    ? 'color-mix(in srgb, var(--app-primary) 12%, transparent)'
+                    : 'var(--app-bg-card)',
+                color: type === key ? 'var(--app-text)' : 'var(--app-text-dark)',
+                border: `1px solid ${type === key ? 'color-mix(in srgb, var(--app-primary) 20%, transparent)' : 'var(--app-border)'}`,
               }}
             >
               {label}
@@ -144,10 +147,10 @@ export function AvailabilityModal({
                 className="flex-1 py-2.5 rounded-[9px] text-xs font-semibold transition-colors"
                 style={{
                   background: selectedSlots.includes(slot)
-                    ? 'rgba(37,99,235,0.12)'
+                    ? 'color-mix(in srgb, var(--app-primary) 12%, transparent)'
                     : 'var(--app-bg-card)',
-                  color: selectedSlots.includes(slot) ? '#60A5FA' : '#4B5C75',
-                  border: `1px solid ${selectedSlots.includes(slot) ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
+                  color: selectedSlots.includes(slot) ? 'var(--app-text)' : 'var(--app-text-dark)',
+                  border: `1px solid ${selectedSlots.includes(slot) ? 'color-mix(in srgb, var(--app-primary) 20%, transparent)' : 'var(--app-border)'}`,
                 }}
               >
                 {t(`calendar.availability.${SLOT_KEYS[idx]}`)}

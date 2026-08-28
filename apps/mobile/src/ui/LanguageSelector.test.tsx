@@ -34,7 +34,7 @@ describe('LanguageSelector', () => {
     render(<LanguageSelector />);
     const buttons = screen.getAllByRole('button');
     const spanishButton = buttons.find((btn) => !btn.textContent?.includes('English'));
-    expect(spanishButton?.className).toContain('bg-primary/15');
+    expect(spanishButton?.className).toContain('bg-primary-tint');
   });
 
   it('highlights English as inactive by default (language is es)', () => {
@@ -78,13 +78,13 @@ describe('LanguageSelector', () => {
     render(<LanguageSelector />);
     const buttons = screen.getAllByRole('button');
     const spanishButton = buttons.find((btn) => !btn.textContent?.includes('English'));
-    expect(spanishButton?.className).toContain('bg-primary/15');
+    expect(spanishButton?.className).toContain('bg-primary-tint');
   });
 
   it('treats non-es language codes as English', () => {
     mockLanguage = 'en';
     render(<LanguageSelector />);
     const englishButton = screen.getByText('English').closest('button');
-    expect(englishButton?.className).toContain('bg-primary/15');
+    expect(englishButton?.className).toContain('bg-primary-tint');
   });
 });

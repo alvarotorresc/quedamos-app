@@ -67,7 +67,7 @@ export function ListView({
               style={{
                 padding: '12px 14px',
                 background: 'var(--app-bg-card)',
-                border: `1px solid ${isBest ? 'rgba(96,165,250,0.12)' : isSecondBest ? 'rgba(148,163,184,0.12)' : 'var(--app-border)'}`,
+                border: `1px solid ${isBest ? 'color-mix(in srgb, var(--app-primary) 12%, transparent)' : isSecondBest ? 'color-mix(in srgb, var(--app-text-muted) 12%, transparent)' : 'var(--app-border)'}`,
               }}
             >
               <div>
@@ -83,8 +83,8 @@ export function ListView({
                     <span
                       className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-[7px]"
                       style={{
-                        background: 'rgba(96,165,250,0.12)',
-                        color: '#60A5FA',
+                        background: 'color-mix(in srgb, var(--app-primary) 12%, transparent)',
+                        color: 'var(--app-text)',
                       }}
                     >
                       {t('calendar.recommended')}
@@ -94,8 +94,8 @@ export function ListView({
                     <span
                       className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-[7px]"
                       style={{
-                        background: 'rgba(148,163,184,0.10)',
-                        color: '#94A3B8',
+                        background: 'color-mix(in srgb, var(--app-text-muted) 10%, transparent)',
+                        color: 'var(--app-text-muted)',
                       }}
                     >
                       {t('calendar.secondRecommended')}

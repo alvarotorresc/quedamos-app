@@ -12,13 +12,13 @@ import { openInMaps } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
 import { downloadICS } from '../lib/ics-utils';
 import { apiDateToKey } from '../lib/date-utils';
-import type { Event } from '../services/events';
+import type { Event, EventStatus } from '../services/events';
 import { MEMBER_COLORS } from '../lib/constants';
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#F59E0B',
-  confirmed: '#34D399',
-  cancelled: '#FB7185',
+const STATUS_BADGE_VARIANT: Record<EventStatus, 'pending' | 'confirmed' | 'cancelled'> = {
+  pending: 'pending',
+  confirmed: 'confirmed',
+  cancelled: 'cancelled',
 };
 
 interface EventDetailModalProps {
@@ -80,7 +80,9 @@ export function EventDetailModal({
           >
             <HiOutlineArrowDownTray className="w-5 h-5 text-text-muted" />
           </button>
-          <Badge color={STATUS_COLORS[event.status]}>{t(`plans.status.${event.status}`)}</Badge>
+          <Badge variant={STATUS_BADGE_VARIANT[event.status]}>
+            {t(`plans.status.${event.status}`)}
+          </Badge>
         </div>
 
         <div className="flex items-center gap-3 text-xs text-text-muted mb-2">

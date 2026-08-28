@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   IonPage,
   IonContent,
@@ -37,6 +37,8 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
 import { searchCities, type GeocodingResult } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
+import { GroupRing } from '../components/GroupRing';
 import { HiOutlineArrowPath } from 'react-icons/hi2';
 
 function formatCode(code: string): string {
@@ -80,6 +82,9 @@ export default function GroupDetailPage() {
   const [citySearch, setCitySearch] = useState('');
   const [cityResults, setCityResults] = useState<GeocodingResult[]>([]);
   const [showCitySearch, setShowCitySearch] = useState(false);
+
+  // Member color map (userId -> color), by join order within the group
+  const colorMap = useMemo(() => buildMemberColorMap(group?.members ?? []), [group?.members]);
 
   const handleCopy = async () => {
     if (!invite?.inviteCode) return;
@@ -212,13 +217,16 @@ export default function GroupDetailPage() {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/tabs/group" text="" />
           </IonButtons>
-          <IonTitle>
-            {group.emoji} {group.name}
-          </IonTitle>
+          <IonTitle>{group.name}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
         <div className="max-w-md mx-auto px-4">
+          {/* Héroe: la Cuadrilla */}
+          <div className="flex justify-center mb-6">
+            <GroupRing members={group.members} emoji={group.emoji} />
+          </div>
+
           {/* Members */}
           <section className="mb-6">
             <h3 className="text-xs font-semibold text-text-dark uppercase tracking-wider mb-3">
@@ -235,16 +243,16 @@ export default function GroupDetailPage() {
                   <div className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3">
                     <Avatar
                       name={member.user.name}
-                      color={getMemberColorByUserId(member.userId)}
+                      color={colorMap.get(member.userId) ?? getMemberColorByUserId(member.userId)}
                       size={36}
                     />
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       <span className="text-sm text-text truncate">{member.user.name}</span>
                       {member.userId === group.createdById && (
-                        <Badge color="#F59E0B">{t('group.creator')}</Badge>
+                        <Badge variant="neutral">{t('group.creator')}</Badge>
                       )}
                       {member.role === 'admin' && member.userId !== group.createdById && (
-                        <Badge color="#60A5FA">{t('group.admin')}</Badge>
+                        <Badge variant="neutral">{t('group.admin')}</Badge>
                       )}
                       {member.userId === currentUserId && (
                         <span className="text-xs text-text-muted">{t('group.memberYou')}</span>
@@ -399,8 +407,8 @@ export default function GroupDetailPage() {
           </section>
 
           {/* Danger zone */}
-          <section className="mb-8 rounded-xl border border-danger/20 p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-danger/70">
+          <section className="mb-8 rounded-xl border border-subtle p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-error">
               {t('group.dangerZone')}
             </h3>
 
@@ -418,7 +426,7 @@ export default function GroupDetailPage() {
                 <Button
                   variant="ghost"
                   onClick={() => setShowDeleteGroupAlert(true)}
-                  className="w-full !bg-danger/10 !text-danger border border-danger/20"
+                  className="w-full !bg-error-tint !text-danger border border-subtle"
                 >
                   {t('group.deleteGroup')}
                 </Button>

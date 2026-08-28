@@ -48,6 +48,30 @@ vi.mock('@capacitor/share', () => ({
   },
 }));
 
+// Mock framer-motion: strip animation-only props and render plain DOM elements so
+// component tests stay deterministic and don't need per-file mocks for every new
+// motion.* tag. motion.test.ts unmocks this to test the real reduced-motion wiring.
+vi.mock('framer-motion', async () => {
+  const React = await import('react');
+  const strip = (props: Record<string, unknown>) => {
+    const { whileTap, whileHover, animate, initial, exit, transition, layoutId: _layoutId, ...rest } = props;
+    return rest;
+  };
+  const motionProxy = new Proxy(
+    {},
+    {
+      get: (_t, tag: string) =>
+        ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) =>
+          React.createElement(tag, strip(props), children as React.ReactNode),
+    },
+  );
+  return {
+    motion: motionProxy,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    useReducedMotion: () => false,
+  };
+});
+
 // Mock i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

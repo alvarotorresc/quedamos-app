@@ -103,10 +103,10 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
             <button
               type="button"
               onClick={() => setIsOnline(!isOnline)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary' : 'bg-[#2a3142]'}`}
+              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary-tint' : 'bg-toggle-off'}`}
             >
               <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOnline ? 'left-5' : 'left-0.5'}`}
+                className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform ${isOnline ? 'left-5 bg-primary' : 'left-0.5 bg-text-dark'}`}
               />
             </button>
           </div>

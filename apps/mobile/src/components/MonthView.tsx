@@ -119,18 +119,20 @@ export function MonthView({
               className="text-center py-2.5 px-1 rounded-[10px] cursor-pointer aspect-square flex flex-col items-center justify-center active:scale-90 transition-transform"
               style={{
                 background: isSel
-                  ? 'rgba(37,99,235,0.18)'
+                  ? 'color-mix(in srgb, var(--app-primary) 18%, transparent)'
                   : ratio > 0.5
-                    ? `rgba(96,165,250,${ratio * 0.12})`
+                    ? `color-mix(in srgb, var(--app-primary) ${ratio * 12}%, transparent)`
                     : 'transparent',
-                border: today ? '1px solid rgba(96,165,250,0.3)' : '1px solid transparent',
+                border: today
+                  ? '1px solid color-mix(in srgb, var(--app-primary) 30%, transparent)'
+                  : '1px solid transparent',
               }}
             >
               <div
                 className="text-sm"
                 style={{
                   fontWeight: today ? 700 : 400,
-                  color: isSel || today ? '#60A5FA' : '#94A3B8',
+                  color: isSel || today ? 'var(--app-text)' : 'var(--app-text-muted)',
                 }}
               >
                 {day.getDate()}
@@ -225,7 +227,7 @@ export function MonthView({
                 className="flex-1 py-[7px] text-xs font-semibold rounded-btn border-none"
                 style={{
                   background: 'var(--app-bg-hover)',
-                  color: '#7B8CA8',
+                  color: 'var(--app-text-muted)',
                   border: '1px solid var(--app-border-strong)',
                 }}
               >

@@ -1,37 +1,30 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
-import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { AvatarStack } from '../ui/AvatarStack';
+import { Aro, type AroMember } from '../ui/Aro';
 import { Button } from '../ui/Button';
 import {
   HiOutlineMapPin,
-  HiOutlineClock,
   HiOutlinePencil,
   HiOutlineVideoCamera,
   HiOutlineArrowDownTray,
 } from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
+import { spring, useMotionSafe } from '../lib/motion';
 import { useAuthStore } from '../stores/auth';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
 import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
 import { downloadICS } from '../lib/ics-utils';
-import { WeatherBadge, getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
-import type { Event } from '../services/events';
+import { getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
+import type { Event, EventStatus } from '../services/events';
 import type { WeatherData } from '../services/weather';
-import { MEMBER_COLORS } from '../lib/constants';
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: '#FBBF24',
-  confirmed: '#34D399',
-  cancelled: '#FB7185',
-};
-
-const STATUS_VARIANTS: Record<string, 'default' | 'success' | 'pending' | 'cancelled'> = {
+const STATUS_BADGE_VARIANT: Record<EventStatus, 'pending' | 'confirmed' | 'cancelled'> = {
   pending: 'pending',
-  confirmed: 'success',
+  confirmed: 'confirmed',
   cancelled: 'cancelled',
 };
 
@@ -65,7 +58,9 @@ export function EventCard({
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const respondEvent = useRespondEvent(groupId);
+  const motionSafe = useMotionSafe();
   const [showWeatherDetail, setShowWeatherDetail] = useState(false);
+  const [justConfirmed, setJustConfirmed] = useState(false);
 
   const isResponding = respondEvent.isPending;
 
@@ -75,11 +70,10 @@ export function EventCard({
   const isPastEvent = dateKey < today;
   const dateObj = new Date(dateKey + 'T00:00:00');
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
-  const formattedDate = dateObj.toLocaleDateString(locale, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+  const weekdayShort = dateObj
+    .toLocaleDateString(locale, { weekday: 'short' })
+    .replace('.', '')
+    .toUpperCase();
 
   // Format time
   const startTime = event.time ? event.time.slice(0, 5) : null;
@@ -88,8 +82,8 @@ export function EventCard({
 
   // Attendees
   const confirmedAttendees = event.attendees.filter((a) => a.status === 'confirmed');
-  const declinedAttendees = event.attendees.filter((a) => a.status === 'declined');
   const totalAttendees = event.attendees.length;
+  const missingCount = Math.max(totalAttendees - confirmedAttendees.length, 0);
 
   // Current user's attendee status
   const myAttendee = event.attendees.find((a) => a.userId === user?.id);
@@ -99,22 +93,88 @@ export function EventCard({
 
   const isCreator = event.createdBy.id === user?.id;
 
+  // Ring of every group member in fixed slot order (same order as memberColorMap)
+  const confirmedUserIds = new Set(confirmedAttendees.map((a) => a.userId));
+  const attendeeRing: AroMember[] = [...memberColorMap.entries()].map(([userId, color]) => ({
+    color,
+    state: confirmedUserIds.has(userId) ? 'on' : 'off',
+  }));
+
   const handleRespond = (status: 'confirmed' | 'declined') => {
-    respondEvent.mutate({ eventId: event.id, status });
+    respondEvent.mutate(
+      { eventId: event.id, status },
+      {
+        onSuccess: () => {
+          if (status === 'confirmed') {
+            setJustConfirmed(true);
+          }
+        },
+      },
+    );
   };
 
   return (
-    <Card variant={STATUS_VARIANTS[event.status] ?? 'default'} className="!p-4">
-      {/* Header: title + badge + edit */}
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h4 className="text-[15px] font-bold text-text leading-snug flex-1 flex items-center gap-1.5">
-          {event.title}
-          {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
-        </h4>
-        <div className="flex items-center gap-1">
+    <div className="border-t border-subtle py-4">
+      {/* Header: attendee ring + title + meta + badge/actions */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <motion.div
+            animate={motionSafe && justConfirmed ? { scale: [1, 1.06, 1] } : undefined}
+            transition={spring.bouncy}
+          >
+            <Aro data-testid="attendee-ring" members={attendeeRing} size={42}>
+              {event.status === 'confirmed' ? (
+                <svg
+                  data-testid="attendee-ring-check"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="w-4 h-4 text-success"
+                  aria-hidden="true"
+                >
+                  <polyline points="4 12 9 17 20 6" />
+                </svg>
+              ) : undefined}
+            </Aro>
+          </motion.div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-[17px] font-bold text-text leading-snug flex items-center gap-1.5">
+              <span className="truncate">{event.title}</span>
+              {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
+            </h4>
+            <p className="font-mono text-[11px] text-text-muted flex items-center gap-1 mt-0.5">
+              <span>
+                {weekdayShort} {dateObj.getDate()}
+              </span>
+              {formattedTime && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{formattedTime}</span>
+                </>
+              )}
+              {!event.isOnline && weather && weather.length > 0 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <button
+                    onClick={() => setShowWeatherDetail((prev) => !prev)}
+                    className="font-mono text-[11px] text-text-muted underline-offset-2 hover:underline bg-transparent border-none p-0 cursor-pointer"
+                    aria-label={t('weather.showDetail')}
+                    aria-expanded={showWeatherDetail}
+                  >
+                    {Math.round(weather[0].tempMax)}°
+                  </button>
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => downloadICS(event)}
-            className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-white/5 transition-colors"
+            className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors"
             title={t('calendar.eventDetail.download')}
             aria-label={t('calendar.eventDetail.download')}
           >
@@ -123,42 +183,23 @@ export function EventCard({
           {isCreator && onEdit && (
             <button
               onClick={() => onEdit(event)}
-              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-white/5 transition-colors"
+              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors"
               title={t('plans.editButton')}
               aria-label={t('plans.editButton')}
             >
               <HiOutlinePencil className="w-4 h-4 text-text-muted" />
             </button>
           )}
-          <Badge color={STATUS_COLORS[event.status]}>{t(`plans.status.${event.status}`)}</Badge>
+          <Badge variant={STATUS_BADGE_VARIANT[event.status]}>
+            {t(`plans.status.${event.status}`)}
+          </Badge>
         </div>
-      </div>
-
-      {/* Date & time + weather badge */}
-      <div className="flex items-center gap-3 text-xs text-text-muted mb-1.5">
-        <span className="capitalize">{formattedDate}</span>
-        {formattedTime && (
-          <span className="flex items-center gap-0.5">
-            <HiOutlineClock className="w-3.5 h-3.5" />
-            {formattedTime}
-          </span>
-        )}
-        {!event.isOnline && weather && weather.length > 0 && (
-          <button
-            onClick={() => setShowWeatherDetail((prev) => !prev)}
-            className="inline-flex items-center gap-0.5 text-[10px] text-text-muted bg-transparent border-none p-0 cursor-pointer"
-            aria-label={t('weather.showDetail')}
-            aria-expanded={showWeatherDetail}
-          >
-            <WeatherBadge weatherCode={weather[0].weatherCode} tempMax={weather[0].tempMax} />
-          </button>
-        )}
       </div>
 
       {/* Weather detail panel (all cities) */}
       {!event.isOnline && showWeatherDetail && weather && weather.length > 0 && (
         <div
-          className="rounded-[10px] px-2.5 py-2 mb-1.5 space-y-0.5"
+          className="rounded-[10px] px-2.5 py-2 mt-2 space-y-0.5"
           style={{
             background: 'var(--app-bg-hover)',
             border: '1px solid var(--app-border)',
@@ -184,7 +225,7 @@ export function EventCard({
               href={sanitizeUrl(event.meetingUrl)}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-xs text-primary mb-1.5 underline-offset-2 hover:underline"
+              className="flex items-center gap-1 text-xs text-primary mt-2 underline-offset-2 hover:underline"
             >
               <HiOutlineVideoCamera className="w-3.5 h-3.5 shrink-0" />
               <span>{t('online.joinMeeting')}</span>
@@ -194,13 +235,13 @@ export function EventCard({
           (hasCoordinates(event.locationLat, event.locationLon) ? (
             <button
               onClick={() => openInMaps(event.location!, event.locationLat, event.locationLon)}
-              className="flex items-center gap-1 text-xs text-primary mb-1.5 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
+              className="flex items-center gap-1 text-xs text-primary mt-2 bg-transparent border-none p-0 cursor-pointer underline-offset-2 hover:underline"
             >
               <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
               <span>{event.location}</span>
             </button>
           ) : (
-            <div className="flex items-center gap-1 text-xs text-text-muted mb-1.5">
+            <div className="flex items-center gap-1 text-xs text-text-muted mt-2">
               <HiOutlineMapPin className="w-3.5 h-3.5 shrink-0" />
               <span>{event.location}</span>
             </div>
@@ -208,64 +249,35 @@ export function EventCard({
 
       {/* Description */}
       {event.description && (
-        <p className="text-xs text-text-dark mb-2 line-clamp-2">{event.description}</p>
+        <p className="text-xs text-text-dark mt-2 line-clamp-2">{event.description}</p>
       )}
 
-      {/* Attendees summary */}
-      <div className="mt-2.5 space-y-2">
-        {/* Confirmed */}
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-success font-semibold">
-            {confirmedAttendees.length}/{totalAttendees}
-          </span>
-          <AvatarStack
-            size={22}
-            members={confirmedAttendees.map((a) => ({
-              name: a.user.name,
-              color: memberColorMap.get(a.userId) ?? MEMBER_COLORS[0],
-            }))}
-          />
-        </div>
-
-        {/* Declined */}
-        {declinedAttendees.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-danger font-semibold">
-              {declinedAttendees.length}/{totalAttendees}
-            </span>
-            <AvatarStack
-              size={22}
-              members={declinedAttendees.map((a) => ({
-                name: a.user.name,
-                color: memberColorMap.get(a.userId) ?? MEMBER_COLORS[0],
-              }))}
-            />
-          </div>
-        )}
-      </div>
+      {/* Going count */}
+      <p className="font-mono text-[11px] text-text-muted mt-2.5">
+        {t('plans.goingCount', { confirmed: confirmedAttendees.length, missing: missingCount })}
+      </p>
 
       {/* Respond buttons */}
       {isPending && event.status !== 'cancelled' && (
         <div className="flex gap-2 mt-3">
           <Button
+            variant="primary"
+            size="sm"
             onClick={() => handleRespond('confirmed')}
             disabled={isResponding}
-            className="flex-1 !py-2 !text-xs"
+            className="flex-1"
           >
             {t('plans.confirm')}
           </Button>
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => handleRespond('declined')}
             disabled={isResponding}
-            className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors"
-            style={{
-              background: 'var(--app-bg-hover)',
-              color: '#FB7185',
-              border: '1px solid rgba(251,113,133,0.15)',
-            }}
+            className="flex-1"
           >
             {t('plans.decline')}
-          </button>
+          </Button>
         </div>
       )}
 
@@ -279,13 +291,12 @@ export function EventCard({
                 : undefined
             }
             disabled={isResponding || isPastEvent}
-            className="w-full py-2 rounded-btn text-xs font-semibold text-center border transition-opacity"
+            className={`w-full py-2 rounded-btn text-xs font-semibold text-center border transition-opacity ${
+              myStatus === 'confirmed'
+                ? 'bg-success-tint text-success border-subtle'
+                : 'bg-error-tint text-error border-subtle'
+            }`}
             style={{
-              background:
-                myStatus === 'confirmed' ? 'rgba(52,211,153,0.1)' : 'rgba(251,113,133,0.1)',
-              color: myStatus === 'confirmed' ? '#34D399' : '#FB7185',
-              borderColor:
-                myStatus === 'confirmed' ? 'rgba(52,211,153,0.15)' : 'rgba(251,113,133,0.15)',
               cursor: isPastEvent ? 'default' : 'pointer',
               opacity: isResponding ? 0.6 : 1,
             }}
@@ -305,12 +316,8 @@ export function EventCard({
             <button
               onClick={() => onConfirm(event)}
               disabled={isConfirming}
-              className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors border-none inline-flex items-center justify-center gap-1.5"
-              style={{
-                background: 'rgba(52,211,153,0.08)',
-                color: '#34D399',
-                opacity: isConfirming ? 0.5 : 1,
-              }}
+              className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors border-none inline-flex items-center justify-center gap-1.5 bg-success-tint text-success"
+              style={{ opacity: isConfirming ? 0.5 : 1 }}
             >
               {isConfirming && <IonSpinner name="crescent" className="w-3 h-3 shrink-0" />}
               {t('plans.confirmEvent')}
@@ -320,12 +327,8 @@ export function EventCard({
             <button
               onClick={() => onDelete(event)}
               disabled={isDeleting}
-              className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors border-none inline-flex items-center justify-center gap-1.5"
-              style={{
-                background: 'rgba(251,113,133,0.08)',
-                color: '#FB7185',
-                opacity: isDeleting ? 0.5 : 1,
-              }}
+              className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors border-none inline-flex items-center justify-center gap-1.5 bg-error-tint text-error"
+              style={{ opacity: isDeleting ? 0.5 : 1 }}
             >
               {isDeleting && <IonSpinner name="crescent" className="w-3 h-3 shrink-0" />}
               {t('plans.deleteEvent')}
@@ -335,12 +338,8 @@ export function EventCard({
             <button
               onClick={() => onCancel(event)}
               disabled={isCancelling}
-              className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors border-none inline-flex items-center justify-center gap-1.5"
-              style={{
-                background: 'var(--app-bg-hover)',
-                color: 'var(--app-text-muted)',
-                opacity: isCancelling ? 0.5 : 1,
-              }}
+              className="flex-1 py-2 rounded-btn text-xs font-semibold transition-colors border-none inline-flex items-center justify-center gap-1.5 bg-bg-hover text-text-muted"
+              style={{ opacity: isCancelling ? 0.5 : 1 }}
             >
               {isCancelling && <IonSpinner name="crescent" className="w-3 h-3 shrink-0" />}
               {t('plans.cancelEvent')}
@@ -348,6 +347,6 @@ export function EventCard({
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }

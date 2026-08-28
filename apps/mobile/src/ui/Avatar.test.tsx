@@ -1,7 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Avatar } from './Avatar';
-import { MEMBER_GRADIENTS, MEMBER_GLOWS } from '../lib/constants';
 
 describe('Avatar', () => {
   it('renders initials from a two-word name', () => {
@@ -26,7 +25,7 @@ describe('Avatar', () => {
 
   it('handles empty name gracefully', () => {
     render(<Avatar name="" color="#60A5FA" />);
-    const element = document.querySelector('.flex.items-center');
+    const element = document.querySelector('.rounded-full');
     expect(element).toBeInTheDocument();
   });
 
@@ -35,22 +34,16 @@ describe('Avatar', () => {
     expect(screen.getByText('X')).toBeInTheDocument();
   });
 
-  it('applies white text color for gradient background', () => {
-    render(<Avatar name="Test User" color="#F59E0B" />);
-    const avatar = screen.getByText('TU');
-    expect(avatar).toHaveStyle({ color: 'rgb(255, 255, 255)' });
+  it('pinta color pleno con inicial en tinta de día', () => {
+    render(<Avatar name="Álvaro" color="#60A5FA" data-testid="avatar" />);
+    const el = screen.getByTestId('avatar');
+    expect(el).toHaveStyle({ background: '#60A5FA', color: '#33302A' });
+    expect(el).toHaveTextContent('Á');
   });
 
-  it('applies gradient background for known member color', () => {
-    render(<Avatar name="Test User" color="#60A5FA" />);
-    const avatar = screen.getByText('TU');
-    expect(avatar).toHaveStyle({ background: MEMBER_GRADIENTS[0] });
-  });
-
-  it('applies solid gradient fallback for unknown color', () => {
-    render(<Avatar name="Test User" color="#ABCDEF" />);
-    const avatar = screen.getByText('TU');
-    expect(avatar).toHaveStyle({ background: 'linear-gradient(135deg, #ABCDEF, #ABCDEF)' });
+  it('no inyecta variables de glow', () => {
+    render(<Avatar name="Sara" color="#F472B6" data-testid="avatar" />);
+    expect(screen.getByTestId('avatar').getAttribute('style')).not.toContain('--glow-color');
   });
 
   it('renders with default size of 32', () => {
@@ -68,14 +61,14 @@ describe('Avatar', () => {
   it('adjusts font size based on size prop', () => {
     render(<Avatar name="Ana" color="#34D399" size={40} />);
     const avatar = screen.getByText('AN');
-    // fontSize = size * 0.35 = 14
-    expect(avatar).toHaveStyle({ fontSize: '14px' });
+    // fontSize = size * 0.38 = 15.2
+    expect(avatar).toHaveStyle({ fontSize: '15.2px' });
   });
 
   it('renders with circular border radius', () => {
     render(<Avatar name="Ana" color="#34D399" size={40} />);
     const avatar = screen.getByText('AN');
-    expect(avatar).toHaveStyle({ borderRadius: '50%' });
+    expect(avatar.className).toContain('rounded-full');
   });
 
   it('calls onClick handler when clicked', () => {
@@ -83,6 +76,30 @@ describe('Avatar', () => {
     render(<Avatar name="Click Me" color="#A78BFA" onClick={handleClick} />);
     fireEvent.click(screen.getByText('CM'));
     expect(handleClick).toHaveBeenCalledOnce();
+  });
+
+  it('applies custom className', () => {
+    render(<Avatar name="Test" color="#60A5FA" className="ml-2" />);
+    const avatar = screen.getByText('TE');
+    expect(avatar.className).toContain('ml-2');
+  });
+
+  it('handles three-word name using first two words', () => {
+    render(<Avatar name="Ana Maria Lopez" color="#FB7185" />);
+    expect(screen.getByText('AM')).toBeInTheDocument();
+  });
+
+  it('applies cursor-pointer class when clickable', () => {
+    const handleClick = vi.fn();
+    render(<Avatar name="Click" color="#60A5FA" onClick={handleClick} />);
+    const avatar = screen.getByText('CL');
+    expect(avatar.className).toContain('cursor-pointer');
+  });
+
+  it('does not apply cursor-pointer class when not clickable', () => {
+    render(<Avatar name="Static" color="#60A5FA" />);
+    const avatar = screen.getByText('ST');
+    expect(avatar.className).not.toContain('cursor-pointer');
   });
 
   it('sets role=button when onClick is provided', () => {
@@ -102,51 +119,41 @@ describe('Avatar', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 
-  it('applies custom className', () => {
-    render(<Avatar name="Test" color="#60A5FA" className="ml-2" />);
-    const avatar = screen.getByText('TE');
-    expect(avatar.className).toContain('ml-2');
-  });
-
-  it('handles three-word name using first two words', () => {
-    render(<Avatar name="Ana Maria Lopez" color="#FB7185" />);
-    expect(screen.getByText('AM')).toBeInTheDocument();
-  });
-
-  it('applies glow box-shadow for known member color', () => {
-    render(<Avatar name="Test User" color="#60A5FA" />);
-    const avatar = screen.getByText('TU');
-    expect(avatar).toHaveStyle({ boxShadow: `0 0 8px ${MEMBER_GLOWS[0]}` });
-  });
-
-  it('does not apply box-shadow when pulse is true', () => {
-    render(<Avatar name="Test User" color="#60A5FA" pulse />);
-    const avatar = screen.getByText('TU');
-    expect(avatar.style.boxShadow).toBe('');
-  });
-
-  it('applies pulse animation class when pulse is true', () => {
-    render(<Avatar name="Test User" color="#60A5FA" pulse />);
-    const avatar = screen.getByText('TU');
-    expect(avatar.className).toContain('animate-[glow-pulse_2.5s_ease-in-out_infinite]');
-  });
-
-  it('does not apply pulse animation class by default', () => {
-    render(<Avatar name="Test User" color="#60A5FA" />);
-    const avatar = screen.getByText('TU');
-    expect(avatar.className).not.toContain('animate-[glow-pulse');
-  });
-
-  it('applies cursor-pointer class when clickable', () => {
+  it('calls onClick when pressing Enter on a clickable avatar', () => {
     const handleClick = vi.fn();
-    render(<Avatar name="Click" color="#60A5FA" onClick={handleClick} />);
-    const avatar = screen.getByText('CL');
-    expect(avatar.className).toContain('cursor-pointer');
+    render(<Avatar name="Keyboard" color="#60A5FA" onClick={handleClick} data-testid="avatar" />);
+    fireEvent.keyDown(screen.getByTestId('avatar'), { key: 'Enter' });
+    expect(handleClick).toHaveBeenCalledOnce();
   });
 
-  it('does not apply cursor-pointer class when not clickable', () => {
-    render(<Avatar name="Static" color="#60A5FA" />);
-    const avatar = screen.getByText('ST');
-    expect(avatar.className).not.toContain('cursor-pointer');
+  it('calls onClick when pressing Space on a clickable avatar', () => {
+    const handleClick = vi.fn();
+    render(<Avatar name="Keyboard" color="#60A5FA" onClick={handleClick} data-testid="avatar" />);
+    fireEvent.keyDown(screen.getByTestId('avatar'), { key: ' ' });
+    expect(handleClick).toHaveBeenCalledOnce();
+  });
+
+  it('prevents default when pressing Space to avoid page scroll', () => {
+    const handleClick = vi.fn();
+    render(<Avatar name="Keyboard" color="#60A5FA" onClick={handleClick} data-testid="avatar" />);
+    const event = new KeyboardEvent('keydown', { key: ' ', bubbles: true });
+    const preventDefaultSpy = vi.spyOn(event, 'preventDefault');
+    screen.getByTestId('avatar').dispatchEvent(event);
+    expect(preventDefaultSpy).toHaveBeenCalled();
+  });
+
+  it('renders identically with pulse=true and without pulse (no-op)', () => {
+    const { container: containerWithPulse } = render(
+      <Avatar name="Test" color="#60A5FA" pulse={true} data-testid="avatar-pulse" />,
+    );
+    const { container: containerWithoutPulse } = render(
+      <Avatar name="Test" color="#60A5FA" data-testid="avatar-no-pulse" />,
+    );
+
+    const withPulse = containerWithPulse.querySelector('[data-testid="avatar-pulse"]');
+    const withoutPulse = containerWithoutPulse.querySelector('[data-testid="avatar-no-pulse"]');
+
+    expect(withPulse?.className).toBe(withoutPulse?.className);
+    expect(withPulse?.getAttribute('style')).toBe(withoutPulse?.getAttribute('style'));
   });
 });

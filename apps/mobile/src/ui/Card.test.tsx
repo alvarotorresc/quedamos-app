@@ -17,7 +17,7 @@ describe('Card', () => {
   it('applies default (unselected) border styles', () => {
     render(<Card data-testid="card">Content</Card>);
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('border-strong');
+    expect(card.className).toContain('border-subtle');
     expect(card.className).not.toContain('border-primary/25');
   });
 
@@ -28,8 +28,8 @@ describe('Card', () => {
       </Card>,
     );
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('border-primary/25');
-    expect(card.className).toContain('bg-primary-dark/10');
+    expect(card.className).toContain('border-subtle');
+    expect(card.className).toContain('bg-primary-tint');
   });
 
   it('applies unselected styles when selected is false', () => {
@@ -39,7 +39,7 @@ describe('Card', () => {
       </Card>,
     );
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('border-strong');
+    expect(card.className).toContain('border-subtle');
     expect(card.className).not.toContain('border-primary/25');
   });
 
@@ -67,8 +67,8 @@ describe('Card', () => {
   it('applies base styles', () => {
     render(<Card data-testid="card">Base</Card>);
     const card = screen.getByTestId('card');
-    expect(card.className).toContain('bg-bg-glass');
-    expect(card.className).toContain('rounded-card');
+    expect(card.className).toContain('bg-bg-light');
+    expect(card.className).toContain('rounded-lg');
     expect(card.className).toContain('transition-all');
   });
 

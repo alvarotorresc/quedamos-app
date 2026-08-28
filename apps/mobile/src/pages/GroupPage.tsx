@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonSpinner } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
@@ -13,6 +13,7 @@ import { AvatarStack } from '../ui/AvatarStack';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui';
 import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
 
 type FormMode = 'create' | 'join' | null;
 
@@ -25,6 +26,15 @@ export default function GroupPage() {
   const { data: groups, isLoading } = useGroups();
   const createGroup = useCreateGroup();
   const joinGroup = useJoinGroup();
+
+  // Per-group member color map (userId -> color), by join order within each group
+  const groupColorMaps = useMemo(() => {
+    const byGroup = new Map<string, Map<string, string>>();
+    (groups ?? []).forEach((group) => {
+      byGroup.set(group.id, buildMemberColorMap(group.members));
+    });
+    return byGroup;
+  }, [groups]);
 
   const [formMode, setFormMode] = useState<FormMode>(null);
   const [groupName, setGroupName] = useState('');
@@ -130,9 +140,10 @@ export default function GroupPage() {
               {hasGroups && (
                 <div className="flex flex-col gap-2 mb-6">
                   {groups.map((group) => {
+                    const colorMap = groupColorMaps.get(group.id);
                     const memberAvatars = group.members.map((m) => ({
                       name: m.user.name,
-                      color: getMemberColorByUserId(m.userId),
+                      color: colorMap?.get(m.userId) ?? getMemberColorByUserId(m.userId),
                     }));
 
                     return (
@@ -182,7 +193,7 @@ export default function GroupPage() {
 
               {/* Error */}
               {error && (
-                <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm mb-4">
+                <div className="bg-error-tint border border-subtle rounded-btn p-3 text-danger text-sm mb-4">
                   {error}
                 </div>
               )}
@@ -199,7 +210,7 @@ export default function GroupPage() {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       placeholder={t('group.groupNamePlaceholder')}
-                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary"
                       autoFocus
                     />
                   </div>
@@ -208,7 +219,7 @@ export default function GroupPage() {
                     <button
                       type="button"
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="w-16 h-12 bg-bg-input border border-strong rounded-btn text-2xl flex items-center justify-center hover:border-primary/40 transition-colors"
+                      className="w-16 h-12 bg-bg-input border border-strong rounded-btn text-2xl flex items-center justify-center hover:border-primary transition-colors"
                     >
                       {emoji || '👥'}
                     </button>
@@ -237,7 +248,7 @@ export default function GroupPage() {
                   <button
                     type="button"
                     onClick={() => toggleForm(null)}
-                    className="w-full py-2.5 text-xs font-semibold text-danger/70 transition-colors"
+                    className="w-full py-2.5 text-xs font-semibold text-error transition-colors"
                   >
                     {t('common.cancel')}
                   </button>
@@ -257,7 +268,7 @@ export default function GroupPage() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
                       placeholder={t('group.inviteCodePlaceholder')}
-                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary/40 text-center font-mono tracking-widest"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary text-center font-mono tracking-widest"
                       maxLength={8}
                       autoFocus
                     />
@@ -271,7 +282,7 @@ export default function GroupPage() {
                   <button
                     type="button"
                     onClick={() => toggleForm(null)}
-                    className="w-full py-2.5 text-xs font-semibold text-danger/70 transition-colors"
+                    className="w-full py-2.5 text-xs font-semibold text-error transition-colors"
                   >
                     {t('common.cancel')}
                   </button>
