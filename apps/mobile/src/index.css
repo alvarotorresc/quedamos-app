@@ -3,95 +3,73 @@
 @tailwind utilities;
 
 :root {
-  --ion-background-color: #0c0f1a;
-  --ion-text-color: #f1f5f9;
-  --ion-toolbar-background: #0c0f1a;
-  --ion-tab-bar-background: rgba(12, 15, 26, 0.92);
+  --ion-background-color: #14120E;
+  --ion-text-color: #F2EFE7;
+  --ion-toolbar-background: #14120E;
+  --ion-tab-bar-background: rgba(20, 18, 14, 0.94);
   --ion-safe-area-top: env(safe-area-inset-top);
   --ion-safe-area-bottom: env(safe-area-inset-bottom);
 
-  --app-bg: #0c0f1a;
-  --app-bg-light: #141829;
-  --app-bg-surface: #1c2035;
-  --app-bg-card: rgba(28, 32, 53, 0.6);
-  --app-bg-input: #1c2035;
-  --app-bg-hover: rgba(255, 255, 255, 0.04);
-  --app-bg-glass: rgba(28, 32, 53, 0.6);
-  --app-bg-overlay: rgba(12, 15, 26, 0.85);
-  --app-toggle-off: rgba(255, 255, 255, 0.1);
-  --app-tab-bar: rgba(12, 15, 26, 0.92);
-
-  --app-text: #f1f5f9;
-  --app-text-muted: #94a3b8;
-  --app-text-dark: #4b5c75;
-
-  --app-border: rgba(255, 255, 255, 0.06);
-  --app-border-strong: rgba(255, 255, 255, 0.12);
-
-  --app-primary: #60a5fa;
-  --app-primary-solid: #2563eb;
-  --app-primary-hover: #4f46e5;
-
-  --app-accent: #8b5cf6;
-
-  --app-success: #34d399;
-  --app-warning: #fbbf24;
-  --app-error: #fb7185;
+  --app-bg: #14120E;
+  --app-bg-light: #191712;
+  --app-bg-surface: #1F1C16;
+  --app-bg-card: #191712;
+  --app-bg-input: #1F1C16;
+  --app-bg-hover: rgba(242, 239, 231, 0.05);
+  --app-bg-glass: #191712;
+  --app-bg-overlay: rgba(20, 18, 14, 0.55);
+  --app-toggle-off: rgba(242, 239, 231, 0.14);
+  --app-tab-bar: rgba(20, 18, 14, 0.94);
+  --app-text: #F2EFE7;
+  --app-text-muted: #8F887A;
+  --app-text-muted-panel: #6E6858;
+  --app-text-dark: #6B6558;
+  --app-apagado: #5E584C;
+  --app-border: rgba(242, 239, 231, 0.12);
+  --app-border-strong: rgba(242, 239, 231, 0.32);
+  --app-primary: #F2EFE7;
+  --app-primary-solid: #F2EFE7;
+  --app-on-primary: #14120E;
+  --app-primary-hover: #E4DFD2;
+  --app-accent: #F2EFE7;
+  --app-success: #7FA98B;
+  --app-warning: #C98D6B;
+  --app-error: #D06A5C;
 }
 
 .light {
-  --ion-background-color: #e0d9d1;
-  --ion-text-color: #1a1d2e;
-  --ion-toolbar-background: #e0d9d1;
-  --ion-tab-bar-background: rgba(224, 217, 209, 0.92);
+  --ion-background-color: #F5F1E8;
+  --ion-text-color: #33302A;
+  --ion-toolbar-background: #F5F1E8;
+  --ion-tab-bar-background: rgba(245, 241, 232, 0.94);
 
-  --app-bg: #e0d9d1;
-  --app-bg-light: #fff9f2;
-  --app-bg-surface: #cec7bf;
-  --app-bg-card: #fff9f2;
-  --app-bg-input: #cec7bf;
-  --app-bg-hover: rgba(0, 0, 0, 0.03);
-  --app-bg-glass: rgba(255, 249, 242, 0.85);
-  --app-bg-overlay: rgba(224, 217, 209, 0.85);
-  --app-toggle-off: rgba(0, 0, 0, 0.1);
-  --app-tab-bar: rgba(224, 217, 209, 0.92);
-
-  --app-text: #1a1d2e;
-  --app-text-muted: #5b6178;
-  --app-text-dark: #8890a5;
-
-  --app-border: rgba(0, 0, 0, 0.06);
-  --app-border-strong: rgba(0, 0, 0, 0.1);
-
-  --app-primary: #2563eb;
-  --app-primary-solid: #2563eb;
-  --app-primary-hover: #4338ca;
-
-  --app-accent: #7c3aed;
-
-  --app-success: #16a34a;
-  --app-warning: #d97706;
-  --app-error: #e11d48;
+  --app-bg: #F5F1E8;
+  --app-bg-light: #FCFAF4;
+  --app-bg-surface: #EDE8DD;
+  --app-bg-card: #FCFAF4;
+  --app-bg-input: #EDE8DD;
+  --app-bg-hover: rgba(51, 48, 42, 0.04);
+  --app-bg-glass: #FCFAF4;
+  --app-bg-overlay: rgba(20, 18, 14, 0.55);
+  --app-toggle-off: rgba(51, 48, 42, 0.14);
+  --app-tab-bar: rgba(245, 241, 232, 0.94);
+  --app-text: #33302A;
+  --app-text-muted: #6E6858;
+  --app-text-muted-panel: #ABA491;
+  --app-text-dark: #A39B87;
+  --app-apagado: #C9C0AE;
+  --app-border: #E6DFD0;
+  --app-border-strong: #D4CBB8;
+  --app-primary: #33302A;
+  --app-primary-solid: #33302A;
+  --app-on-primary: #F5F1E8;
+  --app-primary-hover: #47433B;
+  --app-accent: #33302A;
+  --app-success: #3E7350;
+  --app-warning: #8F6226;
+  --app-error: #B04436;
 }
 
-/* Gradient mesh background */
-body {
-  background-image:
-    radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(96, 165, 250, 0.03) 0%, transparent 50%);
-}
-
-/* Light theme card overrides */
-.light .card-glass {
-  background: var(--app-bg-card) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border: 1.5px solid var(--app-border-strong) !important;
-  box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.06),
-    0 4px 12px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-}
 
 /* Skeleton shimmer */
 @keyframes shimmer {
@@ -114,19 +92,6 @@ body {
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
-/* Avatar glow pulse */
-@keyframes glow-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 8px var(--glow-color, transparent);
-  }
-  50% {
-    box-shadow:
-      0 0 20px var(--glow-color, transparent),
-      0 0 36px var(--glow-soft, transparent);
-  }
-}
-
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -144,26 +109,25 @@ body {
 }
 
 .light ion-alert .alert-title {
-  color: #1e293b !important;
+  color: var(--app-text) !important;
 }
 
 .light ion-alert .alert-message {
-  color: #64748b !important;
+  color: var(--app-text-muted) !important;
 }
 
 .light ion-alert .alert-button {
-  color: #2563eb !important;
+  color: var(--app-primary) !important;
 }
 
 .light ion-alert .alert-button[role='destructive'] {
-  color: #e11d48 !important;
+  color: var(--app-error) !important;
 }
 
 body {
   font-family:
-    'Nunito',
-    -apple-system,
-    BlinkMacSystemFont,
+    'Bricolage Grotesque',
+    'Segoe UI',
     system-ui,
     sans-serif;
   background-color: var(--app-bg);
@@ -206,11 +170,11 @@ ion-alert .alert-message {
 }
 
 ion-alert .alert-button {
-  color: #60a5fa !important;
+  color: var(--app-primary) !important;
 }
 
 ion-alert .alert-button[role='destructive'] {
-  color: #fb7185 !important;
+  color: var(--app-error) !important;
 }
 
 ion-action-sheet {
@@ -233,13 +197,13 @@ ion-action-sheet .action-sheet-title {
 }
 
 ion-action-sheet .action-sheet-button {
-  color: #60a5fa !important;
+  color: var(--app-primary) !important;
 }
 
 ion-action-sheet .action-sheet-button.ion-color-danger,
 ion-action-sheet .action-sheet-button[role='destructive'],
 ion-action-sheet .action-sheet-destructive .action-sheet-button-inner {
-  color: #fb7185 !important;
+  color: var(--app-error) !important;
 }
 
 ion-action-sheet .action-sheet-cancel .action-sheet-button-inner {
@@ -251,18 +215,19 @@ ion-action-sheet .action-sheet-cancel .action-sheet-button-inner {
 }
 
 .light ion-action-sheet .action-sheet-button {
-  color: #2563eb !important;
+  color: var(--app-primary) !important;
 }
 
 .light ion-action-sheet .action-sheet-button.ion-color-danger,
 .light ion-action-sheet .action-sheet-button[role='destructive'],
 .light ion-action-sheet .action-sheet-destructive .action-sheet-button-inner {
-  color: #e11d48 !important;
+  color: var(--app-error) !important;
 }
 
-ion-modal.availability-modal {
+ion-modal.availability-modal,
+ion-modal.create-event-modal {
   --background: var(--app-bg-light);
-  --border-radius: 20px 20px 0 0;
+  --border-radius: 26px 26px 0 0;
 }
 
 .no-scrollbar::-webkit-scrollbar {

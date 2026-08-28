@@ -3,7 +3,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Nunito', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['Bricolage Grotesque', 'Segoe UI', 'system-ui', 'sans-serif'],
+        mono: ['Geist Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
         bg: 'var(--app-bg)',
@@ -21,6 +22,9 @@ export default {
         text: 'var(--app-text)',
         'text-muted': 'var(--app-text-muted)',
         'text-dark': 'var(--app-text-dark)',
+        'on-primary': 'var(--app-on-primary)',
+        apagado: 'var(--app-apagado)',
+        'muted-panel': 'var(--app-text-muted-panel)',
         success: 'var(--app-success)',
         warning: 'var(--app-warning)',
         danger: 'var(--app-error)',
@@ -44,6 +48,7 @@ export default {
         lg: '16px',
         btn: '12px',
         xl: '20px',
+        pill: '9999px',
       },
     },
   },

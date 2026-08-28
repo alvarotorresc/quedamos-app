@@ -3,16 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#080E1A" />
+    <meta name="theme-color" content="#14120E" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-256.png" />
     <title>¿Quedamos?</title>
+    <script>
+      try {
+        if (localStorage.getItem('theme') === 'light') {
+          document.documentElement.classList.add('light');
+        }
+      } catch (e) { /* almacenamiento bloqueado: se queda la noche por defecto */ }
+    </script>
     <script defer src="https://analytics.alvarotc.com/script.js" data-website-id="907ea9ec-1555-44b0-aaa5-68976c8db431"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>
