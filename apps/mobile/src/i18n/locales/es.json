@@ -185,11 +185,6 @@
       "plans": "Quedadas",
       "proposals": "Propuestas"
     },
-    "filter": {
-      "all": "Todas",
-      "online": "Online",
-      "inPerson": "Presencial"
-    },
     "tapToChange": "Toca para cambiar",
     "status": {
       "pending": "En el aire",
@@ -208,7 +203,6 @@
       "submit": "Crear quedada",
       "creating": "Creando...",
       "available": "disponibles",
-      "attendees": "Asistentes",
       "whoCan": "Van los que pueden",
       "selectAttendees": "Invitar miembros específicos",
       "allMembersDefault": "Todos los miembros del grupo serán invitados por defecto",

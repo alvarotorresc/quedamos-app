@@ -61,8 +61,8 @@ export function MonthSummary({ monthOffset, availabilityByDate, totalMembers }: 
         <div
           className="flex-1 rounded-xl p-3 text-center relative"
           style={{
-            background: 'rgba(96,165,250,0.08)',
-            border: '1px solid rgba(96,165,250,0.12)',
+            background: 'color-mix(in srgb, var(--app-primary) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--app-primary) 12%, transparent)',
           }}
         >
           <button
@@ -70,7 +70,7 @@ export function MonthSummary({ monthOffset, availabilityByDate, totalMembers }: 
             onClick={() => toggleTooltip('days')}
             className="absolute top-2 right-2 bg-transparent border-none p-0 cursor-pointer"
           >
-            <InfoIcon color="#60A5FA" />
+            <InfoIcon color="var(--app-primary)" />
           </button>
           <div className="text-xl font-bold text-primary">{stats.daysActive}</div>
           <div className="text-[10px] text-text-muted mt-0.5">
@@ -82,8 +82,8 @@ export function MonthSummary({ monthOffset, availabilityByDate, totalMembers }: 
         <div
           className="flex-1 rounded-xl p-3 text-center relative"
           style={{
-            background: 'rgba(52,211,153,0.08)',
-            border: '1px solid rgba(52,211,153,0.12)',
+            background: 'color-mix(in srgb, var(--app-success) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--app-success) 12%, transparent)',
           }}
         >
           <button
@@ -91,9 +91,9 @@ export function MonthSummary({ monthOffset, availabilityByDate, totalMembers }: 
             onClick={() => toggleTooltip('match')}
             className="absolute top-2 right-2 bg-transparent border-none p-0 cursor-pointer"
           >
-            <InfoIcon color="#34D399" />
+            <InfoIcon color="var(--app-success)" />
           </button>
-          <div className="text-xl font-bold" style={{ color: '#34D399' }}>
+          <div className="text-xl font-bold" style={{ color: 'var(--app-success)' }}>
             {stats.coverage}%
           </div>
           <div className="text-[10px] text-text-muted mt-0.5">
@@ -105,8 +105,8 @@ export function MonthSummary({ monthOffset, availabilityByDate, totalMembers }: 
         <div
           className="flex-1 rounded-xl p-3 text-center relative"
           style={{
-            background: 'rgba(245,158,11,0.08)',
-            border: '1px solid rgba(245,158,11,0.12)',
+            background: 'color-mix(in srgb, var(--app-warning) 8%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--app-warning) 12%, transparent)',
           }}
         >
           <button
@@ -114,9 +114,9 @@ export function MonthSummary({ monthOffset, availabilityByDate, totalMembers }: 
             onClick={() => toggleTooltip('members')}
             className="absolute top-2 right-2 bg-transparent border-none p-0 cursor-pointer"
           >
-            <InfoIcon color="#F59E0B" />
+            <InfoIcon color="var(--app-warning)" />
           </button>
-          <div className="text-xl font-bold" style={{ color: '#F59E0B' }}>
+          <div className="text-xl font-bold" style={{ color: 'var(--app-warning)' }}>
             {stats.activeMembers}
           </div>
           <div className="text-[10px] text-text-muted mt-0.5">

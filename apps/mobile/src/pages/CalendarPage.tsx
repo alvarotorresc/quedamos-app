@@ -268,7 +268,7 @@ export default function CalendarPage() {
             <button
               onClick={handleCreateEventDirect}
               className="w-8 h-8 flex items-center justify-center rounded-full border-none text-primary text-xl font-light leading-none"
-              style={{ background: 'rgba(37,99,235,0.12)' }}
+              style={{ background: 'color-mix(in srgb, var(--app-primary) 12%, transparent)' }}
               aria-label={t('plans.create.title')}
             >
               +
@@ -311,9 +311,11 @@ export default function CalendarPage() {
                     }}
                     className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-none whitespace-nowrap"
                     style={{
-                      background: isActive ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
-                      color: isActive ? '#60A5FA' : '#4B5C75',
-                      border: `1px solid ${isActive ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
+                      background: isActive
+                        ? 'color-mix(in srgb, var(--app-primary) 12%, transparent)'
+                        : 'var(--app-bg-card)',
+                      color: isActive ? 'var(--app-text)' : 'var(--app-text-dark)',
+                      border: `1px solid ${isActive ? 'color-mix(in srgb, var(--app-primary) 20%, transparent)' : 'var(--app-border)'}`,
                     }}
                   >
                     {g.emoji} {g.name}

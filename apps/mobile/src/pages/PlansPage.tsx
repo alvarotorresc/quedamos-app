@@ -295,9 +295,11 @@ export default function PlansPage() {
                     onClick={() => setCurrentGroup(g)}
                     className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-none whitespace-nowrap"
                     style={{
-                      background: isActive ? 'rgba(37,99,235,0.12)' : 'var(--app-bg-card)',
-                      color: isActive ? '#60A5FA' : '#4B5C75',
-                      border: `1px solid ${isActive ? 'rgba(96,165,250,0.2)' : 'var(--app-border)'}`,
+                      background: isActive
+                        ? 'color-mix(in srgb, var(--app-primary) 12%, transparent)'
+                        : 'var(--app-bg-card)',
+                      color: isActive ? 'var(--app-text)' : 'var(--app-text-dark)',
+                      border: `1px solid ${isActive ? 'color-mix(in srgb, var(--app-primary) 20%, transparent)' : 'var(--app-border)'}`,
                     }}
                   >
                     {g.emoji} {g.name}
@@ -441,9 +443,9 @@ export default function PlansPage() {
                       onClick={() => setShowCreateProposal(true)}
                       className="px-3 py-1.5 rounded-[10px] text-[11px] font-semibold border-none"
                       style={{
-                        background: 'rgba(37,99,235,0.1)',
-                        color: '#60A5FA',
-                        border: '1px solid rgba(96,165,250,0.2)',
+                        background: 'color-mix(in srgb, var(--app-primary) 10%, transparent)',
+                        color: 'var(--app-text)',
+                        border: '1px solid color-mix(in srgb, var(--app-primary) 20%, transparent)',
                       }}
                     >
                       + {t('proposals.create')}

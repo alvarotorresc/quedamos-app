@@ -398,9 +398,11 @@ export function CreateEventModal({
                       onClick={() => toggleMember(m.userId)}
                       className="flex items-center gap-2 w-full text-left rounded-[10px] py-1.5 px-2 border-none cursor-pointer"
                       style={{
-                        background: isSelected ? 'rgba(37,99,235,0.08)' : 'transparent',
+                        background: isSelected
+                          ? 'color-mix(in srgb, var(--app-primary) 8%, transparent)'
+                          : 'transparent',
                         border: isSelected
-                          ? '1px solid rgba(96,165,250,0.2)'
+                          ? '1px solid color-mix(in srgb, var(--app-primary) 20%, transparent)'
                           : '1px solid var(--app-border)',
                       }}
                     >

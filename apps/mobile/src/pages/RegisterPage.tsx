@@ -101,7 +101,7 @@ export default function RegisterPage() {
               <span className="text-lg leading-none">&larr;</span> {t('common.back')}
             </button>
 
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-[#60A5FA] to-[#8B5CF6] bg-clip-text text-transparent mb-2">
+            <h1 className="text-2xl font-bold text-text mb-2">
               {t('register.title')}
             </h1>
 

@@ -185,11 +185,6 @@
       "plans": "Plans",
       "proposals": "Proposals"
     },
-    "filter": {
-      "all": "All",
-      "online": "Online",
-      "inPerson": "In-person"
-    },
     "tapToChange": "Tap to change",
     "status": {
       "pending": "Up in the air",
@@ -208,7 +203,6 @@
       "submit": "Create plan",
       "creating": "Creating...",
       "available": "available",
-      "attendees": "Attendees",
       "whoCan": "Everyone who can, goes",
       "selectAttendees": "Invite specific members",
       "allMembersDefault": "All group members will be invited by default",
