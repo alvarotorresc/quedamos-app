@@ -521,6 +521,20 @@
     "rateLimitSeconds": "Por seguridad, solo puedes hacer esto una vez cada 60 segundos",
     "rateLimitExceeded": "Demasiados intentos. Espera unos minutos"
   },
+  "mazo": {
+    "canYou": "¿Puedes el {{weekday}}?",
+    "canYouSlot": "¿Puedes el {{weekday}} {{slot}}?",
+    "goingQuestion": "{{title}}. ¿Vas?",
+    "iCan": "Puedo",
+    "iCant": "No puedo",
+    "going": "Voy",
+    "notGoing": "No voy",
+    "unsure": "Aún no sé",
+    "toMap": "Al mapa",
+    "pending": "{{count}} preguntas pendientes",
+    "done": "Ya está.",
+    "asks": "Pregunta {{name}}"
+  },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
     "saveAvailabilityFailed": "No se pudo guardar tu disponibilidad",

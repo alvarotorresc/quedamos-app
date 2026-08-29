@@ -521,6 +521,20 @@
     "rateLimitSeconds": "For security, you can only do this once every 60 seconds",
     "rateLimitExceeded": "Too many attempts. Please wait a few minutes"
   },
+  "mazo": {
+    "canYou": "Free on {{weekday}}?",
+    "canYouSlot": "Free on {{weekday}} {{slot}}?",
+    "goingQuestion": "{{title}}. Going?",
+    "iCan": "I can",
+    "iCant": "I can't",
+    "going": "I'm going",
+    "notGoing": "Not going",
+    "unsure": "Not sure yet",
+    "toMap": "To the map",
+    "pending": "{{count}} pending questions",
+    "done": "Done.",
+    "asks": "{{name}} asks"
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "saveAvailabilityFailed": "Couldn't save your availability",

@@ -12,6 +12,7 @@ import { useMyColor } from '../hooks/useMyColor';
 import { useGroupWeather } from '../hooks/useWeather';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useEvents } from '../hooks/useEvents';
+import { usePendingQuestions, usePolls } from '../hooks/usePolls';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { formatDateKey, apiDateToKey, getWeekDays } from '../lib/date-utils';
 import type { Event } from '../services/events';
@@ -24,6 +25,7 @@ import { AvailabilityModal } from '../components/AvailabilityModal';
 import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
 import { CreateEventModal } from '../components/CreateEventModal';
 import { EventDetailModal } from '../components/EventDetailModal';
+import { Mazo } from '../components/Mazo';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
@@ -64,7 +66,12 @@ export default function CalendarPage() {
   const { data: myAvailability } = useMyAvailability(groupId);
 
   // Events data
-  const { data: events } = useEvents(groupId);
+  const { data: events, isLoading: eventsLoading } = useEvents(groupId);
+
+  // Polls data — only needed here to know when usePendingQuestions has resolved,
+  // so the mazo doesn't flash open-then-closed while the queries are in flight.
+  const { isLoading: pollsLoading } = usePolls(groupId);
+  const { polls: pendingPolls, pendingEvents } = usePendingQuestions(groupId);
 
   // Weather data
   const { data: weather } = useGroupWeather(groupId);
@@ -79,6 +86,7 @@ export default function CalendarPage() {
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [createEventPrefill, setCreateEventPrefill] = useState<EventPrefill | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [mazoDismissed, setMazoDismissed] = useState(false);
 
   // Member color map (userId -> color), by join order within the group
   const memberColorMap = useMemo(() => buildMemberColorMap(members), [members]);
@@ -471,6 +479,16 @@ export default function CalendarPage() {
           memberColorMap={memberColorMap}
         />
       </IonContent>
+
+      {/* El mazo — entry overlay for pending questions. Gated on both queries having
+          resolved so it never flashes open-then-closed while they're in flight. */}
+      {!mazoDismissed &&
+        !pollsLoading &&
+        !eventsLoading &&
+        groupId !== '' &&
+        (pendingPolls.length > 0 || pendingEvents.length > 0) && (
+          <Mazo groupId={groupId} onDismiss={() => setMazoDismissed(true)} />
+        )}
     </IonPage>
   );
 }
