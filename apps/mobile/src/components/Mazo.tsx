@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { useGroup } from '../hooks/useGroups';
 import { usePendingQuestions, useRespondPoll } from '../hooks/usePolls';
 import { useRespondEvent } from '../hooks/useEvents';
+import { useToast } from '../hooks/useToast';
 import { buildMemberColorMap } from '../lib/member-colors';
 import { MEMBER_COLORS } from '../lib/constants';
 import { apiDateToKey, parseDateKey } from '../lib/date-utils';
@@ -117,6 +118,7 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
 
   const respondPoll = useRespondPoll(groupId);
   const respondEvent = useRespondEvent(groupId);
+  const { showError } = useToast();
 
   // Snapshot the queue once at mount — usePendingQuestions re-derives from the query
   // cache, and each answer invalidates it, which would otherwise shrink the array and
@@ -158,6 +160,7 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
       .then(() => setIndex((i) => i + 1))
       .catch(() => {
         presetFired.current = false;
+        showError('common.unexpectedError');
       });
     // respondPoll is a fresh object each render; presetFired guards re-firing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,6 +174,7 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
       setIndex((i) => i + 1);
     } catch {
       // Keep the question on screen so the user can retry.
+      showError('common.unexpectedError');
     }
   };
 
@@ -180,6 +184,7 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
       setIndex((i) => i + 1);
     } catch {
       // Keep the question on screen so the user can retry.
+      showError('common.unexpectedError');
     }
   };
 

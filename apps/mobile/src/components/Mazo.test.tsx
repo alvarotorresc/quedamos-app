@@ -33,6 +33,13 @@ vi.mock('../lib/motion', () => ({
   useMotionSafe: () => motionSafeValue,
 }));
 
+// Mock useToast (../hooks/useToast) — asserts the mazo surfaces mutation failures instead
+// of swallowing them (the whole point of the mazo is instant, visible feedback per tap).
+const showErrorMock = vi.fn();
+vi.mock('../hooks/useToast', () => ({
+  useToast: () => ({ showError: showErrorMock }),
+}));
+
 function member(userId: string, name: string, joinedAt: string) {
   return { userId, joinedAt, role: 'member', user: { id: userId, name, avatarEmoji: '😊' } };
 }
@@ -85,6 +92,7 @@ describe('Mazo', () => {
     motionSafeValue = true;
     respondPollMock.mockReset();
     respondEventMock.mockReset();
+    showErrorMock.mockReset();
     respondPollMock.mockResolvedValue(createPoll());
     respondEventMock.mockResolvedValue(createEvent());
   });
@@ -103,6 +111,26 @@ describe('Mazo', () => {
     });
 
     expect(respondPollMock).toHaveBeenCalledWith({ pollId: 'p1', answer: 'yes' });
+  });
+
+  it('si la respuesta falla muestra el error comun y no avanza de pregunta', async () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    respondPollMock.mockRejectedValueOnce(new Error('network down'));
+    const onDismiss = vi.fn();
+
+    render(<Mazo groupId="group-1" onDismiss={onDismiss} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('mazo.iCan'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(showErrorMock).toHaveBeenCalledWith('common.unexpectedError');
+    // Still on the same question — not advanced, not done, not dismissed.
+    expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
+    expect(screen.queryByText('mazo.done')).not.toBeInTheDocument();
+    expect(onDismiss).not.toHaveBeenCalled();
   });
 
   it('con la cola vacía llama onDismiss', () => {
