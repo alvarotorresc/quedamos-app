@@ -36,7 +36,7 @@ function createTestPoll(overrides: Partial<Poll> = {}): Poll {
     id: 'poll-1',
     groupId: 'group-1',
     createdById: 'user-2',
-    date: daysFromToday(1),
+    date: daysFromTodayISO(1),
     slot: null,
     status: 'open',
     createdAt: '2026-07-01T00:00:00Z',
@@ -64,6 +64,16 @@ function daysFromToday(offset: number): string {
   const d = new Date();
   d.setDate(d.getDate() + offset);
   return formatDateKey(d);
+}
+
+// Poll.date arrives from the API as a full ISO datetime (Prisma `DateTime @db.Date`,
+// same as Event.date), never as a plain YYYY-MM-DD string. Poll fixtures must use this
+// so the tests exercise the real `apiDateToKey` normalization path, not a shape the
+// server never actually sends.
+function daysFromTodayISO(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return `${formatDateKey(d)}T00:00:00.000Z`;
 }
 
 describe('usePolls', () => {
@@ -137,7 +147,7 @@ describe('usePendingQuestions', () => {
   });
 
   it('excludes polls I already answered and keeps ones I have not', async () => {
-    const futureDate = daysFromToday(1);
+    const futureDate = daysFromTodayISO(1);
     const answeredByMe = createTestPoll({
       id: 'poll-answered',
       date: futureDate,
@@ -180,8 +190,8 @@ describe('usePendingQuestions', () => {
   });
 
   it('excludes open polls with a date that has already passed, even if unanswered', async () => {
-    const pastDate = daysFromToday(-1);
-    const futureDate = daysFromToday(1);
+    const pastDate = daysFromTodayISO(-1);
+    const futureDate = daysFromTodayISO(1);
     const pastPoll = createTestPoll({ id: 'poll-past', date: pastDate, responses: [] });
     const controlPoll = createTestPoll({ id: 'poll-control', date: futureDate, responses: [] });
 

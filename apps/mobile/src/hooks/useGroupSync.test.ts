@@ -65,7 +65,8 @@ describe('useGroupSync', () => {
     const { queryClient } = renderHookWithClient(() => useGroupSync('g1'));
     const spy = vi.spyOn(queryClient, 'invalidateQueries');
 
-    capturedCallback!('polls');
+    if (!capturedCallback) throw new Error('subscribeToGroup callback was not captured');
+    capturedCallback('polls');
 
     expect(spy).toHaveBeenCalledWith({ queryKey: ['polls', 'g1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['availability', 'g1'] });
