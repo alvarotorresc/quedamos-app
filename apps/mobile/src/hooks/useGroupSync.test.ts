@@ -52,6 +52,24 @@ describe('useGroupSync', () => {
     expect(spy).toHaveBeenCalledWith({ queryKey: ['events', 'g1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['proposals', 'g1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['availability', 'g1'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['polls', 'g1'] });
+  });
+
+  it('should invalidate polls and availability when polls sync is received', () => {
+    let capturedCallback: ((resource: SyncResource) => void) | null = null;
+    vi.mocked(subscribeToGroup).mockImplementation((_id, cb) => {
+      capturedCallback = cb;
+      return vi.fn();
+    });
+
+    const { queryClient } = renderHookWithClient(() => useGroupSync('g1'));
+    const spy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    capturedCallback!('polls');
+
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['polls', 'g1'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['availability', 'g1'] });
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
   it('should invalidate only events when events sync is received', () => {

@@ -23,12 +23,17 @@ export function useGroupSync(groupId: string | undefined): void {
         case 'proposals':
           queryClient.invalidateQueries({ queryKey: ['proposals', groupId] });
           break;
+        case 'polls':
+          queryClient.invalidateQueries({ queryKey: ['polls', groupId] });
+          queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
+          break;
         case 'members':
           queryClient.invalidateQueries({ queryKey: ['groups'] });
           queryClient.invalidateQueries({ queryKey: ['groups', groupId] });
           queryClient.invalidateQueries({ queryKey: ['events', groupId] });
           queryClient.invalidateQueries({ queryKey: ['proposals', groupId] });
           queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
+          queryClient.invalidateQueries({ queryKey: ['polls', groupId] });
           break;
       }
     },
