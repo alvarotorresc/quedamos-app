@@ -538,7 +538,8 @@
     "toMap": "Al mapa",
     "pending": "{{count}} preguntas pendientes",
     "done": "Ya está.",
-    "asks": "Pregunta {{name}}"
+    "asks": "Pregunta {{name}}",
+    "answered": "Respondido."
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

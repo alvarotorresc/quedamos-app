@@ -13,6 +13,7 @@ import { useGroupWeather } from '../hooks/useWeather';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
+import { usePollDeepLink } from '../hooks/usePollDeepLink';
 import { formatDateKey, apiDateToKey, getWeekDays } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
@@ -56,6 +57,11 @@ export default function CalendarPage() {
 
   const groupId = currentGroup?.id ?? '';
   useGroupSync(groupId || undefined);
+
+  // Deep link from a push notification straight to a poll question (Task 7) — read once
+  // from the URL, handed to MazoGate/Mazo below, and cleared once the mazo is actually
+  // done with it (`clear` is stable, wired as MazoGate's `onDismiss`).
+  const { focusPollId, presetAnswer, clear: clearPollDeepLink } = usePollDeepLink();
 
   // Group detail (for members)
   const { data: groupDetail } = useGroup(groupId);
@@ -502,7 +508,12 @@ export default function CalendarPage() {
 
       {/* El mazo — entry overlay for pending questions. MazoGate owns the open/dismiss
           latch itself (see MazoGate.tsx for why it can't be a live-data condition here). */}
-      <MazoGate groupId={groupId} />
+      <MazoGate
+        groupId={groupId}
+        focusPollId={focusPollId}
+        presetAnswer={presetAnswer}
+        onDismiss={clearPollDeepLink}
+      />
     </IonPage>
   );
 }

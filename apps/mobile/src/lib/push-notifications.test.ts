@@ -371,6 +371,99 @@ describe('push-notifications', () => {
         '00000000-0000-0000-0000-000000000005',
       );
     });
+
+    it('should navigate to calendar with pollId for new_poll', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_poll',
+            pollId: '00000000-0000-0000-0000-000000000010',
+            groupId: '00000000-0000-0000-0000-000000000011',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?pollId=00000000-0000-0000-0000-000000000010',
+      );
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'quedamos_current_group_id',
+        '00000000-0000-0000-0000-000000000011',
+      );
+    });
+
+    it('should navigate to calendar with pollId for poll_completed', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: { type: 'poll_completed', pollId: '00000000-0000-0000-0000-000000000012' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?pollId=00000000-0000-0000-0000-000000000012',
+      );
+    });
+
+    it('should navigate to calendar without pollId when it is not a valid UUID', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: { type: 'new_poll', pollId: 'not-a-uuid' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
   });
 
   describe('setupWebForegroundHandler', () => {

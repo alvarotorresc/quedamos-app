@@ -31,7 +31,7 @@ vi.mock('../hooks/useGroups', () => ({
 }));
 
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: vi.fn() }),
+  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn() }),
 }));
 
 function member(userId: string, name: string, joinedAt: string) {
@@ -141,6 +141,43 @@ describe('MazoGate', () => {
     expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
 
     vi.useRealTimers();
+  });
+
+  it('pasa focusPollId/presetAnswer al mazo, que auto-responde la pregunta enfocada', async () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+
+    render(<MazoGate groupId="group-1" focusPollId="p1" presetAnswer="yes" />);
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(respondPollMock).toHaveBeenCalledWith({ pollId: 'p1', answer: 'yes' });
+  });
+
+  it('llama la prop onDismiss cuando el mazo se cierra', () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    const onDismiss = vi.fn();
+
+    render(<MazoGate groupId="group-1" onDismiss={onDismiss} />);
+    fireEvent.click(screen.getByText('mazo.toMap'));
+
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('un nuevo focusPollId reabre el mazo aunque ya se hubiera descartado en esta sesión', () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' }), createPoll({ id: 'p2' })], pendingEvents: [] };
+
+    const { rerender } = render(<MazoGate groupId="group-1" />);
+    fireEvent.click(screen.getByText('mazo.toMap'));
+    expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
+
+    // A fresh deep link arrives for a different poll while still on the same group —
+    // the latch must reopen even though it was just dismissed.
+    rerender(<MazoGate groupId="group-1" focusPollId="p2" />);
+
+    expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
   });
 
   it('tras un cambio de grupo se reevalúa desde cero (no arrastra el cierre del grupo anterior)', () => {

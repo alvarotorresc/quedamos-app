@@ -24,6 +24,11 @@ messaging.onBackgroundMessage((payload) => {
   }
 });
 
+// Kept in sync by hand with the equivalent switch in navigateFromPush
+// (src/lib/push-notifications.ts) — this file has no test suite, so any change to the
+// routing here must be mirrored there (and vice versa).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
@@ -32,6 +37,9 @@ self.addEventListener('notificationclick', (event) => {
 
   if (data.type === 'member_joined' || data.type === 'member_left') {
     url = data.groupId ? '/tabs/group/' + data.groupId : '/tabs/group';
+  } else if (data.type === 'new_poll' || data.type === 'poll_completed') {
+    const pollOk = typeof data.pollId === 'string' && UUID_RE.test(data.pollId);
+    url = pollOk ? '/tabs/calendar?pollId=' + data.pollId : '/tabs/calendar';
   } else if (data.eventId) {
     url = '/tabs/plans?eventId=' + data.eventId;
   }

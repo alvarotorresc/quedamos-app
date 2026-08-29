@@ -39,8 +39,9 @@ vi.mock('../lib/motion', () => ({
 // Mock useToast (../hooks/useToast) — asserts the mazo surfaces mutation failures instead
 // of swallowing them (the whole point of the mazo is instant, visible feedback per tap).
 const showErrorMock = vi.fn();
+const showSuccessMock = vi.fn();
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: showErrorMock }),
+  useToast: () => ({ showError: showErrorMock, showSuccess: showSuccessMock }),
 }));
 
 function member(userId: string, name: string, joinedAt: string) {
@@ -97,6 +98,7 @@ describe('Mazo', () => {
     respondPollMock.mockReset();
     respondEventMock.mockReset();
     showErrorMock.mockReset();
+    showSuccessMock.mockReset();
     respondPollMock.mockResolvedValue(createPoll());
     respondEventMock.mockResolvedValue(createEvent());
   });
@@ -200,6 +202,36 @@ describe('Mazo', () => {
     });
 
     expect(respondPollMock).toHaveBeenCalledWith({ pollId: 'p1', answer: 'yes' });
+  });
+
+  it('con presetAnswer, al completarse muestra el toast común de éxito mazo.answered', async () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    const onDismiss = vi.fn();
+
+    render(<Mazo groupId="group-1" focusPollId="p1" presetAnswer="yes" onDismiss={onDismiss} />);
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(showSuccessMock).toHaveBeenCalledWith('mazo.answered');
+  });
+
+  it('si el auto-envío de presetAnswer falla, no muestra el toast de éxito', async () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    respondPollMock.mockRejectedValueOnce(new Error('network down'));
+    const onDismiss = vi.fn();
+
+    render(<Mazo groupId="group-1" focusPollId="p1" presetAnswer="yes" onDismiss={onDismiss} />);
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(showErrorMock).toHaveBeenCalledWith('common.unexpectedError');
+    expect(showSuccessMock).not.toHaveBeenCalled();
   });
 
   it('tras responder la última pregunta muestra mazo.done y luego llama onDismiss', async () => {

@@ -144,7 +144,7 @@ const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function navigateFromPush(data: Record<string, string>): void {
-  const { type, groupId, eventId } = data;
+  const { type, groupId, eventId, pollId } = data;
 
   // Validate UUIDs before using in URLs or storage
   const validGroupId = groupId && UUID_RE.test(groupId) ? groupId : undefined;
@@ -156,6 +156,9 @@ function navigateFromPush(data: Record<string, string>): void {
 
   if (type === 'member_joined' || type === 'member_left') {
     window.location.href = validGroupId ? `/tabs/group/${validGroupId}` : '/tabs/group';
+  } else if (type === 'new_poll' || type === 'poll_completed') {
+    const pollOk = typeof pollId === 'string' && UUID_RE.test(pollId);
+    window.location.href = pollOk ? `/tabs/calendar?pollId=${pollId}` : '/tabs/calendar';
   } else if (validEventId) {
     window.location.href = `/tabs/plans?eventId=${validEventId}`;
   } else {

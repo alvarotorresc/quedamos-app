@@ -538,7 +538,8 @@
     "toMap": "To the map",
     "pending": "{{count}} pending questions",
     "done": "Done.",
-    "asks": "{{name}} asks"
+    "asks": "{{name}} asks",
+    "answered": "Answered."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

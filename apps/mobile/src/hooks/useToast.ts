@@ -14,5 +14,14 @@ export function useToast() {
     });
   };
 
-  return { showError };
+  const showSuccess = (messageKey: string) => {
+    present({
+      message: t(messageKey),
+      duration: 3000,
+      position: 'top',
+      color: 'success',
+    });
+  };
+
+  return { showError, showSuccess };
 }

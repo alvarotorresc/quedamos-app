@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePendingQuestions, usePolls } from '../hooks/usePolls';
 import { useEvents } from '../hooks/useEvents';
 import { Mazo } from './Mazo';
@@ -7,6 +7,15 @@ export interface MazoGateProps {
   groupId: string;
   focusPollId?: string | null;
   presetAnswer?: 'yes' | 'no' | null;
+  /**
+   * Called every time the mazo dismisses (button, done-dwell, or empty queue) — used by
+   * CalendarPage to clear the deep-link URL params once the mazo is actually done with
+   * them (Task 7). Must be referentially stable across renders (e.g. via `useCallback`
+   * with an empty/stable dependency list): it flows into `handleDismiss` below, which
+   * Mazo's own dwell-timer effect is keyed on, so a fresh identity on every render would
+   * silently re-arm that timer.
+   */
+  onDismiss?: () => void;
 }
 
 /**
@@ -26,7 +35,12 @@ export interface MazoGateProps {
  *
  * A group switch resets the latch so the new group gets evaluated fresh.
  */
-export function MazoGate({ groupId, focusPollId = null, presetAnswer = null }: MazoGateProps) {
+export function MazoGate({
+  groupId,
+  focusPollId = null,
+  presetAnswer = null,
+  onDismiss,
+}: MazoGateProps) {
   const { isLoading: pollsLoading } = usePolls(groupId);
   const { isLoading: eventsLoading } = useEvents(groupId);
   const { polls, pendingEvents } = usePendingQuestions(groupId);
@@ -41,6 +55,18 @@ export function MazoGate({ groupId, focusPollId = null, presetAnswer = null }: M
     setDismissed(false);
   }, [groupId]);
 
+  // A deep link for a poll the mazo hasn't already opened for must reopen it, even if the
+  // user dismissed the mazo earlier this session — it only ever clears `dismissed`, never
+  // touches `open` directly, so the closing invariant above (only onDismiss / a group
+  // switch closes it) still holds.
+  const seenFocusPollId = useRef<string | null>(null);
+  useEffect(() => {
+    if (focusPollId && focusPollId !== seenFocusPollId.current) {
+      setDismissed(false);
+    }
+    seenFocusPollId.current = focusPollId;
+  }, [focusPollId]);
+
   useEffect(() => {
     if (open || dismissed) return;
     if (!groupId || pollsLoading || eventsLoading) return;
@@ -53,7 +79,8 @@ export function MazoGate({ groupId, focusPollId = null, presetAnswer = null }: M
   const handleDismiss = useCallback(() => {
     setOpen(false);
     setDismissed(true);
-  }, []);
+    onDismiss?.();
+  }, [onDismiss]);
 
   if (!open) return null;
 

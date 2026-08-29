@@ -113,7 +113,7 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
 
   const respondPoll = useRespondPoll(groupId);
   const respondEvent = useRespondEvent(groupId);
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
 
   // Snapshot the queue once at mount — usePendingQuestions re-derives from the query
   // cache, and each answer invalidates it, which would otherwise shrink the array and
@@ -152,7 +152,10 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
     presetFired.current = true;
     respondPoll
       .mutateAsync({ pollId: current.poll.id, answer: presetAnswer })
-      .then(() => setIndex((i) => i + 1))
+      .then(() => {
+        showSuccess('mazo.answered');
+        setIndex((i) => i + 1);
+      })
       .catch(() => {
         presetFired.current = false;
         showError('common.unexpectedError');

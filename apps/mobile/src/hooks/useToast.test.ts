@@ -24,4 +24,19 @@ describe('useToast', () => {
       }),
     );
   });
+
+  it('presenta un toast success con la clave traducida', () => {
+    const { result } = renderHook(() => useToast());
+
+    result.current.showSuccess('mazo.answered');
+
+    expect(present).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'mazo.answered', // global i18n mock: t(key) => key
+        color: 'success',
+        duration: 3000,
+        position: 'top',
+      }),
+    );
+  });
 });
