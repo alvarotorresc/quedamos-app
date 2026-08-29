@@ -15,11 +15,23 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   const { title, body } = payload.notification || {};
   const data = payload.data || {};
+  const isPoll = data.type === 'new_poll';
   if (title) {
     self.registration.showNotification(title, {
       body: body || '',
       icon: '/logo.png',
       data,
+      // Action buttons let the user answer straight from the notification, without
+      // opening the app first — only for an open question, never for other types
+      // (poll_completed included: it has nothing to answer). Android native ignores
+      // `actions` (unsupported by @capacitor/push-notifications@7) and falls back to
+      // the deep link on tap, same as before this change.
+      ...(isPoll && {
+        actions: [
+          { action: 'yes', title: 'Puedo' },
+          { action: 'no', title: 'No puedo' },
+        ],
+      }),
     });
   }
 });
@@ -33,6 +45,11 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const data = event.notification.data || {};
+  // event.action is '' when the notification body is clicked (no button involved) and
+  // the id of the pressed button ('yes'/'no') when an action button is clicked. Any
+  // other value is treated the same as no answer — only an exact 'yes'/'no' precharges
+  // the mazo's auto-submit (usePollDeepLink.ts / Mazo.tsx, Task 7).
+  const answer = event.action;
   let url = '/tabs/plans';
 
   if (data.type === 'member_joined' || data.type === 'member_left') {
@@ -48,9 +65,11 @@ self.addEventListener('notificationclick', (event) => {
     // Each field validates independently — garbage in one must not suppress the other.
     const pollOk = typeof data.pollId === 'string' && UUID_RE.test(data.pollId);
     const groupOk = typeof data.groupId === 'string' && UUID_RE.test(data.groupId);
+    const answerOk = answer === 'yes' || answer === 'no';
     const pollParams = new URLSearchParams();
     if (pollOk) pollParams.set('pollId', data.pollId);
     if (groupOk) pollParams.set('groupId', data.groupId);
+    if (answerOk) pollParams.set('answer', answer);
     const pollQuery = pollParams.toString();
     url = pollQuery ? '/tabs/calendar?' + pollQuery : '/tabs/calendar';
   } else if (data.type === 'poll_completed') {
