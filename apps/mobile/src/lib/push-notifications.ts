@@ -156,9 +156,14 @@ function navigateFromPush(data: Record<string, string>): void {
 
   if (type === 'member_joined' || type === 'member_left') {
     window.location.href = validGroupId ? `/tabs/group/${validGroupId}` : '/tabs/group';
-  } else if (type === 'new_poll' || type === 'poll_completed') {
+  } else if (type === 'new_poll') {
+    // poll_completed is informational only ("El aro se cierra") — its poll is already
+    // `completed`, so the mazo can never focus/consume a pollId for it. Only an open
+    // question (new_poll) gets the deep-link param.
     const pollOk = typeof pollId === 'string' && UUID_RE.test(pollId);
     window.location.href = pollOk ? `/tabs/calendar?pollId=${pollId}` : '/tabs/calendar';
+  } else if (type === 'poll_completed') {
+    window.location.href = '/tabs/calendar';
   } else if (validEventId) {
     window.location.href = `/tabs/plans?eventId=${validEventId}`;
   } else {

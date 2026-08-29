@@ -409,7 +409,12 @@ describe('push-notifications', () => {
       );
     });
 
-    it('should navigate to calendar with pollId for poll_completed', async () => {
+    it('should navigate to calendar WITHOUT pollId for poll_completed, even with a valid pollId present', async () => {
+      // poll_completed is informational only ("El aro se cierra") — its poll is already
+      // `completed`, so usePendingQuestions filters it out by definition and the mazo can
+      // never consume a focused pollId for it. Routing it into the deep-link param would
+      // just leak an unconsumable ?pollId= into the URL forever. Only new_poll (an actual
+      // open question) gets the pollId param.
       vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
 
       const { PushNotifications } = await import(
@@ -433,9 +438,7 @@ describe('push-notifications', () => {
         },
       });
 
-      expect(hrefSetter).toHaveBeenCalledWith(
-        '/tabs/calendar?pollId=00000000-0000-0000-0000-000000000012',
-      );
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
     });
 
     it('should navigate to calendar without pollId when it is not a valid UUID', async () => {

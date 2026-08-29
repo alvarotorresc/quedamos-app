@@ -37,9 +37,14 @@ self.addEventListener('notificationclick', (event) => {
 
   if (data.type === 'member_joined' || data.type === 'member_left') {
     url = data.groupId ? '/tabs/group/' + data.groupId : '/tabs/group';
-  } else if (data.type === 'new_poll' || data.type === 'poll_completed') {
+  } else if (data.type === 'new_poll') {
+    // poll_completed is informational only ("El aro se cierra") — its poll is already
+    // `completed`, so the mazo can never focus/consume a pollId for it. Only an open
+    // question (new_poll) gets the deep-link param.
     const pollOk = typeof data.pollId === 'string' && UUID_RE.test(data.pollId);
     url = pollOk ? '/tabs/calendar?pollId=' + data.pollId : '/tabs/calendar';
+  } else if (data.type === 'poll_completed') {
+    url = '/tabs/calendar';
   } else if (data.eventId) {
     url = '/tabs/plans?eventId=' + data.eventId;
   }
