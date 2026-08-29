@@ -30,9 +30,7 @@ describe('RLS Migration', () => {
       'poll_responses',
     ];
     for (const table of tables) {
-      expect(allMigrationsSql).toContain(
-        `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`,
-      );
+      expect(allMigrationsSql).toContain(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
     }
   });
 });

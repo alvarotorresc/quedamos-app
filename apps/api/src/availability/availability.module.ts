@@ -8,5 +8,6 @@ import { GroupsModule } from '../groups/groups.module';
   imports: [AuthModule, GroupsModule],
   controllers: [AvailabilityController],
   providers: [AvailabilityService],
+  exports: [AvailabilityService],
 })
 export class AvailabilityModule {}
