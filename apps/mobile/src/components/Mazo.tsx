@@ -12,6 +12,7 @@ import { buildMemberColorMap } from '../lib/member-colors';
 import { MEMBER_COLORS } from '../lib/constants';
 import { apiDateToKey, parseDateKey } from '../lib/date-utils';
 import { spring, useMotionSafe } from '../lib/motion';
+import { SLOT_KEYS } from '../lib/availability-label';
 import type { GroupMember } from '../services/groups';
 import type { Poll } from '../services/polls';
 import type { Event } from '../services/events';
@@ -32,12 +33,6 @@ const DONE_DWELL_MS = 600;
 // The wordmark mark is the app's abstract six-color ring — it always shows all six
 // canonical member colors "on", regardless of the current group's actual members.
 const WORDMARK_MEMBERS: AroMember[] = MEMBER_COLORS.map((color) => ({ color, state: 'on' }));
-
-const SLOT_KEYS: Record<string, string> = {
-  Mañana: 'calendar.availability.morning',
-  Tarde: 'calendar.availability.afternoon',
-  Noche: 'calendar.availability.night',
-};
 
 function questionKey(q: MazoQuestion): string {
   return `${q.kind}:${q.id}`;

@@ -8,10 +8,13 @@ import type { GroupWithMembers } from '../services/groups';
 // Mock usePendingQuestions / useRespondPoll (both live in ../hooks/usePolls)
 const respondPollMock = vi.fn();
 let pendingQuestions: { polls: Poll[]; pendingEvents: Event[] } = { polls: [], pendingEvents: [] };
+// Mutable, unlike the rest of the mock shape — needed to exercise the isSubmitting guard,
+// which a statically-false isPending can never reach.
+let respondPollPending = false;
 
 vi.mock('../hooks/usePolls', () => ({
   usePendingQuestions: () => pendingQuestions,
-  useRespondPoll: () => ({ mutateAsync: respondPollMock, isPending: false }),
+  useRespondPoll: () => ({ mutateAsync: respondPollMock, isPending: respondPollPending }),
 }));
 
 // Mock useRespondEvent (../hooks/useEvents)
@@ -90,6 +93,7 @@ describe('Mazo', () => {
     pendingQuestions = { polls: [], pendingEvents: [] };
     mockGroup = createGroup();
     motionSafeValue = true;
+    respondPollPending = false;
     respondPollMock.mockReset();
     respondEventMock.mockReset();
     showErrorMock.mockReset();
@@ -131,6 +135,22 @@ describe('Mazo', () => {
     expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
     expect(screen.queryByText('mazo.done')).not.toBeInTheDocument();
     expect(onDismiss).not.toHaveBeenCalled();
+  });
+
+  it('deshabilita los botones de respuesta mientras la mutación está en curso', () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    respondPollPending = true;
+    const onDismiss = vi.fn();
+
+    render(<Mazo groupId="group-1" onDismiss={onDismiss} />);
+
+    expect(screen.getByText('mazo.iCan')).toBeDisabled();
+    expect(screen.getByText('mazo.iCant')).toBeDisabled();
+    expect(screen.getByText('mazo.unsure')).toBeDisabled();
+
+    // Clicking a disabled button must not reach the mutation.
+    fireEvent.click(screen.getByText('mazo.iCan'));
+    expect(respondPollMock).not.toHaveBeenCalled();
   });
 
   it('con la cola vacía llama onDismiss', () => {
