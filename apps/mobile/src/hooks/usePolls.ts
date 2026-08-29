@@ -58,7 +58,10 @@ export function usePendingQuestions(groupId: string): { polls: Poll[]; pendingEv
     const today = formatDateKey(new Date());
 
     const pendingPolls = (polls ?? []).filter(
-      (p) => p.status === 'open' && !p.responses.some((r) => r.userId === userId),
+      (p) =>
+        p.status === 'open' &&
+        p.date >= today &&
+        !p.responses.some((r) => r.userId === userId),
     );
 
     const pendingEvents = (events ?? []).filter((ev) => {

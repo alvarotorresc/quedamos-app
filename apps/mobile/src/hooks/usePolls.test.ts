@@ -36,7 +36,7 @@ function createTestPoll(overrides: Partial<Poll> = {}): Poll {
     id: 'poll-1',
     groupId: 'group-1',
     createdById: 'user-2',
-    date: '2026-07-15',
+    date: daysFromToday(1),
     slot: null,
     status: 'open',
     createdAt: '2026-07-01T00:00:00Z',
@@ -177,6 +177,23 @@ describe('usePendingQuestions', () => {
 
     await waitFor(() => expect(result.current.polls).toHaveLength(1));
     expect(result.current.polls[0].id).toBe('poll-open');
+  });
+
+  it('excludes open polls with a date that has already passed, even if unanswered', async () => {
+    const pastDate = daysFromToday(-1);
+    const futureDate = daysFromToday(1);
+    const pastPoll = createTestPoll({ id: 'poll-past', date: pastDate, responses: [] });
+    const controlPoll = createTestPoll({ id: 'poll-control', date: futureDate, responses: [] });
+
+    vi.mocked(pollsService.list).mockResolvedValue([pastPoll, controlPoll]);
+    vi.mocked(eventsService.getAll).mockResolvedValue([]);
+
+    const { result } = renderHook(() => usePendingQuestions('group-1'), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => expect(result.current.polls).toHaveLength(1));
+    expect(result.current.polls[0].id).toBe('poll-control');
   });
 
   it('includes future events where my attendee status is pending', async () => {
