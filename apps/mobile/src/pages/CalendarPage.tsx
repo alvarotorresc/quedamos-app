@@ -316,6 +316,7 @@ export default function CalendarPage() {
                       setSelectedDay(null);
                       setWeekOffset(0);
                       setMonthOffset(0);
+                      setMazoDismissed(false);
                     }}
                     className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border-none whitespace-nowrap"
                     style={{
@@ -487,7 +488,9 @@ export default function CalendarPage() {
         !eventsLoading &&
         groupId !== '' &&
         (pendingPolls.length > 0 || pendingEvents.length > 0) && (
-          <Mazo groupId={groupId} onDismiss={() => setMazoDismissed(true)} />
+          // key={groupId} forces a remount (and a fresh queue snapshot) on group switch —
+          // without it, Mazo would keep answering against the previous group's questions.
+          <Mazo key={groupId} groupId={groupId} onDismiss={() => setMazoDismissed(true)} />
         )}
     </IonPage>
   );
