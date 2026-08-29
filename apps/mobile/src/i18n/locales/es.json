@@ -107,7 +107,7 @@
     "askTitle": "Preguntar al grupo",
     "askAction": "Preguntar",
     "askHint": "Cada uno responde con un toque, sin abrir el calendario.",
-    "askDuplicate": "Ya hay una pregunta abierta para ese día.",
+    "askDuplicate": "Ya has preguntado eso. Prueba otra franja.",
     "editAvailability": "Editar disponibilidad",
     "available": "Disponible",
     "createEvent": "Crear quedada",

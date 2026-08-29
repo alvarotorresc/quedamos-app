@@ -60,7 +60,7 @@ export function AskGroupSheet({ isOpen, onClose, groupId, day }: AskGroupSheetPr
 
   const options: { value: SlotChoice; label: string }[] = [
     { value: 'full', label: t('calendar.allDay') },
-    ...SLOTS.map((s) => ({ value: s as SlotChoice, label: t(SLOT_KEYS[s]) })),
+    ...SLOTS.map((s): { value: SlotChoice; label: string } => ({ value: s, label: t(SLOT_KEYS[s]) })),
   ];
 
   return (

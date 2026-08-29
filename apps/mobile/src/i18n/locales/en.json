@@ -107,7 +107,7 @@
     "askTitle": "Ask the group",
     "askAction": "Ask",
     "askHint": "Everyone answers with one tap, no calendar needed.",
-    "askDuplicate": "There's already an open question for that day.",
+    "askDuplicate": "You already asked that. Try another slot.",
     "editAvailability": "Edit availability",
     "available": "Available",
     "createEvent": "Create plan",

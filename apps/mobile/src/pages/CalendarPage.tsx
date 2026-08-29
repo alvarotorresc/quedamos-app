@@ -171,7 +171,9 @@ export default function CalendarPage() {
     // Same guard as handleCreateEvent below: a poll for a past day would push a
     // notification for a question usePendingQuestions filters out for everyone
     // (it only surfaces polls with date >= today), so it would be unanswerable
-    // and invisible — and it would still occupy the day's unique-open-poll slot.
+    // and invisible — and it would still occupy that day+slot's unique-open-poll
+    // slot (uniqueness in polls.service.ts is scoped to groupId+date+slot, not
+    // the whole day).
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (day < today) return;
