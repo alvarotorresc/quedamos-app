@@ -41,8 +41,18 @@ self.addEventListener('notificationclick', (event) => {
     // poll_completed is informational only ("El aro se cierra") — its poll is already
     // `completed`, so the mazo can never focus/consume a pollId for it. Only an open
     // question (new_poll) gets the deep-link param.
+    //
+    // groupId travels alongside pollId here too: this service worker has no access to
+    // the page's localStorage (unlike navigateFromPush, which also persists it there),
+    // so the URL is the only channel available to select the right group on reload.
+    // Each field validates independently — garbage in one must not suppress the other.
     const pollOk = typeof data.pollId === 'string' && UUID_RE.test(data.pollId);
-    url = pollOk ? '/tabs/calendar?pollId=' + data.pollId : '/tabs/calendar';
+    const groupOk = typeof data.groupId === 'string' && UUID_RE.test(data.groupId);
+    const pollParams = new URLSearchParams();
+    if (pollOk) pollParams.set('pollId', data.pollId);
+    if (groupOk) pollParams.set('groupId', data.groupId);
+    const pollQuery = pollParams.toString();
+    url = pollQuery ? '/tabs/calendar?' + pollQuery : '/tabs/calendar';
   } else if (data.type === 'poll_completed') {
     url = '/tabs/calendar';
   } else if (data.eventId) {

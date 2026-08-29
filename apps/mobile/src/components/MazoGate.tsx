@@ -74,6 +74,27 @@ export function MazoGate({
     setOpen(true);
   }, [open, dismissed, groupId, pollsLoading, eventsLoading, polls, pendingEvents]);
 
+  // Cleanup must not depend on the mazo ever opening (IMPORTANT 2, fix round 1): it never
+  // opens for a focused poll that answered elsewhere, whose date already passed
+  // (usePendingQuestions filters those out), or that was closed/deleted between the push
+  // and the tap — all normal occurrences, not just an exotic edge case. Once the queries
+  // have resolved, if the focused poll isn't among the pending ones, the mazo can never
+  // consume it — clear the deep link directly via the `onDismiss` prop (not
+  // `handleDismiss`: there's no open mazo here to mark `dismissed` for). Guarded by
+  // `orphanClearedFor` so it fires at most once per distinct `focusPollId` — including the
+  // ordinary case where the poll WAS pending and the mazo answered it normally, which
+  // would otherwise also match here right as the query invalidates; that's a harmless
+  // second call into the same idempotent `clear()` already fired by `handleDismiss` below.
+  const orphanClearedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!focusPollId) return;
+    if (pollsLoading || eventsLoading) return;
+    if (orphanClearedFor.current === focusPollId) return;
+    if (polls.some((p) => p.id === focusPollId)) return;
+    orphanClearedFor.current = focusPollId;
+    onDismiss?.();
+  }, [focusPollId, pollsLoading, eventsLoading, polls, onDismiss]);
+
   // Stable across re-renders so Mazo's own dwell-timer effect (keyed on `onDismiss`)
   // never sees a fresh identity and cancels/rearms itself mid-dwell.
   const handleDismiss = useCallback(() => {

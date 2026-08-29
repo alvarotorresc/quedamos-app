@@ -180,6 +180,62 @@ describe('MazoGate', () => {
     expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
   });
 
+  // IMPORTANT 2 (fix round 1): cleanup of the deep-link params must not depend on the
+  // mazo ever opening. It doesn't open when the focused poll isn't (or is no longer)
+  // among the pending ones — answered elsewhere, its date passed, or it was closed/
+  // deleted between the push and the tap — so relying only on Mazo's own onDismiss would
+  // leave `?pollId=…` stuck in the URL forever in those cases.
+  it('limpia el deep link si el pollId enfocado no está entre los pendientes tras resolver las queries, aunque el mazo nunca llegue a abrirse', () => {
+    pendingQuestions = { polls: [], pendingEvents: [] };
+    const onDismiss = vi.fn();
+
+    render(<MazoGate groupId="group-1" focusPollId="orphan-poll" onDismiss={onDismiss} />);
+
+    expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('no limpia el deep link mientras las queries todavía están cargando', () => {
+    pollsLoading = true;
+    pendingQuestions = { polls: [], pendingEvents: [] };
+    const onDismiss = vi.fn();
+
+    const { rerender } = render(
+      <MazoGate groupId="group-1" focusPollId="orphan-poll" onDismiss={onDismiss} />,
+    );
+    expect(onDismiss).not.toHaveBeenCalled();
+
+    pollsLoading = false;
+    rerender(<MazoGate groupId="group-1" focusPollId="orphan-poll" onDismiss={onDismiss} />);
+
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it('no limpia el deep link si el pollId enfocado sí está pendiente (el mazo se abre en su lugar)', () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    const onDismiss = vi.fn();
+
+    render(<MazoGate groupId="group-1" focusPollId="p1" onDismiss={onDismiss} />);
+
+    expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
+    expect(onDismiss).not.toHaveBeenCalled();
+  });
+
+  it('no repite la limpieza del mismo pollId huérfano en renders sucesivos', () => {
+    pendingQuestions = { polls: [], pendingEvents: [] };
+    const onDismiss = vi.fn();
+
+    const { rerender } = render(
+      <MazoGate groupId="group-1" focusPollId="orphan-poll" onDismiss={onDismiss} />,
+    );
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+
+    rerender(<MazoGate groupId="group-1" focusPollId="orphan-poll" onDismiss={onDismiss} />);
+    rerender(<MazoGate groupId="group-1" focusPollId="orphan-poll" onDismiss={onDismiss} />);
+
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
   it('tras un cambio de grupo se reevalúa desde cero (no arrastra el cierre del grupo anterior)', () => {
     pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
     const { rerender } = render(<MazoGate groupId="group-1" />);

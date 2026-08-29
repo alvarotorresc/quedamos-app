@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
@@ -14,6 +14,7 @@ import { useScreenView } from '../hooks/useAnalytics';
 import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { usePollDeepLink } from '../hooks/usePollDeepLink';
+import { useAutoSelectGroup } from '../hooks/useAutoSelectGroup';
 import { formatDateKey, apiDateToKey, getWeekDays } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
@@ -43,25 +44,26 @@ export default function CalendarPage() {
 
   // Group selection
   const { data: groups, isLoading: groupsLoading } = useGroups();
-  const { currentGroup, setCurrentGroup, getPersistedGroupId } = useGroupStore();
+  const { currentGroup, setCurrentGroup } = useGroupStore();
 
-  // Auto-select group on load
-  useEffect(() => {
-    if (!groups || groups.length === 0) return;
-    if (currentGroup && groups.find((g) => g.id === currentGroup.id)) return;
+  // Deep link from a push notification straight to a poll question (Task 7) — read once
+  // from the URL. `groupId` is consumed by useAutoSelectGroup below (the only channel
+  // that survives the service worker's notificationclick path, which has no access to
+  // localStorage); `focusPollId`/`presetAnswer` are handed to MazoGate/Mazo, which also
+  // clears everything via `clear` once truly done with them (see MazoGate for why).
+  const {
+    focusPollId,
+    presetAnswer,
+    groupId: deepLinkGroupId,
+    clear: clearPollDeepLink,
+  } = usePollDeepLink();
 
-    const persistedId = getPersistedGroupId();
-    const match = persistedId ? groups.find((g) => g.id === persistedId) : null;
-    setCurrentGroup(match ?? groups[0]);
-  }, [groups, currentGroup, setCurrentGroup, getPersistedGroupId]);
+  // Auto-select group on load — deep-link groupId takes priority (fix round 1), then
+  // whatever's already selected, then the persisted id, then the first group.
+  useAutoSelectGroup(groups, deepLinkGroupId);
 
   const groupId = currentGroup?.id ?? '';
   useGroupSync(groupId || undefined);
-
-  // Deep link from a push notification straight to a poll question (Task 7) — read once
-  // from the URL, handed to MazoGate/Mazo below, and cleared once the mazo is actually
-  // done with it (`clear` is stable, wired as MazoGate's `onDismiss`).
-  const { focusPollId, presetAnswer, clear: clearPollDeepLink } = usePollDeepLink();
 
   // Group detail (for members)
   const { data: groupDetail } = useGroup(groupId);
