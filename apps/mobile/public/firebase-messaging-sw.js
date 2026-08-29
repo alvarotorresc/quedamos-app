@@ -53,7 +53,10 @@ self.addEventListener('notificationclick', (event) => {
   let url = '/tabs/plans';
 
   if (data.type === 'member_joined' || data.type === 'member_left') {
-    url = data.groupId ? '/tabs/group/' + data.groupId : '/tabs/group';
+    // Same UUID validation + fallback as navigateFromPush's validGroupId — a garbage
+    // groupId must not end up in the URL, it should just fall back to the groupless route.
+    const memberGroupOk = typeof data.groupId === 'string' && UUID_RE.test(data.groupId);
+    url = memberGroupOk ? '/tabs/group/' + data.groupId : '/tabs/group';
   } else if (data.type === 'new_poll') {
     // poll_completed is informational only ("El aro se cierra") — its poll is already
     // `completed`, so the mazo can never focus/consume a pollId for it. Only an open
@@ -69,25 +72,42 @@ self.addEventListener('notificationclick', (event) => {
     const pollParams = new URLSearchParams();
     if (pollOk) pollParams.set('pollId', data.pollId);
     if (groupOk) pollParams.set('groupId', data.groupId);
-    if (answerOk) pollParams.set('answer', answer);
+    // Gated on pollOk too: an answer with no pollId to attach it to is inert (Mazo.tsx's
+    // auto-submit guard requires a non-null focusPollId), so there is no reason to leak it
+    // into the URL when pollId is missing or invalid.
+    if (answerOk && pollOk) pollParams.set('answer', answer);
     const pollQuery = pollParams.toString();
     url = pollQuery ? '/tabs/calendar?' + pollQuery : '/tabs/calendar';
   } else if (data.type === 'poll_completed') {
     url = '/tabs/calendar';
-  } else if (data.eventId) {
+  } else if (typeof data.eventId === 'string' && UUID_RE.test(data.eventId)) {
+    // Same UUID validation as navigateFromPush's validEventId — an invalid eventId falls
+    // through to the '/tabs/plans' default set above, same as that fallback.
     url = '/tabs/plans?eventId=' + data.eventId;
   }
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+    (async () => {
+      const windowClients = await clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const client of windowClients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus();
-          client.navigate(url);
-          return;
+          try {
+            await client.focus();
+            await client.navigate(url);
+            return;
+          } catch {
+            // matchAll({ includeUncontrolled: true }) can return windows this SW doesn't
+            // actually control (e.g. a tab loaded before this SW took over) — navigate()
+            // rejects with InvalidStateError for those. That used to just mean "wrong page
+            // opens"; now it would silently drop the answer the user just tapped a button
+            // for, since `answer` only travels in the destination URL. Falling through to
+            // openWindow instead of leaving this rejection unobserved guarantees the
+            // answer still reaches a real, controlled page.
+            break;
+          }
         }
       }
       return clients.openWindow(url);
-    })
+    })()
   );
 });
