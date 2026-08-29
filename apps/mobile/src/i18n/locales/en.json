@@ -301,6 +301,7 @@
       "title": "Notifications",
       "groups": {
         "events": "Events",
+        "questions": "Questions",
         "proposals": "Proposals",
         "members": "Members",
         "reminders": "Reminders"
@@ -312,6 +313,8 @@
       "eventConfirmed": "Plan confirmed by all",
       "eventDeclined": "Someone declined a plan",
       "eventReminder": "24h reminder before a plan",
+      "newPoll": "New group questions",
+      "pollCompleted": "The ring closes",
       "newProposal": "New proposal created",
       "proposalVoted": "Someone voted on a proposal",
       "proposalConverted": "Proposal converted to plan",

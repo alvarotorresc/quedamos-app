@@ -301,6 +301,7 @@
       "title": "Notificaciones",
       "groups": {
         "events": "Quedadas",
+        "questions": "Preguntas",
         "proposals": "Propuestas",
         "members": "Miembros",
         "reminders": "Recordatorios"
@@ -312,6 +313,8 @@
       "eventConfirmed": "Quedada confirmada por todos",
       "eventDeclined": "Alguien rechazó una quedada",
       "eventReminder": "Recordatorio 24h antes de una quedada",
+      "newPoll": "Nuevas preguntas al grupo",
+      "pollCompleted": "El aro se cierra",
       "newProposal": "Nueva propuesta creada",
       "proposalVoted": "Alguien votó en una propuesta",
       "proposalConverted": "Propuesta convertida en quedada",
