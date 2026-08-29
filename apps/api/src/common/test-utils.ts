@@ -101,6 +101,28 @@ interface MockPrismaModels {
     findMany: jest.Mock;
     create: jest.Mock;
   }>;
+  availabilityPoll: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    updateMany: jest.Mock;
+    upsert: jest.Mock;
+    delete: jest.Mock;
+    count: jest.Mock;
+  }>;
+  pollResponse: MockModel<{
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    updateMany: jest.Mock;
+    upsert: jest.Mock;
+    delete: jest.Mock;
+    count: jest.Mock;
+  }>;
 }
 
 export interface MockPrisma extends MockPrismaModels {
@@ -206,6 +228,28 @@ export function createMockPrisma(): MockPrisma {
     notificationLog: {
       findMany: jest.fn(),
       create: jest.fn(),
+    },
+    availabilityPoll: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      upsert: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn().mockResolvedValue(1),
+    },
+    pollResponse: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      updateMany: jest.fn(),
+      upsert: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
     },
   };
   return {
