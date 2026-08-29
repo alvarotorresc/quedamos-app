@@ -24,6 +24,7 @@ import { AvailabilityModal } from '../components/AvailabilityModal';
 import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
 import { CreateEventModal } from '../components/CreateEventModal';
 import { EventDetailModal } from '../components/EventDetailModal';
+import { AskGroupSheet } from '../components/AskGroupSheet';
 import { MazoGate } from '../components/MazoGate';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
@@ -78,6 +79,8 @@ export default function CalendarPage() {
   const [showAvailModal, setShowAvailModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [showAskSheet, setShowAskSheet] = useState(false);
+  const [askDay, setAskDay] = useState<Date | null>(null);
   const [createEventPrefill, setCreateEventPrefill] = useState<EventPrefill | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
 
@@ -162,6 +165,19 @@ export default function CalendarPage() {
 
   const handleMarkAvailability = () => {
     setShowAvailModal(true);
+  };
+
+  const handleAskGroup = (day: Date) => {
+    // Same guard as handleCreateEvent below: a poll for a past day would push a
+    // notification for a question usePendingQuestions filters out for everyone
+    // (it only surfaces polls with date >= today), so it would be unanswerable
+    // and invisible — and it would still occupy the day's unique-open-poll slot.
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (day < today) return;
+
+    setAskDay(day);
+    setShowAskSheet(true);
   };
 
   const handleCreateEventDirect = () => {
@@ -373,6 +389,7 @@ export default function CalendarPage() {
                   weatherByDate={weatherByDate}
                   eventsByDate={eventsByDate}
                   onEventClick={(ev) => setSelectedEvent(ev)}
+                  onAskGroup={handleAskGroup}
                 />
               )}
               {calView === 'month' && (
@@ -470,6 +487,14 @@ export default function CalendarPage() {
           onClose={() => setSelectedEvent(null)}
           event={selectedEvent}
           memberColorMap={memberColorMap}
+        />
+
+        {/* Ask-the-group sheet */}
+        <AskGroupSheet
+          isOpen={showAskSheet}
+          onClose={() => setShowAskSheet(false)}
+          groupId={groupId}
+          day={askDay}
         />
       </IonContent>
 

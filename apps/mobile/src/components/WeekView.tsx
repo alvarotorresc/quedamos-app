@@ -25,6 +25,7 @@ interface WeekViewProps {
   weatherByDate?: Map<string, WeatherData[]>;
   eventsByDate?: Map<string, Event[]>;
   onEventClick?: (event: Event) => void;
+  onAskGroup?: (day: Date) => void;
 }
 
 export function WeekView({
@@ -42,6 +43,7 @@ export function WeekView({
   weatherByDate,
   eventsByDate,
   onEventClick,
+  onAskGroup,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -209,6 +211,18 @@ export function WeekView({
                 >
                   {myAvail ? t('calendar.editAvailability') : t('calendar.markAvailable')}
                 </Button>
+                {onAskGroup && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAskGroup(day);
+                    }}
+                  >
+                    {t('calendar.ask')}
+                  </Button>
+                )}
                 {availCount >= 2 && (
                   <Button
                     variant="secondary"

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { WeekView } from './WeekView';
 import { formatDateKey, getWeekDays } from '../lib/date-utils';
@@ -49,5 +49,24 @@ describe('WeekView rediseñada', () => {
     expect(screen.queryByTestId('best-day-panel')).not.toBeInTheDocument();
     expect(screen.getAllByTestId('day-row')).toHaveLength(7);
     expect(screen.getByText(/Cena/)).toBeInTheDocument();
+  });
+  it('en la fila expandida ofrece el chip Preguntar cuando se pasa onAskGroup', () => {
+    const props = buildProps();
+    const week = getWeekDays(new Date(), 0);
+    const day = week[0]; // fila normal, no el panel de mejor día (week[4])
+    const onAskGroup = vi.fn<(day: Date) => void>();
+    render(<WeekView {...props} selectedDay={day} onAskGroup={onAskGroup} />);
+    fireEvent.click(screen.getByText('calendar.ask'));
+    expect(onAskGroup).toHaveBeenCalledOnce();
+    // Comparamos por clave de fecha: WeekView recalcula `new Date()` internamente,
+    // así que el Date exacto puede diferir en milisegundos del `day` de este test.
+    expect(formatDateKey(onAskGroup.mock.calls[0][0])).toBe(formatDateKey(day));
+  });
+  it('no pinta el chip Preguntar si no se pasa onAskGroup', () => {
+    const props = buildProps();
+    const week = getWeekDays(new Date(), 0);
+    const day = week[0];
+    render(<WeekView {...props} selectedDay={day} />);
+    expect(screen.queryByText('calendar.ask')).not.toBeInTheDocument();
   });
 });
