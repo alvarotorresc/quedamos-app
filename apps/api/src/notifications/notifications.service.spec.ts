@@ -406,6 +406,234 @@ describe('NotificationsService', () => {
     });
   });
 
+  // Web push duplicates bug: @firebase/messaging shows its own notification whenever the
+  // FCM payload carries a top-level `notification` AND onBackgroundMessage also fires — it
+  // is not either/or. Our SW's onBackgroundMessage already shows the right one (routing +
+  // action buttons), so the SDK's copy is a duplicate. Fix: web tokens get a data-only
+  // payload (no `notification`, no `webpush.notification`), title/body travel inside
+  // `data` instead. Android tokens are unaffected — same payload shape as before.
+  describe('sendToTokens — platform-split payloads (web push duplicates fix)', () => {
+    it('should send a data-only message for web tokens: no notification key, title/body folded into data', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([{ token: 'web-token', platform: 'web' }]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+
+      await service.sendToUser('user-1', 'Title', 'Body', { type: 'new_event' });
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
+      const [[calledMessage]] = mockSendEachForMulticast.mock.calls;
+      expect(calledMessage).toEqual(
+        expect.objectContaining({
+          tokens: ['web-token'],
+          data: { type: 'new_event', title: 'Title', body: 'Body' },
+        }),
+      );
+      expect(calledMessage).not.toHaveProperty('notification');
+      expect(calledMessage).not.toHaveProperty('webpush');
+    });
+
+    it('should keep the current notification + android block for android tokens, unchanged', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([
+        { token: 'android-token', platform: 'android' },
+      ]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+
+      await service.sendToUser('user-1', 'Title', 'Body', { type: 'new_event' });
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokens: ['android-token'],
+          notification: { title: 'Title', body: 'Body' },
+          data: { type: 'new_event' },
+          android: {
+            notification: {
+              channelId: 'default',
+              icon: 'ic_launcher',
+            },
+          },
+        }),
+      );
+    });
+
+    it('should issue two separate multicast sends when tokens span both platforms', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([
+        { token: 'android-token', platform: 'android' },
+        { token: 'web-token', platform: 'web' },
+      ]);
+      mockSendEachForMulticast.mockImplementation((message: { tokens: string[] }) => ({
+        successCount: message.tokens.length,
+        failureCount: 0,
+        responses: message.tokens.map(() => ({ success: true })),
+      }));
+
+      await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(2);
+      const calls = mockSendEachForMulticast.mock.calls.map(
+        ([message]: [
+          { tokens: string[]; notification?: unknown; data?: Record<string, string> },
+        ]) => message,
+      );
+      const androidCall = calls.find((c: { tokens: string[] }) =>
+        c.tokens.includes('android-token'),
+      );
+      const webCall = calls.find((c: { tokens: string[] }) => c.tokens.includes('web-token'));
+
+      expect(androidCall).toEqual(
+        expect.objectContaining({ notification: { title: 'Title', body: 'Body' } }),
+      );
+      expect(webCall).not.toHaveProperty('notification');
+      expect(webCall?.data).toEqual({ title: 'Title', body: 'Body' });
+    });
+
+    it('should send a single multicast call for web-only tokens (no notification key)', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([
+        { token: 'web-token-1', platform: 'web' },
+        { token: 'web-token-2', platform: 'web' },
+      ]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 2,
+        failureCount: 0,
+        responses: [{ success: true }, { success: true }],
+      });
+
+      await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
+      const [[calledMessage]] = mockSendEachForMulticast.mock.calls;
+      expect(calledMessage.tokens).toEqual(['web-token-1', 'web-token-2']);
+      expect(calledMessage).not.toHaveProperty('notification');
+    });
+
+    it('should send a single multicast call for android-only tokens, as today', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([
+        { token: 'android-token-1', platform: 'android' },
+        { token: 'android-token-2', platform: 'android' },
+      ]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 2,
+        failureCount: 0,
+        responses: [{ success: true }, { success: true }],
+      });
+
+      await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({ notification: { title: 'Title', body: 'Body' } }),
+      );
+    });
+
+    it('should aggregate sent/failed counts across both platform batches', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([
+        { token: 'android-token', platform: 'android' },
+        { token: 'web-token-1', platform: 'web' },
+        { token: 'web-token-2', platform: 'web' },
+      ]);
+      prisma.notificationLog.create.mockResolvedValue({});
+      // Dispatch per-batch by token identity, not call order — the aggregation must be
+      // correct regardless of which batch (android/web) is sent first.
+      mockSendEachForMulticast.mockImplementation((message: { tokens: string[] }) => {
+        if (message.tokens.includes('android-token')) {
+          return { successCount: 1, failureCount: 0, responses: [{ success: true }] };
+        }
+        return {
+          successCount: 1,
+          failureCount: 1,
+          responses: [
+            { success: true },
+            {
+              success: false,
+              error: { code: 'messaging/internal-error', message: 'transient' },
+            },
+          ],
+        };
+      });
+
+      await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          tokenCount: 3,
+          sentCount: 2,
+          failedCount: 1,
+        }),
+      });
+    });
+
+    it('should clean up invalid tokens independently per platform batch (by-batch response indices)', async () => {
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([
+        { token: 'android-valid', platform: 'android' },
+        { token: 'android-invalid', platform: 'android' },
+        { token: 'web-valid', platform: 'web' },
+        { token: 'web-invalid', platform: 'web' },
+      ]);
+      prisma.pushToken.deleteMany.mockResolvedValue({ count: 1 });
+      // Each batch's response.responses is indexed against THAT batch's own tokens array
+      // (['android-valid','android-invalid'] or ['web-valid','web-invalid']), never against
+      // the combined 4-token list. A batch-index bug would delete the wrong token.
+      mockSendEachForMulticast.mockImplementation((message: { tokens: string[] }) => {
+        const isAndroidBatch = message.tokens.includes('android-valid');
+        const errorCode = isAndroidBatch
+          ? 'messaging/registration-token-not-registered'
+          : 'messaging/invalid-registration-token';
+        return {
+          successCount: 1,
+          failureCount: 1,
+          responses: [
+            { success: true },
+            { success: false, error: { code: errorCode, message: 'gone' } },
+          ],
+        };
+      });
+
+      await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
+        where: { token: { in: ['android-invalid'] } },
+      });
+      expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
+        where: { token: { in: ['web-invalid'] } },
+      });
+    });
+
+    it('should treat a token with no recognized platform as native (android-style payload), not data-only', async () => {
+      // Defensive default: an unexpected/missing platform value must degrade to today's
+      // behavior (full payload) rather than silently becoming a silent data-only push.
+      service.onModuleInit();
+      prisma.pushToken.findMany.mockResolvedValue([{ token: 'unknown-platform-token' }]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+
+      await service.sendToUser('user-1', 'Title', 'Body');
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          notification: { title: 'Title', body: 'Body' },
+        }),
+      );
+    });
+  });
+
   describe('sendTestNotification', () => {
     it('should send a test notification to the requesting user', async () => {
       service.onModuleInit();
