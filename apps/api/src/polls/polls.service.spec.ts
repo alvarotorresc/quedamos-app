@@ -7,7 +7,7 @@ describe('PollsService', () => {
   let prisma: ReturnType<typeof createMockPrisma>;
   let groupsService: { findById: jest.Mock; getMembers: jest.Mock };
   let notifications: ReturnType<typeof createMockNotificationsService>;
-  let availability: { create: jest.Mock };
+  let availability: { mergeFromPoll: jest.Mock };
 
   const MEMBERS = [{ userId: 'u1' }, { userId: 'u2' }, { userId: 'u3' }];
 
@@ -18,7 +18,7 @@ describe('PollsService', () => {
       getMembers: jest.fn().mockResolvedValue(MEMBERS),
     };
     notifications = createMockNotificationsService();
-    availability = { create: jest.fn().mockResolvedValue({}) };
+    availability = { mergeFromPoll: jest.fn().mockResolvedValue({}) };
     service = new PollsService(
       prisma as never,
       groupsService as never,
@@ -55,11 +55,7 @@ describe('PollsService', () => {
           }),
         }),
       );
-      expect(availability.create).toHaveBeenCalledWith(
-        'g1',
-        'u1',
-        expect.objectContaining({ date: '2026-02-13', type: 'day' }),
-      );
+      expect(availability.mergeFromPoll).toHaveBeenCalledWith('g1', 'u1', '2026-02-13', null);
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
         expect.stringContaining('¿Puedes'),
@@ -82,11 +78,7 @@ describe('PollsService', () => {
 
       await service.create('g1', 'u1', { date: '2026-02-13', slot: 'Tarde' });
 
-      expect(availability.create).toHaveBeenCalledWith(
-        'g1',
-        'u1',
-        expect.objectContaining({ date: '2026-02-13', type: 'slots', slots: ['Tarde'] }),
-      );
+      expect(availability.mergeFromPoll).toHaveBeenCalledWith('g1', 'u1', '2026-02-13', 'Tarde');
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
         expect.stringContaining('por la tarde'),
@@ -172,17 +164,13 @@ describe('PollsService', () => {
       prisma.pollResponse.findMany.mockResolvedValue([{ userId: 'u1', answer: 'yes' }]);
 
       await service.respond('g1', 'p1', 'u2', { answer: 'no' });
-      expect(availability.create).not.toHaveBeenCalled();
+      expect(availability.mergeFromPoll).not.toHaveBeenCalled();
 
       await service.respond('g1', 'p1', 'u2', { answer: 'unsure' });
-      expect(availability.create).not.toHaveBeenCalled();
+      expect(availability.mergeFromPoll).not.toHaveBeenCalled();
 
       await service.respond('g1', 'p1', 'u2', { answer: 'yes' });
-      expect(availability.create).toHaveBeenCalledWith(
-        'g1',
-        'u2',
-        expect.objectContaining({ date: '2026-02-13', type: 'day' }),
-      );
+      expect(availability.mergeFromPoll).toHaveBeenCalledWith('g1', 'u2', '2026-02-13', null);
     });
 
     it('cuando el último miembro dice yes: completed una sola vez + push poll_completed', async () => {

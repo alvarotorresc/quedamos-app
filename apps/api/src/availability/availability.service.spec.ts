@@ -192,6 +192,142 @@ describe('AvailabilityService', () => {
     });
   });
 
+  // I1 — never degrade availability already marked. One test per cell of the merge
+  // table (existing row × poll shape) from final-fix-wave-brief.md.
+  describe('mergeFromPoll', () => {
+    it('sin fila existente y sondeo sin franja: crea type=day', async () => {
+      prisma.availability.findUnique.mockResolvedValue(null);
+      prisma.availability.create.mockResolvedValue({ id: 'a1', type: 'day' });
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
+
+      expect(prisma.availability.create).toHaveBeenCalledWith({
+        data: {
+          userId: 'user-1',
+          groupId: 'group-1',
+          date: new Date('2026-03-01'),
+          type: 'day',
+          slots: [],
+        },
+      });
+    });
+
+    it('sin fila existente y sondeo con franja: crea type=slots con esa franja', async () => {
+      prisma.availability.findUnique.mockResolvedValue(null);
+      prisma.availability.create.mockResolvedValue({ id: 'a1', type: 'slots' });
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', 'Tarde');
+
+      expect(prisma.availability.create).toHaveBeenCalledWith({
+        data: {
+          userId: 'user-1',
+          groupId: 'group-1',
+          date: new Date('2026-03-01'),
+          type: 'slots',
+          slots: ['Tarde'],
+        },
+      });
+    });
+
+    it('fila existente type=day y sondeo sin franja: no toca nada', async () => {
+      const existing = { id: 'a1', type: 'day', slots: [] };
+      prisma.availability.findUnique.mockResolvedValue(existing);
+
+      const result = await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
+
+      expect(prisma.availability.update).not.toHaveBeenCalled();
+      expect(prisma.availability.create).not.toHaveBeenCalled();
+      expect(result).toBe(existing);
+    });
+
+    it('fila existente type=day y sondeo con franja: no toca nada (el día ya cubre la franja)', async () => {
+      const existing = { id: 'a1', type: 'day', slots: [] };
+      prisma.availability.findUnique.mockResolvedValue(existing);
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', 'Tarde');
+
+      expect(prisma.availability.update).not.toHaveBeenCalled();
+      expect(prisma.availability.create).not.toHaveBeenCalled();
+    });
+
+    it('fila existente type=slots y sondeo sin franja: amplía a day (permitido)', async () => {
+      prisma.availability.findUnique.mockResolvedValue({
+        id: 'a1',
+        type: 'slots',
+        slots: ['Mañana'],
+      });
+      prisma.availability.update.mockResolvedValue({ id: 'a1', type: 'day' });
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
+
+      expect(prisma.availability.update).toHaveBeenCalledWith({
+        where: { id: 'a1' },
+        data: { type: 'day', slots: [] },
+      });
+    });
+
+    it('fila existente type=slots y sondeo con franja nueva: la añade preservando el orden existente', async () => {
+      prisma.availability.findUnique.mockResolvedValue({
+        id: 'a1',
+        type: 'slots',
+        slots: ['Mañana'],
+      });
+      prisma.availability.update.mockResolvedValue({ id: 'a1', type: 'slots' });
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', 'Tarde');
+
+      expect(prisma.availability.update).toHaveBeenCalledWith({
+        where: { id: 'a1' },
+        data: { slots: ['Mañana', 'Tarde'] },
+      });
+    });
+
+    it('fila existente type=slots y sondeo con franja ya presente: no toca nada (idempotente)', async () => {
+      const existing = { id: 'a1', type: 'slots', slots: ['Tarde'] };
+      prisma.availability.findUnique.mockResolvedValue(existing);
+
+      const result = await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', 'Tarde');
+
+      expect(prisma.availability.update).not.toHaveBeenCalled();
+      expect(result).toBe(existing);
+    });
+
+    it('fila existente type=range y sondeo sin franja: amplía a day (permitido)', async () => {
+      prisma.availability.findUnique.mockResolvedValue({
+        id: 'a1',
+        type: 'range',
+        slots: [],
+        startTime: '18:00',
+        endTime: '20:00',
+      });
+      prisma.availability.update.mockResolvedValue({ id: 'a1', type: 'day' });
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
+
+      expect(prisma.availability.update).toHaveBeenCalledWith({
+        where: { id: 'a1' },
+        data: { type: 'day', slots: [], startTime: null, endTime: null },
+      });
+    });
+
+    it('fila existente type=range y sondeo con franja: queda intacta (nunca destruir un rango preciso)', async () => {
+      const existing = {
+        id: 'a1',
+        type: 'range',
+        slots: [],
+        startTime: '18:00',
+        endTime: '20:00',
+      };
+      prisma.availability.findUnique.mockResolvedValue(existing);
+
+      const result = await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', 'Noche');
+
+      expect(prisma.availability.update).not.toHaveBeenCalled();
+      expect(prisma.availability.create).not.toHaveBeenCalled();
+      expect(result).toBe(existing);
+    });
+  });
+
   describe('delete', () => {
     it('should delete existing availability', async () => {
       prisma.availability.findUnique.mockResolvedValue({ id: '1' });

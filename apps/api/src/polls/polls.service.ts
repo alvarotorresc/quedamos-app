@@ -72,14 +72,6 @@ export class PollsService {
     return new Date(now.getTime() - elapsedMs);
   }
 
-  private availabilityFor(date: string, slot: string | null) {
-    return {
-      date,
-      type: slot ? ('slots' as const) : ('day' as const),
-      ...(slot && { slots: [slot] }),
-    };
-  }
-
   async create(groupId: string, userId: string, dto: CreatePollDto) {
     const group = await this.groupsService.findById(groupId, userId);
 
@@ -104,12 +96,9 @@ export class PollsService {
       include: { createdBy: { select: PUBLIC_USER_SELECT } },
     });
 
-    // Asking already answers for you: the ring lights up without a second tap.
-    await this.availabilityService.create(
-      groupId,
-      userId,
-      this.availabilityFor(dto.date, dto.slot ?? null),
-    );
+    // Asking already answers for you: the ring lights up without a second tap. Merge, not
+    // replace — never degrade availability the asker already marked (I1).
+    await this.availabilityService.mergeFromPoll(groupId, userId, dto.date, dto.slot ?? null);
 
     // Anti-spam rule (spec §3): at most ONE poll push per group per day.
     // The poll is created either way — it just stays silent in the deck.
@@ -164,11 +153,7 @@ export class PollsService {
 
     if (dto.answer === 'yes') {
       const dateKey = poll.date.toISOString().slice(0, 10);
-      await this.availabilityService.create(
-        groupId,
-        userId,
-        this.availabilityFor(dateKey, poll.slot),
-      );
+      await this.availabilityService.mergeFromPoll(groupId, userId, dateKey, poll.slot);
     }
 
     const [members, responses] = await Promise.all([
