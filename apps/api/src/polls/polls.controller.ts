@@ -41,6 +41,7 @@ export class PollsController {
   }
 
   @Post(':pollId/close')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   close(
     @Param('groupId', ParseUUIDPipe) groupId: string,
     @Param('pollId', ParseUUIDPipe) pollId: string,
