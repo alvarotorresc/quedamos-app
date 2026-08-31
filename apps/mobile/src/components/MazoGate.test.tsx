@@ -236,6 +236,45 @@ describe('MazoGate', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
+  // C1: `dismissed` guarded closing, but nothing guarded opening — a refetch that grows
+  // the live pending list from empty to non-empty (someone else asking a question while
+  // this user had nothing pending) used to re-trigger the mount condition and slam the
+  // mazo open mid-session.
+  it('sin pendientes al montar, un sondeo nuevo por refetch no reabre el mazo (evaluado ya no reacciona a datos vivos)', () => {
+    pendingQuestions = { polls: [], pendingEvents: [] };
+    const { rerender } = render(<MazoGate groupId="group-1" />);
+    expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
+
+    // Simulates B asking a question while A has the app open with nothing pending — the
+    // broadcast invalidates and refetches, growing the live `polls` array mid-session.
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    rerender(<MazoGate groupId="group-1" />);
+
+    expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
+  });
+
+  it('un focusPollId nuevo tras evaluar sin pendientes SÍ abre el mazo (el deep link fuerza una reevaluación)', () => {
+    pendingQuestions = { polls: [], pendingEvents: [] };
+    const { rerender } = render(<MazoGate groupId="group-1" />);
+    expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
+
+    pendingQuestions = { polls: [createPoll({ id: 'p9' })], pendingEvents: [] };
+    rerender(<MazoGate groupId="group-1" focusPollId="p9" />);
+
+    expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
+  });
+
+  it('un cambio de grupo tras evaluar sin pendientes reevalúa el grupo nuevo y abre si tiene pendientes', () => {
+    pendingQuestions = { polls: [], pendingEvents: [] };
+    const { rerender } = render(<MazoGate groupId="group-1" />);
+    expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
+
+    pendingQuestions = { polls: [createPoll({ id: 'p2' })], pendingEvents: [] };
+    rerender(<MazoGate groupId="group-2" />);
+
+    expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
+  });
+
   it('tras un cambio de grupo se reevalúa desde cero (no arrastra el cierre del grupo anterior)', () => {
     pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
     const { rerender } = render(<MazoGate groupId="group-1" />);

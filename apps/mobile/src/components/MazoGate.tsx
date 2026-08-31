@@ -33,7 +33,20 @@ export interface MazoGateProps {
  * first. Task 7's deep-link flow depends on that `onDismiss` running (it clears the URL
  * params after consuming them), so this isn't just cosmetic.
  *
- * A group switch resets the latch so the new group gets evaluated fresh.
+ * A second latch, `evaluated`, guards the *opening* side the same way `dismissed` guards
+ * closing (fix round 2, C1): once the pending-questions queries have resolved once for
+ * this group, the mount-condition effect below stops reacting to further changes in the
+ * live `polls`/`pendingEvents` data for the rest of the session. Without it, a group
+ * member who opened the app with nothing pending (so the mazo never opened, `dismissed`
+ * stays false all session) would get the mazo suddenly slammed open mid-task the moment
+ * anyone in the group asked a question — the realtime `broadcastSync` invalidates and
+ * refetches `polls`, growing it from empty to non-empty, and the old effect treated that
+ * exactly like an initial mount. `evaluated` is reset by the same two things that
+ * legitimately warrant a fresh look: a group switch, and a new `focusPollId` (a deep
+ * link must still open the mazo for its poll even after the group was already evaluated
+ * empty this session).
+ *
+ * A group switch resets both latches so the new group gets evaluated fresh.
  */
 export function MazoGate({
   groupId,
@@ -47,32 +60,41 @@ export function MazoGate({
 
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [evaluated, setEvaluated] = useState(false);
 
-  // Fresh evaluation per group — neither "already open" nor "already dismissed" should
-  // carry over from whatever group was previously selected.
+  // Fresh evaluation per group — neither "already open", "already dismissed" nor
+  // "already evaluated" should carry over from whatever group was previously selected.
   useEffect(() => {
     setOpen(false);
     setDismissed(false);
+    setEvaluated(false);
   }, [groupId]);
 
   // A deep link for a poll the mazo hasn't already opened for must reopen it, even if the
-  // user dismissed the mazo earlier this session — it only ever clears `dismissed`, never
-  // touches `open` directly, so the closing invariant above (only onDismiss / a group
-  // switch closes it) still holds.
+  // user dismissed the mazo earlier this session, or the group was already evaluated
+  // with nothing pending — it only ever clears `dismissed`/`evaluated`, never touches
+  // `open` directly, so the closing invariant above (only onDismiss / a group switch
+  // closes it) still holds.
   const seenFocusPollId = useRef<string | null>(null);
   useEffect(() => {
     if (focusPollId && focusPollId !== seenFocusPollId.current) {
       setDismissed(false);
+      setEvaluated(false);
     }
     seenFocusPollId.current = focusPollId;
   }, [focusPollId]);
 
   useEffect(() => {
-    if (open || dismissed) return;
+    if (evaluated) return;
     if (!groupId || pollsLoading || eventsLoading) return;
+    // Both queries have resolved for this group — mark it evaluated regardless of the
+    // outcome below, so a later live-data change (someone else asking a question) can't
+    // reopen the mount-condition check for the rest of the session.
+    setEvaluated(true);
+    if (open || dismissed) return;
     if (polls.length === 0 && pendingEvents.length === 0) return;
     setOpen(true);
-  }, [open, dismissed, groupId, pollsLoading, eventsLoading, polls, pendingEvents]);
+  }, [evaluated, open, dismissed, groupId, pollsLoading, eventsLoading, polls, pendingEvents]);
 
   // Cleanup must not depend on the mazo ever opening (IMPORTANT 2, fix round 1): it never
   // opens for a focused poll that answered elsewhere, whose date already passed
