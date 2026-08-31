@@ -144,7 +144,7 @@ const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function navigateFromPush(data: Record<string, string>): void {
-  const { type, groupId, eventId } = data;
+  const { type, groupId, eventId, pollId } = data;
 
   // Validate UUIDs before using in URLs or storage
   const validGroupId = groupId && UUID_RE.test(groupId) ? groupId : undefined;
@@ -156,6 +156,23 @@ function navigateFromPush(data: Record<string, string>): void {
 
   if (type === 'member_joined' || type === 'member_left') {
     window.location.href = validGroupId ? `/tabs/group/${validGroupId}` : '/tabs/group';
+  } else if (type === 'new_poll') {
+    // poll_completed is informational only ("El aro se cierra") — its poll is already
+    // `completed`, so the mazo can never focus/consume a pollId for it. Only an open
+    // question (new_poll) gets the deep-link param.
+    //
+    // groupId travels alongside pollId (not just in localStorage above) because the
+    // service worker's notificationclick path replicates this same routing but has no
+    // access to the page's localStorage — the URL is the only channel that reaches it.
+    // Each field validates independently: garbage in one must not suppress the other.
+    const pollOk = typeof pollId === 'string' && UUID_RE.test(pollId);
+    const pollParams = new URLSearchParams();
+    if (pollOk) pollParams.set('pollId', pollId);
+    if (validGroupId) pollParams.set('groupId', validGroupId);
+    const pollQuery = pollParams.toString();
+    window.location.href = pollQuery ? `/tabs/calendar?${pollQuery}` : '/tabs/calendar';
+  } else if (type === 'poll_completed') {
+    window.location.href = '/tabs/calendar';
   } else if (validEventId) {
     window.location.href = `/tabs/plans?eventId=${validEventId}`;
   } else {

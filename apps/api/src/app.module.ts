@@ -11,6 +11,7 @@ import { AvailabilityModule } from './availability/availability.module';
 import { EventsModule } from './events/events.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ProposalsModule } from './proposals/proposals.module';
+import { PollsModule } from './polls/polls.module';
 import { WeatherModule } from './weather/weather.module';
 import { InviteModule } from './invite/invite.module';
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -38,6 +39,7 @@ import { HealthController } from './health.controller';
     EventsModule,
     NotificationsModule,
     ProposalsModule,
+    PollsModule,
     WeatherModule,
     InviteModule,
   ],

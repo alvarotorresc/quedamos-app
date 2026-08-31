@@ -13,6 +13,9 @@ export const NOTIFICATION_TYPES = [
   'new_proposal',
   'proposal_voted',
   'proposal_converted',
+  // Polls
+  'new_poll',
+  'poll_completed',
   // Members
   'member_joined',
   'member_left',

@@ -25,6 +25,7 @@ interface WeekViewProps {
   weatherByDate?: Map<string, WeatherData[]>;
   eventsByDate?: Map<string, Event[]>;
   onEventClick?: (event: Event) => void;
+  onAskGroup?: (day: Date) => void;
 }
 
 export function WeekView({
@@ -42,10 +43,12 @@ export function WeekView({
   weatherByDate,
   eventsByDate,
   onEventClick,
+  onAskGroup,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
   const week = getWeekDays(new Date(), weekOffset);
+  const todayKey = formatDateKey(new Date());
 
   const monthLabel = week[0].toLocaleDateString(locale, {
     month: 'long',
@@ -74,6 +77,7 @@ export function WeekView({
       {/* Days */}
       {week.map((day) => {
         const key = formatDateKey(day);
+        const isPast = key < todayKey;
         const dayAvail = availabilityByDate.get(key) ?? [];
         const myAvail = myAvailabilityByDate.get(key);
         const isSel = isSameDay(selectedDay, day);
@@ -209,6 +213,18 @@ export function WeekView({
                 >
                   {myAvail ? t('calendar.editAvailability') : t('calendar.markAvailable')}
                 </Button>
+                {onAskGroup && !isPast && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAskGroup(day);
+                    }}
+                  >
+                    {t('calendar.ask')}
+                  </Button>
+                )}
                 {availCount >= 2 && (
                   <Button
                     variant="secondary"

@@ -1,6 +1,6 @@
 import type { Availability } from '../services/availability';
 
-const SLOT_KEYS: Record<string, string> = {
+export const SLOT_KEYS: Record<string, string> = {
   Mañana: 'calendar.availability.morning',
   Tarde: 'calendar.availability.afternoon',
   Noche: 'calendar.availability.night',

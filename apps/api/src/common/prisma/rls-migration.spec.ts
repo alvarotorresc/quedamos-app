@@ -1,14 +1,19 @@
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 describe('RLS Migration', () => {
-  const migrationPath = join(
-    __dirname,
-    '../../../prisma/migrations/20260318120000_enable_rls_all_tables/migration.sql',
-  );
+  const migrationsDir = join(__dirname, '../../../prisma/migrations');
 
-  it('should enable RLS on all 11 tables', () => {
-    const sql = readFileSync(migrationPath, 'utf-8');
+  // Las migraciones ya aplicadas no se tocan: cada tabla nueva habilita RLS en
+  // la suya, así que la comprobación mira el SQL de todas ellas.
+  const allMigrationsSql = readdirSync(migrationsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => readFileSync(join(migrationsDir, entry.name, 'migration.sql'), 'utf-8'))
+    .join('\n')
+    // Prisma cita los identificadores; la migración original no lo hacía.
+    .replace(/"/g, '');
+
+  it('should enable RLS on every table', () => {
     const tables = [
       'users',
       'groups',
@@ -21,9 +26,11 @@ describe('RLS Migration', () => {
       'group_cities',
       'plan_proposals',
       'plan_votes',
+      'availability_polls',
+      'poll_responses',
     ];
     for (const table of tables) {
-      expect(sql).toContain(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
+      expect(allMigrationsSql).toContain(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
     }
   });
 });

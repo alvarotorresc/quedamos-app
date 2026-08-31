@@ -371,6 +371,172 @@ describe('push-notifications', () => {
         '00000000-0000-0000-0000-000000000005',
       );
     });
+
+    it('should navigate to calendar with pollId for new_poll', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_poll',
+            pollId: '00000000-0000-0000-0000-000000000010',
+            groupId: '00000000-0000-0000-0000-000000000011',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?pollId=00000000-0000-0000-0000-000000000010&groupId=00000000-0000-0000-0000-000000000011',
+      );
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'quedamos_current_group_id',
+        '00000000-0000-0000-0000-000000000011',
+      );
+    });
+
+    it('should navigate to calendar with pollId only when groupId is not a valid UUID', async () => {
+      // groupId travels alongside pollId so the service worker's notificationclick path
+      // (which has no access to localStorage, unlike navigateFromPush) can still select
+      // the right group on reload. Each field validates independently — garbage in one
+      // must not suppress the other.
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_poll',
+            pollId: '00000000-0000-0000-0000-000000000020',
+            groupId: 'not-a-uuid',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?pollId=00000000-0000-0000-0000-000000000020',
+      );
+    });
+
+    it('should navigate to calendar with groupId only when pollId is not a valid UUID', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_poll',
+            pollId: 'not-a-uuid',
+            groupId: '00000000-0000-0000-0000-000000000021',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?groupId=00000000-0000-0000-0000-000000000021',
+      );
+    });
+
+    it('should navigate to calendar WITHOUT pollId for poll_completed, even with a valid pollId present', async () => {
+      // poll_completed is informational only ("El aro se cierra") — its poll is already
+      // `completed`, so usePendingQuestions filters it out by definition and the mazo can
+      // never consume a focused pollId for it. Routing it into the deep-link param would
+      // just leak an unconsumable ?pollId= into the URL forever. Only new_poll (an actual
+      // open question) gets the pollId param.
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: { type: 'poll_completed', pollId: '00000000-0000-0000-0000-000000000012' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
+
+    it('should navigate to calendar without pollId when it is not a valid UUID', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: { type: 'new_poll', pollId: 'not-a-uuid' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
   });
 
   describe('setupWebForegroundHandler', () => {

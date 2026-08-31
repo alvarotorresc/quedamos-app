@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createMockConfigService } from '../common/test-utils';
+import { NOTIFICATION_TYPES } from './dto/update-preference.dto';
 
 // Mock firebase-admin
 jest.mock('firebase-admin', () => {
@@ -175,12 +176,12 @@ describe('NotificationsService', () => {
   });
 
   describe('getPreferences', () => {
-    it('should return all 16 notification types with defaults', async () => {
+    it('should return every notification type with defaults', async () => {
       prisma.notificationPreference.findMany.mockResolvedValue([]);
 
       const result = await service.getPreferences('user-1');
 
-      expect(result).toHaveLength(16);
+      expect(result).toHaveLength(NOTIFICATION_TYPES.length);
       expect(result.every((p) => p.enabled === true)).toBe(true);
     });
 
@@ -543,7 +544,7 @@ describe('NotificationsService', () => {
       const result = await service.getDebugInfo('user-1');
 
       expect(result.tokens).toEqual(tokens);
-      expect(result.preferences).toHaveLength(16);
+      expect(result.preferences).toHaveLength(NOTIFICATION_TYPES.length);
       expect(result.recentLogs).toEqual(logs);
     });
 
