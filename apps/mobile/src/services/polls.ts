@@ -32,11 +32,20 @@ export interface CreatePollDto {
   slot?: string;
 }
 
+/**
+ * `notified` is true when the anti-spam rule (spec §3, at most one poll push per group
+ * per day) actually let the push through, false when it silenced it — the poll is
+ * created either way. Only present on the create response (I3).
+ */
+export interface CreatePollResult extends Poll {
+  notified: boolean;
+}
+
 export const pollsService = {
   list: (groupId: string) => api.get<Poll[]>(`/groups/${groupId}/polls`),
 
   create: (groupId: string, data: CreatePollDto) =>
-    api.post<Poll>(`/groups/${groupId}/polls`, data),
+    api.post<CreatePollResult>(`/groups/${groupId}/polls`, data),
 
   respond: (groupId: string, pollId: string, answer: 'yes' | 'no' | 'unsure') =>
     api.post<Poll>(`/groups/${groupId}/polls/${pollId}/respond`, { answer }),

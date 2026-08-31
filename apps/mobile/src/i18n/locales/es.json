@@ -108,6 +108,7 @@
     "askAction": "Preguntar",
     "askHint": "Cada uno responde con un toque, sin abrir el calendario.",
     "askDuplicate": "Ya has preguntado eso. Prueba otra franja.",
+    "askNotNotified": "Queda en el mazo; hoy ya se avisó al grupo.",
     "editAvailability": "Editar disponibilidad",
     "available": "Disponible",
     "createEvent": "Crear quedada",

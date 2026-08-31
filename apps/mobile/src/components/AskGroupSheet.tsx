@@ -25,7 +25,7 @@ const SLOTS: TimeSlot[] = ['Mañana', 'Tarde', 'Noche'];
 export function AskGroupSheet({ isOpen, onClose, groupId, day }: AskGroupSheetProps) {
   const { t, i18n } = useTranslation();
   const createPoll = useCreatePoll(groupId);
-  const { showError } = useToast();
+  const { showError, showInfo } = useToast();
 
   const [slot, setSlot] = useState<SlotChoice>('full');
 
@@ -46,7 +46,10 @@ export function AskGroupSheet({ isOpen, onClose, groupId, day }: AskGroupSheetPr
     if (!day) return;
     const date = formatDateKey(day);
     try {
-      await createPoll.mutateAsync(slot === 'full' ? { date } : { date, slot });
+      const result = await createPoll.mutateAsync(slot === 'full' ? { date } : { date, slot });
+      // Anti-spam silenced the push (I3) — the poll still exists, but the asker would
+      // otherwise believe the group got notified when it didn't.
+      if (!result.notified) showInfo('calendar.askNotNotified');
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : '';

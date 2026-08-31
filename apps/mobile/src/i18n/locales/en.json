@@ -108,6 +108,7 @@
     "askAction": "Ask",
     "askHint": "Everyone answers with one tap, no calendar needed.",
     "askDuplicate": "You already asked that. Try another slot.",
+    "askNotNotified": "Saved to the deck — the group was already notified today.",
     "editAvailability": "Edit availability",
     "available": "Available",
     "createEvent": "Create plan",

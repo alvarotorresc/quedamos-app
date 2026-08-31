@@ -17,10 +17,12 @@ vi.mock('../hooks/usePolls', () => ({
 }));
 
 // Mock useToast (../hooks/useToast) — asserts the 409 (duplicate poll) path surfaces the
-// dedicated copy instead of the generic error toast.
+// dedicated copy instead of the generic error toast, and that a silenced anti-spam push
+// (I3) surfaces its own informative (non-error) toast.
 const showErrorMock = vi.fn();
+const showInfoMock = vi.fn();
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: showErrorMock }),
+  useToast: () => ({ showError: showErrorMock, showInfo: showInfoMock }),
 }));
 
 const DAY = new Date('2026-02-13T00:00:00');
@@ -44,17 +46,18 @@ describe('AskGroupSheet', () => {
   });
 
   it('por defecto pregunta por el día completo (sin franja)', async () => {
-    createPollMock.mockResolvedValueOnce({});
+    createPollMock.mockResolvedValueOnce({ notified: true });
     const { onClose } = renderSheet();
 
     fireEvent.click(screen.getByText('calendar.askAction'));
 
     expect(createPollMock).toHaveBeenCalledWith({ date: '2026-02-13' });
     await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(showInfoMock).not.toHaveBeenCalled();
   });
 
   it('elegir «Tarde» y preguntar crea el sondeo con esa franja', async () => {
-    createPollMock.mockResolvedValueOnce({});
+    createPollMock.mockResolvedValueOnce({ notified: true });
     const { onClose } = renderSheet();
 
     fireEvent.click(screen.getByText('calendar.availability.afternoon'));
@@ -62,6 +65,17 @@ describe('AskGroupSheet', () => {
 
     expect(createPollMock).toHaveBeenCalledWith({ date: '2026-02-13', slot: 'Tarde' });
     await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  });
+
+  it('cuando el anti-spam silenció la push (notified=false) avisa con un toast informativo, no de error', async () => {
+    createPollMock.mockResolvedValueOnce({ notified: false });
+    const { onClose } = renderSheet();
+
+    fireEvent.click(screen.getByText('calendar.askAction'));
+
+    await vi.waitFor(() => expect(showInfoMock).toHaveBeenCalledWith('calendar.askNotNotified'));
+    expect(showErrorMock).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it('un 409 (ya hay sondeo abierto) muestra el toast calendar.askDuplicate y no cierra', async () => {

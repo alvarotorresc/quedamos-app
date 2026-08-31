@@ -46,7 +46,7 @@ describe('PollsService', () => {
         createdBy: { id: 'u1', name: 'Álvaro', avatarEmoji: '😊' },
       });
 
-      await service.create('g1', 'u1', { date: '2026-02-13' });
+      const result = await service.create('g1', 'u1', { date: '2026-02-13' });
 
       expect(prisma.availabilityPoll.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -64,6 +64,7 @@ describe('PollsService', () => {
         expect.objectContaining({ type: 'new_poll', pollId: 'p1', groupId: 'g1' }),
         'new_poll',
       );
+      expect(result.notified).toBe(true);
     });
 
     it('con franja, la pregunta la nombra y la disponibilidad va por slots', async () => {
@@ -102,10 +103,11 @@ describe('PollsService', () => {
       });
       prisma.availabilityPoll.count.mockResolvedValue(2);
 
-      await service.create('g1', 'u2', { date: '2026-02-14' });
+      const result = await service.create('g1', 'u2', { date: '2026-02-14' });
 
       expect(prisma.availabilityPoll.create).toHaveBeenCalled();
       expect(notifications.sendToGroup).not.toHaveBeenCalled();
+      expect(result.notified).toBe(false);
     });
 
     it('la ventana del día se cuenta en hora española, no en UTC', async () => {

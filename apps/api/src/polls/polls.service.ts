@@ -101,11 +101,14 @@ export class PollsService {
     await this.availabilityService.mergeFromPoll(groupId, userId, dto.date, dto.slot ?? null);
 
     // Anti-spam rule (spec §3): at most ONE poll push per group per day.
-    // The poll is created either way — it just stays silent in the deck.
+    // The poll is created either way — it just stays silent in the deck. `notified`
+    // surfaces that fact to the caller (I3) so the asker isn't left believing a silenced
+    // poll reached the group — the anti-spam rule and its window are unchanged.
     const createdToday = await this.prisma.availabilityPoll.count({
       where: { groupId, createdAt: { gte: this.startOfDay(new Date()) } },
     });
-    if (createdToday <= 1) {
+    const notified = createdToday <= 1;
+    if (notified) {
       const title = this.questionTitle(poll.date, poll.slot);
       this.notifications
         .sendToGroup(
@@ -119,7 +122,7 @@ export class PollsService {
         .catch((err) => this.logger.error('new_poll push failed', err));
     }
 
-    return poll;
+    return { ...poll, notified };
   }
 
   async findAllForGroup(groupId: string, userId: string) {

@@ -23,5 +23,16 @@ export function useToast() {
     });
   };
 
-  return { showError, showSuccess };
+  // Neutral — for messages that are neither an error nor a success confirmation (e.g. "your
+  // poll stayed silent today" or "that question isn't pending anymore").
+  const showInfo = (messageKey: string) => {
+    present({
+      message: t(messageKey),
+      duration: 3000,
+      position: 'top',
+      color: 'medium',
+    });
+  };
+
+  return { showError, showSuccess, showInfo };
 }
