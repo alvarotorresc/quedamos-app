@@ -34,6 +34,18 @@ const DONE_DWELL_MS = 600;
 // canonical member colors "on", regardless of the current group's actual members.
 const WORDMARK_MEMBERS: AroMember[] = MEMBER_COLORS.map((color) => ({ color, state: 'on' }));
 
+// Slot phrasing for the spoken question ("¿Puedes el sábado por la tarde?" / "Free on
+// Saturday afternoon?") — matches the exact wording of the backend push
+// (polls.service.ts questionTitle/SLOT_LABEL) word for word (I2). Deliberately separate
+// from SLOT_KEYS (../lib/availability-label): that map is chip-label copy ("Tarde" /
+// "Afternoon"), grammatically wrong when interpolated straight into this sentence
+// ("¿Puedes el sábado Tarde?").
+const MAZO_SLOT_KEYS: Record<string, string> = {
+  Mañana: 'mazo.slotMorning',
+  Tarde: 'mazo.slotAfternoon',
+  Noche: 'mazo.slotNight',
+};
+
 function questionKey(q: MazoQuestion): string {
   return `${q.kind}:${q.id}`;
 }
@@ -216,7 +228,7 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
       ? current.poll.slot
         ? t('mazo.canYouSlot', {
             weekday,
-            slot: t(SLOT_KEYS[current.poll.slot] ?? current.poll.slot),
+            slot: t(MAZO_SLOT_KEYS[current.poll.slot] ?? current.poll.slot),
           })
         : t('mazo.canYou', { weekday })
       : t('mazo.goingQuestion', { title: current.event.title })

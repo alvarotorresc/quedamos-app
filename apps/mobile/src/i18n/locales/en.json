@@ -530,6 +530,9 @@
   "mazo": {
     "canYou": "Free on {{weekday}}?",
     "canYouSlot": "Free on {{weekday}} {{slot}}?",
+    "slotMorning": "morning",
+    "slotAfternoon": "afternoon",
+    "slotNight": "night",
     "goingQuestion": "{{title}}. Going?",
     "iCan": "I can",
     "iCant": "I can't",

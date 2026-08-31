@@ -44,6 +44,21 @@ vi.mock('../hooks/useToast', () => ({
   useToast: () => ({ showError: showErrorMock, showSuccess: showSuccessMock }),
 }));
 
+// Local override of the global react-i18next mock (src/test/setup.ts): still `t(key) =>
+// key` for every existing assertion, but as a spy so I2's slotted-question test can
+// assert the exact interpolation args `t()` was called with — the outer key alone
+// ('mazo.canYouSlot') can't tell "por la tarde" from "Tarde" apart, since both resolve to
+// the same untranslated key under the global mock.
+const mockT = vi.fn((key: string) => key);
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: mockT,
+    i18n: { language: 'es', changeLanguage: vi.fn() },
+  }),
+  Trans: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: { type: '3rdParty', init: vi.fn() },
+}));
+
 function member(userId: string, name: string, joinedAt: string) {
   return { userId, joinedAt, role: 'member', user: { id: userId, name, avatarEmoji: '😊' } };
 }
@@ -188,6 +203,25 @@ describe('Mazo', () => {
     // shown first instead, this would fail — proving the reorder actually happened.
     expect(screen.getByText('mazo.canYouSlot')).toBeInTheDocument();
     expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
+  });
+
+  // I2: the slotted question must phrase the slot the same way the backend push does
+  // ("por la tarde" / "afternoon"), not the calendar chip label ("Tarde" / "Afternoon")
+  // that used to make it read "¿Puedes el sábado Tarde?" — agrammatical and diverging
+  // from the push for the exact same question.
+  it('la pregunta con franja usa la clave de fraseo del mazo (mazo.slotAfternoon), no la etiqueta de chip', () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1', slot: 'Tarde' })], pendingEvents: [] };
+    const onDismiss = vi.fn();
+
+    render(<Mazo groupId="group-1" onDismiss={onDismiss} />);
+
+    // The global mock resolves every t(key) to the key itself, so the nested slot call's
+    // return value IS its key — asserting the outer call's `slot` arg proves which key
+    // was used without needing real i18next interpolation.
+    expect(mockT).toHaveBeenCalledWith('mazo.canYouSlot', {
+      weekday: expect.any(String),
+      slot: 'mazo.slotAfternoon',
+    });
   });
 
   it('con presetAnswer envía la respuesta automáticamente sin toque', async () => {

@@ -530,6 +530,9 @@
   "mazo": {
     "canYou": "¿Puedes el {{weekday}}?",
     "canYouSlot": "¿Puedes el {{weekday}} {{slot}}?",
+    "slotMorning": "por la mañana",
+    "slotAfternoon": "por la tarde",
+    "slotNight": "por la noche",
     "goingQuestion": "{{title}}. ¿Vas?",
     "iCan": "Puedo",
     "iCant": "No puedo",
