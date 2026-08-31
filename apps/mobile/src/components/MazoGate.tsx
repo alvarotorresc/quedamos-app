@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePendingQuestions, usePolls } from '../hooks/usePolls';
 import { useEvents } from '../hooks/useEvents';
+import { useToast } from '../hooks/useToast';
 import { Mazo } from './Mazo';
 
 export interface MazoGateProps {
@@ -57,6 +58,7 @@ export function MazoGate({
   const { isLoading: pollsLoading } = usePolls(groupId);
   const { isLoading: eventsLoading } = useEvents(groupId);
   const { polls, pendingEvents } = usePendingQuestions(groupId);
+  const { showInfo } = useToast();
 
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -96,6 +98,18 @@ export function MazoGate({
     setOpen(true);
   }, [evaluated, open, dismissed, groupId, pollsLoading, eventsLoading, polls, pendingEvents]);
 
+  // Tracks whether the currently-focused deep-link poll was ever actually seen among the
+  // pending ones — lets the orphan-cleanup effect below tell "answered normally, now gone
+  // from the live list because it was just consumed" apart from "never was pending to
+  // begin with" (fix round 2, I4). A ref, not state: it only needs to be read by that
+  // effect, declared right after this one so it observes the same-render write.
+  const focusSeenPendingRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (focusPollId && polls.some((p) => p.id === focusPollId)) {
+      focusSeenPendingRef.current = focusPollId;
+    }
+  }, [focusPollId, polls]);
+
   // Cleanup must not depend on the mazo ever opening (IMPORTANT 2, fix round 1): it never
   // opens for a focused poll that answered elsewhere, whose date already passed
   // (usePendingQuestions filters those out), or that was closed/deleted between the push
@@ -107,6 +121,13 @@ export function MazoGate({
   // ordinary case where the poll WAS pending and the mazo answered it normally, which
   // would otherwise also match here right as the query invalidates; that's a harmless
   // second call into the same idempotent `clear()` already fired by `handleDismiss` below.
+  //
+  // A genuinely orphaned deep link (I4) — the user tapped "Puedo"/"No puedo" on a push
+  // for a poll that's already answered elsewhere, closed, or deleted — silently drops the
+  // answer with no feedback: the app clears the URL and lands on the calendar as if
+  // nothing happened. `focusSeenPendingRef` tells that case apart from the harmless
+  // normal-answer race above: only show the toast when this focusPollId was NEVER seen
+  // pending, i.e. it could not have been consumed by an open mazo.
   const orphanClearedFor = useRef<string | null>(null);
   useEffect(() => {
     if (!focusPollId) return;
@@ -114,7 +135,13 @@ export function MazoGate({
     if (orphanClearedFor.current === focusPollId) return;
     if (polls.some((p) => p.id === focusPollId)) return;
     orphanClearedFor.current = focusPollId;
+    if (focusSeenPendingRef.current !== focusPollId) {
+      showInfo('mazo.notPendingAnymore');
+    }
     onDismiss?.();
+    // showInfo is a fresh object each render (useToast isn't memoized); orphanClearedFor
+    // guards re-firing, same pattern as Mazo's presetAnswer effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusPollId, pollsLoading, eventsLoading, polls, onDismiss]);
 
   // Stable across re-renders so Mazo's own dwell-timer effect (keyed on `onDismiss`)

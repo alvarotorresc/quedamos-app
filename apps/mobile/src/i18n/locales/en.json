@@ -540,7 +540,8 @@
     "pending": "{{count}} pending questions",
     "done": "Done.",
     "asks": "{{name}} asks",
-    "answered": "Answered."
+    "answered": "Answered.",
+    "notPendingAnymore": "That question isn't pending anymore."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

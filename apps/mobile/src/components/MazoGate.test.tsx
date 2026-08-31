@@ -30,8 +30,9 @@ vi.mock('../hooks/useGroups', () => ({
   useGroup: () => ({ data: mockGroup }),
 }));
 
+const showInfoMock = vi.fn();
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn() }),
+  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: showInfoMock }),
 }));
 
 function member(userId: string, name: string, joinedAt: string) {
@@ -72,6 +73,7 @@ describe('MazoGate', () => {
     mockGroup = createGroup();
     respondPollMock.mockReset();
     respondEventMock.mockReset();
+    showInfoMock.mockReset();
     respondPollMock.mockResolvedValue(createPoll());
   });
 
@@ -193,6 +195,11 @@ describe('MazoGate', () => {
 
     expect(screen.queryByText('mazo.canYou')).not.toBeInTheDocument();
     expect(onDismiss).toHaveBeenCalledTimes(1);
+    // I4: a deep link whose poll was never pending (answered elsewhere, closed, or
+    // deleted between the push and the tap) must not silently drop the user's tap — it
+    // gets an informative toast, not just a silent redirect to the calendar.
+    expect(showInfoMock).toHaveBeenCalledTimes(1);
+    expect(showInfoMock).toHaveBeenCalledWith('mazo.notPendingAnymore');
   });
 
   it('no limpia el deep link mientras las queries todavía están cargando', () => {
@@ -234,6 +241,42 @@ describe('MazoGate', () => {
     rerender(<MazoGate groupId="group-1" focusPollId="orphan-poll" onDismiss={onDismiss} />);
 
     expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  // I4, camino feliz: responder normalmente la pregunta enfocada por deep link también
+  // deja `polls` sin ese id una vez invalida — la misma condición que dispara el efecto
+  // huérfano (comentario "harmless second call" de más arriba). El toast NO debe salir
+  // aquí: la respuesta sí se consumió, no se perdió.
+  it('responder normalmente la pregunta enfocada por deep link no muestra el toast de "ya no pendiente"', async () => {
+    vi.useFakeTimers();
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    respondPollMock.mockImplementation(async () => {
+      pendingQuestions = { polls: [], pendingEvents: [] };
+      return createPoll();
+    });
+    const onDismiss = vi.fn();
+
+    const { rerender } = render(
+      <MazoGate groupId="group-1" focusPollId="p1" presetAnswer="yes" onDismiss={onDismiss} />,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    // Force MazoGate to re-read the now-empty pendingQuestions, same as the C1 race test.
+    rerender(
+      <MazoGate groupId="group-1" focusPollId="p1" presetAnswer="yes" onDismiss={onDismiss} />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+
+    expect(respondPollMock).toHaveBeenCalledWith({ pollId: 'p1', answer: 'yes' });
+    expect(showInfoMock).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   // C1: `dismissed` guarded closing, but nothing guarded opening — a refetch that grows
