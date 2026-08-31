@@ -53,7 +53,11 @@ describe('WeekView rediseñada', () => {
   it('en la fila expandida ofrece el chip Preguntar cuando se pasa onAskGroup', () => {
     const props = buildProps();
     const week = getWeekDays(new Date(), 0);
-    const day = week[0]; // fila normal, no el panel de mejor día (week[4])
+    // week[6] = domingo, último día de la semana actual: nunca es pasado (hoy o futuro
+    // dentro de la semana en curso), a diferencia de week[0] (lunes), que sí es pasado
+    // cualquier día que no sea lunes — y el chip se oculta en días pasados (M2). Tampoco
+    // vale week[4]: es el panel de mejor día, no una fila normal.
+    const day = week[6];
     const onAskGroup = vi.fn<(day: Date) => void>();
     render(<WeekView {...props} selectedDay={day} onAskGroup={onAskGroup} />);
     fireEvent.click(screen.getByText('calendar.ask'));
@@ -65,7 +69,9 @@ describe('WeekView rediseñada', () => {
   it('no pinta el chip Preguntar si no se pasa onAskGroup', () => {
     const props = buildProps();
     const week = getWeekDays(new Date(), 0);
-    const day = week[0];
+    // week[6] (domingo): nunca es pasado dentro de la semana actual — ver comentario en
+    // el test anterior.
+    const day = week[6];
     render(<WeekView {...props} selectedDay={day} />);
     expect(screen.queryByText('calendar.ask')).not.toBeInTheDocument();
   });
