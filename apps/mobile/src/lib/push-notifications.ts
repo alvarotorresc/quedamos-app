@@ -193,8 +193,13 @@ export function setupWebForegroundHandler(): void {
     if (!messaging) return;
 
     onMessage(messaging, (payload) => {
-      const { title, body } = payload.notification ?? {};
+      // Web tokens now receive a data-only payload (no top-level `notification`) — the
+      // backend splits sends by platform to avoid @firebase/messaging showing its own
+      // duplicate notification. Read title/body from `data` first, with a fallback to
+      // `notification` for resilience during rollout (old backend + new client).
       const data = payload.data as Record<string, string> | undefined;
+      const title = data?.title ?? payload.notification?.title;
+      const body = data?.body ?? payload.notification?.body;
       if (title && 'Notification' in window && Notification.permission === 'granted') {
         const notification = new Notification(title, {
           body: body ?? '',

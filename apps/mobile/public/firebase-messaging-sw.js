@@ -13,8 +13,14 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const { title, body } = payload.notification || {};
+  // Web tokens now receive a data-only payload (no top-level `notification`) — the backend
+  // splits sends by platform so @firebase/messaging never shows its own duplicate
+  // notification on top of the one we show below. Read title/body from `data` first, with
+  // a fallback to `notification` for resilience during rollout (old backend + new SW).
   const data = payload.data || {};
+  const notification = payload.notification || {};
+  const title = data.title || notification.title;
+  const body = data.body || notification.body;
   const isPoll = data.type === 'new_poll';
   if (title) {
     self.registration.showNotification(title, {
