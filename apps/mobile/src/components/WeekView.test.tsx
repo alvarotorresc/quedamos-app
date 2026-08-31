@@ -69,4 +69,14 @@ describe('WeekView rediseñada', () => {
     render(<WeekView {...props} selectedDay={day} />);
     expect(screen.queryByText('calendar.ask')).not.toBeInTheDocument();
   });
+  it('no pinta el chip Preguntar en un día pasado, aunque se pase onAskGroup (M2)', () => {
+    const props = buildProps();
+    // Semana completa anterior a hoy — cualquiera de sus días es pasado sin importar en
+    // qué día de la semana se ejecute el test.
+    const pastWeek = getWeekDays(new Date(), -1);
+    const day = pastWeek[0];
+    const onAskGroup = vi.fn<(day: Date) => void>();
+    render(<WeekView {...props} weekOffset={-1} selectedDay={day} onAskGroup={onAskGroup} />);
+    expect(screen.queryByText('calendar.ask')).not.toBeInTheDocument();
+  });
 });
