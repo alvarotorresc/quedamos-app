@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Mazo } from './Mazo';
+import esLocale from '../i18n/locales/es.json';
+import enLocale from '../i18n/locales/en.json';
 import type { Poll } from '../services/polls';
 import type { Event } from '../services/events';
 import type { GroupWithMembers } from '../services/groups';
@@ -333,5 +335,28 @@ describe('Mazo', () => {
     });
 
     expect(respondEventMock).toHaveBeenCalledWith({ eventId: 'e1', status: 'confirmed' });
+  });
+
+  // M1: the mazo's own count (not the locale strings, which the global t(key)=>key mock
+  // can't exercise — see the JSON-level test below) must be right even on the very last
+  // question, which is exactly where "1 preguntas pendientes" used to show up.
+  it('pasa el contador correcto a mazo.pending, incluida la última pregunta pendiente (count: 1)', () => {
+    pendingQuestions = { polls: [createPoll({ id: 'p1' })], pendingEvents: [] };
+    render(<Mazo groupId="group-1" onDismiss={vi.fn()} />);
+
+    expect(mockT).toHaveBeenCalledWith('mazo.pending', { count: 1 });
+  });
+
+  // M1: the mock above resolves every t(key) to the key itself, so it can't tell a
+  // singular/plural mismatch apart — this is the one check that actually exercises the
+  // JSON deliverable, following the repo's existing memberCount_one/_other pattern.
+  it('mazo.pending usa las claves de plural _one/_other en ambos locales (M1)', () => {
+    expect(esLocale.mazo.pending_one).toBe('{{count}} pregunta pendiente');
+    expect(esLocale.mazo.pending_other).toBe('{{count}} preguntas pendientes');
+    expect('pending' in esLocale.mazo).toBe(false);
+
+    expect(enLocale.mazo.pending_one).toBe('{{count}} pending question');
+    expect(enLocale.mazo.pending_other).toBe('{{count}} pending questions');
+    expect('pending' in enLocale.mazo).toBe(false);
   });
 });
