@@ -27,6 +27,7 @@ import {
 import { useGroupSync } from '../hooks/useGroupSync';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
+import { useToast } from '../hooks/useToast';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
@@ -62,6 +63,7 @@ export default function GroupDetailPage() {
   const deleteGroup = useDeleteGroup();
 
   const { track } = useAnalytics();
+  const { showError } = useToast();
   const [copied, setCopied] = useState(false);
   const [showLeaveAlert, setShowLeaveAlert] = useState(false);
   const [showRegenerateAlert, setShowRegenerateAlert] = useState(false);
@@ -88,9 +90,13 @@ export default function GroupDetailPage() {
 
   const handleCopy = async () => {
     if (!invite?.inviteCode) return;
-    await navigator.clipboard.writeText(invite.inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(invite.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showError('errors.copyFailed');
+    }
   };
 
   const handleShare = async () => {
