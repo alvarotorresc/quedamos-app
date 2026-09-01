@@ -28,6 +28,7 @@ import { useGroupSync } from '../hooks/useGroupSync';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
 import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
@@ -131,32 +132,51 @@ export default function GroupDetailPage() {
   };
 
   const handleAddCity = async (result: GeocodingResult) => {
-    await addCity.mutateAsync({
-      name: result.name,
-      lat: result.latitude,
-      lon: result.longitude,
-    });
-    setCitySearch('');
-    setShowCitySearch(false);
+    await runWithErrorToast(
+      () =>
+        addCity.mutateAsync({
+          name: result.name,
+          lat: result.latitude,
+          lon: result.longitude,
+        }),
+      showError,
+      {
+        onSuccess: () => {
+          setCitySearch('');
+          setShowCitySearch(false);
+        },
+        errorKey: 'errors.addCityFailed',
+      },
+    );
   };
 
   const handleRegenerate = async () => {
-    await refreshInvite.mutateAsync(id);
-    setRegeneratedFeedback(true);
-    setTimeout(() => setRegeneratedFeedback(false), 2000);
+    await runWithErrorToast(() => refreshInvite.mutateAsync(id), showError, {
+      onSuccess: () => {
+        setRegeneratedFeedback(true);
+        setTimeout(() => setRegeneratedFeedback(false), 2000);
+      },
+      errorKey: 'errors.regenerateCodeFailed',
+    });
   };
 
   const handleLeave = async () => {
-    await leaveGroup.mutateAsync(id);
-    history.replace('/tabs/group');
+    await runWithErrorToast(() => leaveGroup.mutateAsync(id), showError, {
+      onSuccess: () => history.replace('/tabs/group'),
+      errorKey: 'errors.leaveGroupFailed',
+    });
   };
 
   const handleUpdateRole = async (userId: string, role: 'admin' | 'member') => {
-    await updateRole.mutateAsync({ userId, role });
+    await runWithErrorToast(() => updateRole.mutateAsync({ userId, role }), showError, {
+      errorKey: 'errors.updateRoleFailed',
+    });
   };
 
   const handleKick = async (userId: string) => {
-    await kickMember.mutateAsync(userId);
+    await runWithErrorToast(() => kickMember.mutateAsync(userId), showError, {
+      errorKey: 'errors.kickMemberFailed',
+    });
   };
 
   const getActionButtons = () => {
@@ -185,8 +205,10 @@ export default function GroupDetailPage() {
   };
 
   const handleDeleteGroup = async () => {
-    await deleteGroup.mutateAsync(id);
-    history.replace('/tabs/group');
+    await runWithErrorToast(() => deleteGroup.mutateAsync(id), showError, {
+      onSuccess: () => history.replace('/tabs/group'),
+      errorKey: 'errors.deleteGroupFailed',
+    });
   };
 
   if (isLoading) {
