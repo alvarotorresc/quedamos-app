@@ -158,10 +158,10 @@ export default function CalendarPage() {
   }, [events]);
 
   // Top days calculation — days with most people available (future only)
+  const today = formatDateKey(new Date());
   const topDays = useMemo(() => {
-    const today = formatDateKey(new Date());
     return calculateTopDays(availabilityByDate, today, 2);
-  }, [availabilityByDate]);
+  }, [availabilityByDate, today]);
 
   const bestDay = topDays[0] ?? null;
   const secondBestDay = topDays[1] ?? null;
