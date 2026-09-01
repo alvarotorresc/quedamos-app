@@ -63,4 +63,33 @@ describe('useCitySearch', () => {
     expect(result.current).toHaveLength(1);
     expect(result.current[0].name).toBe('Malaga');
   });
+
+  it('ignores a stale in-flight response once the query drops below minChars', async () => {
+    let resolveFirst!: (v: unknown) => void;
+    vi.mocked(searchCities).mockImplementationOnce(
+      () => new Promise((r) => { resolveFirst = r as never; }),
+    );
+
+    const { result, rerender } = renderHook(({ q }) => useCitySearch(q), {
+      initialProps: { q: 'Mad' },
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300); // fires the fetch (pending)
+    });
+
+    // Query drops below minChars while the fetch is still in flight.
+    rerender({ q: 'M' });
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+    expect(result.current).toEqual([]);
+
+    // The stale response finally arrives — it must not repopulate results.
+    await act(async () => {
+      resolveFirst([{ name: 'Madrid', latitude: 40.4, longitude: -3.7, country: 'Spain' }]);
+      await vi.runAllTimersAsync();
+    });
+
+    expect(result.current).toEqual([]);
+  });
 });

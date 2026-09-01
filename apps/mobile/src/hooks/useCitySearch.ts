@@ -11,6 +11,7 @@ export function useCitySearch(query: string, minChars = 2, delay = 300): Geocodi
 
   useEffect(() => {
     if (query.trim().length < minChars) {
+      seqRef.current += 1;
       setResults([]);
       return;
     }
