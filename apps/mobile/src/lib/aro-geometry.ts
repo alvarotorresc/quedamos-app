@@ -14,12 +14,19 @@ export function aroStrokeWidth(n: number, radius: number): number {
   return n <= 8 ? 9 : n <= 14 ? 7 : 5.5;
 }
 
-export function aroArc(
+interface ArcGeometry {
+  dash: number;
+  circumference: number;
+  slotAngleDeg: number;
+  halfArcDeg: number;
+}
+
+function arcGeometry(
   n: number,
   index: number,
   radius: number,
-  opts: { strokeWidth?: number; short?: boolean } = {},
-): { dasharray: string; rotate: number } {
+  opts: { strokeWidth?: number; short?: boolean },
+): ArcGeometry {
   const C = 2 * Math.PI * radius;
   const slot = C / n;
   const strokeWidth = opts.strokeWidth ?? aroStrokeWidth(n, radius);
@@ -27,11 +34,43 @@ export function aroArc(
   const gapVisible = Math.min(slot * 0.3, small ? 3.8 : 13);
   const full = Math.max(slot - strokeWidth - gapVisible, 1);
   const dash = opts.short ? Math.max(Math.min(5, full * 0.5), 1) : full;
-  const slotAngle = -90 + index * (360 / n);
+  const slotAngleDeg = -90 + index * (360 / n);
   const halfArcDeg = (dash / C) * 180;
+  return { dash, circumference: C, slotAngleDeg, halfArcDeg };
+}
+
+export function aroArc(
+  n: number,
+  index: number,
+  radius: number,
+  opts: { strokeWidth?: number; short?: boolean } = {},
+): { dasharray: string; rotate: number } {
+  const { dash, circumference: C, slotAngleDeg, halfArcDeg } = arcGeometry(n, index, radius, opts);
   return {
     dasharray: `${dash.toFixed(2)} ${(C - dash).toFixed(2)}`,
-    rotate: slotAngle - halfArcDeg,
+    rotate: slotAngleDeg - halfArcDeg,
+  };
+}
+
+/**
+ * Mismo convenio que `aroArc`, expresado como ángulos de canvas (radianes) en
+ * vez de dasharray/rotate SVG: el arco nace en `slotAngle − halfArc` y barre
+ * `(dash/C)·2π` en sentido horario (ambos convenios comparten origen en 0° =
+ * eje +x y giro horario, así que `ctx.arc(cx, cy, r, startRad, endRad)`
+ * dibuja el mismo trazo que `aroArc` tras rotarlo).
+ */
+export function aroArcAngles(
+  n: number,
+  index: number,
+  radius: number,
+  opts: { strokeWidth?: number; short?: boolean } = {},
+): { startRad: number; endRad: number } {
+  const { dash, circumference: C, slotAngleDeg, halfArcDeg } = arcGeometry(n, index, radius, opts);
+  const startDeg = slotAngleDeg - halfArcDeg;
+  const endDeg = startDeg + (dash / C) * 360;
+  return {
+    startRad: (startDeg * Math.PI) / 180,
+    endRad: (endDeg * Math.PI) / 180,
   };
 }
 

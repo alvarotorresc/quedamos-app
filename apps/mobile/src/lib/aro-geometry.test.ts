@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aroArc, aroStrokeWidth, slotCenter } from './aro-geometry';
+import { aroArc, aroArcAngles, aroStrokeWidth, slotCenter } from './aro-geometry';
 
 describe('aroArc (convenio spec §5.3)', () => {
   it('n=6 r=16: dash ≈9.5 y arco centrado en su hueco', () => {
@@ -28,6 +28,48 @@ describe('aroArc (convenio spec §5.3)', () => {
     const center = (r: number, d: number, C: number) => r + (d / C) * 180;
     const C = 2 * Math.PI * 16;
     expect(center(short.rotate, dashShort, C)).toBeCloseTo(center(full.rotate, dashFull, C), 1);
+  });
+});
+
+describe('aroArcAngles (misma matemática que aroArc, expresada como ángulos de canvas)', () => {
+  it('n=6, i=0, r=240, strokeWidth=32: ancla contra aroArc(...).rotate/dasharray', () => {
+    const { dasharray, rotate } = aroArc(6, 0, 240, { strokeWidth: 32 });
+    const [dash] = dasharray.split(' ').map(Number);
+    const C = 2 * Math.PI * 240;
+    const expectedStartDeg = rotate;
+    const expectedEndDeg = rotate + (dash / C) * 360;
+
+    const { startRad, endRad } = aroArcAngles(6, 0, 240, { strokeWidth: 32 });
+    expect(startRad).toBeCloseTo((expectedStartDeg * Math.PI) / 180, 3);
+    expect(endRad).toBeCloseTo((expectedEndDeg * Math.PI) / 180, 3);
+  });
+
+  it('n=6, i=3, r=16 (radio pequeño, sin strokeWidth explícito): ancla contra aroArc', () => {
+    const { dasharray, rotate } = aroArc(6, 3, 16);
+    const [dash] = dasharray.split(' ').map(Number);
+    const C = 2 * Math.PI * 16;
+    const expectedStartDeg = rotate;
+    const expectedEndDeg = rotate + (dash / C) * 360;
+
+    const { startRad, endRad } = aroArcAngles(6, 3, 16);
+    expect(startRad).toBeCloseTo((expectedStartDeg * Math.PI) / 180, 3);
+    expect(endRad).toBeCloseTo((expectedEndDeg * Math.PI) / 180, 3);
+  });
+
+  it('el arco cubre exactamente el mismo barrido angular que dash/C en aroArc', () => {
+    const { dasharray } = aroArc(12, 5, 100, { strokeWidth: 9 });
+    const [dash] = dasharray.split(' ').map(Number);
+    const C = 2 * Math.PI * 100;
+    const sweepRad = (dash / C) * 2 * Math.PI;
+
+    const { startRad, endRad } = aroArcAngles(12, 5, 100, { strokeWidth: 9 });
+    expect(endRad - startRad).toBeCloseTo(sweepRad, 4);
+  });
+
+  it('respeta short: igual que aroArc, produce un barrido menor', () => {
+    const full = aroArcAngles(6, 2, 16);
+    const short = aroArcAngles(6, 2, 16, { short: true });
+    expect(short.endRad - short.startRad).toBeLessThan(full.endRad - full.startRad);
   });
 });
 
