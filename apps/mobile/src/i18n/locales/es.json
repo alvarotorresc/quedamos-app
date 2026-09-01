@@ -562,6 +562,8 @@
     "updateRoleFailed": "No se pudo actualizar el rol",
     "kickMemberFailed": "No se pudo expulsar al miembro",
     "deleteGroupFailed": "No se pudo eliminar el grupo",
-    "copyFailed": "No se pudo copiar el código"
+    "copyFailed": "No se pudo copiar el código",
+    "answerPollFailed": "No se pudo guardar tu respuesta",
+    "respondEventFailed": "No se pudo guardar tu asistencia"
   }
 }

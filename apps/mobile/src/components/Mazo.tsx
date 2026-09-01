@@ -8,6 +8,7 @@ import { useGroup } from '../hooks/useGroups';
 import { usePendingQuestions, useRespondPoll } from '../hooks/usePolls';
 import { useRespondEvent } from '../hooks/useEvents';
 import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 import { buildMemberColorMap } from '../lib/member-colors';
 import { MEMBER_COLORS } from '../lib/constants';
 import { apiDateToKey, parseDateKey } from '../lib/date-utils';
@@ -162,16 +163,20 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
     if (!current || current.kind !== 'poll' || !presetAnswer) return;
     if (current.poll.id !== focusPollId) return;
     presetFired.current = true;
-    respondPoll
-      .mutateAsync({ pollId: current.poll.id, answer: presetAnswer })
-      .then(() => {
-        showSuccess('mazo.answered');
-        setIndex((i) => i + 1);
-      })
-      .catch(() => {
+    void runWithErrorToast(
+      () => respondPoll.mutateAsync({ pollId: current.poll.id, answer: presetAnswer }),
+      (messageKey) => {
         presetFired.current = false;
-        showError('common.unexpectedError');
-      });
+        showError(messageKey);
+      },
+      {
+        onSuccess: () => {
+          showSuccess('mazo.answered');
+          setIndex((i) => i + 1);
+        },
+        errorKey: 'errors.answerPollFailed',
+      },
+    );
     // respondPoll is a fresh object each render; presetFired guards re-firing.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, presetAnswer, focusPollId]);
@@ -179,23 +184,21 @@ export function Mazo({ groupId, focusPollId = null, presetAnswer = null, onDismi
   if (total === 0) return null;
 
   const handlePollAnswer = async (pollId: string, answer: 'yes' | 'no' | 'unsure') => {
-    try {
-      await respondPoll.mutateAsync({ pollId, answer });
-      setIndex((i) => i + 1);
-    } catch {
-      // Keep the question on screen so the user can retry.
-      showError('common.unexpectedError');
-    }
+    // On failure runWithErrorToast skips onSuccess, so the question stays on screen
+    // and the user can retry.
+    await runWithErrorToast(() => respondPoll.mutateAsync({ pollId, answer }), showError, {
+      onSuccess: () => setIndex((i) => i + 1),
+      errorKey: 'errors.answerPollFailed',
+    });
   };
 
   const handleEventAnswer = async (eventId: string, status: 'confirmed' | 'declined') => {
-    try {
-      await respondEvent.mutateAsync({ eventId, status });
-      setIndex((i) => i + 1);
-    } catch {
-      // Keep the question on screen so the user can retry.
-      showError('common.unexpectedError');
-    }
+    // On failure runWithErrorToast skips onSuccess, so the question stays on screen
+    // and the user can retry.
+    await runWithErrorToast(() => respondEvent.mutateAsync({ eventId, status }), showError, {
+      onSuccess: () => setIndex((i) => i + 1),
+      errorKey: 'errors.respondEventFailed',
+    });
   };
 
   const ring = current ? memberStates(current, members, memberColorMap) : [];
