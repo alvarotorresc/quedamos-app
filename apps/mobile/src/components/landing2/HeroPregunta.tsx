@@ -86,11 +86,19 @@ export function HeroPregunta(): JSX.Element {
         </Link>
       </div>
 
+      {/*
+        El anillo gigante no es responsive (mismo -right-2.5/700px en todos los
+        breakpoints), así que a partir de xl (1280px) el móvil usa la posición
+        EXACTA del artboard (right-330/w-340) para quedar sobre la mitad
+        IZQUIERDA del aro, dejando su semicírculo derecho limpio (verificado:
+        a 1280px el móvil sigue sin chocar con el titular, margen ~70px). El
+        valor intermedio (lg, 1024-1279) no se toca: ya no solapa el titular.
+      */}
       <div
-        className="hidden lg:block absolute right-6 xl:right-16 2xl:right-[330px] top-[165px] z-[2]"
+        className="hidden lg:block absolute right-6 xl:right-[330px] top-[165px] z-[2]"
         style={{ transform: 'rotate(2deg)' }}
       >
-        <div className="w-[240px] xl:w-[280px] 2xl:w-[340px] p-2.5 rounded-[48px] bg-bg-surface border border-subtle">
+        <div className="w-[240px] xl:w-[340px] p-2.5 rounded-[48px] bg-bg-surface border border-subtle">
           <div className="flex flex-col gap-4 h-[600px] px-[18px] py-[22px] rounded-[39px] bg-bg border border-subtle overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="font-extrabold text-xl tracking-tight text-text">
@@ -112,11 +120,17 @@ export function HeroPregunta(): JSX.Element {
               <p className="font-extrabold text-[27px] leading-[1.1] tracking-tight text-text">
                 {t('landing2.hero.mockup.question')}
               </p>
-              <div className="flex gap-2.5 pt-1">
-                <span className="flex items-center justify-center h-11 flex-1 rounded-pill bg-primary text-on-primary font-bold text-[15px]">
+              {/*
+                Sin flex-1: dos pills de ancho igual hacen que el texto EN más
+                largo ("Can't make it") se envuelva dentro de su pill. Cada
+                pill se ajusta a su contenido (px + whitespace-nowrap) en vez
+                de repartirse el ancho a partes iguales.
+              */}
+              <div className="flex flex-wrap gap-2.5 pt-1">
+                <span className="flex items-center justify-center h-11 px-5 whitespace-nowrap rounded-pill bg-primary text-on-primary font-bold text-[15px]">
                   {t('landing2.hero.mockup.canGo')}
                 </span>
-                <span className="flex items-center justify-center h-11 flex-1 rounded-pill border border-strong text-text font-bold text-[15px]">
+                <span className="flex items-center justify-center h-11 px-5 whitespace-nowrap rounded-pill border border-strong text-text font-bold text-[15px]">
                   {t('landing2.hero.mockup.cannotGo')}
                 </span>
               </div>
