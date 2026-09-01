@@ -11,8 +11,17 @@ export const GITHUB_URL = 'https://github.com/alvarotorresc/quedamos-app';
 export function CtaArrow({ size = 32 }: { size?: number }): JSX.Element {
   return (
     <span
-      className="flex items-center justify-center rounded-pill bg-on-primary/16 shrink-0"
-      style={{ width: size, height: size }}
+      className="flex items-center justify-center rounded-pill shrink-0"
+      // Tailwind can't slice an opacity modifier out of a CSS-var color (verified
+      // against the built CSS: `bg-on-primary/16` generates no rule at all), so
+      // the tint is inline via color-mix on the same --app-on-primary token. The
+      // artboards use 16% in day and 12% in night for this bubble; one alpha
+      // uniformly across both themes reads close enough not to special-case it.
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: 'color-mix(in srgb, var(--app-on-primary) 16%, transparent)',
+      }}
       aria-hidden="true"
     >
       <svg width={size * 0.4} height={size * 0.4} viewBox="0 0 14 14" fill="none">
