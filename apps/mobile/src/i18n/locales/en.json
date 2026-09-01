@@ -463,6 +463,136 @@
       "by": "by"
     }
   },
+  "landing2": {
+    "cta": "Open Quedamos",
+    "githubCta": "View the code on GitHub",
+    "nav": {
+      "brand": "¿Quedamos?",
+      "codeOpen": "Open source"
+    },
+    "hero": {
+      "title": "Your group wants to hang.",
+      "subtitle": "Nobody knows when. Quedamos asks the group and pings you when everyone's free.",
+      "mockup": {
+        "today": "Today",
+        "month": "Sep 2026",
+        "asks": "Iris asks",
+        "question": "Free Saturday the 14th?",
+        "canGo": "I'm in",
+        "cannotGo": "Can't make it",
+        "fri": "Fri",
+        "sat": "Sat",
+        "allCan": "Everyone's in",
+        "askCta": "Meet up?"
+      }
+    },
+    "banda": {
+      "title": "The whole app fits in a circle.",
+      "subtitle": "Each arc is a person, in their color. The gap is whoever hasn't answered. When the circle closes, everyone's free.",
+      "weekday": "saturday",
+      "dayNumber": "14",
+      "pending": "Up in the air: one hasn't answered, one can't make it.",
+      "sealed": "Sealed: plan, time and place confirmed."
+    },
+    "pantallas": {
+      "title": "Three screens. Not one more.",
+      "subtitle": "You ask, you see who's free, you seal the plan. That's the whole app.",
+      "week": {
+        "title": "Week",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun",
+        "allCan": "Everyone's in",
+        "askCta": "Meet up?"
+      },
+      "events": {
+        "title": "Plans",
+        "upcoming": "Upcoming",
+        "past": "Past",
+        "dinnerTitle": "Dinner at Iris's",
+        "dinnerTime": "Sat 14 · 9:00 PM",
+        "confirmed": "Confirmed",
+        "padelTitle": "Tennis and beers",
+        "padelTime": "Sun 22 · 12:00 PM",
+        "pending": "Up in the air",
+        "propose": "Propose a plan"
+      },
+      "group": {
+        "title": "Crew",
+        "of6": "{{count}} of 6",
+        "invite": "Invite the group"
+      }
+    },
+    "cuadrilla": {
+      "title": "Six colors. Yours is yours.",
+      "names": {
+        "vera": "Vera",
+        "hugo": "Hugo",
+        "noa": "Noa",
+        "leo": "Leo",
+        "iris": "Iris",
+        "teo": "Teo"
+      }
+    },
+    "proceso": {
+      "title": "From the question to the plan",
+      "steps": {
+        "sondear": {
+          "index": "01",
+          "title": "Ask",
+          "description": "Ask the group about a day from the calendar. Everyone answers when they can."
+        },
+        "cierra": {
+          "index": "02",
+          "title": "The circle closes",
+          "description": "When everyone can, you get the ping. Zero taps, zero calendar to read."
+        },
+        "quedamos": {
+          "index": "03",
+          "title": "It's on",
+          "description": "Someone proposes a plan, time and place. Confirming closes your arc."
+        }
+      }
+    },
+    "renuncias": {
+      "title": "What Quedamos will never do",
+      "subtitle": "Crossed out on purpose. This isn't a roadmap.",
+      "items": {
+        "interrogate": {
+          "label": "Interrogate you",
+          "description": "One question a day, tops. Nothing to ask, nothing pings."
+        },
+        "confetti": {
+          "label": "Confetti",
+          "description": "The celebration is the circle closing."
+        },
+        "streaks": {
+          "label": "Streaks and points",
+          "description": "No levels, no guilt for skipping a week."
+        },
+        "punish": {
+          "label": "Punish absence",
+          "description": "Whoever doesn't answer is a gap, not a strike."
+        },
+        "shoutEmoji": {
+          "label": "Shouty emoji",
+          "description": "The voice stays plain and direct. It only claims what's true."
+        },
+        "aiPlan": {
+          "label": "An AI in your plan",
+          "description": "Your plan is yours."
+        }
+      }
+    },
+    "cierre": {
+      "quote": "“Nothing pending. The week's been answered.”",
+      "subtitle": "The empty state is the reward.",
+      "footer": {
+        "languages": "Español / English"
+      }
+    }
+  },
   "online": {
     "toggle": "Online event",
     "meetingUrl": "Meeting link",
