@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth';
 import { useJoinGroup } from '../hooks/useGroups';
 import { useScreenView } from '../hooks/useAnalytics';
 import { Button } from '../ui/Button';
+import { ApiError } from '../lib/api';
 
 export default function JoinGroupPage() {
   useScreenView('JoinGroup');
@@ -50,8 +51,7 @@ export default function JoinGroupPage() {
       })
       .catch((e: unknown) => {
         setStatus('error');
-        const message = e instanceof Error ? e.message : '';
-        if (message.includes('Already a member')) {
+        if (e instanceof ApiError && e.status === 409) {
           setErrorMessage(t('group.alreadyMember'));
         } else {
           setErrorMessage(t('joinGroup.error'));

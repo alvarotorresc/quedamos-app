@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AskGroupSheet } from './AskGroupSheet';
+import { ApiError } from '../lib/api';
 
 // IonModal is a Stencil web component that never presents under jsdom (see
 // CreateEventModal.test.tsx) — render children directly when isOpen, like that file does.
@@ -79,7 +80,7 @@ describe('AskGroupSheet', () => {
   });
 
   it('un 409 (ya hay sondeo abierto) muestra el toast calendar.askDuplicate y no cierra', async () => {
-    createPollMock.mockRejectedValueOnce(new Error('An open poll already exists for this day'));
+    createPollMock.mockRejectedValueOnce(new ApiError('An open poll already exists for this day', 409));
     const { onClose } = renderSheet();
 
     fireEvent.click(screen.getByText('calendar.askAction'));
@@ -88,12 +89,31 @@ describe('AskGroupSheet', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('un 409 con otro mensaje también muestra calendar.askDuplicate (se detecta por status, no por texto)', async () => {
+    createPollMock.mockRejectedValueOnce(new ApiError('otro mensaje distinto', 409));
+    const { onClose } = renderSheet();
+
+    fireEvent.click(screen.getByText('calendar.askAction'));
+
+    await vi.waitFor(() => expect(showErrorMock).toHaveBeenCalledWith('calendar.askDuplicate'));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('un ApiError con otro status (no 409) muestra el toast genérico', async () => {
+    createPollMock.mockRejectedValueOnce(new ApiError('boom', 500));
+    renderSheet();
+
+    fireEvent.click(screen.getByText('calendar.askAction'));
+
+    await vi.waitFor(() => expect(showErrorMock).toHaveBeenCalledWith('errors.generic'));
+  });
+
   it('un error inesperado muestra el toast genérico', async () => {
     createPollMock.mockRejectedValueOnce(new Error('network down'));
     renderSheet();
 
     fireEvent.click(screen.getByText('calendar.askAction'));
 
-    await vi.waitFor(() => expect(showErrorMock).toHaveBeenCalledWith('common.unexpectedError'));
+    await vi.waitFor(() => expect(showErrorMock).toHaveBeenCalledWith('errors.generic'));
   });
 });
