@@ -1,4 +1,9 @@
-import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { GroupsService } from './groups.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -145,11 +150,11 @@ describe('GroupsService', () => {
       await expect(service.joinByCode('user-1', 'INVALID')).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException when already a member', async () => {
+    it('should throw ConflictException when already a member', async () => {
       prisma.group.findUnique.mockResolvedValue(createTestGroup());
       prisma.groupMember.findUnique.mockResolvedValue({ groupId: 'group-1', userId: 'user-1' });
 
-      await expect(service.joinByCode('user-1', '12345678')).rejects.toThrow(BadRequestException);
+      await expect(service.joinByCode('user-1', '12345678')).rejects.toThrow(ConflictException);
     });
 
     it('should add new member as attendee to active future events', async () => {

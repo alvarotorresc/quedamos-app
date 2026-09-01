@@ -7,6 +7,7 @@ import { useCreatePoll } from '../hooks/usePolls';
 import { useToast } from '../hooks/useToast';
 import { formatDateKey } from '../lib/date-utils';
 import { SLOT_KEYS } from '../lib/availability-label';
+import { ApiError } from '../lib/api';
 import type { TimeSlot } from '../services/availability';
 
 interface AskGroupSheetProps {
@@ -52,11 +53,10 @@ export function AskGroupSheet({ isOpen, onClose, groupId, day }: AskGroupSheetPr
       if (!result.notified) showInfo('calendar.askNotNotified');
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      if (message.includes('already exists for this day')) {
+      if (err instanceof ApiError && err.status === 409) {
         showError('calendar.askDuplicate');
       } else {
-        showError('common.unexpectedError');
+        showError('errors.generic');
       }
     }
   };

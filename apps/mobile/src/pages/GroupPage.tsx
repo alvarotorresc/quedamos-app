@@ -14,6 +14,7 @@ import { Button } from '../ui/Button';
 import { EmptyState } from '../ui';
 import { getMemberColorByUserId } from '../lib/constants';
 import { buildMemberColorMap } from '../lib/member-colors';
+import { ApiError } from '../lib/api';
 
 type FormMode = 'create' | 'join' | null;
 
@@ -90,8 +91,7 @@ export default function GroupPage() {
       setFormMode(null);
       history.push(`/tabs/group/${group.id}`);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : '';
-      if (message.includes('Already a member')) {
+      if (e instanceof ApiError && e.status === 409) {
         setError(t('group.alreadyMember'));
       } else {
         setError(t('group.joinError'));

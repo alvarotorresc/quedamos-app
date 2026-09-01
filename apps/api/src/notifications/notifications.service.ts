@@ -78,15 +78,22 @@ export class NotificationsService implements OnModuleInit {
   private static readonly MAX_TOKENS_PER_USER = 10;
 
   async registerToken(userId: string, dto: RegisterTokenDto) {
-    const tokenCount = await this.prisma.pushToken.count({ where: { userId } });
-    if (tokenCount >= NotificationsService.MAX_TOKENS_PER_USER) {
-      // Delete oldest token to make room
-      const oldest = await this.prisma.pushToken.findFirst({
-        where: { userId },
-        orderBy: { createdAt: 'asc' },
-      });
-      if (oldest) {
-        await this.prisma.pushToken.delete({ where: { id: oldest.id } });
+    const existing = await this.prisma.pushToken.findUnique({
+      where: { userId_token: { userId, token: dto.token } },
+    });
+
+    if (!existing) {
+      const tokenCount = await this.prisma.pushToken.count({ where: { userId } });
+      if (tokenCount >= NotificationsService.MAX_TOKENS_PER_USER) {
+        // Delete oldest token to make room — only for a genuinely new token, never when
+        // the caller is just re-sending a token we already have registered.
+        const oldest = await this.prisma.pushToken.findFirst({
+          where: { userId },
+          orderBy: { createdAt: 'asc' },
+        });
+        if (oldest) {
+          await this.prisma.pushToken.delete({ where: { id: oldest.id } });
+        }
       }
     }
 
