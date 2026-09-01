@@ -278,5 +278,24 @@ describe('group-sync', () => {
 
       expect(tempChannel.send).not.toHaveBeenCalled();
     });
+
+    it('removes the temporary channel when the subscription errors', () => {
+      const tempChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+      vi.mocked(supabase.channel).mockReturnValue(tempChannel as never);
+
+      broadcastSync('group-temp-err', 'events');
+
+      const subscribeCallback = vi.mocked(tempChannel.subscribe).mock.calls[0][0] as (
+        status: string,
+      ) => void;
+      subscribeCallback('CHANNEL_ERROR');
+
+      expect(tempChannel.send).not.toHaveBeenCalled();
+      expect(supabase.removeChannel).toHaveBeenCalledWith(tempChannel);
+    });
   });
 });

@@ -72,8 +72,11 @@ export function broadcastSync(groupId: string, resource: SyncResource): void {
           event: 'sync',
           payload: { resource },
         });
-        // Clean up after a short delay to ensure message is sent
+        // Clean up after a short delay to ensure the message is sent
         setTimeout(() => supabase.removeChannel(tempChannel), 1000);
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        // Terminal failure: never got to send — don't leak the channel
+        supabase.removeChannel(tempChannel);
       }
     });
   }
