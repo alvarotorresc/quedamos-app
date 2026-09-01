@@ -54,9 +54,27 @@ async function registerNative(): Promise<{
     resolveToken = resolve;
   });
 
+  let initialTokenReceived = false;
+
   const registrationHandle = await PushNotifications.addListener('registration', (t) => {
     currentToken = t.value;
-    resolveToken(t.value);
+
+    if (!initialTokenReceived) {
+      initialTokenReceived = true;
+      resolveToken(t.value);
+      return;
+    }
+
+    // FCM rotated the token after the initial registration (e.g. token
+    // expiry or app reinstall). This listener stays alive for the whole
+    // session (see cleanup below), so resend the new token to keep the
+    // backend record current. The endpoint is an idempotent upsert
+    // (UNIQUE(user_id, token)), so re-sending is always safe.
+    void sendTokenToBackend(t.value).catch((err) => {
+      if (import.meta.env.DEV) {
+        console.error('[Push] Failed to resend rotated token:', err);
+      }
+    });
   });
 
   const errorHandle = await PushNotifications.addListener('registrationError', (error) => {

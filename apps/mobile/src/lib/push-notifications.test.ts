@@ -47,6 +47,7 @@ import {
   setCurrentToken,
   setupWebForegroundHandler,
   resetNativePushSetup,
+  registerForPush,
 } from './push-notifications';
 import { getFirebaseMessaging } from './firebase';
 import { onMessage } from 'firebase/messaging';
@@ -79,6 +80,47 @@ describe('push-notifications', () => {
       expect(api.post).toHaveBeenCalledWith('/notifications/register-token', {
         token: 'native-token-456',
         platform: 'android',
+      });
+    });
+  });
+
+  describe('registerForPush (native token rotation)', () => {
+    it('resends a new token to the backend when the registration listener fires again after the initial token', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+
+      const registerPromise = registerForPush();
+
+      // Wait for the 'registration' listener to be registered via addListener.
+      await vi.waitFor(() => {
+        const registered = vi
+          .mocked(PushNotifications.addListener)
+          .mock.calls.some((call) => call[0] === 'registration');
+        expect(registered).toBe(true);
+      });
+
+      const registrationCall = vi
+        .mocked(PushNotifications.addListener)
+        .mock.calls.find((call) => call[0] === 'registration');
+      const registrationCallback = registrationCall![1] as (t: { value: string }) => void;
+
+      // Initial token arrives — resolves registerForPush() as today.
+      registrationCallback({ value: 'initial-token' });
+
+      const { token } = await registerPromise;
+      expect(token).toBe('initial-token');
+
+      vi.mocked(api.post).mockClear();
+
+      // FCM rotates the token after the initial registration.
+      registrationCallback({ value: 'rotated-token' });
+
+      await vi.waitFor(() => {
+        expect(api.post).toHaveBeenCalledWith('/notifications/register-token', {
+          token: 'rotated-token',
+          platform: 'android',
+        });
       });
     });
   });
