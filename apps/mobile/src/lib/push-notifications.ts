@@ -54,29 +54,65 @@ async function registerNative(): Promise<{
     resolveToken = resolve;
   });
 
+  let initialTokenReceived = false;
+
   const registrationHandle = await PushNotifications.addListener('registration', (t) => {
+    const previousToken = currentToken;
     currentToken = t.value;
-    resolveToken(t.value);
+
+    if (!initialTokenReceived) {
+      initialTokenReceived = true;
+      resolveToken(t.value);
+      return;
+    }
+
+    // FCM rotated the token after the initial registration (e.g. token expiry or app
+    // reinstall) — or a resume re-ran registerNative() while this listener was still
+    // attached (it's only removed once the NEW registerNative() call resolves), so the
+    // same native event can reach this branch with a token that hasn't actually
+    // changed. Only resend when it did: on native, the hook itself unconditionally
+    // resends whatever token IT resolves with on every resume, so resending an
+    // unchanged token here too would double-POST for a single resume.
+    if (t.value === previousToken) return;
+
+    // The endpoint is an idempotent upsert (UNIQUE(user_id, token)), so re-sending is
+    // always safe.
+    void sendTokenToBackend(t.value).catch((err) => {
+      if (import.meta.env.DEV) {
+        console.error('[Push] Failed to resend rotated token:', err);
+      }
+    });
   });
 
   const errorHandle = await PushNotifications.addListener('registrationError', (error) => {
     if (import.meta.env.DEV) {
       console.error('[Push] Native registration error:', error);
     }
+    // Settle the promise even though no token arrived, so a LATER real 'registration'
+    // event (e.g. a retry after this error) is treated as a resend instead of routed
+    // into the (already-resolved) initial-token branch above, where resolveToken()
+    // would silently no-op on an already-settled promise and the token would vanish.
+    initialTokenReceived = true;
     resolveToken(null);
   });
 
-  await PushNotifications.register();
-
-  const token = await tokenPromise;
-
-  return {
-    token,
-    cleanup: () => {
-      registrationHandle.remove();
-      errorHandle.remove();
-    },
+  const cleanup = () => {
+    registrationHandle.remove();
+    errorHandle.remove();
   };
+
+  try {
+    await PushNotifications.register();
+    const token = await tokenPromise;
+    return { token, cleanup };
+  } catch (err) {
+    // register() (or, in principle, awaiting tokenPromise) threw after the listeners
+    // were already attached above — without this, registerNative() throws before ever
+    // returning a cleanup function, and the caller has no way to remove the handles it
+    // never received. Tear them down here instead of leaking them.
+    cleanup();
+    throw err;
+  }
 }
 
 async function registerWeb(): Promise<string | null> {
