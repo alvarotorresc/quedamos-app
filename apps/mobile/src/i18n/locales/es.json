@@ -547,6 +547,11 @@
     "answered": "Respondido.",
     "notPendingAnymore": "Esa pregunta ya no está pendiente."
   },
+  "share": {
+    "tarjetaCerrada": "El aro se ha cerrado. Podéis {{count}} el {{fecha}}.",
+    "tarjetaSellada": "Quedamos. {{titulo}}, {{fechaHora}}.",
+    "linkCopied": "Enlace copiado. Tarjeta descargada."
+  },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
     "saveAvailabilityFailed": "No se pudo guardar tu disponibilidad",

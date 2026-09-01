@@ -547,6 +547,11 @@
     "answered": "Answered.",
     "notPendingAnymore": "That question isn't pending anymore."
   },
+  "share": {
+    "tarjetaCerrada": "The circle's closed. {{count}} of you are free on {{fecha}}.",
+    "tarjetaSellada": "We're on. {{titulo}}, {{fechaHora}}.",
+    "linkCopied": "Link copied. Card downloaded."
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "saveAvailabilityFailed": "Couldn't save your availability",
