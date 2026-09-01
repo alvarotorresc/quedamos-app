@@ -19,7 +19,7 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import { spring, useMotionSafe } from '../lib/motion';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
-import { apiDateToKey, formatDateKey } from '../lib/date-utils';
+import { apiDateToKey, formatDateKey, formatShareDate } from '../lib/date-utils';
 import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
 import { downloadICS } from '../lib/ics-utils';
@@ -138,8 +138,7 @@ export function EventCard({
     if (sharing) return;
     if (!invite?.inviteUrl) return;
     const theme: 'dia' | 'noche' = darkMode ? 'noche' : 'dia';
-    const weekdayFull = dateObj.toLocaleDateString(locale, { weekday: 'long' });
-    const fechaHora = `${weekdayFull} ${dateObj.getDate()}${formattedTime ? ` · ${formattedTime}` : ''}`;
+    const fechaHora = `${formatShareDate(dateObj, i18n.language)}${formattedTime ? ` · ${formattedTime}` : ''}`;
 
     setSharing(true);
     try {

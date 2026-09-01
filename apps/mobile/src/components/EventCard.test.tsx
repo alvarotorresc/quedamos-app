@@ -449,18 +449,42 @@ describe('EventCard', () => {
       expect(opts.memberColors).toEqual(['#60A5FA', '#34D399']);
     });
 
-    it('interpola share.tarjetaSellada con el título y la fecha/hora reales del evento', async () => {
-      const event = createEvent({ status: 'confirmed', title: 'Cena en el centro' });
+    it('interpola share.tarjetaSellada con el título y la fecha localizada del evento, sin hora si no hay', async () => {
+      const event = createEvent({ status: 'confirmed', title: 'Cena en el centro', date: '2026-04-15' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      // Mock i18n.language es 'es' (ver mock arriba): "miércoles 15", sin franja horaria.
+      await waitFor(() =>
+        expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
+          titulo: 'Cena en el centro',
+          fechaHora: 'miércoles 15',
+        }),
+      );
+    });
+
+    it('añade la franja horaria a fechaHora cuando el evento tiene hora', async () => {
+      const event = createEvent({
+        status: 'confirmed',
+        title: 'Cena en el centro',
+        date: '2026-04-15',
+        time: '21:00:00',
+      });
 
       render(<EventCard event={event} {...defaultProps} />);
       fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() =>
-        expect(mockT).toHaveBeenCalledWith(
-          'share.tarjetaSellada',
-          expect.objectContaining({ titulo: 'Cena en el centro' }),
-        ),
+        expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
+          titulo: 'Cena en el centro',
+          fechaHora: 'miércoles 15 · 21:00',
+        }),
       );
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.fechaHora).toBe('miércoles 15 · 21:00');
     });
 
     it('fallo del renderer muestra el toast errors.shareTarjetaFailed, sin lanzar', async () => {

@@ -8,6 +8,7 @@ import {
   getWeekDays,
   getMonthCells,
   weekOffsetOf,
+  formatShareDate,
 } from './date-utils';
 
 describe('formatDateKey', () => {
@@ -125,6 +126,23 @@ describe('getMonthCells', () => {
   it('should handle month offset', () => {
     const { month } = getMonthCells(new Date(2026, 0, 1), 2); // Jan + 2 = March
     expect(month.getMonth()).toBe(2);
+  });
+});
+
+describe('formatShareDate', () => {
+  const monday = new Date(2026, 8, 14); // Mon Sep 14 2026
+
+  it('formats Spanish as "weekday day" (long weekday, no comma)', () => {
+    expect(formatShareDate(monday, 'es')).toBe('lunes 14');
+  });
+
+  it('formats English as "Weekday, Mon day" (short weekday + month)', () => {
+    expect(formatShareDate(monday, 'en')).toBe('Mon, Sep 14');
+  });
+
+  it('treats region-tagged locales like their base language', () => {
+    expect(formatShareDate(monday, 'es-ES')).toBe('lunes 14');
+    expect(formatShareDate(monday, 'en-US')).toBe('Mon, Sep 14');
   });
 });
 

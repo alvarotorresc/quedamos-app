@@ -1,7 +1,7 @@
 import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { WeekView } from './WeekView';
-import { formatDateKey, getWeekDays } from '../lib/date-utils';
+import { formatDateKey, getWeekDays, parseDateKey, formatShareDate } from '../lib/date-utils';
 
 // Mock react-i18next locally (overrides the global setup.ts mock for this file) so we can
 // assert on the exact key + interpolation params passed to t(), not just the rendered key text.
@@ -179,15 +179,16 @@ describe('WeekView rediseñada', () => {
       expect(call.showInfo).toBe(mockShowInfo);
     });
 
-    it('interpola share.tarjetaCerrada solo con fecha, sin count', async () => {
-      render(<WeekView {...buildProps()} />);
+    it('interpola share.tarjetaCerrada con la fecha localizada del mejor día, sin count', async () => {
+      const props = buildProps();
+      render(<WeekView {...props} />);
 
       fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockT).toHaveBeenCalledWith('share.tarjetaCerrada', expect.any(Object)));
       const call = mockT.mock.calls.find(([key]) => key === 'share.tarjetaCerrada');
-      expect(call?.[1]).toHaveProperty('fecha');
-      expect(call?.[1]).not.toHaveProperty('count');
+      // Mock i18n.language es 'es' (ver mock arriba): weekday largo + día, sin coma ni mes.
+      expect(call?.[1]).toEqual({ fecha: formatShareDate(parseDateKey(props.bestDayKey!), 'es') });
     });
 
     it('usa share.cardCerrada como título de la tarjeta cerrada, no calendar.bestDayQuestion', async () => {
@@ -198,6 +199,18 @@ describe('WeekView rediseñada', () => {
       await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
       const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
       expect(opts.titulo).toBe('share.cardCerrada');
+    });
+
+    it('usa share.cardSubCerrada como subtítulo de la tarjeta cerrada, no calendar.allCan', async () => {
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
+      expect(opts.subtitulo).toBe('share.cardSubCerrada');
+      const call = mockT.mock.calls.find(([key]) => key === 'share.cardSubCerrada');
+      expect(call?.[1]).toEqual({ count: 2 });
     });
 
     it('renderiza el aro con los colores de todos los miembros del grupo, en orden de slot', async () => {

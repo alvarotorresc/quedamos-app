@@ -549,8 +549,9 @@
   },
   "share": {
     "tarjetaCerrada": "The circle's closed. You're all free on {{fecha}}.",
-    "tarjetaSellada": "We're on. {{titulo}}, {{fechaHora}}.",
+    "tarjetaSellada": "It's on. {{titulo}}, {{fechaHora}}.",
     "cardCerrada": "The circle's closed.",
+    "cardSubCerrada": "All {{count}} of you are free.",
     "cardSellada": "It's on.",
     "linkCopied": "Link copied. Card downloaded.",
     "cardDownloaded": "Card downloaded."

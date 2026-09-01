@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HiOutlineShare } from 'react-icons/hi2';
-import { getWeekDays, formatDateKey, isSameDay } from '../lib/date-utils';
+import { getWeekDays, formatDateKey, isSameDay, formatShareDate } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
 import { Aro, type AroMember } from '../ui/Aro';
 import { Button } from '../ui/Button';
@@ -86,14 +86,14 @@ export function WeekView({
             weekdayLabel,
             dayNumber,
             titulo: t('share.cardCerrada'),
-            subtitulo: t('calendar.allCan', { count: totalMembers }),
+            subtitulo: t('share.cardSubCerrada', { count: totalMembers }),
             memberColors: [...memberColorMap.values()],
             theme,
             marca: t('landing.brand'),
             pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
           });
           const texto = t('share.tarjetaCerrada', {
-            fecha: `${weekdayLabel} ${dayNumber}`,
+            fecha: formatShareDate(day, i18n.language),
           });
           const { shared } = await shareTarjeta({
             blob,
