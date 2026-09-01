@@ -120,15 +120,30 @@ export function BandaAro(): JSX.Element {
     return { i, dasharray, rotate, color: MEMBER_COLORS[i] };
   });
 
+  // El artboard fija height:600px + padding:0 110px (sin padding vertical)
+  // en esta sección, con align-items:center repartiendo el aire sobrante
+  // arriba/abajo del contenido, no py-24. min-h en vez de h fija para no
+  // recortar si el contenido stackeado (ver más abajo) pidiese más de 600px;
+  // py-16 se mantiene como margen de seguridad mínimo, no del artboard.
   return (
     <section
-      className={`${BANDA_SCOPE} grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[72px] items-center px-6 lg:px-[110px] py-24 bg-primary text-on-primary`}
+      className={`${BANDA_SCOPE} grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[72px] items-center min-h-[600px] px-6 lg:px-[110px] py-16 bg-primary text-on-primary`}
     >
       <style>{`
         .${BANDA_SCOPE} { --banda-track: rgba(51, 48, 42, 0.32); --banda-apagado: #C9C0AE; }
         .light .${BANDA_SCOPE} { --banda-track: rgba(242, 239, 231, 0.32); --banda-apagado: #5E584C; }
       `}</style>
-      <div className="flex items-center justify-center gap-[60px] flex-wrap">
+      {/*
+        La columna izquierda (aro 300px + lista de iconos, ~658px de ancho
+        junta) no cabe en el 3fr del grid mientras el viewport sea menor que
+        ~1389px (resuelto de (vw-220-72)*3/5 >= 658; 328.8px de sobra a
+        1180px, insuficiente incluso a 1440px con el grid a 2 columnas
+        activo desde 1024), lo que antes disparaba flex-wrap y engordaba la
+        sección con un hueco vertical grande. flex-row en base (grid a 1
+        columna, ancho completo) y desde min-[1400px] (sitio de sobra, con
+        margen sobre el umbral calculado); flex-col en el tramo de en medio.
+      */}
+      <div className="flex flex-row lg:flex-col min-[1400px]:flex-row items-center justify-center gap-10 lg:gap-9 min-[1400px]:gap-[60px]">
         <div className="relative w-[300px] h-[300px]" data-testid="banda-aro-center">
           <svg
             width={300}
@@ -139,14 +154,13 @@ export function BandaAro(): JSX.Element {
             data-motion={motionSafe ? 'closing' : 'static'}
           >
             <g>
-              <circle
-                cx={0}
-                cy={0}
-                r={CENTER_RADIUS}
-                fill="none"
-                stroke="var(--banda-track)"
-                strokeWidth={CENTER_STROKE}
-              />
+              {/*
+                Sin traza base: el aro central está siempre cerrado (los 6
+                slots "on"), así que un círculo de fondo solo dejaría ver
+                --banda-track como churretes grises en los huecos ENTRE arcos.
+                El artboard deja esos huecos como fondo limpio; la traza
+                atenuada solo existe para el estado "en el aire" (PendingIcon).
+              */}
               {arcs.map(({ i, dasharray, rotate, color }) =>
                 motionSafe ? (
                   <motion.circle
