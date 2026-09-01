@@ -80,4 +80,25 @@ describe('BandaAro', () => {
     const arcs = [...circles].slice(1);
     arcs.forEach((c) => expect(c).not.toHaveAttribute('data-has-initial'));
   });
+
+  it('los trazos atenuados de la banda usan la tinta del tema CONTRARIO al de la página, no --app-border/--app-apagado', () => {
+    const { container } = render(<BandaAro />);
+    // Ni el aro central ni el icono "en el aire" deben referenciar los tokens
+    // del tema de la página: quedarían mal en la banda invertida (ver el
+    // comentario de BANDA_SCOPE en el componente).
+    const strokes = [...container.querySelectorAll('circle')].map((c) => c.getAttribute('stroke'));
+    expect(strokes).not.toContain('var(--app-border)');
+    expect(strokes).not.toContain('var(--app-apagado)');
+    expect(strokes).toContain('var(--banda-track)');
+    expect(strokes).toContain('var(--banda-apagado)');
+
+    // Pin de los dos valores reales, uno por tema, contra los dos artboards
+    // (Main.dc.html:148-150 día, LandingNoche.dc.html:148-150 noche).
+    const styleText = container.querySelector('style')?.textContent ?? '';
+    expect(styleText).toContain('--banda-track: rgba(51, 48, 42, 0.32)');
+    expect(styleText).toContain('--banda-apagado: #C9C0AE');
+    expect(styleText).toContain('.light .landing2-banda-scope');
+    expect(styleText).toContain('--banda-track: rgba(242, 239, 231, 0.32)');
+    expect(styleText).toContain('--banda-apagado: #5E584C');
+  });
 });

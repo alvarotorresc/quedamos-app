@@ -11,6 +11,20 @@ const SIDE_RADIUS = 88;
 const SIDE_STROKE = 13;
 const INDICES = [0, 1, 2, 3, 4, 5] as const;
 
+// La banda es una sección INVERTIDA (bg-primary/text-on-primary): en día es
+// oscura, en noche es clara/papel. Sus trazos atenuados (hueco sin responder,
+// arco apagado) necesitan la tinta del tema CONTRARIO al de la página, no la
+// del tema activo (var(--app-border)/var(--app-apagado) son del tema de la
+// página y quedan mal: un aro claro pintado sobre la banda oscura en día, o
+// demasiado visible en ambos). Verificado contra los dos artboards
+// (Main.dc.html:148-150 día, LandingNoche.dc.html:148-150 noche): la banda
+// día usa rgba(242,239,231,.32)/#5E584C (tinta+apagado del tema noche); la
+// banda noche usa rgba(51,48,42,.32)/#C9C0AE (tinta+apagado del tema día).
+// Ni una clase Tailwind ni un `style` inline pueden invertir un valor según
+// el ancestro `.light`; un <style> con el mismo selector que usa el resto de
+// la app sí, sin tocar index.css.
+const BANDA_SCOPE = 'landing2-banda-scope';
+
 /**
  * Icono «en el aire»: uno sin responder (hueco) y uno que no puede (arco
  * corto, mismo convenio `apagado` que Aro/tarjeta.ts: strokeWidth explícito +
@@ -25,7 +39,7 @@ function PendingIcon(): JSX.Element {
           cy={0}
           r={SIDE_RADIUS}
           fill="none"
-          stroke="var(--app-border)"
+          stroke="var(--banda-track)"
           strokeWidth={SIDE_STROKE}
         />
         {INDICES.map((i) => {
@@ -42,7 +56,7 @@ function PendingIcon(): JSX.Element {
               cy={0}
               r={SIDE_RADIUS}
               fill="none"
-              stroke={short ? 'var(--app-apagado)' : MEMBER_COLORS[i]}
+              stroke={short ? 'var(--banda-apagado)' : MEMBER_COLORS[i]}
               strokeWidth={SIDE_STROKE}
               strokeLinecap="round"
               strokeDasharray={dasharray}
@@ -107,7 +121,13 @@ export function BandaAro(): JSX.Element {
   });
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[72px] items-center px-6 lg:px-[110px] py-24 bg-primary text-on-primary">
+    <section
+      className={`${BANDA_SCOPE} grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[72px] items-center px-6 lg:px-[110px] py-24 bg-primary text-on-primary`}
+    >
+      <style>{`
+        .${BANDA_SCOPE} { --banda-track: rgba(51, 48, 42, 0.32); --banda-apagado: #C9C0AE; }
+        .light .${BANDA_SCOPE} { --banda-track: rgba(242, 239, 231, 0.32); --banda-apagado: #5E584C; }
+      `}</style>
       <div className="flex items-center justify-center gap-[60px] flex-wrap">
         <div className="relative w-[300px] h-[300px]" data-testid="banda-aro-center">
           <svg
@@ -124,7 +144,7 @@ export function BandaAro(): JSX.Element {
                 cy={0}
                 r={CENTER_RADIUS}
                 fill="none"
-                stroke="var(--app-border)"
+                stroke="var(--banda-track)"
                 strokeWidth={CENTER_STROKE}
               />
               {arcs.map(({ i, dasharray, rotate, color }) =>
