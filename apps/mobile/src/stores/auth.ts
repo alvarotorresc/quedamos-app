@@ -19,7 +19,7 @@ interface User {
   timeSlots?: TimeSlotPreferences;
 }
 
-export function mapSessionUser(sessionUser: {
+function mapSessionUser(sessionUser: {
   id: string;
   email?: string | null;
   user_metadata?: { name?: string; avatarEmoji?: string; timeSlots?: unknown };
@@ -33,7 +33,7 @@ export function mapSessionUser(sessionUser: {
   };
 }
 
-export function usersEqual(a: User | null, b: User | null): boolean {
+function usersEqual(a: User | null, b: User | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return (
