@@ -36,7 +36,8 @@ import { WeatherWidget } from '../components/WeatherWidget';
 import { useGroupWeather } from '../hooks/useWeather';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
-import { searchCities, type GeocodingResult } from '../services/weather';
+import { useCitySearch } from '../hooks/useCitySearch';
+import type { GeocodingResult } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
 import { buildMemberColorMap } from '../lib/member-colors';
 import { GroupRing } from '../components/GroupRing';
@@ -82,7 +83,7 @@ export default function GroupDetailPage() {
   const addCity = useAddCity(id);
   const removeCity = useRemoveCity(id);
   const [citySearch, setCitySearch] = useState('');
-  const [cityResults, setCityResults] = useState<GeocodingResult[]>([]);
+  const cityResults = useCitySearch(citySearch);
   const [showCitySearch, setShowCitySearch] = useState(false);
 
   // Member color map (userId -> color), by join order within the group
@@ -129,16 +130,6 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleCitySearch = async (query: string) => {
-    setCitySearch(query);
-    if (query.length >= 2) {
-      const results = await searchCities(query);
-      setCityResults(results);
-    } else {
-      setCityResults([]);
-    }
-  };
-
   const handleAddCity = async (result: GeocodingResult) => {
     await addCity.mutateAsync({
       name: result.name,
@@ -146,7 +137,6 @@ export default function GroupDetailPage() {
       lon: result.longitude,
     });
     setCitySearch('');
-    setCityResults([]);
     setShowCitySearch(false);
   };
 
@@ -308,7 +298,7 @@ export default function GroupDetailPage() {
                 <input
                   type="text"
                   value={citySearch}
-                  onChange={(e) => handleCitySearch(e.target.value)}
+                  onChange={(e) => setCitySearch(e.target.value)}
                   placeholder={t('weather.searchCity')}
                   className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark mb-1"
                   style={{
