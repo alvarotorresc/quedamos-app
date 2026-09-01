@@ -26,13 +26,18 @@ const ALL_ON: AroMember[] = MEMBER_COLORS.map((color) => ({ color, state: 'on' }
  * Héroe split (zona 2 del lienzo): titular 128px + móvil de la Pregunta rotado
  * 2° + aro gigante r=300 sw=36 de halo. El halo es bespoke (aroArc explícito):
  * Aro.tsx fija R=16 internamente, no cubre un radio de diseño de 300.
+ *
+ * El lienzo es un lienzo de 1440px fijo: titular (pl-110 + max-w-640) y móvil
+ * (right-330, w-340) chocan por debajo de ~1420px si se usan tal cual. Los
+ * tamaños se escalan en 3 escalones (lg/xl/2xl) — solo el escalón 2xl (≥1536)
+ * usa los valores exactos del artboard, donde ya hay margen de sobra.
  */
 export function HeroPregunta(): JSX.Element {
   const { t } = useTranslation();
   const motionSafe = useMotionSafe();
 
   return (
-    <section className="relative flex items-center min-h-[860px] overflow-hidden pt-16 pl-[110px] pr-6">
+    <section className="relative flex items-center min-h-[860px] overflow-hidden pt-16 pl-6 lg:pl-16 xl:pl-20 2xl:pl-[110px] pr-6">
       <motion.svg
         width={700}
         height={700}
@@ -65,11 +70,11 @@ export function HeroPregunta(): JSX.Element {
         </g>
       </motion.svg>
 
-      <div className="flex flex-col gap-[34px] max-w-[640px] z-[2]">
-        <h1 className="font-extrabold text-[128px] leading-[0.96] tracking-[-0.045em] text-text">
+      <div className="flex flex-col gap-[34px] max-w-[380px] lg:max-w-[420px] xl:max-w-[460px] 2xl:max-w-[640px] z-[2]">
+        <h1 className="font-extrabold text-[52px] lg:text-[64px] xl:text-[76px] 2xl:text-[128px] leading-[0.98] 2xl:leading-[0.96] tracking-[-0.045em] text-text">
           {t('landing2.hero.title')}
         </h1>
-        <p className="text-[23px] leading-[1.45] text-text-muted max-w-[460px]">
+        <p className="text-base lg:text-lg 2xl:text-[23px] leading-[1.45] text-text-muted max-w-[340px] 2xl:max-w-[460px]">
           {t('landing2.hero.subtitle')}
         </p>
         <Link
@@ -82,10 +87,10 @@ export function HeroPregunta(): JSX.Element {
       </div>
 
       <div
-        className="absolute right-[330px] top-[165px] z-[2]"
+        className="hidden lg:block absolute right-6 xl:right-16 2xl:right-[330px] top-[165px] z-[2]"
         style={{ transform: 'rotate(2deg)' }}
       >
-        <div className="w-[340px] p-2.5 rounded-[48px] bg-bg-surface border border-subtle">
+        <div className="w-[240px] xl:w-[280px] 2xl:w-[340px] p-2.5 rounded-[48px] bg-bg-surface border border-subtle">
           <div className="flex flex-col gap-4 h-[600px] px-[18px] py-[22px] rounded-[39px] bg-bg border border-subtle overflow-hidden">
             <div className="flex items-center justify-between">
               <span className="font-extrabold text-xl tracking-tight text-text">
