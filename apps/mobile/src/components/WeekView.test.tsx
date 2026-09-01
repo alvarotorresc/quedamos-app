@@ -143,12 +143,23 @@ describe('WeekView rediseñada', () => {
       expect(within(panel).getByText('group.share')).toBeInTheDocument();
     });
 
-    it('no muestra Compartir en una fila normal (sin aro cerrado)', () => {
+    it('una quedada ya creada en el mejor día sustituye el panel por una fila normal, sin Compartir', () => {
       const props = buildProps();
       const eventsByDate = new Map([
         [props.bestDayKey!, [{ id: 'e1', title: 'Cena', time: '21:00:00' }] as never[]],
       ]);
       render(<WeekView {...props} eventsByDate={eventsByDate} />);
+      expect(screen.queryByTestId('best-day-panel')).not.toBeInTheDocument();
+      expect(screen.queryByText('group.share')).not.toBeInTheDocument();
+    });
+
+    it('disponibilidad parcial (falta un miembro): el aro no se cierra, sin panel ni Compartir', () => {
+      const props = buildProps();
+      // Solo u1 disponible el mejor día — con totalMembers=2 el aro no se cierra,
+      // así que ni el panel ni su botón Compartir deberían pintarse.
+      const availabilityByDate = new Map([[props.bestDayKey!, [{ userId: 'u1', type: 'day' }] as never[]]]);
+      render(<WeekView {...props} availabilityByDate={availabilityByDate} />);
+      expect(screen.queryByTestId('best-day-panel')).not.toBeInTheDocument();
       expect(screen.queryByText('group.share')).not.toBeInTheDocument();
     });
 

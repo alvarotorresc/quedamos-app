@@ -13,11 +13,11 @@ const RING_SIZE = 6;
 // los otros 5 índices. El sexto color (el hueco) lo rellena el punto.
 const MEMBER_SLOTS = [0, 1, 2, 4, 5] as const;
 const ARC_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#FB7185'] as const;
-const DOT_COLOR_COLOR = '#A78BFA';
+const DOT_COLOR_MULTICOLOR = '#A78BFA';
 const DOT_COLOR_MONO = '#60A5FA';
 
-export function Logo({ size = 24, variant = 'color', className }: LogoProps) {
-  const dotFill = variant === 'mono' ? DOT_COLOR_MONO : DOT_COLOR_COLOR;
+export function Logo({ size = 24, variant = 'color', className }: LogoProps): JSX.Element {
+  const dotFill = variant === 'mono' ? DOT_COLOR_MONO : DOT_COLOR_MULTICOLOR;
   return (
     <svg
       width={size}
