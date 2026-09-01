@@ -172,6 +172,7 @@ export default function CalendarPage() {
     : null;
 
   const handleMarkAvailability = () => {
+    if (!selectedDay) setSelectedDay(new Date());
     setShowAvailModal(true);
   };
 
