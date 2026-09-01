@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ConvertProposalModal } from './ConvertProposalModal';
 import { createWrapper } from '../test/test-utils';
 import type { Proposal } from '../services/proposals';
@@ -56,5 +56,27 @@ describe('ConvertProposalModal errors', () => {
       expect(showErrorMock).toHaveBeenCalledWith('errors.convertProposalFailed'),
     );
     expect(onClose).not.toHaveBeenCalled();
+  });
+});
+
+describe('ConvertProposalModal — fecha mínima en local, no UTC', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('con la hora del sistema pasada la medianoche UTC, el mínimo del selector de fecha es el día local, no el día UTC', () => {
+    // 2026-03-01T23:30:00Z es ya 2026-03-02 en Europe/Madrid (UTC+1 en marzo, antes del
+    // cambio de horario). El bug usaba toISOString() (UTC), que se habría quedado en
+    // 2026-03-01.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-03-01T23:30:00Z'));
+
+    const { container } = render(
+      <ConvertProposalModal isOpen onClose={vi.fn()} groupId="g1" proposal={null} />,
+      { wrapper: createWrapper() },
+    );
+
+    const dateInput = container.querySelector('input[type="date"]');
+    expect(dateInput).toHaveAttribute('min', '2026-03-02');
   });
 });

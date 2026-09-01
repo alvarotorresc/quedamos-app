@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import type { Proposal } from '../services/proposals';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
+import { formatDateKey } from '../lib/date-utils';
 
 interface ConvertProposalModalProps {
   isOpen: boolean;
@@ -66,7 +67,7 @@ export function ConvertProposalModal({
     border: '1px solid var(--app-border-strong)',
   };
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDateKey(new Date());
 
   return (
     <IonModal
