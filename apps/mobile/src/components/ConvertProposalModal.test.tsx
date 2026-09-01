@@ -57,6 +57,20 @@ describe('ConvertProposalModal errors', () => {
     );
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('convertir con éxito cierra el modal sin mostrar ningún toast de error', async () => {
+    convertProposalMutateAsync.mockResolvedValueOnce({ id: 'e1' });
+    const onClose = vi.fn();
+    render(
+      <ConvertProposalModal isOpen onClose={onClose} groupId="g1" proposal={PROPOSAL} />,
+      { wrapper: createWrapper() },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'proposals.convert' }));
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(showErrorMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('ConvertProposalModal — fecha mínima en local, no UTC', () => {

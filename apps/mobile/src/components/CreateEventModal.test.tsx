@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CreateEventModal } from './CreateEventModal';
 import { createWrapper } from '../test/test-utils';
@@ -113,5 +113,22 @@ describe('CreateEventModal errors', () => {
       expect(showErrorMock).toHaveBeenCalledWith('errors.createEventFailed'),
     );
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('crear con éxito cierra el modal (resetAndClose) sin mostrar ningún toast de error', async () => {
+    createEventMutateAsync.mockResolvedValueOnce({ id: 'e1' });
+    const onClose = vi.fn();
+    render(
+      <CreateEventModal isOpen onClose={onClose} groupId="g1" prefill={prefill} />,
+      { wrapper: createWrapper() },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'plans.create.submit' }));
+
+    // resetAndClose fires several setState calls after the mutation resolves — use
+    // testing-library's waitFor (auto-wraps in act) instead of vi.waitFor to avoid a
+    // spurious "not wrapped in act(...)" warning.
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(showErrorMock).not.toHaveBeenCalled();
   });
 });

@@ -46,4 +46,20 @@ describe('CreateProposalModal errors', () => {
     );
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('crear con éxito cierra el modal sin mostrar ningún toast de error', async () => {
+    createProposalMutateAsync.mockResolvedValueOnce({ id: 'p1' });
+    const onClose = vi.fn();
+    render(<CreateProposalModal isOpen onClose={onClose} groupId="g1" />, {
+      wrapper: createWrapper(),
+    });
+
+    fireEvent.change(screen.getByPlaceholderText('proposals.titlePlaceholder'), {
+      target: { value: 'Cena el viernes' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'proposals.create' }));
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(showErrorMock).not.toHaveBeenCalled();
+  });
 });
