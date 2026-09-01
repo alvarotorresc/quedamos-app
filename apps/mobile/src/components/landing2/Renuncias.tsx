@@ -24,6 +24,7 @@ export function Renuncias(): JSX.Element {
         <p className="text-lg text-text-muted">{t('landing2.renuncias.subtitle')}</p>
       </div>
       <motion.div
+        data-testid="renuncias-grid"
         className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-x-[90px] gap-y-[42px]"
         initial={motionSafe ? { opacity: 0, y: 16 } : undefined}
         whileInView={{ opacity: 1, y: 0 }}

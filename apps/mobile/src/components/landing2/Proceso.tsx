@@ -45,14 +45,25 @@ export function Proceso(): JSX.Element {
       </h2>
       <div className="relative">
         <div
-          className="hidden lg:block absolute top-[58px] left-[58px] right-[58px] h-px"
-          style={{ backgroundColor: 'var(--app-border)' }}
+          className="hidden lg:block absolute top-[58px] left-[58px] h-px"
+          style={{
+            backgroundColor: 'var(--app-border)',
+            // Geometría del conector: 3 nodos en grid-cols-3 gap-14 (56px),
+            // círculos de 116px alineados al inicio de su columna (no
+            // centrados) -> el centro de cada nodo está a 58px (mitad del
+            // círculo) del borde izquierdo de SU columna, no del grid entero.
+            // El nodo 3 no es un espejo del nodo 1: su centro está a
+            // colWidth - 58px del borde derecho del grid, con
+            // colWidth = (100% - 2·gap) / 3 = (100% - 7rem) / 3.
+            right: 'calc((100% - 7rem) / 3 - 58px)',
+          }}
           aria-hidden="true"
         />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-14">
           {STEPS.map(({ key, members, check }, i) => (
             <motion.div
               key={key}
+              data-testid={`proceso-step-${key}`}
               className="relative flex flex-col gap-[18px]"
               initial={motionSafe ? { opacity: 0, y: 16 } : undefined}
               whileInView={{ opacity: 1, y: 0 }}
