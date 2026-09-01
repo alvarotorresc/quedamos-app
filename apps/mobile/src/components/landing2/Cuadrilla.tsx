@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
+import { useMotionSafe } from '../../lib/motion';
 import { MEMBER_COLORS } from '../../lib/constants';
 
 const NAME_KEYS = ['vera', 'hugo', 'noa', 'leo', 'iris', 'teo'] as const;
@@ -14,8 +16,16 @@ const MEMBER_INK = '#14120E';
  */
 export function Cuadrilla(): JSX.Element {
   const { t } = useTranslation();
+  const motionSafe = useMotionSafe();
   return (
-    <section className="flex flex-col">
+    <motion.section
+      data-testid="cuadrilla-section"
+      className="flex flex-col"
+      initial={motionSafe ? { opacity: 0, y: 16 } : undefined}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4 }}
+    >
       <div className="px-6 lg:px-[110px] pt-24 pb-[54px]">
         <h2 className="font-extrabold text-[56px] tracking-[-0.03em] text-text">
           {t('landing2.cuadrilla.title')}
@@ -34,6 +44,6 @@ export function Cuadrilla(): JSX.Element {
           </div>
         ))}
       </div>
-    </section>
+    </motion.section>
   );
 }

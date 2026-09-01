@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 import { Aro, type AroMember } from '../../ui';
 import { SegmentedPills } from '../../ui/SegmentedPills';
 import { aroArc, slotCenter } from '../../lib/aro-geometry';
+import { useMotionSafe } from '../../lib/motion';
 import { MEMBER_COLORS } from '../../lib/constants';
 
 const RING_RADIUS = 88;
@@ -83,6 +85,7 @@ function DayRow({ weekday, day, members }: DayRowProps): JSX.Element {
  */
 export function Pantallas(): JSX.Element {
   const { t } = useTranslation();
+  const motionSafe = useMotionSafe();
   const [eventsTab, setEventsTab] = useState<'upcoming' | 'past'>('upcoming');
 
   const ring = INDICES.map((i) => {
@@ -91,7 +94,14 @@ export function Pantallas(): JSX.Element {
   });
 
   return (
-    <section className="flex flex-col gap-[60px] px-6 lg:px-[110px] py-24 bg-bg-light border-y border-subtle">
+    <motion.section
+      data-testid="pantallas-section"
+      className="flex flex-col gap-[60px] px-6 lg:px-[110px] py-24 bg-bg-light border-y border-subtle"
+      initial={motionSafe ? { opacity: 0, y: 16 } : undefined}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4 }}
+    >
       <div className="flex flex-col gap-3.5">
         <h2 className="font-extrabold text-[56px] leading-tight tracking-[-0.03em] text-text">
           {t('landing2.pantallas.title')}
@@ -276,6 +286,6 @@ export function Pantallas(): JSX.Element {
           </div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

@@ -1,6 +1,8 @@
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { useMotionSafe } from '../../lib/motion';
 import { CtaArrow, GITHUB_URL } from './NavIsla';
 
 /**
@@ -11,8 +13,16 @@ import { CtaArrow, GITHUB_URL } from './NavIsla';
  */
 export function Cierre(): JSX.Element {
   const { t } = useTranslation();
+  const motionSafe = useMotionSafe();
   return (
-    <section className="flex flex-col justify-center gap-[30px] px-6 lg:px-[110px] py-24 border-t border-subtle">
+    <motion.section
+      data-testid="cierre-section"
+      className="flex flex-col justify-center gap-[30px] px-6 lg:px-[110px] py-24 border-t border-subtle"
+      initial={motionSafe ? { opacity: 0, y: 16 } : undefined}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.4 }}
+    >
       <p className="font-extrabold text-[46px] leading-[1.15] tracking-[-0.025em] max-w-[820px] text-text">
         {t('landing2.cierre.quote')}
       </p>
@@ -31,6 +41,6 @@ export function Cierre(): JSX.Element {
         </a>
         <span>{t('landing2.cierre.footer.languages')}</span>
       </div>
-    </section>
+    </motion.section>
   );
 }
