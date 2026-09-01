@@ -20,6 +20,8 @@ export interface TarjetaCerradaOpts {
   theme: 'dia' | 'noche';
   /** Wordmark de marca, «¿Quedamos?» */
   marca: string;
+  /** Enlace de invitación (sin esquema), alineado a la izquierda en el pie. */
+  pie?: string;
 }
 
 export interface TarjetaSelladaOpts {
@@ -30,6 +32,8 @@ export interface TarjetaSelladaOpts {
   theme: 'dia' | 'noche';
   /** Wordmark de marca, «¿Quedamos?» */
   marca: string;
+  /** Enlace de invitación (sin esquema), alineado a la izquierda en el pie. */
+  pie?: string;
 }
 
 const CARD_SIZE = 1080;
@@ -41,6 +45,9 @@ const CENTRAL_STROKE_WIDTH = 32;
 // Mini aro de marca (header): r=16/sw=3.5 en el artboard → ×2.
 const BRAND_RADIUS = 32;
 const BRAND_STROKE_WIDTH = 7;
+// Medio ancho de la caja del icono en el artboard (26px), no el radio del
+// aro (32px): el aro se dibuja centrado en esa caja de 52×52.
+const BRAND_ICON_HALF = 26;
 const BRAND_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'] as const;
 
 // Check de TarjetaSellada: path del artboard `M -40 4 L -12 32 L 46 -30` ×2,
@@ -92,9 +99,9 @@ async function loadCardFonts(): Promise<void> {
     `400 36px ${DISPLAY_FAMILY}`,
     `400 34px ${DISPLAY_FAMILY}`,
     `400 26px ${DISPLAY_FAMILY}`,
-    `500 24px ${MONO_FAMILY}`,
-    `500 26px ${MONO_FAMILY}`,
-    `500 28px ${MONO_FAMILY}`,
+    `400 24px ${MONO_FAMILY}`,
+    `400 26px ${MONO_FAMILY}`,
+    `400 28px ${MONO_FAMILY}`,
   ];
 
   await Promise.allSettled(
@@ -161,8 +168,8 @@ function drawRing(
 }
 
 function drawBrand(ctx: CanvasRenderingContext2D, marca: string, palette: ThemePalette): void {
-  const cx = 64 + BRAND_RADIUS;
-  const cy = 52 + BRAND_RADIUS;
+  const cx = 64 + BRAND_ICON_HALF;
+  const cy = 52 + BRAND_ICON_HALF;
   drawRing(ctx, cx, cy, BRAND_RADIUS, BRAND_STROKE_WIDTH, BRAND_COLORS);
 
   ctx.fillStyle = palette.text;
@@ -175,14 +182,13 @@ function drawBrand(ctx: CanvasRenderingContext2D, marca: string, palette: ThemeP
 /**
  * Pie de la tarjeta: filo de 2px + «Abrir en Quedamos» alineado a la derecha.
  * El artboard también muestra un placeholder `[enlace de invitación]` a la
- * izquierda, pero ninguna de las opts congeladas (`TarjetaCerradaOpts` /
- * `TarjetaSelladaOpts`) trae ese enlace — es `shareTarjeta` (Task 3) quien
- * conoce el `inviteUrl` y lo añade al texto/URL del share sheet, no al PNG.
- * Renderizar el texto entre corchetes tal cual lo mostraría a los
- * destinatarios reales, así que ese slot se deja vacío a propósito.
+ * izquierda, alineado a la misma línea base — `pie` lo rellena con el
+ * `inviteUrl` real (sin esquema) cuando el caller lo pasa; si no, ese slot
+ * se deja vacío.
  */
-function drawFooter(ctx: CanvasRenderingContext2D, palette: ThemePalette): void {
+function drawFooter(ctx: CanvasRenderingContext2D, palette: ThemePalette, pie?: string): void {
   const borderY = CARD_SIZE - 96;
+  const baselineY = borderY + 42;
 
   ctx.strokeStyle = palette.border;
   ctx.lineWidth = 2;
@@ -195,7 +201,15 @@ function drawFooter(ctx: CanvasRenderingContext2D, palette: ThemePalette): void 
   ctx.font = `400 26px ${DISPLAY_FONT}`;
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.fillText('Abrir en Quedamos', CARD_SIZE - 64, borderY + 42);
+  ctx.fillText('Abrir en Quedamos', CARD_SIZE - 64, baselineY);
+
+  if (pie) {
+    ctx.fillStyle = palette.muted;
+    ctx.font = `400 26px ${MONO_FONT}`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(pie, 64, baselineY);
+  }
 }
 
 export async function renderTarjetaCerrada(opts: TarjetaCerradaOpts): Promise<Blob> {
@@ -205,7 +219,7 @@ export async function renderTarjetaCerrada(opts: TarjetaCerradaOpts): Promise<Bl
 
   drawBackground(ctx, palette);
   drawBrand(ctx, opts.marca, palette);
-  drawFooter(ctx, palette);
+  drawFooter(ctx, palette, opts.pie);
 
   const cx = CARD_SIZE / 2;
   const cy = 470;
@@ -215,7 +229,7 @@ export async function renderTarjetaCerrada(opts: TarjetaCerradaOpts): Promise<Bl
   ctx.textBaseline = 'middle';
 
   ctx.fillStyle = palette.muted;
-  ctx.font = `500 24px ${MONO_FONT}`;
+  ctx.font = `400 24px ${MONO_FONT}`;
   ctx.fillText(opts.weekdayLabel.toUpperCase(), cx, cy - 70);
 
   ctx.fillStyle = palette.text;
@@ -240,7 +254,7 @@ export async function renderTarjetaSellada(opts: TarjetaSelladaOpts): Promise<Bl
 
   drawBackground(ctx, palette);
   drawBrand(ctx, opts.marca, palette);
-  drawFooter(ctx, palette);
+  drawFooter(ctx, palette, opts.pie);
 
   const cx = CARD_SIZE / 2;
   const cy = 460;
@@ -271,7 +285,7 @@ export async function renderTarjetaSellada(opts: TarjetaSelladaOpts): Promise<Bl
   ctx.fillText(opts.plan, cx, cy + CENTRAL_RADIUS + 160);
 
   ctx.fillStyle = palette.muted;
-  ctx.font = `500 28px ${MONO_FONT}`;
+  ctx.font = `400 28px ${MONO_FONT}`;
   ctx.fillText(opts.fechaHora, cx, cy + CENTRAL_RADIUS + 210);
 
   return toPngBlob(canvas);

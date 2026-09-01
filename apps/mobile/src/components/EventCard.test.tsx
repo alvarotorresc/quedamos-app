@@ -418,6 +418,17 @@ describe('EventCard', () => {
       expect(opts.titulo).toBe('share.cardSellada');
     });
 
+    it('pasa el inviteUrl sin esquema como pie de la tarjeta', async () => {
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.pie).toBe('quedamos.app/i/ABC123');
+    });
+
     it('la tarjeta sellada solo pinta a quienes confirmaron asistencia, en orden de slot', async () => {
       const event = createEvent({
         status: 'confirmed',

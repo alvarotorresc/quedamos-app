@@ -8,6 +8,10 @@ import {
 } from './tarjeta';
 
 const MEMBER_COLORS = ['#60A5FA', '#F59E0B', '#F472B6', '#34D399', '#A78BFA', '#FB7185'];
+// Mitad del lienzo (CARD_SIZE=1080 / 2): el pie va a la izquierda, «Abrir en
+// Quedamos» a la derecha — cualquier x menor que esto está en la mitad
+// izquierda.
+const CARD_HALF = 540;
 
 interface MockCtx {
   fillRect: ReturnType<typeof vi.fn>;
@@ -212,6 +216,40 @@ describe('renderTarjetaSellada', () => {
   it('tema noche: fillRect de fondo cubre todo el lienzo', async () => {
     await renderTarjetaSellada({ ...baseSelladaOpts, theme: 'noche' });
     expect(mockCtx.fillRect.mock.calls[0]).toEqual([0, 0, 1080, 1080]);
+  });
+});
+
+describe('pie de la tarjeta (inviteUrl)', () => {
+  it('renderTarjetaCerrada: dibuja el pie alineado a la izquierda cuando se pasa', async () => {
+    await renderTarjetaCerrada({ ...baseCerradaOpts, pie: 'quedamos.app/i/ABC123' });
+    const pieCall = mockCtx.fillText.mock.calls.find((call) => call[0] === 'quedamos.app/i/ABC123');
+    expect(pieCall).toBeDefined();
+    const [, x] = pieCall as [string, number, number];
+    expect(x).toBeLessThan(CARD_HALF);
+  });
+
+  it('renderTarjetaCerrada: no dibuja ningún pie cuando no se pasa', async () => {
+    await renderTarjetaCerrada(baseCerradaOpts);
+    const pieCalls = mockCtx.fillText.mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].includes('quedamos.app'),
+    );
+    expect(pieCalls).toHaveLength(0);
+  });
+
+  it('renderTarjetaSellada: dibuja el pie alineado a la izquierda cuando se pasa', async () => {
+    await renderTarjetaSellada({ ...baseSelladaOpts, pie: 'quedamos.app/i/ABC123' });
+    const pieCall = mockCtx.fillText.mock.calls.find((call) => call[0] === 'quedamos.app/i/ABC123');
+    expect(pieCall).toBeDefined();
+    const [, x] = pieCall as [string, number, number];
+    expect(x).toBeLessThan(CARD_HALF);
+  });
+
+  it('renderTarjetaSellada: no dibuja ningún pie cuando no se pasa', async () => {
+    await renderTarjetaSellada(baseSelladaOpts);
+    const pieCalls = mockCtx.fillText.mock.calls.filter(
+      (call) => typeof call[0] === 'string' && call[0].includes('quedamos.app'),
+    );
+    expect(pieCalls).toHaveLength(0);
   });
 });
 

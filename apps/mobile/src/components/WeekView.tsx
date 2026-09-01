@@ -85,6 +85,7 @@ export function WeekView({
           memberColors: [...memberColorMap.values()],
           theme,
           marca: t('landing.brand'),
+          pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
         });
         const texto = t('share.tarjetaCerrada', {
           fecha: `${weekdayLabel} ${dayNumber}`,

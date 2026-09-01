@@ -148,6 +148,7 @@ export function EventCard({
           memberColors: selladaMemberColors,
           theme,
           marca: t('landing.brand'),
+          pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
         });
         const texto = t('share.tarjetaSellada', { titulo: event.title, fechaHora });
         const { shared } = await shareTarjeta({

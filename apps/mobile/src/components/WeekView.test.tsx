@@ -200,6 +200,16 @@ describe('WeekView rediseñada', () => {
       expect(opts.theme).toBe('noche');
     });
 
+    it('pasa el inviteUrl sin esquema como pie de la tarjeta', async () => {
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
+      expect(opts.pie).toBe('quedamos.app/i/ABC123');
+    });
+
     it('fallo del renderer muestra el toast errors.shareTarjetaFailed, sin lanzar', async () => {
       mockRenderTarjetaCerrada.mockRejectedValue(new Error('boom'));
       render(<WeekView {...buildProps()} />);
