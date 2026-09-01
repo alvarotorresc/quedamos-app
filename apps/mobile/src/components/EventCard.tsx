@@ -10,14 +10,22 @@ import {
   HiOutlinePencil,
   HiOutlineVideoCamera,
   HiOutlineArrowDownTray,
+  HiOutlineShare,
 } from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
+import { useGroupInvite } from '../hooks/useGroups';
+import { useToast } from '../hooks/useToast';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { spring, useMotionSafe } from '../lib/motion';
 import { useAuthStore } from '../stores/auth';
-import { apiDateToKey, formatDateKey } from '../lib/date-utils';
+import { useThemeStore } from '../stores/theme';
+import { apiDateToKey, formatDateKey, formatShareDate } from '../lib/date-utils';
 import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
 import { downloadICS } from '../lib/ics-utils';
+import { runWithErrorToast } from '../lib/mutation-utils';
+import { renderTarjetaSellada } from '../lib/tarjeta';
+import { shareTarjeta } from '../lib/share-tarjeta';
 import { getWeatherIcon, getWeatherDescKey } from './WeatherWidget';
 import type { Event, EventStatus } from '../services/events';
 import type { WeatherData } from '../services/weather';
@@ -59,8 +67,13 @@ export function EventCard({
   const user = useAuthStore((s) => s.user);
   const respondEvent = useRespondEvent(groupId);
   const motionSafe = useMotionSafe();
+  const { data: invite } = useGroupInvite(groupId);
+  const darkMode = useThemeStore((s) => s.darkMode);
+  const { showError, showInfo } = useToast();
+  const { track } = useAnalytics();
   const [showWeatherDetail, setShowWeatherDetail] = useState(false);
   const [justConfirmed, setJustConfirmed] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const isResponding = respondEvent.isPending;
 
@@ -99,6 +112,14 @@ export function EventCard({
     color,
     state: confirmedUserIds.has(userId) ? 'on' : 'off',
   }));
+  // Sealed-card ring: only the people who confirmed, in slot order (falls back to the
+  // full group in the unlikely case an event is confirmed with no confirmed attendee
+  // rows, so the card never ships with an empty ring).
+  const confirmedMemberColors = [...memberColorMap.entries()]
+    .filter(([userId]) => confirmedUserIds.has(userId))
+    .map(([, color]) => color);
+  const selladaMemberColors =
+    confirmedMemberColors.length > 0 ? confirmedMemberColors : [...memberColorMap.values()];
 
   const handleRespond = (status: 'confirmed' | 'declined') => {
     respondEvent.mutate(
@@ -111,6 +132,45 @@ export function EventCard({
         },
       },
     );
+  };
+
+  const handleShare = async () => {
+    if (sharing) return;
+    if (!invite?.inviteUrl) return;
+    const theme: 'dia' | 'noche' = darkMode ? 'noche' : 'dia';
+    const fechaHora = `${formatShareDate(dateObj, i18n.language)}${formattedTime ? ` · ${formattedTime}` : ''}`;
+
+    setSharing(true);
+    try {
+      await runWithErrorToast(
+        async () => {
+          const blob = await renderTarjetaSellada({
+            titulo: t('share.cardSellada'),
+            plan: event.title,
+            fechaHora,
+            memberColors: selladaMemberColors,
+            theme,
+            marca: t('landing.brand'),
+            pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
+          });
+          const texto = t('share.tarjetaSellada', { titulo: event.title, fechaHora });
+          const { shared } = await shareTarjeta({
+            blob,
+            texto,
+            inviteUrl: invite.inviteUrl,
+            filename: 'quedamos-tarjeta.png',
+            showInfo,
+          });
+          if (shared) {
+            track('share_tarjeta', { momento: 'sellada' });
+          }
+        },
+        showError,
+        { errorKey: 'errors.shareTarjetaFailed' },
+      );
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -189,6 +249,20 @@ export function EventCard({
             >
               <HiOutlinePencil className="w-4 h-4 text-text-muted" />
             </button>
+          )}
+          {event.status === 'confirmed' && (
+            <motion.button
+              initial={motionSafe && justConfirmed ? { scale: 0, opacity: 0 } : false}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={spring.bouncy}
+              onClick={handleShare}
+              disabled={sharing}
+              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors disabled:opacity-40 disabled:pointer-events-none"
+              title={t('group.share')}
+              aria-label={t('group.share')}
+            >
+              <HiOutlineShare className="w-4 h-4 text-text-muted" />
+            </motion.button>
           )}
           <Badge variant={STATUS_BADGE_VARIANT[event.status]}>
             {t(`plans.status.${event.status}`)}

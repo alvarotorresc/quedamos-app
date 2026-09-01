@@ -384,6 +384,7 @@ export default function CalendarPage() {
               {/* Calendar view */}
               {calView === 'week' && (
                 <WeekView
+                  groupId={groupId}
                   weekOffset={weekOffset}
                   onWeekChange={setWeekOffset}
                   selectedDay={selectedDay}

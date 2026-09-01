@@ -547,6 +547,15 @@
     "answered": "Respondido.",
     "notPendingAnymore": "Esa pregunta ya no está pendiente."
   },
+  "share": {
+    "tarjetaCerrada": "El aro se ha cerrado. Podéis todos el {{fecha}}.",
+    "tarjetaSellada": "Quedamos. {{titulo}}, {{fechaHora}}.",
+    "cardCerrada": "El aro se ha cerrado.",
+    "cardSubCerrada": "Podéis los {{count}}.",
+    "cardSellada": "Quedamos.",
+    "linkCopied": "Enlace copiado. Tarjeta descargada.",
+    "cardDownloaded": "Tarjeta descargada."
+  },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
     "saveAvailabilityFailed": "No se pudo guardar tu disponibilidad",
@@ -565,6 +574,7 @@
     "deleteGroupFailed": "No se pudo eliminar el grupo",
     "copyFailed": "No se pudo copiar el código",
     "answerPollFailed": "No se pudo guardar tu respuesta",
-    "respondEventFailed": "No se pudo guardar tu asistencia"
+    "respondEventFailed": "No se pudo guardar tu asistencia",
+    "shareTarjetaFailed": "No se pudo crear la tarjeta"
   }
 }

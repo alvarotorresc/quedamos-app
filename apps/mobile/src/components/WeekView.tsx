@@ -1,9 +1,17 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getWeekDays, formatDateKey, isSameDay } from '../lib/date-utils';
+import { HiOutlineShare } from 'react-icons/hi2';
+import { getWeekDays, formatDateKey, isSameDay, formatShareDate } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
 import { Aro, type AroMember } from '../ui/Aro';
 import { Button } from '../ui/Button';
+import { useGroupInvite } from '../hooks/useGroups';
+import { useToast } from '../hooks/useToast';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { useThemeStore } from '../stores/theme';
+import { runWithErrorToast } from '../lib/mutation-utils';
+import { renderTarjetaCerrada } from '../lib/tarjeta';
+import { shareTarjeta } from '../lib/share-tarjeta';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
 import type { Event } from '../services/events';
@@ -26,6 +34,8 @@ interface WeekViewProps {
   eventsByDate?: Map<string, Event[]>;
   onEventClick?: (event: Event) => void;
   onAskGroup?: (day: Date) => void;
+  /** Group id — used to fetch the invite link the shared aro card includes. */
+  groupId: string;
 }
 
 export function WeekView({
@@ -44,16 +54,65 @@ export function WeekView({
   eventsByDate,
   onEventClick,
   onAskGroup,
+  groupId,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
   const week = getWeekDays(new Date(), weekOffset);
   const todayKey = formatDateKey(new Date());
+  const { data: invite } = useGroupInvite(groupId);
+  const darkMode = useThemeStore((s) => s.darkMode);
+  const { showError, showInfo } = useToast();
+  const { track } = useAnalytics();
+  const [sharing, setSharing] = useState(false);
 
   const monthLabel = week[0].toLocaleDateString(locale, {
     month: 'long',
     year: 'numeric',
   });
+
+  const handleShareBestDay = async (day: Date) => {
+    if (sharing) return;
+    if (!invite?.inviteUrl) return;
+    const weekdayLabel = day.toLocaleDateString(locale, { weekday: 'long' });
+    const dayNumber = String(day.getDate());
+    const theme: 'dia' | 'noche' = darkMode ? 'noche' : 'dia';
+
+    setSharing(true);
+    try {
+      await runWithErrorToast(
+        async () => {
+          const blob = await renderTarjetaCerrada({
+            weekdayLabel,
+            dayNumber,
+            titulo: t('share.cardCerrada'),
+            subtitulo: t('share.cardSubCerrada', { count: totalMembers }),
+            memberColors: [...memberColorMap.values()],
+            theme,
+            marca: t('landing.brand'),
+            pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
+          });
+          const texto = t('share.tarjetaCerrada', {
+            fecha: formatShareDate(day, i18n.language),
+          });
+          const { shared } = await shareTarjeta({
+            blob,
+            texto,
+            inviteUrl: invite.inviteUrl,
+            filename: 'quedamos-tarjeta.png',
+            showInfo,
+          });
+          if (shared) {
+            track('share_tarjeta', { momento: 'cerrada' });
+          }
+        },
+        showError,
+        { errorKey: 'errors.shareTarjetaFailed' },
+      );
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <div>
@@ -148,6 +207,18 @@ export function WeekView({
                   className="flex-1 border border-strong text-on-primary rounded-pill py-3 text-sm font-semibold"
                 >
                   {t('calendar.editAvailability')}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShareBestDay(day);
+                  }}
+                  disabled={sharing}
+                  aria-label={t('group.share')}
+                  title={t('group.share')}
+                  className="shrink-0 w-11 h-11 flex items-center justify-center border border-strong text-on-primary rounded-pill p-2.5 disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  <HiOutlineShare className="w-4 h-4" />
                 </button>
               </div>
             </div>

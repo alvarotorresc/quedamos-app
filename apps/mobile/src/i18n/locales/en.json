@@ -547,6 +547,15 @@
     "answered": "Answered.",
     "notPendingAnymore": "That question isn't pending anymore."
   },
+  "share": {
+    "tarjetaCerrada": "The circle's closed. You're all free on {{fecha}}.",
+    "tarjetaSellada": "It's on. {{titulo}}, {{fechaHora}}.",
+    "cardCerrada": "The circle's closed.",
+    "cardSubCerrada": "All {{count}} of you are free.",
+    "cardSellada": "It's on.",
+    "linkCopied": "Link copied. Card downloaded.",
+    "cardDownloaded": "Card downloaded."
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "saveAvailabilityFailed": "Couldn't save your availability",
@@ -565,6 +574,7 @@
     "deleteGroupFailed": "Couldn't delete the group",
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",
-    "respondEventFailed": "Couldn't save your response"
+    "respondEventFailed": "Couldn't save your response",
+    "shareTarjetaFailed": "Couldn't create the card"
   }
 }

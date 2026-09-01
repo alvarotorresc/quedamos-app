@@ -28,6 +28,17 @@ export function parseDateKey(key: string): Date {
   return new Date(key + 'T00:00:00');
 }
 
+/**
+ * Localized date for share-card copy: "lunes 14" in Spanish, "Mon, Sep 14" in English.
+ * Any non-English `language` (e.g. 'es', 'es-ES') gets the Spanish format.
+ */
+export function formatShareDate(date: Date, language: string): string {
+  const opts: Intl.DateTimeFormatOptions = language.startsWith('en')
+    ? { weekday: 'short', month: 'short', day: 'numeric' }
+    : { weekday: 'long', day: 'numeric' };
+  return date.toLocaleDateString(language, opts);
+}
+
 export function getWeekDays(base: Date, weekOffset: number): Date[] {
   const d = new Date(base);
   d.setDate(d.getDate() + weekOffset * 7);
