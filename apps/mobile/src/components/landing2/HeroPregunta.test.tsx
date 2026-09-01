@@ -9,6 +9,42 @@ vi.mock('../../lib/motion', () => ({
   useMotionSafe: () => motionSafeValue,
 }));
 
+// Local override of the global framer-motion mock (src/test/setup.ts): that one
+// strips `animate`/`initial` entirely, so a test asserting on those props would
+// pass identically whether or not the component actually gates them behind
+// useMotionSafe. Surface `animate` as a data attribute instead so the gate test
+// can discriminate the real branch, not just the data-motion label the
+// component sets for itself.
+vi.mock('framer-motion', async () => {
+  const React = await import('react');
+  const motionProxy = new Proxy(
+    {},
+    {
+      get:
+        (_t, tag: string) =>
+        ({
+          children,
+          animate,
+          initial: _initial,
+          whileInView: _whileInView,
+          viewport: _viewport,
+          transition: _transition,
+          ...rest
+        }: Record<string, unknown> & { children?: React.ReactNode }) =>
+          React.createElement(
+            tag,
+            { ...rest, 'data-has-animate': animate !== undefined ? 'true' : undefined },
+            children as React.ReactNode,
+          ),
+    },
+  );
+  return {
+    motion: motionProxy,
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+    useReducedMotion: () => false,
+  };
+});
+
 describe('HeroPregunta', () => {
   beforeEach(() => {
     motionSafeValue = true;
@@ -39,23 +75,27 @@ describe('HeroPregunta', () => {
     expect(screen.getByText('landing2.hero.mockup.askCta')).toBeInTheDocument();
   });
 
-  it('el halo respira con motion habilitado', () => {
+  it('el halo respira con motion habilitado: lleva animate real, no solo la etiqueta', () => {
     motionSafeValue = true;
     render(
       <MemoryRouter>
         <HeroPregunta />
       </MemoryRouter>,
     );
-    expect(screen.getByTestId('hero-halo')).toHaveAttribute('data-motion', 'breathing');
+    const halo = screen.getByTestId('hero-halo');
+    expect(halo).toHaveAttribute('data-motion', 'breathing');
+    expect(halo).toHaveAttribute('data-has-animate', 'true');
   });
 
-  it('con reduced-motion el halo queda estático (gate de useMotionSafe)', () => {
+  it('con reduced-motion el halo queda estático: sin animate (gate real de useMotionSafe)', () => {
     motionSafeValue = false;
     render(
       <MemoryRouter>
         <HeroPregunta />
       </MemoryRouter>,
     );
-    expect(screen.getByTestId('hero-halo')).toHaveAttribute('data-motion', 'static');
+    const halo = screen.getByTestId('hero-halo');
+    expect(halo).toHaveAttribute('data-motion', 'static');
+    expect(halo).not.toHaveAttribute('data-has-animate');
   });
 });
