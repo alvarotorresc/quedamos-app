@@ -78,3 +78,51 @@ describe('AvailabilityModal errors', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 });
+
+describe('AvailabilityModal success', () => {
+  beforeEach(() => {
+    createMutateAsync.mockReset();
+    deleteMutateAsync.mockReset();
+    showErrorMock.mockReset();
+  });
+
+  it('guardar con éxito cierra el modal sin mostrar ningún toast de error', async () => {
+    createMutateAsync.mockResolvedValueOnce({});
+    const onClose = vi.fn();
+    render(
+      <AvailabilityModal isOpen onClose={onClose} selectedDay={SELECTED_DAY} groupId="g1" />,
+      { wrapper: createWrapper() },
+    );
+
+    fireEvent.click(screen.getByText('calendar.availability.save'));
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(showErrorMock).not.toHaveBeenCalled();
+  });
+
+  it('eliminar con éxito cierra el modal sin mostrar ningún toast de error', async () => {
+    deleteMutateAsync.mockResolvedValueOnce({ success: true });
+    const onClose = vi.fn();
+    render(
+      <AvailabilityModal
+        isOpen
+        onClose={onClose}
+        selectedDay={SELECTED_DAY}
+        groupId="g1"
+        existingAvailability={{
+          id: 'a1',
+          userId: 'u1',
+          groupId: 'g1',
+          date: '2026-03-10',
+          type: 'day',
+        }}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    fireEvent.click(screen.getByText('calendar.availability.delete'));
+
+    await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(showErrorMock).not.toHaveBeenCalled();
+  });
+});
