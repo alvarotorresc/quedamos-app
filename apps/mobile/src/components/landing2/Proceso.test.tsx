@@ -67,11 +67,33 @@ describe('Proceso', () => {
     expect(svgs.length).toBeGreaterThanOrEqual(3);
   });
 
+  it('el refuerzo de la traza de Sondear no engrosa el aro-wrapper de 116px que lo envuelve (solo el svg de Aro lo lleva)', () => {
+    render(<Proceso />);
+    STEP_KEYS.forEach((step) => {
+      const stepEl = screen.getByTestId(`proceso-step-${step}`);
+      // El wrapper de 116px es el primer div hijo directo del paso.
+      const nodeWrapper = stepEl.querySelector(':scope > div');
+      expect(nodeWrapper).not.toBeNull();
+      expect(nodeWrapper).toHaveClass('border-subtle');
+      expect(nodeWrapper).not.toHaveClass('proceso-sondear-trace');
+
+      const aroRoot = nodeWrapper?.querySelector('svg')?.parentElement;
+      if (step === 'sondear') {
+        expect(aroRoot).toHaveClass('proceso-sondear-trace');
+      } else {
+        expect(aroRoot).not.toHaveClass('proceso-sondear-trace');
+      }
+    });
+  });
+
   it('los 3 nodos entran con fade-up con motion habilitado: llevan initial real', () => {
     motionSafeValue = true;
     render(<Proceso />);
     STEP_KEYS.forEach((step) => {
-      expect(screen.getByTestId(`proceso-step-${step}`)).toHaveAttribute('data-has-initial', 'true');
+      expect(screen.getByTestId(`proceso-step-${step}`)).toHaveAttribute(
+        'data-has-initial',
+        'true',
+      );
     });
   });
 

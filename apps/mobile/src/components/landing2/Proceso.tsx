@@ -17,7 +17,16 @@ const ALL_ON: AroMember[] = MEMBER_COLORS.map((color) => ({ color, state: 'on' }
 
 function CheckMark(): JSX.Element {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="var(--app-text)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4" aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="var(--app-text)"
+      strokeWidth={2.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-4 h-4"
+      aria-hidden="true"
+    >
       <polyline points="4 12 9 17 20 6" />
     </svg>
   );
@@ -46,6 +55,11 @@ export function Proceso(): JSX.Element {
         sobre el bg-bg normal de este nodo, y en la práctica se confunde con
         el nodo 02 (cerrado). Se sube solo aquí a border-strong (alpha .32),
         sin tocar Aro.tsx (que sí debe quedarse sutil en el resto de la app).
+        La clase va en el propio wrapper de <Aro> (no en el aro de 116px que
+        lo envuelve): si viviera en el wrapper de 116px, ESE elemento también
+        resolvería --app-border a border-strong para su propio `border
+        border-subtle`, engrosando el círculo exterior x3 en el nodo 01 y
+        contradiciendo la intención (solo la traza interna debe reforzarse).
       */}
       <style>{`.proceso-sondear-trace { --app-border: var(--app-border-strong); }`}</style>
       <h2 className="font-extrabold text-[46px] tracking-[-0.025em] text-text">
@@ -78,10 +92,12 @@ export function Proceso(): JSX.Element {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: motionSafe ? i * 0.1 : 0 }}
             >
-              <div
-                className={`flex items-center justify-center w-[116px] h-[116px] rounded-pill bg-bg border border-subtle ${key === 'sondear' ? 'proceso-sondear-trace' : ''}`}
-              >
-                <Aro members={members} size={96}>
+              <div className="flex items-center justify-center w-[116px] h-[116px] rounded-pill bg-bg border border-subtle">
+                <Aro
+                  members={members}
+                  size={96}
+                  className={key === 'sondear' ? 'proceso-sondear-trace' : ''}
+                >
                   {check ? <CheckMark /> : undefined}
                 </Aro>
               </div>
