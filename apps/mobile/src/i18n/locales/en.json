@@ -570,6 +570,7 @@
     "deleteGroupFailed": "Couldn't delete the group",
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",
-    "respondEventFailed": "Couldn't save your response"
+    "respondEventFailed": "Couldn't save your response",
+    "shareTarjetaFailed": "Couldn't create the card"
   }
 }

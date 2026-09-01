@@ -1,7 +1,46 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { WeekView } from './WeekView';
 import { formatDateKey, getWeekDays } from '../lib/date-utils';
+
+// Mock react-i18next locally (overrides the global setup.ts mock for this file) so we can
+// assert on the exact key + interpolation params passed to t(), not just the rendered key text.
+const mockT = vi.fn((key: string) => key);
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: mockT,
+    i18n: { language: 'es', changeLanguage: vi.fn() },
+  }),
+  Trans: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: { type: '3rdParty', init: vi.fn() },
+}));
+
+// Invite link the shareable card links back to — mutable per test via `mockInvite`.
+let mockInvite: { inviteUrl: string } | undefined;
+vi.mock('../hooks/useGroups', () => ({
+  useGroupInvite: () => ({ data: mockInvite }),
+}));
+
+const mockShowError = vi.fn();
+const mockShowInfo = vi.fn();
+vi.mock('../hooks/useToast', () => ({
+  useToast: () => ({ showError: mockShowError, showSuccess: vi.fn(), showInfo: mockShowInfo }),
+}));
+
+const mockTrack = vi.fn();
+vi.mock('../hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
+
+const mockRenderTarjetaCerrada = vi.fn();
+vi.mock('../lib/tarjeta', () => ({
+  renderTarjetaCerrada: (...args: unknown[]) => mockRenderTarjetaCerrada(...args),
+}));
+
+const mockShareTarjeta = vi.fn();
+vi.mock('../lib/share-tarjeta', () => ({
+  shareTarjeta: (...args: unknown[]) => mockShareTarjeta(...args),
+}));
 
 function buildProps() {
   const week = getWeekDays(new Date(), 0);
@@ -12,6 +51,7 @@ function buildProps() {
     ] as never[]],
   ]);
   return {
+    groupId: 'group-1',
     weekOffset: 0, onWeekChange: vi.fn(),
     selectedDay: null, onSelectDay: vi.fn(),
     availabilityByDate,
@@ -24,6 +64,16 @@ function buildProps() {
 }
 
 describe('WeekView rediseñada', () => {
+  beforeEach(() => {
+    mockInvite = { inviteUrl: 'https://quedamos.app/i/ABC123' };
+    mockRenderTarjetaCerrada.mockReset().mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
+    mockShareTarjeta.mockReset().mockResolvedValue(undefined);
+    mockShowError.mockReset();
+    mockShowInfo.mockReset();
+    mockTrack.mockReset();
+    mockT.mockClear();
+  });
+
   it('pinta 7 filas de día', () => {
     render(<WeekView {...buildProps()} />);
     // el mejor día es panel, no fila
@@ -84,5 +134,105 @@ describe('WeekView rediseñada', () => {
     const onAskGroup = vi.fn<(day: Date) => void>();
     render(<WeekView {...props} weekOffset={-1} selectedDay={day} onAskGroup={onAskGroup} />);
     expect(screen.queryByText('calendar.ask')).not.toBeInTheDocument();
+  });
+
+  describe('compartir la tarjeta del mejor día', () => {
+    it('muestra el botón Compartir dentro del panel de mejor día', () => {
+      render(<WeekView {...buildProps()} />);
+      const panel = screen.getByTestId('best-day-panel');
+      expect(within(panel).getByText('group.share')).toBeInTheDocument();
+    });
+
+    it('no muestra Compartir en una fila normal (sin aro cerrado)', () => {
+      const props = buildProps();
+      const eventsByDate = new Map([
+        [props.bestDayKey!, [{ id: 'e1', title: 'Cena', time: '21:00:00' }] as never[]],
+      ]);
+      render(<WeekView {...props} eventsByDate={eventsByDate} />);
+      expect(screen.queryByText('group.share')).not.toBeInTheDocument();
+    });
+
+    it('al pulsar Compartir renderiza la tarjeta y la comparte con el blob y el inviteUrl', async () => {
+      const blob = new Blob(['png'], { type: 'image/png' });
+      mockRenderTarjetaCerrada.mockResolvedValue(blob);
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
+      const call = mockShareTarjeta.mock.calls[0][0];
+      expect(call.blob).toBe(blob);
+      expect(call.inviteUrl).toBe('https://quedamos.app/i/ABC123');
+      expect(call.filename).toBe('quedamos-tarjeta.png');
+      expect(call.texto).toBe('share.tarjetaCerrada');
+      expect(call.showInfo).toBe(mockShowInfo);
+    });
+
+    it('interpola share.tarjetaCerrada con la misma frase que calendar.allCan ("los N"), no un número desnudo, en es', async () => {
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() =>
+        expect(mockT).toHaveBeenCalledWith(
+          'share.tarjetaCerrada',
+          expect.objectContaining({ count: 'los 2' }),
+        ),
+      );
+    });
+
+    it('renderiza el aro con los colores de todos los miembros del grupo, en orden de slot', async () => {
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
+      expect(opts.memberColors).toEqual(['#60A5FA', '#F59E0B']);
+      expect(opts.theme).toBe('noche');
+    });
+
+    it('fallo del renderer muestra el toast errors.shareTarjetaFailed, sin lanzar', async () => {
+      mockRenderTarjetaCerrada.mockRejectedValue(new Error('boom'));
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.shareTarjetaFailed'));
+      expect(mockShareTarjeta).not.toHaveBeenCalled();
+    });
+
+    it('la cancelación de shareTarjeta no muestra ningún toast de error', async () => {
+      mockShareTarjeta.mockResolvedValue(undefined); // shareTarjeta resuelve en silencio al cancelar
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
+
+    it('trackea share_tarjeta con momento cerrada', async () => {
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() =>
+        expect(mockTrack).toHaveBeenCalledWith('share_tarjeta', { momento: 'cerrada' }),
+      );
+    });
+
+    it('sin inviteUrl cargado todavía, no renderiza ni comparte nada (no crashea)', async () => {
+      mockInvite = undefined;
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      // Da tiempo a cualquier microtask pendiente antes de comprobar que no pasó nada.
+      await Promise.resolve();
+      expect(mockRenderTarjetaCerrada).not.toHaveBeenCalled();
+      expect(mockShareTarjeta).not.toHaveBeenCalled();
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
   });
 });

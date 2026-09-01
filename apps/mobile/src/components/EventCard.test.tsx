@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventCard } from './EventCard';
 import type { Event } from '../services/events';
@@ -18,6 +18,33 @@ vi.mock('../stores/auth', () => ({
   useAuthStore: vi.fn((selector: (s: { user: { id: string } }) => unknown) =>
     selector({ user: { id: mockUserId } }),
   ),
+}));
+
+// Invite link the shareable card links back to — mutable per test via `mockInvite`.
+let mockInvite: { inviteUrl: string } | undefined;
+vi.mock('../hooks/useGroups', () => ({
+  useGroupInvite: () => ({ data: mockInvite }),
+}));
+
+const mockShowError = vi.fn();
+const mockShowInfo = vi.fn();
+vi.mock('../hooks/useToast', () => ({
+  useToast: () => ({ showError: mockShowError, showSuccess: vi.fn(), showInfo: mockShowInfo }),
+}));
+
+const mockTrack = vi.fn();
+vi.mock('../hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
+
+const mockRenderTarjetaSellada = vi.fn();
+vi.mock('../lib/tarjeta', () => ({
+  renderTarjetaSellada: (...args: unknown[]) => mockRenderTarjetaSellada(...args),
+}));
+
+const mockShareTarjeta = vi.fn();
+vi.mock('../lib/share-tarjeta', () => ({
+  shareTarjeta: (...args: unknown[]) => mockShareTarjeta(...args),
 }));
 
 // Mock react-i18next locally (overrides the global setup.ts mock for this file) so we can
@@ -46,6 +73,7 @@ vi.mock('react-icons/hi2', () => ({
   HiOutlinePencil: () => <span data-testid="icon-pencil" />,
   HiOutlineVideoCamera: () => <span data-testid="icon-video" />,
   HiOutlineArrowDownTray: () => <span data-testid="icon-download" />,
+  HiOutlineShare: () => <span data-testid="icon-share" />,
 }));
 
 // Mock ics-utils
@@ -106,6 +134,9 @@ describe('EventCard', () => {
   beforeEach(() => {
     mockUserId = CURRENT_USER_ID;
     vi.clearAllMocks();
+    mockInvite = { inviteUrl: 'https://quedamos.app/i/ABC123' };
+    mockRenderTarjetaSellada.mockReset().mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
+    mockShareTarjeta.mockReset().mockResolvedValue(undefined);
   });
 
   // --- Test 1: Invited user with pending status sees confirm/decline buttons ---
@@ -341,6 +372,120 @@ describe('EventCard', () => {
       render(<EventCard event={event} {...defaultProps} />);
 
       expect(screen.getByText('Retiro Park')).toBeInTheDocument();
+    });
+  });
+
+  describe('compartir la tarjeta sellada', () => {
+    it('muestra el botón Compartir solo cuando el evento está confirmado', () => {
+      const confirmedEvent = createEvent({ status: 'confirmed' });
+      const { rerender } = render(<EventCard event={confirmedEvent} {...defaultProps} />);
+      expect(screen.getByRole('button', { name: 'group.share' })).toBeInTheDocument();
+
+      const pendingEvent = createEvent({ status: 'pending' });
+      rerender(<EventCard event={pendingEvent} {...defaultProps} />);
+      expect(screen.queryByRole('button', { name: 'group.share' })).not.toBeInTheDocument();
+    });
+
+    it('al pulsar Compartir renderiza la tarjeta sellada y la comparte con el blob y el inviteUrl', async () => {
+      const blob = new Blob(['png'], { type: 'image/png' });
+      mockRenderTarjetaSellada.mockResolvedValue(blob);
+      const event = createEvent({ status: 'confirmed', title: 'Cena en el centro' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
+      const call = mockShareTarjeta.mock.calls[0][0];
+      expect(call.blob).toBe(blob);
+      expect(call.inviteUrl).toBe('https://quedamos.app/i/ABC123');
+      expect(call.filename).toBe('quedamos-tarjeta.png');
+      expect(call.showInfo).toBe(mockShowInfo);
+
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.plan).toBe('Cena en el centro');
+      // Sin adjuntos confirmados en el evento, cae al grupo entero (fallback de seguridad).
+      expect(opts.memberColors).toEqual(['#60A5FA', '#F59E0B', '#34D399']);
+    });
+
+    it('la tarjeta sellada solo pinta a quienes confirmaron asistencia, en orden de slot', async () => {
+      const event = createEvent({
+        status: 'confirmed',
+        attendees: [
+          createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'),
+          createAttendee(CREATOR_ID, 'confirmed', 'Creator'),
+          createAttendee(OTHER_USER_ID, 'declined', 'Misa'),
+        ],
+      });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      // CURRENT_USER_ID y CREATOR_ID confirmaron; OTHER_USER_ID rechazó y queda fuera.
+      // El orden sigue siendo el de slot de memberColorMap, no el de attendees.
+      expect(opts.memberColors).toEqual(['#60A5FA', '#34D399']);
+    });
+
+    it('interpola share.tarjetaSellada con el título y la fecha/hora reales del evento', async () => {
+      const event = createEvent({ status: 'confirmed', title: 'Cena en el centro' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() =>
+        expect(mockT).toHaveBeenCalledWith(
+          'share.tarjetaSellada',
+          expect.objectContaining({ titulo: 'Cena en el centro' }),
+        ),
+      );
+    });
+
+    it('fallo del renderer muestra el toast errors.shareTarjetaFailed, sin lanzar', async () => {
+      mockRenderTarjetaSellada.mockRejectedValue(new Error('boom'));
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.shareTarjetaFailed'));
+      expect(mockShareTarjeta).not.toHaveBeenCalled();
+    });
+
+    it('la cancelación de shareTarjeta no muestra ningún toast de error', async () => {
+      mockShareTarjeta.mockResolvedValue(undefined); // shareTarjeta resuelve en silencio al cancelar
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
+
+    it('trackea share_tarjeta con momento sellada', async () => {
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() =>
+        expect(mockTrack).toHaveBeenCalledWith('share_tarjeta', { momento: 'sellada' }),
+      );
+    });
+
+    it('sin inviteUrl cargado todavía, no renderiza ni comparte nada (no crashea)', async () => {
+      mockInvite = undefined;
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      // Da tiempo a cualquier microtask pendiente antes de comprobar que no pasó nada.
+      await Promise.resolve();
+      expect(mockRenderTarjetaSellada).not.toHaveBeenCalled();
+      expect(mockShareTarjeta).not.toHaveBeenCalled();
+      expect(mockShowError).not.toHaveBeenCalled();
     });
   });
 });

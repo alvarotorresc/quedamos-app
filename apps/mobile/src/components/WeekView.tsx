@@ -4,6 +4,13 @@ import { getWeekDays, formatDateKey, isSameDay } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
 import { Aro, type AroMember } from '../ui/Aro';
 import { Button } from '../ui/Button';
+import { useGroupInvite } from '../hooks/useGroups';
+import { useToast } from '../hooks/useToast';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { useThemeStore } from '../stores/theme';
+import { runWithErrorToast } from '../lib/mutation-utils';
+import { renderTarjetaCerrada } from '../lib/tarjeta';
+import { shareTarjeta } from '../lib/share-tarjeta';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
 import type { Event } from '../services/events';
@@ -26,6 +33,8 @@ interface WeekViewProps {
   eventsByDate?: Map<string, Event[]>;
   onEventClick?: (event: Event) => void;
   onAskGroup?: (day: Date) => void;
+  /** Group id — used to fetch the invite link the shared aro card includes. */
+  groupId: string;
 }
 
 export function WeekView({
@@ -44,16 +53,63 @@ export function WeekView({
   eventsByDate,
   onEventClick,
   onAskGroup,
+  groupId,
 }: WeekViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
   const week = getWeekDays(new Date(), weekOffset);
   const todayKey = formatDateKey(new Date());
+  const { data: invite } = useGroupInvite(groupId);
+  const darkMode = useThemeStore((s) => s.darkMode);
+  const { showError, showInfo } = useToast();
+  const { track } = useAnalytics();
 
   const monthLabel = week[0].toLocaleDateString(locale, {
     month: 'long',
     year: 'numeric',
   });
+
+  const handleShareBestDay = async (day: Date) => {
+    if (!invite?.inviteUrl) return;
+    const weekdayLabel = day.toLocaleDateString(locale, { weekday: 'long' });
+    const dayNumber = String(day.getDate());
+    const theme: 'dia' | 'noche' = darkMode ? 'noche' : 'dia';
+
+    await runWithErrorToast(
+      async () => {
+        const blob = await renderTarjetaCerrada({
+          weekdayLabel,
+          dayNumber,
+          titulo: t('calendar.bestDayQuestion', { weekday: weekdayLabel }),
+          subtitulo: t('calendar.allCan', { count: totalMembers }),
+          memberColors: [...memberColorMap.values()],
+          theme,
+          marca: t('landing.brand'),
+        });
+        // share.tarjetaCerrada's ES copy ("Podéis {{count}} el {{fecha}}.")
+        // wants the same "los N" phrase the app already uses in
+        // calendar.allCan ("Podéis los {{count}}") — a bare number there
+        // reads as "Podéis 2", which isn't Spanish. EN keeps the headcount
+        // as-is ("{{count}} of you are free…"). Branch on locale until a
+        // copy pass unifies the two strings.
+        const count = i18n.language === 'es' ? `los ${totalMembers}` : totalMembers;
+        const texto = t('share.tarjetaCerrada', {
+          count,
+          fecha: `${weekdayLabel} ${dayNumber}`,
+        });
+        await shareTarjeta({
+          blob,
+          texto,
+          inviteUrl: invite.inviteUrl,
+          filename: 'quedamos-tarjeta.png',
+          showInfo,
+        });
+        track('share_tarjeta', { momento: 'cerrada' });
+      },
+      showError,
+      { errorKey: 'errors.shareTarjetaFailed' },
+    );
+  };
 
   return (
     <div>
@@ -148,6 +204,15 @@ export function WeekView({
                   className="flex-1 border border-strong text-on-primary rounded-pill py-3 text-sm font-semibold"
                 >
                   {t('calendar.editAvailability')}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShareBestDay(day);
+                  }}
+                  className="border border-strong text-on-primary rounded-pill py-3 px-4 text-sm font-semibold"
+                >
+                  {t('group.share')}
                 </button>
               </div>
             </div>

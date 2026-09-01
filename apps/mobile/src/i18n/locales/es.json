@@ -570,6 +570,7 @@
     "deleteGroupFailed": "No se pudo eliminar el grupo",
     "copyFailed": "No se pudo copiar el código",
     "answerPollFailed": "No se pudo guardar tu respuesta",
-    "respondEventFailed": "No se pudo guardar tu asistencia"
+    "respondEventFailed": "No se pudo guardar tu asistencia",
+    "shareTarjetaFailed": "No se pudo crear la tarjeta"
   }
 }
