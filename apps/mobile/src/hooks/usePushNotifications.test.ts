@@ -286,4 +286,65 @@ describe('usePushNotifications', () => {
       expect(removeSpy).toHaveBeenCalledWith('visibilitychange', expect.any(Function));
     });
   });
+
+  describe('effect deps keyed on user id (not the User object)', () => {
+    it('does not re-register when the user object changes but the id stays the same', async () => {
+      vi.mocked(registerForPush).mockResolvedValue({ token: 'token-x', cleanup: vi.fn() });
+      vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: { id: 'user-1' } }));
+
+      const { rerender } = renderHook(() => usePushNotifications());
+      await waitFor(() => expect(registerForPush).toHaveBeenCalledTimes(1));
+
+      // Simulate a profile edit (e.g. updateName/updateTimeSlots): same id, a new
+      // object reference for `user`.
+      vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: { id: 'user-1' } }));
+      rerender();
+
+      await flushMicrotasks();
+      expect(registerForPush).toHaveBeenCalledTimes(1);
+    });
+
+    it('re-registers when the user id actually changes', async () => {
+      vi.mocked(registerForPush).mockResolvedValue({ token: 'token-x', cleanup: vi.fn() });
+      vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: { id: 'user-1' } }));
+
+      const { rerender } = renderHook(() => usePushNotifications());
+      await waitFor(() => expect(registerForPush).toHaveBeenCalledTimes(1));
+
+      vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: { id: 'user-2' } }));
+      rerender();
+
+      await waitFor(() => expect(registerForPush).toHaveBeenCalledTimes(2));
+    });
+  });
+
+  describe('resets the last-sent-token memory on logout (web)', () => {
+    beforeEach(() => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+    });
+
+    it('resends a token that looks unchanged to the backend for the next signed-in user after a logout', async () => {
+      vi.stubGlobal('Notification', { permission: 'granted' });
+      vi.mocked(registerForPush).mockResolvedValue({ token: 'shared-device-token', cleanup: vi.fn() });
+      vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: { id: 'user-1' } }));
+
+      const { rerender } = renderHook(() => usePushNotifications());
+      await waitFor(() => expect(sendTokenToBackend).toHaveBeenCalledTimes(1));
+
+      // Logout: the effect cleans up and, per the fix, clears lastSentTokenRef so it
+      // doesn't leak into the next signed-in user's session.
+      vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: undefined }));
+      rerender();
+      await flushMicrotasks();
+
+      // A different user signs in on the same browser/device. FCM tokens are
+      // per-installation, not per-user, so it's plausible the resolved token is the
+      // literal same string as before.
+      vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: { id: 'user-2' } }));
+      rerender();
+
+      await waitFor(() => expect(sendTokenToBackend).toHaveBeenCalledTimes(2));
+      expect(sendTokenToBackend).toHaveBeenLastCalledWith('shared-device-token');
+    });
+  });
 });

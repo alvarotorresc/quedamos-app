@@ -10,7 +10,10 @@ import {
 } from '../lib/push-notifications';
 
 export function usePushNotifications() {
-  const user = useAuthStore((s) => s.user);
+  // Keyed on the id, not the User object, so profile edits (name, time-slot
+  // preferences, ...) that produce a new object reference for the same logged-in user
+  // don't tear down and re-register push on every save.
+  const userId = useAuthStore((s) => s.user?.id);
   const cleanupRef = useRef<(() => void) | null>(null);
   // Web has no onTokenRefresh in the modular Firebase SDK, so re-obtaining the token on
   // resume is the only way to detect rotation there. Tracked across resumes (not reset
@@ -18,7 +21,14 @@ export function usePushNotifications() {
   const lastSentTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!userId) {
+      // Logging out (or switching to a signed-out state) invalidates any token we
+      // previously sent — without this, a different user signing in on the same
+      // browser session could get silently skipped as "already sent" if their
+      // device happens to resolve the same web push token.
+      lastSentTokenRef.current = null;
+      return;
+    }
 
     // `cancelled`/`inFlight` are closures local to THIS effect invocation on purpose,
     // not refs: React StrictMode double-invokes this effect (mount -> cleanup -> mount)
@@ -78,11 +88,19 @@ export function usePushNotifications() {
     let removeResumeListener: (() => void) | null = null;
 
     if (isNative) {
+      // Catch attached immediately (not deferred inside removeResumeListener) so a
+      // rejected addListener() call can never surface as an unhandled promise
+      // rejection, regardless of whether this effect ever reaches cleanup.
       const listenerPromise = CapApp.addListener('appStateChange', ({ isActive }) => {
         if (isActive) void register();
+      }).catch((err) => {
+        if (import.meta.env.DEV) {
+          console.error('[Push] Failed to attach appStateChange listener:', err);
+        }
+        return null;
       });
       removeResumeListener = () => {
-        void listenerPromise.then((handle) => handle.remove());
+        void listenerPromise.then((handle) => handle?.remove());
       };
     } else {
       const onVisibilityChange = () => {
@@ -108,5 +126,5 @@ export function usePushNotifications() {
       cleanupRef.current = null;
       removeResumeListener?.();
     };
-  }, [user]);
+  }, [userId]);
 }
