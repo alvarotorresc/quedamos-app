@@ -40,6 +40,14 @@ export function Proceso(): JSX.Element {
 
   return (
     <section className="flex flex-col justify-center gap-14 px-6 lg:px-[110px] py-24">
+      {/*
+        El hueco (estado off) de Sondear se apoya en la traza que Aro.tsx
+        pinta siempre en var(--app-border) — muy sutil (alpha .12 en oscuro)
+        sobre el bg-bg normal de este nodo, y en la práctica se confunde con
+        el nodo 02 (cerrado). Se sube solo aquí a border-strong (alpha .32),
+        sin tocar Aro.tsx (que sí debe quedarse sutil en el resto de la app).
+      */}
+      <style>{`.proceso-sondear-trace { --app-border: var(--app-border-strong); }`}</style>
       <h2 className="font-extrabold text-[46px] tracking-[-0.025em] text-text">
         {t('landing2.proceso.title')}
       </h2>
@@ -70,7 +78,9 @@ export function Proceso(): JSX.Element {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: motionSafe ? i * 0.1 : 0 }}
             >
-              <div className="flex items-center justify-center w-[116px] h-[116px] rounded-pill bg-bg border border-subtle">
+              <div
+                className={`flex items-center justify-center w-[116px] h-[116px] rounded-pill bg-bg border border-subtle ${key === 'sondear' ? 'proceso-sondear-trace' : ''}`}
+              >
                 <Aro members={members} size={96}>
                   {check ? <CheckMark /> : undefined}
                 </Aro>
