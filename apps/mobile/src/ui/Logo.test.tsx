@@ -3,15 +3,20 @@ import { describe, it, expect } from 'vitest';
 import { Logo } from './Logo';
 import { aroArc } from '../lib/aro-geometry';
 
+const EXPECTED_ROTATIONS = ['rotate(-110.55)', 'rotate(-50.55)', 'rotate(9.45)', 'rotate(129.45)', 'rotate(189.45)'];
+
 describe('Logo', () => {
-  it('pinta 5 arcos de miembro con dasharray + el punto del sexto color', () => {
+  it('pinta 5 arcos de miembro con el dasharray y el rotate exactos del aro (slots 0,1,2,4,5) + el punto del sexto color', () => {
     const { container } = render(<Logo />);
     const circles = container.querySelectorAll('circle');
     expect(circles).toHaveLength(6);
     const arcs = [...circles].slice(0, 5);
     arcs.forEach((c) => {
-      expect(c.getAttribute('stroke-dasharray')).toBeTruthy();
+      expect(c.getAttribute('stroke-dasharray')).toBe('71.72 556.60');
     });
+    // Pin the rotate() in DOM order: reordering MEMBER_SLOTS would swap which
+    // color lands in which clock position without failing any other test.
+    expect(arcs.map((c) => c.getAttribute('transform'))).toEqual(EXPECTED_ROTATIONS);
     const dot = circles[5];
     expect(dot.getAttribute('cx')).toBe('0');
     expect(dot.getAttribute('cy')).toBe('106');
@@ -58,7 +63,9 @@ describe('Logo', () => {
 });
 
 describe('geometría aprobada del lienzo (anclaje)', () => {
-  it("aroArc(6, 0, 100, { strokeWidth: 20 }).dasharray === '71.72 556.60'", () => {
-    expect(aroArc(6, 0, 100, { strokeWidth: 20 }).dasharray).toBe('71.72 556.60');
+  it("aroArc(6, 0, 100, { strokeWidth: 20 }) === { dasharray: '71.72 556.60', rotate: -110.55 }", () => {
+    const { dasharray, rotate } = aroArc(6, 0, 100, { strokeWidth: 20 });
+    expect(dasharray).toBe('71.72 556.60');
+    expect(rotate).toBeCloseTo(-110.55, 2);
   });
 });
