@@ -541,10 +541,37 @@ describe('push-notifications', () => {
 
   describe('setupWebForegroundHandler', () => {
     // IMPORTANT: The module-level `webForegroundSetup` flag persists across
-    // tests within the same module instance. Tests are ordered carefully:
+    // tests within the same module instance (there is no reset export for it,
+    // unlike resetNativePushSetup). Tests are ordered carefully:
     // 1. Native platform test (does not set the flag)
-    // 2. Full web test (sets the flag, verifies getFirebaseMessaging + onMessage)
+    // 2. Full web test (sets the flag, verifies getFirebaseMessaging + onMessage,
+    //    and captures the registered onMessage callback into
+    //    `capturedOnMessageCallback` for reuse below — the flag being permanently
+    //    set means onMessage is only ever registered once for this module instance)
+    // 2a-2c. Payload-handling tests that invoke the captured callback directly with
+    //    different payload shapes (data-first read + fallback to `notification`)
     // 3. Idempotency test (verifies the flag prevents a second setup)
+
+    type ForegroundPayload = {
+      notification?: { title?: string; body?: string };
+      data?: Record<string, string>;
+    };
+    let capturedOnMessageCallback: ((payload: ForegroundPayload) => void) | null = null;
+    let notificationCtor: ReturnType<typeof vi.fn>;
+
+    function stubNotificationApi(): void {
+      notificationCtor = vi.fn().mockImplementation(function (
+        this: { onclick: (() => void) | null; close: () => void },
+      ) {
+        this.onclick = null;
+        this.close = vi.fn();
+      });
+      Object.defineProperty(notificationCtor, 'permission', {
+        value: 'granted',
+        configurable: true,
+      });
+      vi.stubGlobal('Notification', notificationCtor);
+    }
 
     it('should not set up handler on native platform', () => {
       vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
@@ -570,6 +597,60 @@ describe('push-notifications', () => {
           expect.any(Function),
         );
       });
+
+      // Capture the registered callback for the payload-handling tests below — the
+      // webForegroundSetup flag makes onMessage a one-time registration for this
+      // module instance, so later tests reuse this same function reference instead
+      // of trying to trigger a fresh setupWebForegroundHandler() call.
+      const call = vi.mocked(onMessage).mock.calls[0];
+      capturedOnMessageCallback = call[1] as (payload: ForegroundPayload) => void;
+    });
+
+    it('should show a notification using title/body from payload.data when notification is absent', () => {
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+
+      capturedOnMessageCallback({
+        data: { type: 'new_event', title: 'From data', body: 'Data body', eventId: 'e-1' },
+      });
+
+      expect(notificationCtor).toHaveBeenCalledWith(
+        'From data',
+        expect.objectContaining({ body: 'Data body', icon: '/logo.png' }),
+      );
+    });
+
+    it('should prefer payload.data over payload.notification when both are present', () => {
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+
+      capturedOnMessageCallback({
+        notification: { title: 'From notification', body: 'Notification body' },
+        data: { type: 'new_event', title: 'From data', body: 'Data body' },
+      });
+
+      expect(notificationCtor).toHaveBeenCalledWith(
+        'From data',
+        expect.objectContaining({ body: 'Data body' }),
+      );
+    });
+
+    it('should fall back to payload.notification when payload.data has no title/body', () => {
+      // Resilience during rollout: an old backend still sends `notification` with no
+      // title/body inside `data`. This case already worked before this change too — it
+      // guards the deploy-window fallback rather than reproducing the duplicate-push bug.
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+
+      capturedOnMessageCallback({
+        notification: { title: 'From notification', body: 'Notification body' },
+        data: { type: 'new_event' },
+      });
+
+      expect(notificationCtor).toHaveBeenCalledWith(
+        'From notification',
+        expect.objectContaining({ body: 'Notification body' }),
+      );
     });
 
     it('should be idempotent - calling twice only sets up once', () => {
