@@ -58,7 +58,7 @@ describe('shareTarjeta', () => {
     const { Filesystem } = await import('@capacitor/filesystem');
     const { Share } = await import('@capacitor/share');
 
-    await shareTarjeta(baseOpts());
+    const result = await shareTarjeta(baseOpts());
 
     expect(Filesystem.writeFile).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -75,6 +75,7 @@ describe('shareTarjeta', () => {
         url: 'file:///cache/tarjeta.png',
       }),
     );
+    expect(result).toEqual({ shared: true });
   });
 
   it('web with file-share support: calls navigator.share with a File named per filename', async () => {
@@ -86,7 +87,7 @@ describe('shareTarjeta', () => {
     Object.defineProperty(navigator, 'canShare', { value: canShare, configurable: true });
     Object.defineProperty(navigator, 'share', { value: share, configurable: true });
 
-    await shareTarjeta(baseOpts());
+    const result = await shareTarjeta(baseOpts());
 
     expect(canShare).toHaveBeenCalled();
     expect(share).toHaveBeenCalledTimes(1);
@@ -95,6 +96,7 @@ describe('shareTarjeta', () => {
     expect(call.files[0].name).toBe('quedamos-tarjeta.png');
     expect(call.files[0].type).toBe('image/png');
     expect(call.url).toBe('https://quedamos.app/i/ABC123');
+    expect(result).toEqual({ shared: true });
   });
 
   it('web without file-share support: downloads via anchor, copies the inviteUrl and shows a confirmation toast', async () => {
@@ -119,7 +121,7 @@ describe('shareTarjeta', () => {
 
     const showInfo = vi.fn();
 
-    await shareTarjeta(baseOpts({ showInfo }));
+    const result = await shareTarjeta(baseOpts({ showInfo }));
 
     expect(createElementSpy).toHaveBeenCalledWith('a');
     expect(clickSpy).toHaveBeenCalled();
@@ -128,6 +130,7 @@ describe('shareTarjeta', () => {
     expect(revokeUrlSpy).toHaveBeenCalled();
     expect(writeText).toHaveBeenCalledWith('https://quedamos.app/i/ABC123');
     expect(showInfo).toHaveBeenCalledWith(expect.any(String));
+    expect(result).toEqual({ shared: true });
 
     createElementSpy.mockRestore();
     appendSpy.mockRestore();
@@ -142,7 +145,7 @@ describe('shareTarjeta', () => {
 
     const showInfo = vi.fn();
 
-    await expect(shareTarjeta(baseOpts({ showInfo }))).resolves.toBeUndefined();
+    await expect(shareTarjeta(baseOpts({ showInfo }))).resolves.toEqual({ shared: false });
     expect(showInfo).not.toHaveBeenCalled();
   });
 
@@ -156,7 +159,7 @@ describe('shareTarjeta', () => {
 
     const showInfo = vi.fn();
 
-    await expect(shareTarjeta(baseOpts({ showInfo }))).resolves.toBeUndefined();
+    await expect(shareTarjeta(baseOpts({ showInfo }))).resolves.toEqual({ shared: false });
     expect(showInfo).not.toHaveBeenCalled();
   });
 

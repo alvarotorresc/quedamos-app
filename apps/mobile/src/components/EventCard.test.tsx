@@ -136,7 +136,7 @@ describe('EventCard', () => {
     vi.clearAllMocks();
     mockInvite = { inviteUrl: 'https://quedamos.app/i/ABC123' };
     mockRenderTarjetaSellada.mockReset().mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
-    mockShareTarjeta.mockReset().mockResolvedValue(undefined);
+    mockShareTarjeta.mockReset().mockResolvedValue({ shared: true });
   });
 
   // --- Test 1: Invited user with pending status sees confirm/decline buttons ---
@@ -463,8 +463,8 @@ describe('EventCard', () => {
       expect(mockShareTarjeta).not.toHaveBeenCalled();
     });
 
-    it('la cancelación de shareTarjeta no muestra ningún toast de error', async () => {
-      mockShareTarjeta.mockResolvedValue(undefined); // shareTarjeta resuelve en silencio al cancelar
+    it('la cancelación de shareTarjeta no muestra ningún toast de error ni trackea', async () => {
+      mockShareTarjeta.mockResolvedValue({ shared: false }); // shareTarjeta resuelve { shared: false } al cancelar
       const event = createEvent({ status: 'confirmed' });
 
       render(<EventCard event={event} {...defaultProps} />);
@@ -472,9 +472,11 @@ describe('EventCard', () => {
 
       await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
       expect(mockShowError).not.toHaveBeenCalled();
+      expect(mockTrack).not.toHaveBeenCalled();
     });
 
-    it('trackea share_tarjeta con momento sellada', async () => {
+    it('trackea share_tarjeta con momento sellada cuando shareTarjeta resuelve shared: true', async () => {
+      mockShareTarjeta.mockResolvedValue({ shared: true });
       const event = createEvent({ status: 'confirmed' });
 
       render(<EventCard event={event} {...defaultProps} />);

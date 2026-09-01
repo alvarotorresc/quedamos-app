@@ -150,14 +150,16 @@ export function EventCard({
           marca: t('landing.brand'),
         });
         const texto = t('share.tarjetaSellada', { titulo: event.title, fechaHora });
-        await shareTarjeta({
+        const { shared } = await shareTarjeta({
           blob,
           texto,
           inviteUrl: invite.inviteUrl,
           filename: 'quedamos-tarjeta.png',
           showInfo,
         });
-        track('share_tarjeta', { momento: 'sellada' });
+        if (shared) {
+          track('share_tarjeta', { momento: 'sellada' });
+        }
       },
       showError,
       { errorKey: 'errors.shareTarjetaFailed' },

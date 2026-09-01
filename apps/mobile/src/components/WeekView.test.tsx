@@ -67,7 +67,7 @@ describe('WeekView rediseñada', () => {
   beforeEach(() => {
     mockInvite = { inviteUrl: 'https://quedamos.app/i/ABC123' };
     mockRenderTarjetaCerrada.mockReset().mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
-    mockShareTarjeta.mockReset().mockResolvedValue(undefined);
+    mockShareTarjeta.mockReset().mockResolvedValue({ shared: true });
     mockShowError.mockReset();
     mockShowInfo.mockReset();
     mockTrack.mockReset();
@@ -210,17 +210,19 @@ describe('WeekView rediseñada', () => {
       expect(mockShareTarjeta).not.toHaveBeenCalled();
     });
 
-    it('la cancelación de shareTarjeta no muestra ningún toast de error', async () => {
-      mockShareTarjeta.mockResolvedValue(undefined); // shareTarjeta resuelve en silencio al cancelar
+    it('la cancelación de shareTarjeta no muestra ningún toast de error ni trackea', async () => {
+      mockShareTarjeta.mockResolvedValue({ shared: false }); // shareTarjeta resuelve { shared: false } al cancelar
       render(<WeekView {...buildProps()} />);
 
       fireEvent.click(screen.getByText('group.share'));
 
       await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
       expect(mockShowError).not.toHaveBeenCalled();
+      expect(mockTrack).not.toHaveBeenCalled();
     });
 
-    it('trackea share_tarjeta con momento cerrada', async () => {
+    it('trackea share_tarjeta con momento cerrada cuando shareTarjeta resuelve shared: true', async () => {
+      mockShareTarjeta.mockResolvedValue({ shared: true });
       render(<WeekView {...buildProps()} />);
 
       fireEvent.click(screen.getByText('group.share'));

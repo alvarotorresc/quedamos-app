@@ -89,14 +89,16 @@ export function WeekView({
         const texto = t('share.tarjetaCerrada', {
           fecha: `${weekdayLabel} ${dayNumber}`,
         });
-        await shareTarjeta({
+        const { shared } = await shareTarjeta({
           blob,
           texto,
           inviteUrl: invite.inviteUrl,
           filename: 'quedamos-tarjeta.png',
           showInfo,
         });
-        track('share_tarjeta', { momento: 'cerrada' });
+        if (shared) {
+          track('share_tarjeta', { momento: 'cerrada' });
+        }
       },
       showError,
       { errorKey: 'errors.shareTarjetaFailed' },

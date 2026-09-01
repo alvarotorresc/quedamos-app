@@ -54,7 +54,7 @@ function downloadBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(objectUrl);
 }
 
-async function shareNative(opts: ShareTarjetaOpts): Promise<void> {
+async function shareNative(opts: ShareTarjetaOpts): Promise<{ shared: boolean }> {
   const { blob, texto, inviteUrl, filename } = opts;
 
   // Share requires a real file URI, not a data URL — write to cache first.
@@ -72,12 +72,13 @@ async function shareNative(opts: ShareTarjetaOpts): Promise<void> {
       url: result.uri,
     });
   } catch (error) {
-    if (isShareCancel(error)) return;
+    if (isShareCancel(error)) return { shared: false };
     throw error;
   }
+  return { shared: true };
 }
 
-async function shareWeb(opts: ShareTarjetaOpts): Promise<void> {
+async function shareWeb(opts: ShareTarjetaOpts): Promise<{ shared: boolean }> {
   const { blob, texto, inviteUrl, filename, showInfo } = opts;
   const file = new File([blob], filename, { type: 'image/png' });
 
@@ -85,21 +86,21 @@ async function shareWeb(opts: ShareTarjetaOpts): Promise<void> {
     try {
       await navigator.share({ files: [file], text: texto, url: inviteUrl });
     } catch (error) {
-      if (isShareCancel(error)) return;
+      if (isShareCancel(error)) return { shared: false };
       throw error;
     }
-    return;
+    return { shared: true };
   }
 
   downloadBlob(blob, filename);
   await navigator.clipboard.writeText(inviteUrl);
   showInfo?.('share.linkCopied');
+  return { shared: true };
 }
 
-export async function shareTarjeta(opts: ShareTarjetaOpts): Promise<void> {
+export async function shareTarjeta(opts: ShareTarjetaOpts): Promise<{ shared: boolean }> {
   if (Capacitor.isNativePlatform()) {
-    await shareNative(opts);
-    return;
+    return shareNative(opts);
   }
-  await shareWeb(opts);
+  return shareWeb(opts);
 }
