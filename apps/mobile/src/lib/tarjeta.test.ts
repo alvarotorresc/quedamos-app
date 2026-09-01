@@ -253,6 +253,42 @@ describe('pie de la tarjeta (inviteUrl)', () => {
   });
 });
 
+describe('mini aro de marca (header)', () => {
+  it('centra el mini aro en su caja de icono (64+26, 52+26), no en el radio del aro', async () => {
+    await renderTarjetaCerrada(baseCerradaOpts);
+    // La caja del icono mide 52×52 desde (64, 52): su mitad es 26, no BRAND_RADIUS (32).
+    expect(mockCtx.translate.mock.calls).toContainEqual([90, 78]);
+  });
+});
+
+describe('peso de fuente mono (weekdayLabel/fechaHora)', () => {
+  it('usa peso 400, no 500, en el weekday label de la tarjeta cerrada', async () => {
+    const fonts: string[] = [];
+    Object.defineProperty(mockCtx, 'font', {
+      get: () => fonts[fonts.length - 1] ?? '',
+      set: (v: string) => {
+        fonts.push(v);
+      },
+    });
+    await renderTarjetaCerrada(baseCerradaOpts);
+    expect(fonts.some((f) => f.startsWith('400 24px') && f.includes('Geist Mono'))).toBe(true);
+    expect(fonts.some((f) => f.startsWith('500') && f.includes('Geist Mono'))).toBe(false);
+  });
+
+  it('usa peso 400, no 500, en el fechaHora de la tarjeta sellada', async () => {
+    const fonts: string[] = [];
+    Object.defineProperty(mockCtx, 'font', {
+      get: () => fonts[fonts.length - 1] ?? '',
+      set: (v: string) => {
+        fonts.push(v);
+      },
+    });
+    await renderTarjetaSellada(baseSelladaOpts);
+    expect(fonts.some((f) => f.startsWith('400 28px') && f.includes('Geist Mono'))).toBe(true);
+    expect(fonts.some((f) => f.startsWith('500') && f.includes('Geist Mono'))).toBe(false);
+  });
+});
+
 describe('getContext nulo', () => {
   it('lanza un error explícito si el canvas no da contexto 2D', async () => {
     getContextSpy.mockReturnValue(null);
