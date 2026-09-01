@@ -92,4 +92,28 @@ describe('useCitySearch', () => {
 
     expect(result.current).toEqual([]);
   });
+
+  it('clears results when searchCities rejects, without an unhandled rejection', async () => {
+    vi.mocked(searchCities)
+      .mockResolvedValueOnce([
+        { name: 'Madrid', latitude: 40.4, longitude: -3.7, country: 'Spain' },
+      ])
+      .mockRejectedValueOnce(new Error('offline'));
+
+    const { result, rerender } = renderHook(({ q }) => useCitySearch(q), {
+      initialProps: { q: 'Mad' },
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300); // resolves with Madrid
+    });
+    expect(result.current).toHaveLength(1);
+
+    rerender({ q: 'Mal' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(300); // rejects
+    });
+
+    // Old code left an unhandled rejection here and never cleared stale results.
+    expect(result.current).toEqual([]);
+  });
 });

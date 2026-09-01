@@ -16,9 +16,14 @@ export function useCitySearch(query: string, minChars = 2, delay = 300): Geocodi
       return;
     }
     const seq = ++seqRef.current;
-    const handle = setTimeout(async () => {
-      const found = await searchCities(query);
-      if (seq === seqRef.current) setResults(found);
+    const handle = setTimeout(() => {
+      searchCities(query)
+        .then((found) => {
+          if (seq === seqRef.current) setResults(found);
+        })
+        .catch(() => {
+          if (seq === seqRef.current) setResults([]);
+        });
     }, delay);
     return () => clearTimeout(handle);
   }, [query, minChars, delay]);
