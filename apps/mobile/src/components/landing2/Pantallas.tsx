@@ -106,7 +106,8 @@ export function Pantallas(): JSX.Element {
         <h2 className="font-extrabold text-[56px] leading-tight tracking-[-0.03em] text-text">
           {t('landing2.pantallas.title')}
         </h2>
-        <p className="text-lg text-text-muted max-w-[560px]">{t('landing2.pantallas.subtitle')}</p>
+        {/* max-w-[600px] (subido de 560): a 560 el EN deja "app." huérfano en su propia línea. */}
+        <p className="text-lg text-text-muted max-w-[600px]">{t('landing2.pantallas.subtitle')}</p>
       </div>
 
       <div className="flex flex-wrap items-start justify-center gap-0">
