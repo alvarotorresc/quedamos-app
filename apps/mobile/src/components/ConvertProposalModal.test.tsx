@@ -62,12 +62,16 @@ describe('ConvertProposalModal errors', () => {
 describe('ConvertProposalModal — fecha mínima en local, no UTC', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllEnvs();
   });
 
   it('con la hora del sistema pasada la medianoche UTC, el mínimo del selector de fecha es el día local, no el día UTC', () => {
-    // 2026-03-01T23:30:00Z es ya 2026-03-02 en Europe/Madrid (UTC+1 en marzo, antes del
-    // cambio de horario). El bug usaba toISOString() (UTC), que se habría quedado en
-    // 2026-03-01.
+    // Fijamos TZ explícitamente en vez de depender del huso horario ambiente del runner:
+    // CI corre en ubuntu-latest (TZ=UTC), donde la fecha ISO y la fecha local coinciden y
+    // este test pasaría sin ejercitar el bug. Europe/Madrid está en UTC+1 en marzo (antes
+    // del cambio de horario), así que 2026-03-01T23:30:00Z ya es 2026-03-02 en local. El
+    // bug usaba toISOString() (siempre UTC), que se habría quedado en 2026-03-01.
+    vi.stubEnv('TZ', 'Europe/Madrid');
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-01T23:30:00Z'));
 
