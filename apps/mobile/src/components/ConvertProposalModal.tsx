@@ -5,6 +5,8 @@ import { HiOutlineVideoCamera } from 'react-icons/hi2';
 import { useConvertProposal } from '../hooks/useProposals';
 import { Button } from '../ui/Button';
 import type { Proposal } from '../services/proposals';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 
 interface ConvertProposalModalProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ export function ConvertProposalModal({
 }: ConvertProposalModalProps) {
   const { t } = useTranslation();
   const convertProposal = useConvertProposal(groupId);
+  const { showError } = useToast();
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -40,15 +43,15 @@ export function ConvertProposalModal({
 
   const handleSubmit = async () => {
     if (!canSubmit || !proposal) return;
-    await convertProposal.mutateAsync({
-      proposalId: proposal.id,
-      data: {
-        date,
-        ...(time && { time }),
-        ...(endTime && { endTime }),
-      },
-    });
-    onClose();
+    await runWithErrorToast(
+      () =>
+        convertProposal.mutateAsync({
+          proposalId: proposal.id,
+          data: { date, ...(time && { time }), ...(endTime && { endTime }) },
+        }),
+      showError,
+      { onSuccess: onClose, errorKey: 'errors.convertProposalFailed' },
+    );
   };
 
   const handleDismiss = () => {
