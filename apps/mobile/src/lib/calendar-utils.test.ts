@@ -161,4 +161,26 @@ describe('calculateTopDays', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({ dateKey: '2026-03-15', count: 3, rank: 1 });
   });
+
+  it('should exclude days with fewer than 2 available people', () => {
+    const map = buildMap([
+      ['2026-03-05', 1],
+      ['2026-03-07', 3],
+      ['2026-03-10', 1],
+    ]);
+
+    const result = calculateTopDays(map, today, 2);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({ dateKey: '2026-03-07', count: 3, rank: 1 });
+  });
+
+  it('should return empty when every future day has a single person', () => {
+    const map = buildMap([
+      ['2026-03-05', 1],
+      ['2026-03-09', 1],
+    ]);
+
+    expect(calculateTopDays(map, today, 2)).toEqual([]);
+  });
 });
