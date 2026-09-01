@@ -132,6 +132,7 @@ export class GroupsService {
     });
 
     if (existingMember) {
+      // This message literal is load-bearing: pre-v1.0.0 clients detect membership conflicts by matching this exact string.
       throw new ConflictException('Already a member of this group');
     }
 

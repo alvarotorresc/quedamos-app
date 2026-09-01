@@ -28,6 +28,7 @@ describe('RLS Migration', () => {
       'plan_votes',
       'availability_polls',
       'poll_responses',
+      'notification_logs',
     ];
     for (const table of tables) {
       expect(allMigrationsSql).toContain(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
