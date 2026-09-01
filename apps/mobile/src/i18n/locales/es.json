@@ -555,12 +555,16 @@
     "updateEventFailed": "No se pudieron guardar los cambios",
     "createProposalFailed": "No se pudo crear la propuesta",
     "convertProposalFailed": "No se pudo convertir la propuesta",
+    "updateProposalFailed": "No se pudo actualizar la propuesta",
     "addCityFailed": "No se pudo añadir la ciudad",
+    "removeCityFailed": "No se pudo quitar la ciudad",
     "regenerateCodeFailed": "No se pudo regenerar el código",
     "leaveGroupFailed": "No se pudo salir del grupo",
     "updateRoleFailed": "No se pudo actualizar el rol",
     "kickMemberFailed": "No se pudo expulsar al miembro",
     "deleteGroupFailed": "No se pudo eliminar el grupo",
-    "copyFailed": "No se pudo copiar el código"
+    "copyFailed": "No se pudo copiar el código",
+    "answerPollFailed": "No se pudo guardar tu respuesta",
+    "respondEventFailed": "No se pudo guardar tu asistencia"
   }
 }

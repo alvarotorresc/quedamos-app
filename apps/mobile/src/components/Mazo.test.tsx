@@ -149,7 +149,7 @@ describe('Mazo', () => {
       await Promise.resolve();
     });
 
-    expect(showErrorMock).toHaveBeenCalledWith('common.unexpectedError');
+    expect(showErrorMock).toHaveBeenCalledWith('errors.answerPollFailed');
     // Still on the same question — not advanced, not done, not dismissed.
     expect(screen.getByText('mazo.canYou')).toBeInTheDocument();
     expect(screen.queryByText('mazo.done')).not.toBeInTheDocument();
@@ -266,7 +266,7 @@ describe('Mazo', () => {
       await Promise.resolve();
     });
 
-    expect(showErrorMock).toHaveBeenCalledWith('common.unexpectedError');
+    expect(showErrorMock).toHaveBeenCalledWith('errors.answerPollFailed');
     expect(showSuccessMock).not.toHaveBeenCalled();
   });
 
@@ -335,6 +335,26 @@ describe('Mazo', () => {
     });
 
     expect(respondEventMock).toHaveBeenCalledWith({ eventId: 'e1', status: 'confirmed' });
+  });
+
+  it('si la respuesta a la quedada falla muestra su error específico y no avanza de pregunta', async () => {
+    pendingQuestions = { polls: [], pendingEvents: [createEvent({ id: 'e1' })] };
+    respondEventMock.mockRejectedValueOnce(new Error('network down'));
+    const onDismiss = vi.fn();
+
+    render(<Mazo groupId="group-1" onDismiss={onDismiss} />);
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('mazo.going'));
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(showErrorMock).toHaveBeenCalledWith('errors.respondEventFailed');
+    // Still on the same question — not advanced, not done, not dismissed.
+    expect(screen.getByText('mazo.goingQuestion')).toBeInTheDocument();
+    expect(screen.queryByText('mazo.done')).not.toBeInTheDocument();
+    expect(onDismiss).not.toHaveBeenCalled();
   });
 
   // M1: the mazo's own count (not the locale strings, which the global t(key)=>key mock

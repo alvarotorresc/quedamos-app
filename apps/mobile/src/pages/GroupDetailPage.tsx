@@ -27,6 +27,8 @@ import {
 import { useGroupSync } from '../hooks/useGroupSync';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
@@ -35,7 +37,8 @@ import { WeatherWidget } from '../components/WeatherWidget';
 import { useGroupWeather } from '../hooks/useWeather';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
-import { searchCities, type GeocodingResult } from '../services/weather';
+import { useCitySearch } from '../hooks/useCitySearch';
+import type { GeocodingResult } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
 import { buildMemberColorMap } from '../lib/member-colors';
 import { GroupRing } from '../components/GroupRing';
@@ -62,6 +65,7 @@ export default function GroupDetailPage() {
   const deleteGroup = useDeleteGroup();
 
   const { track } = useAnalytics();
+  const { showError } = useToast();
   const [copied, setCopied] = useState(false);
   const [showLeaveAlert, setShowLeaveAlert] = useState(false);
   const [showRegenerateAlert, setShowRegenerateAlert] = useState(false);
@@ -80,7 +84,7 @@ export default function GroupDetailPage() {
   const addCity = useAddCity(id);
   const removeCity = useRemoveCity(id);
   const [citySearch, setCitySearch] = useState('');
-  const [cityResults, setCityResults] = useState<GeocodingResult[]>([]);
+  const cityResults = useCitySearch(citySearch);
   const [showCitySearch, setShowCitySearch] = useState(false);
 
   // Member color map (userId -> color), by join order within the group
@@ -88,9 +92,13 @@ export default function GroupDetailPage() {
 
   const handleCopy = async () => {
     if (!invite?.inviteCode) return;
-    await navigator.clipboard.writeText(invite.inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(invite.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showError('errors.copyFailed');
+    }
   };
 
   const handleShare = async () => {
@@ -123,44 +131,58 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleCitySearch = async (query: string) => {
-    setCitySearch(query);
-    if (query.length >= 2) {
-      const results = await searchCities(query);
-      setCityResults(results);
-    } else {
-      setCityResults([]);
-    }
+  const handleAddCity = async (result: GeocodingResult) => {
+    await runWithErrorToast(
+      () =>
+        addCity.mutateAsync({
+          name: result.name,
+          lat: result.latitude,
+          lon: result.longitude,
+        }),
+      showError,
+      {
+        onSuccess: () => {
+          setCitySearch('');
+          setShowCitySearch(false);
+        },
+        errorKey: 'errors.addCityFailed',
+      },
+    );
   };
 
-  const handleAddCity = async (result: GeocodingResult) => {
-    await addCity.mutateAsync({
-      name: result.name,
-      lat: result.latitude,
-      lon: result.longitude,
+  const handleRemoveCity = async (cityId: string) => {
+    await runWithErrorToast(() => removeCity.mutateAsync(cityId), showError, {
+      errorKey: 'errors.removeCityFailed',
     });
-    setCitySearch('');
-    setCityResults([]);
-    setShowCitySearch(false);
   };
 
   const handleRegenerate = async () => {
-    await refreshInvite.mutateAsync(id);
-    setRegeneratedFeedback(true);
-    setTimeout(() => setRegeneratedFeedback(false), 2000);
+    await runWithErrorToast(() => refreshInvite.mutateAsync(id), showError, {
+      onSuccess: () => {
+        setRegeneratedFeedback(true);
+        setTimeout(() => setRegeneratedFeedback(false), 2000);
+      },
+      errorKey: 'errors.regenerateCodeFailed',
+    });
   };
 
   const handleLeave = async () => {
-    await leaveGroup.mutateAsync(id);
-    history.replace('/tabs/group');
+    await runWithErrorToast(() => leaveGroup.mutateAsync(id), showError, {
+      onSuccess: () => history.replace('/tabs/group'),
+      errorKey: 'errors.leaveGroupFailed',
+    });
   };
 
   const handleUpdateRole = async (userId: string, role: 'admin' | 'member') => {
-    await updateRole.mutateAsync({ userId, role });
+    await runWithErrorToast(() => updateRole.mutateAsync({ userId, role }), showError, {
+      errorKey: 'errors.updateRoleFailed',
+    });
   };
 
   const handleKick = async (userId: string) => {
-    await kickMember.mutateAsync(userId);
+    await runWithErrorToast(() => kickMember.mutateAsync(userId), showError, {
+      errorKey: 'errors.kickMemberFailed',
+    });
   };
 
   const getActionButtons = () => {
@@ -189,8 +211,10 @@ export default function GroupDetailPage() {
   };
 
   const handleDeleteGroup = async () => {
-    await deleteGroup.mutateAsync(id);
-    history.replace('/tabs/group');
+    await runWithErrorToast(() => deleteGroup.mutateAsync(id), showError, {
+      onSuccess: () => history.replace('/tabs/group'),
+      errorKey: 'errors.deleteGroupFailed',
+    });
   };
 
   if (isLoading) {
@@ -302,7 +326,7 @@ export default function GroupDetailPage() {
                 <input
                   type="text"
                   value={citySearch}
-                  onChange={(e) => handleCitySearch(e.target.value)}
+                  onChange={(e) => setCitySearch(e.target.value)}
                   placeholder={t('weather.searchCity')}
                   className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark mb-1"
                   style={{
@@ -353,7 +377,7 @@ export default function GroupDetailPage() {
                     📍 {city.name}
                     {isAdmin && (
                       <button
-                        onClick={() => removeCity.mutate(city.id)}
+                        onClick={() => handleRemoveCity(city.id)}
                         className="text-text-dark hover:text-danger ml-0.5 border-none bg-transparent text-[10px]"
                       >
                         ✕

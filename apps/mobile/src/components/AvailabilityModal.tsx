@@ -7,6 +7,8 @@ import { useAuthStore } from '../stores/auth';
 import { DEFAULT_TIME_SLOTS, getSlotHours } from '../lib/time-slot-utils';
 import type { Availability, AvailabilityType, TimeSlot } from '../services/availability';
 import { Button } from '../ui/Button';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 
 interface AvailabilityModalProps {
   isOpen: boolean;
@@ -30,6 +32,7 @@ export function AvailabilityModal({
   const userTimeSlots = useAuthStore((s) => s.user?.timeSlots) ?? DEFAULT_TIME_SLOTS;
   const createAvailability = useCreateAvailability(groupId);
   const deleteAvailability = useDeleteAvailability(groupId);
+  const { showError } = useToast();
 
   const [type, setType] = useState<AvailabilityType>('day');
   const [selectedSlots, setSelectedSlots] = useState<TimeSlot[]>([]);
@@ -66,22 +69,26 @@ export function AvailabilityModal({
     if (type === 'range' && fromTime >= toTime) return;
 
     const date = formatDateKey(selectedDay);
-    await createAvailability.mutateAsync({
-      date,
-      type,
-      ...(type === 'slots' && { slots: selectedSlots }),
-      ...(type === 'range' && {
-        startTime: fromTime,
-        endTime: toTime,
-      }),
-    });
-    onClose();
+    await runWithErrorToast(
+      () =>
+        createAvailability.mutateAsync({
+          date,
+          type,
+          ...(type === 'slots' && { slots: selectedSlots }),
+          ...(type === 'range' && { startTime: fromTime, endTime: toTime }),
+        }),
+      showError,
+      { onSuccess: onClose, errorKey: 'errors.saveAvailabilityFailed' },
+    );
   };
 
   const handleDelete = async () => {
     if (!selectedDay) return;
-    await deleteAvailability.mutateAsync(formatDateKey(selectedDay));
-    onClose();
+    await runWithErrorToast(
+      () => deleteAvailability.mutateAsync(formatDateKey(selectedDay)),
+      showError,
+      { onSuccess: onClose, errorKey: 'errors.deleteAvailabilityFailed' },
+    );
   };
 
   const dateLabel = selectedDay?.toLocaleDateString(i18n.language === 'es' ? 'es-ES' : 'en-US', {

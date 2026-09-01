@@ -65,6 +65,10 @@ export function broadcastSync(groupId: string, resource: SyncResource): void {
   } else {
     // No active channel — fire-and-forget via a temporary channel
     const tempChannel = supabase.channel(name);
+    // subscribe() registers an internal onClose that re-fires this callback with
+    // CLOSED once we removeChannel() on the happy path below — guard so only the
+    // first path actually removes the channel.
+    let removed = false;
     tempChannel.subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         tempChannel.send({
@@ -72,8 +76,17 @@ export function broadcastSync(groupId: string, resource: SyncResource): void {
           event: 'sync',
           payload: { resource },
         });
-        // Clean up after a short delay to ensure message is sent
-        setTimeout(() => supabase.removeChannel(tempChannel), 1000);
+        // Clean up after a short delay to ensure the message is sent
+        setTimeout(() => {
+          if (removed) return;
+          removed = true;
+          supabase.removeChannel(tempChannel);
+        }, 1000);
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        // Terminal failure: never got to send — don't leak the channel
+        if (removed) return;
+        removed = true;
+        supabase.removeChannel(tempChannel);
       }
     });
   }

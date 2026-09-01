@@ -555,12 +555,16 @@
     "updateEventFailed": "Couldn't save your changes",
     "createProposalFailed": "Couldn't create the proposal",
     "convertProposalFailed": "Couldn't convert the proposal",
+    "updateProposalFailed": "Couldn't update the proposal",
     "addCityFailed": "Couldn't add the city",
+    "removeCityFailed": "Couldn't remove the city",
     "regenerateCodeFailed": "Couldn't regenerate the code",
     "leaveGroupFailed": "Couldn't leave the group",
     "updateRoleFailed": "Couldn't update the role",
     "kickMemberFailed": "Couldn't remove the member",
     "deleteGroupFailed": "Couldn't delete the group",
-    "copyFailed": "Couldn't copy the code"
+    "copyFailed": "Couldn't copy the code",
+    "answerPollFailed": "Couldn't save your answer",
+    "respondEventFailed": "Couldn't save your response"
   }
 }

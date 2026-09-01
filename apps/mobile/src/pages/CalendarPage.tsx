@@ -15,7 +15,7 @@ import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { usePollDeepLink } from '../hooks/usePollDeepLink';
 import { useAutoSelectGroup } from '../hooks/useAutoSelectGroup';
-import { formatDateKey, apiDateToKey, getWeekDays } from '../lib/date-utils';
+import { formatDateKey, apiDateToKey, getWeekDays, weekOffsetOf } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
 import { WeekView } from '../components/WeekView';
@@ -158,10 +158,10 @@ export default function CalendarPage() {
   }, [events]);
 
   // Top days calculation — days with most people available (future only)
+  const todayKey = formatDateKey(new Date());
   const topDays = useMemo(() => {
-    const today = formatDateKey(new Date());
-    return calculateTopDays(availabilityByDate, today, 2);
-  }, [availabilityByDate]);
+    return calculateTopDays(availabilityByDate, todayKey, 2);
+  }, [availabilityByDate, todayKey]);
 
   const bestDay = topDays[0] ?? null;
   const secondBestDay = topDays[1] ?? null;
@@ -172,6 +172,10 @@ export default function CalendarPage() {
     : null;
 
   const handleMarkAvailability = () => {
+    if (!selectedDay) {
+      setSelectedDay(new Date());
+      setWeekOffset(0);
+    }
     setShowAvailModal(true);
   };
 
@@ -432,6 +436,7 @@ export default function CalendarPage() {
                   secondBestDayKey={secondBestDay?.dateKey ?? null}
                   onSelectDay={(day) => {
                     setSelectedDay(day);
+                    setWeekOffset(weekOffsetOf(day));
                     setCalView('week');
                   }}
                   weatherByDate={weatherByDate}

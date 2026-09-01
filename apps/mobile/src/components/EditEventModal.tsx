@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useUpdateEvent } from '../hooks/useEvents';
 import { Button } from '../ui/Button';
 import type { Event } from '../services/events';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
+import { buildEventEditPayload } from '../lib/event-edit-payload';
 
 interface EditEventModalProps {
   isOpen: boolean;
@@ -15,6 +18,7 @@ interface EditEventModalProps {
 export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventModalProps) {
   const { t } = useTranslation();
   const updateEvent = useUpdateEvent(groupId);
+  const { showError } = useToast();
 
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('');
@@ -42,19 +46,23 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
 
   const handleSubmit = async () => {
     if (!canSubmit || !event) return;
-    await updateEvent.mutateAsync({
-      eventId: event.id,
-      data: {
-        title: title.trim(),
-        ...(!isOnline && location.trim() ? { location: location.trim() } : { location: '' }),
-        ...(time ? { time } : {}),
-        ...(endTime ? { endTime } : {}),
-        ...(description.trim() ? { description: description.trim() } : { description: '' }),
-        isOnline,
-        ...(isOnline && meetingUrl.trim() ? { meetingUrl: meetingUrl.trim() } : {}),
-      },
-    });
-    onClose();
+    await runWithErrorToast(
+      () =>
+        updateEvent.mutateAsync({
+          eventId: event.id,
+          data: buildEventEditPayload({
+            title,
+            location,
+            time,
+            endTime,
+            description,
+            isOnline,
+            meetingUrl,
+          }),
+        }),
+      showError,
+      { onSuccess: onClose, errorKey: 'errors.updateEventFailed' },
+    );
   };
 
   const handleDismiss = () => {
@@ -102,7 +110,15 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
             <span className="text-sm text-text">{t('online.toggle')}</span>
             <button
               type="button"
-              onClick={() => setIsOnline(!isOnline)}
+              onClick={() => {
+                const next = !isOnline;
+                setIsOnline(next);
+                if (next) {
+                  setLocation('');
+                } else {
+                  setMeetingUrl('');
+                }
+              }}
               className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary-tint' : 'bg-toggle-off'}`}
             >
               <div
