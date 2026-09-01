@@ -142,7 +142,7 @@ export function EventCard({
     await runWithErrorToast(
       async () => {
         const blob = await renderTarjetaSellada({
-          titulo: `${t('calendar.letsMeet')}.`,
+          titulo: t('share.cardSellada'),
           plan: event.title,
           fechaHora,
           memberColors: selladaMemberColors,

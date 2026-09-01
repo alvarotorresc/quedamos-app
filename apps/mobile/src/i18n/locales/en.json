@@ -548,8 +548,10 @@
     "notPendingAnymore": "That question isn't pending anymore."
   },
   "share": {
-    "tarjetaCerrada": "The circle's closed. {{count}} of you are free on {{fecha}}.",
+    "tarjetaCerrada": "The circle's closed. You're all free on {{fecha}}.",
     "tarjetaSellada": "We're on. {{titulo}}, {{fechaHora}}.",
+    "cardCerrada": "The circle's closed.",
+    "cardSellada": "It's on.",
     "linkCopied": "Link copied. Card downloaded."
   },
   "errors": {

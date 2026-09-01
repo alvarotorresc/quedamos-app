@@ -168,17 +168,25 @@ describe('WeekView rediseñada', () => {
       expect(call.showInfo).toBe(mockShowInfo);
     });
 
-    it('interpola share.tarjetaCerrada con la misma frase que calendar.allCan ("los N"), no un número desnudo, en es', async () => {
+    it('interpola share.tarjetaCerrada solo con fecha, sin count', async () => {
       render(<WeekView {...buildProps()} />);
 
       fireEvent.click(screen.getByText('group.share'));
 
-      await waitFor(() =>
-        expect(mockT).toHaveBeenCalledWith(
-          'share.tarjetaCerrada',
-          expect.objectContaining({ count: 'los 2' }),
-        ),
-      );
+      await waitFor(() => expect(mockT).toHaveBeenCalledWith('share.tarjetaCerrada', expect.any(Object)));
+      const call = mockT.mock.calls.find(([key]) => key === 'share.tarjetaCerrada');
+      expect(call?.[1]).toHaveProperty('fecha');
+      expect(call?.[1]).not.toHaveProperty('count');
+    });
+
+    it('usa share.cardCerrada como título de la tarjeta cerrada, no calendar.bestDayQuestion', async () => {
+      render(<WeekView {...buildProps()} />);
+
+      fireEvent.click(screen.getByText('group.share'));
+
+      await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
+      expect(opts.titulo).toBe('share.cardCerrada');
     });
 
     it('renderiza el aro con los colores de todos los miembros del grupo, en orden de slot', async () => {

@@ -80,21 +80,13 @@ export function WeekView({
         const blob = await renderTarjetaCerrada({
           weekdayLabel,
           dayNumber,
-          titulo: t('calendar.bestDayQuestion', { weekday: weekdayLabel }),
+          titulo: t('share.cardCerrada'),
           subtitulo: t('calendar.allCan', { count: totalMembers }),
           memberColors: [...memberColorMap.values()],
           theme,
           marca: t('landing.brand'),
         });
-        // share.tarjetaCerrada's ES copy ("Podéis {{count}} el {{fecha}}.")
-        // wants the same "los N" phrase the app already uses in
-        // calendar.allCan ("Podéis los {{count}}") — a bare number there
-        // reads as "Podéis 2", which isn't Spanish. EN keeps the headcount
-        // as-is ("{{count}} of you are free…"). Branch on locale until a
-        // copy pass unifies the two strings.
-        const count = i18n.language === 'es' ? `los ${totalMembers}` : totalMembers;
         const texto = t('share.tarjetaCerrada', {
-          count,
           fecha: `${weekdayLabel} ${dayNumber}`,
         });
         await shareTarjeta({

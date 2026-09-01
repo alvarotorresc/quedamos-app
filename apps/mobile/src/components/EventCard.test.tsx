@@ -407,6 +407,17 @@ describe('EventCard', () => {
       expect(opts.memberColors).toEqual(['#60A5FA', '#F59E0B', '#34D399']);
     });
 
+    it('usa share.cardSellada como título de la tarjeta sellada, no calendar.letsMeet', async () => {
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.titulo).toBe('share.cardSellada');
+    });
+
     it('la tarjeta sellada solo pinta a quienes confirmaron asistencia, en orden de slot', async () => {
       const event = createEvent({
         status: 'confirmed',
