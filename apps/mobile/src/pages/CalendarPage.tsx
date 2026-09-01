@@ -158,10 +158,10 @@ export default function CalendarPage() {
   }, [events]);
 
   // Top days calculation — days with most people available (future only)
-  const today = formatDateKey(new Date());
+  const todayKey = formatDateKey(new Date());
   const topDays = useMemo(() => {
-    return calculateTopDays(availabilityByDate, today, 2);
-  }, [availabilityByDate, today]);
+    return calculateTopDays(availabilityByDate, todayKey, 2);
+  }, [availabilityByDate, todayKey]);
 
   const bestDay = topDays[0] ?? null;
   const secondBestDay = topDays[1] ?? null;
@@ -172,7 +172,10 @@ export default function CalendarPage() {
     : null;
 
   const handleMarkAvailability = () => {
-    if (!selectedDay) setSelectedDay(new Date());
+    if (!selectedDay) {
+      setSelectedDay(new Date());
+      setWeekOffset(0);
+    }
     setShowAvailModal(true);
   };
 
