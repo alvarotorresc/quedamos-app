@@ -163,6 +163,33 @@ describe('NotificationsService', () => {
       expect(prisma.pushToken.findFirst).not.toHaveBeenCalled();
       expect(prisma.pushToken.delete).not.toHaveBeenCalled();
     });
+
+    it('should not evict when at max capacity but the token already exists (mobile re-sends on every resume)', async () => {
+      prisma.pushToken.count.mockResolvedValue(10);
+      prisma.pushToken.findUnique.mockResolvedValue({
+        userId: 'user-1',
+        token: 'existing-tok',
+        platform: 'web',
+      });
+      // Configured exactly like the sibling "evict oldest token" test so this test would
+      // catch a real deletion (not just an un-configured mock resolving to undefined) if
+      // the fix regressed and the eviction path ran anyway.
+      prisma.pushToken.findFirst.mockResolvedValue({ id: 'old-token-id', token: 'old' });
+      prisma.pushToken.upsert.mockResolvedValue({
+        userId: 'user-1',
+        token: 'existing-tok',
+        platform: 'android',
+      });
+
+      await service.registerToken('user-1', { token: 'existing-tok', platform: 'android' });
+
+      expect(prisma.pushToken.delete).not.toHaveBeenCalled();
+      expect(prisma.pushToken.findUnique).toHaveBeenCalledWith({
+        where: { userId_token: { userId: 'user-1', token: 'existing-tok' } },
+      });
+      expect(prisma.pushToken.findFirst).not.toHaveBeenCalled();
+      expect(prisma.pushToken.upsert).toHaveBeenCalled();
+    });
   });
 
   describe('unregisterToken', () => {
