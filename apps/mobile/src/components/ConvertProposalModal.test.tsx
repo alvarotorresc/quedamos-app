@@ -89,6 +89,10 @@ describe('ConvertProposalModal — fecha mínima en local, no UTC', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-01T23:30:00Z'));
 
+    // Self-check: fails loudly here (not just in the harder-to-diagnose assertion
+    // below) if TZ stubbing ever stops taking effect for this runner/Node version.
+    expect(new Date('2026-03-01T23:30:00Z').getHours()).toBe(0);
+
     const { container } = render(
       <ConvertProposalModal isOpen onClose={vi.fn()} groupId="g1" proposal={null} />,
       { wrapper: createWrapper() },
