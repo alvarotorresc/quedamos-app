@@ -40,5 +40,6 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /opt/services
+            docker logout ghcr.io || true
             docker compose pull quedamos-api
             docker compose up -d quedamos-api
