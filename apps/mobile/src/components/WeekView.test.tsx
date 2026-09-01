@@ -265,5 +265,27 @@ describe('WeekView rediseñada', () => {
       expect(mockShareTarjeta).not.toHaveBeenCalled();
       expect(mockShowError).not.toHaveBeenCalled();
     });
+
+    it('el doble click rápido en Compartir solo llama a shareTarjeta una vez (guard en vuelo)', async () => {
+      let resolveShare!: (value: { shared: boolean }) => void;
+      mockShareTarjeta.mockImplementation(
+        () =>
+          new Promise<{ shared: boolean }>((resolve) => {
+            resolveShare = resolve;
+          }),
+      );
+      render(<WeekView {...buildProps()} />);
+
+      const button = screen.getByRole('button', { name: 'group.share' });
+      fireEvent.click(button);
+      fireEvent.click(button);
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledTimes(1));
+      expect(button).toBeDisabled();
+
+      resolveShare({ shared: true });
+      await waitFor(() => expect(button).not.toBeDisabled());
+      expect(mockShareTarjeta).toHaveBeenCalledTimes(1);
+    });
   });
 });

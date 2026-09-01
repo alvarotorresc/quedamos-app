@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getWeekDays, formatDateKey, isSameDay } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
@@ -63,6 +63,7 @@ export function WeekView({
   const darkMode = useThemeStore((s) => s.darkMode);
   const { showError, showInfo } = useToast();
   const { track } = useAnalytics();
+  const [sharing, setSharing] = useState(false);
 
   const monthLabel = week[0].toLocaleDateString(locale, {
     month: 'long',
@@ -70,40 +71,46 @@ export function WeekView({
   });
 
   const handleShareBestDay = async (day: Date) => {
+    if (sharing) return;
     if (!invite?.inviteUrl) return;
     const weekdayLabel = day.toLocaleDateString(locale, { weekday: 'long' });
     const dayNumber = String(day.getDate());
     const theme: 'dia' | 'noche' = darkMode ? 'noche' : 'dia';
 
-    await runWithErrorToast(
-      async () => {
-        const blob = await renderTarjetaCerrada({
-          weekdayLabel,
-          dayNumber,
-          titulo: t('share.cardCerrada'),
-          subtitulo: t('calendar.allCan', { count: totalMembers }),
-          memberColors: [...memberColorMap.values()],
-          theme,
-          marca: t('landing.brand'),
-          pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
-        });
-        const texto = t('share.tarjetaCerrada', {
-          fecha: `${weekdayLabel} ${dayNumber}`,
-        });
-        const { shared } = await shareTarjeta({
-          blob,
-          texto,
-          inviteUrl: invite.inviteUrl,
-          filename: 'quedamos-tarjeta.png',
-          showInfo,
-        });
-        if (shared) {
-          track('share_tarjeta', { momento: 'cerrada' });
-        }
-      },
-      showError,
-      { errorKey: 'errors.shareTarjetaFailed' },
-    );
+    setSharing(true);
+    try {
+      await runWithErrorToast(
+        async () => {
+          const blob = await renderTarjetaCerrada({
+            weekdayLabel,
+            dayNumber,
+            titulo: t('share.cardCerrada'),
+            subtitulo: t('calendar.allCan', { count: totalMembers }),
+            memberColors: [...memberColorMap.values()],
+            theme,
+            marca: t('landing.brand'),
+            pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
+          });
+          const texto = t('share.tarjetaCerrada', {
+            fecha: `${weekdayLabel} ${dayNumber}`,
+          });
+          const { shared } = await shareTarjeta({
+            blob,
+            texto,
+            inviteUrl: invite.inviteUrl,
+            filename: 'quedamos-tarjeta.png',
+            showInfo,
+          });
+          if (shared) {
+            track('share_tarjeta', { momento: 'cerrada' });
+          }
+        },
+        showError,
+        { errorKey: 'errors.shareTarjetaFailed' },
+      );
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -205,7 +212,8 @@ export function WeekView({
                     e.stopPropagation();
                     handleShareBestDay(day);
                   }}
-                  className="border border-strong text-on-primary rounded-pill py-3 px-4 text-sm font-semibold"
+                  disabled={sharing}
+                  className="border border-strong text-on-primary rounded-pill py-3 px-4 text-sm font-semibold disabled:opacity-40 disabled:pointer-events-none"
                 >
                   {t('group.share')}
                 </button>

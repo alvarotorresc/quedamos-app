@@ -73,6 +73,7 @@ export function EventCard({
   const { track } = useAnalytics();
   const [showWeatherDetail, setShowWeatherDetail] = useState(false);
   const [justConfirmed, setJustConfirmed] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const isResponding = respondEvent.isPending;
 
@@ -134,37 +135,43 @@ export function EventCard({
   };
 
   const handleShare = async () => {
+    if (sharing) return;
     if (!invite?.inviteUrl) return;
     const theme: 'dia' | 'noche' = darkMode ? 'noche' : 'dia';
     const weekdayFull = dateObj.toLocaleDateString(locale, { weekday: 'long' });
     const fechaHora = `${weekdayFull} ${dateObj.getDate()}${formattedTime ? ` · ${formattedTime}` : ''}`;
 
-    await runWithErrorToast(
-      async () => {
-        const blob = await renderTarjetaSellada({
-          titulo: t('share.cardSellada'),
-          plan: event.title,
-          fechaHora,
-          memberColors: selladaMemberColors,
-          theme,
-          marca: t('landing.brand'),
-          pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
-        });
-        const texto = t('share.tarjetaSellada', { titulo: event.title, fechaHora });
-        const { shared } = await shareTarjeta({
-          blob,
-          texto,
-          inviteUrl: invite.inviteUrl,
-          filename: 'quedamos-tarjeta.png',
-          showInfo,
-        });
-        if (shared) {
-          track('share_tarjeta', { momento: 'sellada' });
-        }
-      },
-      showError,
-      { errorKey: 'errors.shareTarjetaFailed' },
-    );
+    setSharing(true);
+    try {
+      await runWithErrorToast(
+        async () => {
+          const blob = await renderTarjetaSellada({
+            titulo: t('share.cardSellada'),
+            plan: event.title,
+            fechaHora,
+            memberColors: selladaMemberColors,
+            theme,
+            marca: t('landing.brand'),
+            pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
+          });
+          const texto = t('share.tarjetaSellada', { titulo: event.title, fechaHora });
+          const { shared } = await shareTarjeta({
+            blob,
+            texto,
+            inviteUrl: invite.inviteUrl,
+            filename: 'quedamos-tarjeta.png',
+            showInfo,
+          });
+          if (shared) {
+            track('share_tarjeta', { momento: 'sellada' });
+          }
+        },
+        showError,
+        { errorKey: 'errors.shareTarjetaFailed' },
+      );
+    } finally {
+      setSharing(false);
+    }
   };
 
   return (
@@ -250,7 +257,8 @@ export function EventCard({
               animate={{ scale: 1, opacity: 1 }}
               transition={spring.bouncy}
               onClick={handleShare}
-              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors"
+              disabled={sharing}
+              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors disabled:opacity-40 disabled:pointer-events-none"
               title={t('group.share')}
               aria-label={t('group.share')}
             >

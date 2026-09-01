@@ -511,5 +511,32 @@ describe('EventCard', () => {
       expect(mockShareTarjeta).not.toHaveBeenCalled();
       expect(mockShowError).not.toHaveBeenCalled();
     });
+
+    it('el doble click rápido en Compartir solo llama a shareTarjeta una vez (guard en vuelo)', async () => {
+      let resolveShare!: (value: { shared: boolean }) => void;
+      mockShareTarjeta.mockImplementation(
+        () =>
+          new Promise<{ shared: boolean }>((resolve) => {
+            resolveShare = resolve;
+          }),
+      );
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+
+      // Re-query after each interaction instead of holding a stale node reference —
+      // motion.button remounts its underlying DOM element on prop-driven re-renders.
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledTimes(1));
+      expect(screen.getByRole('button', { name: 'group.share' })).toBeDisabled();
+
+      resolveShare({ shared: true });
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'group.share' })).not.toBeDisabled(),
+      );
+      expect(mockShareTarjeta).toHaveBeenCalledTimes(1);
+    });
   });
 });
