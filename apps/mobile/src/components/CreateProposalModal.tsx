@@ -6,6 +6,8 @@ import { useForecast } from '../hooks/useWeather';
 import { Button } from '../ui/Button';
 import { WeatherBadge } from './WeatherWidget';
 import { LocationSearch } from './LocationSearch';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 
 interface CreateProposalModalProps {
   isOpen: boolean;
@@ -16,6 +18,7 @@ interface CreateProposalModalProps {
 export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposalModalProps) {
   const { t } = useTranslation();
   const createProposal = useCreateProposal(groupId);
+  const { showError } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -58,15 +61,19 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
-    await createProposal.mutateAsync({
-      title: title.trim(),
-      ...(description.trim() && { description: description.trim() }),
-      ...(!isOnline && location.trim() && { location: location.trim() }),
-      ...(proposedDate && { proposedDate }),
-      ...(isOnline && { isOnline: true }),
-      ...(isOnline && meetingUrl.trim() && { meetingUrl: meetingUrl.trim() }),
-    });
-    onClose();
+    await runWithErrorToast(
+      () =>
+        createProposal.mutateAsync({
+          title: title.trim(),
+          ...(description.trim() && { description: description.trim() }),
+          ...(!isOnline && location.trim() && { location: location.trim() }),
+          ...(proposedDate && { proposedDate }),
+          ...(isOnline && { isOnline: true }),
+          ...(isOnline && meetingUrl.trim() && { meetingUrl: meetingUrl.trim() }),
+        }),
+      showError,
+      { onSuccess: onClose, errorKey: 'errors.createProposalFailed' },
+    );
   };
 
   const handleDismiss = () => {
