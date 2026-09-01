@@ -1,7 +1,20 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { StrictMode } from 'react';
+import { render, screen, act } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import JoinGroupPage from './JoinGroupPage';
 import { ApiError } from '../lib/api';
+
+// A promise we can resolve/reject on our own schedule, to simulate the join
+// request settling after the page has already unmounted.
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
 
 // IonPage/IonContent/IonSpinner are Stencil web components that never present under
 // jsdom (see AskGroupSheet.test.tsx) — render children directly.
@@ -49,5 +62,77 @@ describe('JoinGroupPage', () => {
     render(<JoinGroupPage />);
 
     expect(await screen.findByText('joinGroup.error')).toBeInTheDocument();
+  });
+
+  describe('unmount mid-request', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('no navega si el join resuelve después de desmontar el componente', async () => {
+      const deferred = createDeferred<{ id: string }>();
+      joinGroupMock.mockReturnValueOnce(deferred.promise);
+      vi.useFakeTimers();
+
+      const { unmount } = render(<JoinGroupPage />);
+      unmount();
+
+      // Resolve the mutation only after the page is gone, then let its .then()
+      // and the (would-be) nav timeout run their course.
+      await act(async () => {
+        deferred.resolve({ id: 'group-1' });
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(historyReplaceMock).not.toHaveBeenCalledWith(expect.stringContaining('/tabs/group/'));
+    });
+
+    it('no navega si el componente se desmonta tras el éxito pero antes de que salte el timeout', async () => {
+      joinGroupMock.mockResolvedValueOnce({ id: 'group-1' });
+      vi.useFakeTimers();
+
+      const { unmount } = render(<JoinGroupPage />);
+
+      // Let the join succeed and the nav timeout get scheduled, then unmount
+      // before the 1s timeout fires.
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      unmount();
+
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(historyReplaceMock).not.toHaveBeenCalledWith(expect.stringContaining('/tabs/group/'));
+    });
+
+    it('navega tras un join exitoso aunque StrictMode remonte el efecto en dev', async () => {
+      const deferred = createDeferred<{ id: string }>();
+      joinGroupMock.mockReturnValueOnce(deferred.promise);
+      vi.useFakeTimers();
+
+      render(
+        <StrictMode>
+          <JoinGroupPage />
+        </StrictMode>,
+      );
+
+      await act(async () => {
+        deferred.resolve({ id: 'group-1' });
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(historyReplaceMock).toHaveBeenCalledWith('/tabs/group/group-1');
+    });
   });
 });
