@@ -85,7 +85,9 @@ describe('BandaAro', () => {
   it('el aro central no pinta --banda-track: los huecos entre arcos quedan limpios', () => {
     const { container } = render(<BandaAro />);
     const svg = container.querySelector('[data-testid="banda-aro-center"] svg');
-    const strokes = [...(svg?.querySelectorAll('circle') ?? [])].map((c) => c.getAttribute('stroke'));
+    const strokes = [...(svg?.querySelectorAll('circle') ?? [])].map((c) =>
+      c.getAttribute('stroke'),
+    );
     expect(strokes).not.toContain('var(--banda-track)');
   });
 

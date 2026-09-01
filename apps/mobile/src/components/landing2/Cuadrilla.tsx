@@ -38,7 +38,10 @@ export function Cuadrilla(): JSX.Element {
             className="flex items-end p-6"
             style={{ backgroundColor: MEMBER_COLORS[i] }}
           >
-            <span className="font-extrabold text-2xl tracking-[-0.02em]" style={{ color: MEMBER_INK }}>
+            <span
+              className="font-extrabold text-2xl tracking-[-0.02em]"
+              style={{ color: MEMBER_INK }}
+            >
               {t(`landing2.cuadrilla.names.${key}`)}
             </span>
           </div>

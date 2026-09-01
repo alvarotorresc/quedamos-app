@@ -47,4 +47,18 @@ describe('LandingPage', () => {
       expect(screen.getAllByText(key)).toHaveLength(1);
     }
   });
+
+  it('wraps the section stack in a <main> landmark, with NavIsla outside it', () => {
+    render(
+      <MemoryRouter>
+        <LandingPage onLogin={() => {}} onRegister={() => {}} />
+      </MemoryRouter>,
+    );
+
+    const main = screen.getByRole('main');
+    const nav = screen.getByRole('navigation');
+    expect(main.contains(nav)).toBe(false);
+    expect(main).toContainElement(screen.getByText('landing2.hero.title'));
+    expect(main).toContainElement(screen.getByText('landing2.cierre.quote'));
+  });
 });

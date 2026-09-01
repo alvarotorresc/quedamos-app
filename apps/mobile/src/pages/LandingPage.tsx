@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { useScreenView } from '../hooks/useAnalytics';
 import { NavIsla } from '../components/landing2/NavIsla';
 import { HeroPregunta } from '../components/landing2/HeroPregunta';
@@ -31,13 +32,15 @@ export default function LandingPage(_props: LandingPageProps): JSX.Element {
     // either way since nothing in the tree has a transform.
     <div className="h-screen overflow-y-auto overflow-x-hidden bg-bg text-text">
       <NavIsla />
-      <HeroPregunta />
-      <BandaAro />
-      <Pantallas />
-      <Cuadrilla />
-      <Proceso />
-      <Renuncias />
-      <Cierre />
+      <main>
+        <HeroPregunta />
+        <BandaAro />
+        <Pantallas />
+        <Cuadrilla />
+        <Proceso />
+        <Renuncias />
+        <Cierre />
+      </main>
     </div>
   );
 }

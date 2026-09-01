@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -115,7 +116,9 @@ export function HeroPregunta(): JSX.Element {
                   style={{ backgroundColor: MEMBER_COLORS[4] }}
                   aria-hidden="true"
                 />
-                <span className="text-[13px] text-text-muted">{t('landing2.hero.mockup.asks')}</span>
+                <span className="text-[13px] text-text-muted">
+                  {t('landing2.hero.mockup.asks')}
+                </span>
               </div>
               <p className="font-extrabold text-[27px] leading-[1.1] tracking-tight text-text">
                 {t('landing2.hero.mockup.question')}
