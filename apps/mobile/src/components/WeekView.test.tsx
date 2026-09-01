@@ -140,7 +140,7 @@ describe('WeekView rediseñada', () => {
     it('muestra el botón Compartir dentro del panel de mejor día', () => {
       render(<WeekView {...buildProps()} />);
       const panel = screen.getByTestId('best-day-panel');
-      expect(within(panel).getByText('group.share')).toBeInTheDocument();
+      expect(within(panel).getByRole('button', { name: 'group.share' })).toBeInTheDocument();
     });
 
     it('una quedada ya creada en el mejor día sustituye el panel por una fila normal, sin Compartir', () => {
@@ -150,7 +150,7 @@ describe('WeekView rediseñada', () => {
       ]);
       render(<WeekView {...props} eventsByDate={eventsByDate} />);
       expect(screen.queryByTestId('best-day-panel')).not.toBeInTheDocument();
-      expect(screen.queryByText('group.share')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'group.share' })).not.toBeInTheDocument();
     });
 
     it('disponibilidad parcial (falta un miembro): el aro no se cierra, sin panel ni Compartir', () => {
@@ -160,7 +160,7 @@ describe('WeekView rediseñada', () => {
       const availabilityByDate = new Map([[props.bestDayKey!, [{ userId: 'u1', type: 'day' }] as never[]]]);
       render(<WeekView {...props} availabilityByDate={availabilityByDate} />);
       expect(screen.queryByTestId('best-day-panel')).not.toBeInTheDocument();
-      expect(screen.queryByText('group.share')).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'group.share' })).not.toBeInTheDocument();
     });
 
     it('al pulsar Compartir renderiza la tarjeta y la comparte con el blob y el inviteUrl', async () => {
@@ -168,7 +168,7 @@ describe('WeekView rediseñada', () => {
       mockRenderTarjetaCerrada.mockResolvedValue(blob);
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
       const call = mockShareTarjeta.mock.calls[0][0];
@@ -182,7 +182,7 @@ describe('WeekView rediseñada', () => {
     it('interpola share.tarjetaCerrada solo con fecha, sin count', async () => {
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockT).toHaveBeenCalledWith('share.tarjetaCerrada', expect.any(Object)));
       const call = mockT.mock.calls.find(([key]) => key === 'share.tarjetaCerrada');
@@ -193,7 +193,7 @@ describe('WeekView rediseñada', () => {
     it('usa share.cardCerrada como título de la tarjeta cerrada, no calendar.bestDayQuestion', async () => {
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
       const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
@@ -203,7 +203,7 @@ describe('WeekView rediseñada', () => {
     it('renderiza el aro con los colores de todos los miembros del grupo, en orden de slot', async () => {
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
       const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
@@ -214,7 +214,7 @@ describe('WeekView rediseñada', () => {
     it('pasa el inviteUrl sin esquema como pie de la tarjeta', async () => {
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockRenderTarjetaCerrada).toHaveBeenCalledOnce());
       const opts = mockRenderTarjetaCerrada.mock.calls[0][0];
@@ -225,7 +225,7 @@ describe('WeekView rediseñada', () => {
       mockRenderTarjetaCerrada.mockRejectedValue(new Error('boom'));
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.shareTarjetaFailed'));
       expect(mockShareTarjeta).not.toHaveBeenCalled();
@@ -235,7 +235,7 @@ describe('WeekView rediseñada', () => {
       mockShareTarjeta.mockResolvedValue({ shared: false }); // shareTarjeta resuelve { shared: false } al cancelar
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
       expect(mockShowError).not.toHaveBeenCalled();
@@ -246,7 +246,7 @@ describe('WeekView rediseñada', () => {
       mockShareTarjeta.mockResolvedValue({ shared: true });
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       await waitFor(() =>
         expect(mockTrack).toHaveBeenCalledWith('share_tarjeta', { momento: 'cerrada' }),
@@ -257,7 +257,7 @@ describe('WeekView rediseñada', () => {
       mockInvite = undefined;
       render(<WeekView {...buildProps()} />);
 
-      fireEvent.click(screen.getByText('group.share'));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
 
       // Da tiempo a cualquier microtask pendiente antes de comprobar que no pasó nada.
       await Promise.resolve();

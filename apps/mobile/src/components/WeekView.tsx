@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { HiOutlineShare } from 'react-icons/hi2';
 import { getWeekDays, formatDateKey, isSameDay } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
 import { Aro, type AroMember } from '../ui/Aro';
@@ -213,9 +214,11 @@ export function WeekView({
                     handleShareBestDay(day);
                   }}
                   disabled={sharing}
-                  className="border border-strong text-on-primary rounded-pill py-3 px-4 text-sm font-semibold disabled:opacity-40 disabled:pointer-events-none"
+                  aria-label={t('group.share')}
+                  title={t('group.share')}
+                  className="shrink-0 w-11 h-11 flex items-center justify-center border border-strong text-on-primary rounded-pill p-2.5 disabled:opacity-40 disabled:pointer-events-none"
                 >
-                  {t('group.share')}
+                  <HiOutlineShare className="w-4 h-4" />
                 </button>
               </div>
             </div>
