@@ -2,6 +2,13 @@ import { supabase } from './supabase';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 async function getAuthToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token ?? null;
@@ -24,7 +31,7 @@ async function fetchApi<T>(
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Error' }));
-    throw new Error(error.message || 'API Error');
+    throw new ApiError(error.message || 'API Error', response.status);
   }
 
   if (response.status === 204) {

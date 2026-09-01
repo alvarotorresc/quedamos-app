@@ -15,7 +15,7 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 // Import after mocking
-const { api } = await import('./api');
+const { api, ApiError } = await import('./api');
 
 describe('api', () => {
   beforeEach(() => {
@@ -90,6 +90,7 @@ describe('api', () => {
   it('should throw error on non-ok response', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
+      status: 404,
       json: () => Promise.resolve({ message: 'Not found' }),
     });
 
@@ -99,10 +100,29 @@ describe('api', () => {
   it('should throw generic error when response body is not JSON', async () => {
     mockFetch.mockResolvedValue({
       ok: false,
+      status: 500,
       json: () => Promise.reject(new Error('parse error')),
     });
 
     await expect(api.get('/error')).rejects.toThrow('Error');
+  });
+
+  it('should throw ApiError with status code on non-ok response', async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 409,
+      json: () => Promise.resolve({ message: 'Conflict' }),
+    });
+
+    try {
+      await api.get('/conflict');
+      throw new Error('Should have thrown');
+    } catch (err) {
+      expect(err).toBeInstanceOf(ApiError);
+      if (err instanceof ApiError) {
+        expect(err.status).toBe(409);
+      }
+    }
   });
 
   it('should include Content-Type header', async () => {
