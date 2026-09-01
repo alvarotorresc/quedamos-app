@@ -150,6 +150,12 @@ export default function GroupDetailPage() {
     );
   };
 
+  const handleRemoveCity = async (cityId: string) => {
+    await runWithErrorToast(() => removeCity.mutateAsync(cityId), showError, {
+      errorKey: 'errors.removeCityFailed',
+    });
+  };
+
   const handleRegenerate = async () => {
     await runWithErrorToast(() => refreshInvite.mutateAsync(id), showError, {
       onSuccess: () => {
@@ -371,7 +377,7 @@ export default function GroupDetailPage() {
                     📍 {city.name}
                     {isAdmin && (
                       <button
-                        onClick={() => removeCity.mutate(city.id)}
+                        onClick={() => handleRemoveCity(city.id)}
                         className="text-text-dark hover:text-danger ml-0.5 border-none bg-transparent text-[10px]"
                       >
                         ✕
