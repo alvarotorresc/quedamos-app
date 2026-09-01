@@ -91,6 +91,9 @@ describe('shareTarjeta', () => {
 
     expect(canShare).toHaveBeenCalled();
     expect(share).toHaveBeenCalledTimes(1);
+    expect(share).toHaveBeenCalledWith(
+      expect.objectContaining({ text: expect.stringContaining('https://quedamos.app/i/ABC123') }),
+    );
     const [call] = share.mock.calls[0];
     expect(call.files).toHaveLength(1);
     expect(call.files[0].name).toBe('quedamos-tarjeta.png');
@@ -99,7 +102,7 @@ describe('shareTarjeta', () => {
     expect(result).toEqual({ shared: true });
   });
 
-  it('web without file-share support: downloads via anchor, copies the inviteUrl and shows a confirmation toast', async () => {
+  it('web without file-share support: downloads via anchor, copies the inviteUrl and shows the link-copied toast', async () => {
     const { Capacitor } = await import('@capacitor/core');
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
 
@@ -129,7 +132,73 @@ describe('shareTarjeta', () => {
     expect(removeSpy).toHaveBeenCalled();
     expect(revokeUrlSpy).toHaveBeenCalled();
     expect(writeText).toHaveBeenCalledWith('https://quedamos.app/i/ABC123');
-    expect(showInfo).toHaveBeenCalledWith(expect.any(String));
+    expect(showInfo).toHaveBeenCalledWith('share.linkCopied');
+    expect(result).toEqual({ shared: true });
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
+  it('web without file-share support and no clipboard API: still downloads, shows the card-downloaded toast, resolves shared and does not throw', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/fake');
+    const revokeUrlSpy = vi.fn();
+    globalThis.URL.revokeObjectURL = revokeUrlSpy;
+
+    const clickSpy = vi.fn();
+    const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue({
+      href: '',
+      download: '',
+      click: clickSpy,
+    } as unknown as HTMLAnchorElement);
+    const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
+    const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+
+    // jsdom has no navigator.clipboard by default — the afterEach's deleteProperty
+    // guarantees that "not present" state even if a previous test defined it.
+    const showInfo = vi.fn();
+
+    const result = await shareTarjeta(baseOpts({ showInfo }));
+
+    expect(clickSpy).toHaveBeenCalled();
+    expect(showInfo).toHaveBeenCalledWith('share.cardDownloaded');
+    expect(showInfo).not.toHaveBeenCalledWith('share.linkCopied');
+    expect(result).toEqual({ shared: true });
+
+    createElementSpy.mockRestore();
+    appendSpy.mockRestore();
+    removeSpy.mockRestore();
+  });
+
+  it('web without file-share support: a clipboard write rejection still resolves with the card-downloaded toast', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:http://localhost/fake');
+    globalThis.URL.revokeObjectURL = vi.fn();
+
+    const clickSpy = vi.fn();
+    const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue({
+      href: '',
+      download: '',
+      click: clickSpy,
+    } as unknown as HTMLAnchorElement);
+    const appendSpy = vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
+    const removeSpy = vi.spyOn(document.body, 'removeChild').mockImplementation((node) => node);
+
+    const writeText = vi.fn(() => Promise.reject(new Error('denied')));
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+
+    const showInfo = vi.fn();
+
+    const result = await shareTarjeta(baseOpts({ showInfo }));
+
+    expect(clickSpy).toHaveBeenCalled();
+    expect(writeText).toHaveBeenCalledWith('https://quedamos.app/i/ABC123');
+    expect(showInfo).toHaveBeenCalledWith('share.cardDownloaded');
     expect(result).toEqual({ shared: true });
 
     createElementSpy.mockRestore();

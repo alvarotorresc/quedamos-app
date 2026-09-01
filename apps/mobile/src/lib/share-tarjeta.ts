@@ -84,7 +84,7 @@ async function shareWeb(opts: ShareTarjetaOpts): Promise<{ shared: boolean }> {
 
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], text: texto, url: inviteUrl });
+      await navigator.share({ files: [file], text: `${texto} ${inviteUrl}`, url: inviteUrl });
     } catch (error) {
       if (isShareCancel(error)) return { shared: false };
       throw error;
@@ -93,8 +93,14 @@ async function shareWeb(opts: ShareTarjetaOpts): Promise<{ shared: boolean }> {
   }
 
   downloadBlob(blob, filename);
-  await navigator.clipboard.writeText(inviteUrl);
-  showInfo?.('share.linkCopied');
+  try {
+    await navigator.clipboard.writeText(inviteUrl);
+    showInfo?.('share.linkCopied');
+  } catch {
+    // Clipboard absent or write rejected — the download already happened, so
+    // still confirm that instead of failing the whole share flow.
+    showInfo?.('share.cardDownloaded');
+  }
   return { shared: true };
 }
 

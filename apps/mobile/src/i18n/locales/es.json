@@ -552,7 +552,8 @@
     "tarjetaSellada": "Quedamos. {{titulo}}, {{fechaHora}}.",
     "cardCerrada": "El aro se ha cerrado.",
     "cardSellada": "Quedamos.",
-    "linkCopied": "Enlace copiado. Tarjeta descargada."
+    "linkCopied": "Enlace copiado. Tarjeta descargada.",
+    "cardDownloaded": "Tarjeta descargada."
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

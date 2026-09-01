@@ -552,7 +552,8 @@
     "tarjetaSellada": "We're on. {{titulo}}, {{fechaHora}}.",
     "cardCerrada": "The circle's closed.",
     "cardSellada": "It's on.",
-    "linkCopied": "Link copied. Card downloaded."
+    "linkCopied": "Link copied. Card downloaded.",
+    "cardDownloaded": "Card downloaded."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
