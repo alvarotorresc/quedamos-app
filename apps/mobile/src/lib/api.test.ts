@@ -94,6 +94,7 @@ describe('api', () => {
       json: () => Promise.resolve({ message: 'Not found' }),
     });
 
+    await expect(api.get('/missing')).rejects.toMatchObject({ status: 404 });
     await expect(api.get('/missing')).rejects.toThrow('Not found');
   });
 
@@ -114,15 +115,8 @@ describe('api', () => {
       json: () => Promise.resolve({ message: 'Conflict' }),
     });
 
-    try {
-      await api.get('/conflict');
-      throw new Error('Should have thrown');
-    } catch (err) {
-      expect(err).toBeInstanceOf(ApiError);
-      if (err instanceof ApiError) {
-        expect(err.status).toBe(409);
-      }
-    }
+    await expect(api.get('/conflict')).rejects.toMatchObject({ status: 409 });
+    await expect(api.get('/conflict')).rejects.toBeInstanceOf(ApiError);
   });
 
   it('should include Content-Type header', async () => {

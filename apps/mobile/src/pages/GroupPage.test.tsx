@@ -50,6 +50,7 @@ function openJoinFormAndSubmit(code: string) {
   render(<GroupPage />);
 
   // No groups yet -> EmptyState's secondary action opens the join form.
+  // This matches a hardcoded string in GroupPage's EmptyState; if i18n is added here, update this query.
   fireEvent.click(screen.getByText('Tengo un código'));
 
   const input = screen.getByPlaceholderText('group.inviteCodePlaceholder');
