@@ -206,7 +206,7 @@ describe('useAuthStore', () => {
 
   it('keeps the same user object reference across repeated auth events', async () => {
     let captured: ((event: string, session: unknown) => void) | null = null;
-    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((cb) => {
+    vi.mocked(supabase.auth.onAuthStateChange).mockImplementationOnce((cb) => {
       captured = cb as never;
       return { data: { subscription: { unsubscribe: vi.fn() } } } as never;
     });
