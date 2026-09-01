@@ -67,8 +67,19 @@ describe('Pantallas', () => {
     expect(screen.getByText('landing2.pantallas.events.dinnerTitle')).toBeInTheDocument();
     expect(screen.getByText('landing2.pantallas.events.padelTitle')).toBeInTheDocument();
     expect(screen.getByText('landing2.pantallas.events.propose')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'landing2.pantallas.events.upcoming' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'landing2.pantallas.events.past' })).toBeInTheDocument();
+    expect(screen.getByText('landing2.pantallas.events.upcoming')).toBeInTheDocument();
+    expect(screen.getByText('landing2.pantallas.events.past')).toBeInTheDocument();
+  });
+
+  it('las pestañas Próximas/Pasadas del mockup son decorativas, no botones interactivos', () => {
+    render(<Pantallas />);
+    expect(
+      screen.queryByRole('button', { name: 'landing2.pantallas.events.upcoming' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'landing2.pantallas.events.past' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
   });
 
   it('la pantalla Cuadrilla lleva el ring, dos miembros y el CTA de invitar', () => {
