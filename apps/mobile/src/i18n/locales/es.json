@@ -555,6 +555,7 @@
     "updateEventFailed": "No se pudieron guardar los cambios",
     "createProposalFailed": "No se pudo crear la propuesta",
     "convertProposalFailed": "No se pudo convertir la propuesta",
+    "updateProposalFailed": "No se pudo actualizar la propuesta",
     "addCityFailed": "No se pudo añadir la ciudad",
     "regenerateCodeFailed": "No se pudo regenerar el código",
     "leaveGroupFailed": "No se pudo salir del grupo",

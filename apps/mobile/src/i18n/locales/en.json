@@ -555,6 +555,7 @@
     "updateEventFailed": "Couldn't save your changes",
     "createProposalFailed": "Couldn't create the proposal",
     "convertProposalFailed": "Couldn't convert the proposal",
+    "updateProposalFailed": "Could not update the proposal",
     "addCityFailed": "Couldn't add the city",
     "regenerateCodeFailed": "Couldn't regenerate the code",
     "leaveGroupFailed": "Couldn't leave the group",
