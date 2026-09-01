@@ -13,6 +13,8 @@ import { formatDateKey } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
 import { buildMemberColorMap } from '../lib/member-colors';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 
 export interface EventPrefill {
   date: string;
@@ -42,6 +44,7 @@ export function CreateEventModal({
 }: CreateEventModalProps) {
   const { t } = useTranslation();
   const createEvent = useCreateEvent(groupId);
+  const { showError } = useToast();
   const user = useAuthStore((s) => s.user);
   const { data: groupDetail } = useGroup(groupId);
   const members = groupDetail?.members ?? [];
@@ -116,19 +119,25 @@ export function CreateEventModal({
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
-    await createEvent.mutateAsync({
-      title: title.trim(),
-      date: resolvedDate,
-      ...(time && { time }),
-      ...(endTime && { endTime }),
-      ...(description.trim() && { description: description.trim() }),
-      ...(!isOnline && location.trim() && { location: location.trim() }),
-      ...(!isOnline && locationLat != null && locationLon != null && { locationLat, locationLon }),
-      ...(selectedMemberIds.size > 0 && { attendeeIds: [...selectedMemberIds] }),
-      ...(isOnline && { isOnline: true }),
-      ...(isOnline && meetingUrl.trim() && { meetingUrl: meetingUrl.trim() }),
-    });
-    resetAndClose();
+    await runWithErrorToast(
+      () =>
+        createEvent.mutateAsync({
+          title: title.trim(),
+          date: resolvedDate,
+          ...(time && { time }),
+          ...(endTime && { endTime }),
+          ...(description.trim() && { description: description.trim() }),
+          ...(!isOnline && location.trim() && { location: location.trim() }),
+          ...(!isOnline &&
+            locationLat != null &&
+            locationLon != null && { locationLat, locationLon }),
+          ...(selectedMemberIds.size > 0 && { attendeeIds: [...selectedMemberIds] }),
+          ...(isOnline && { isOnline: true }),
+          ...(isOnline && meetingUrl.trim() && { meetingUrl: meetingUrl.trim() }),
+        }),
+      showError,
+      { onSuccess: resetAndClose, errorKey: 'errors.createEventFailed' },
+    );
   };
 
   const resetAndClose = () => {
