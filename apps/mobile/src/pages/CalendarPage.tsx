@@ -15,7 +15,7 @@ import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { usePollDeepLink } from '../hooks/usePollDeepLink';
 import { useAutoSelectGroup } from '../hooks/useAutoSelectGroup';
-import { formatDateKey, apiDateToKey, getWeekDays } from '../lib/date-utils';
+import { formatDateKey, apiDateToKey, getWeekDays, weekOffsetOf } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
 import { WeekView } from '../components/WeekView';
@@ -432,6 +432,7 @@ export default function CalendarPage() {
                   secondBestDayKey={secondBestDay?.dateKey ?? null}
                   onSelectDay={(day) => {
                     setSelectedDay(day);
+                    setWeekOffset(weekOffsetOf(day));
                     setCalView('week');
                   }}
                   weatherByDate={weatherByDate}

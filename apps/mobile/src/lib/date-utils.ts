@@ -53,3 +53,18 @@ export function getMonthCells(
     cells.push(new Date(d.getFullYear(), d.getMonth(), i));
   return { cells, month: d };
 }
+
+/**
+ * Number of Monday-based weeks between base's week and day's week.
+ * Matches WeekView, which renders getWeekDays(new Date(), weekOffset).
+ */
+export function weekOffsetOf(day: Date, base: Date = new Date()): number {
+  const mondayOf = (d: Date): Date => {
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  };
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  // Round to absorb the 1-hour DST wobble across a week boundary.
+  return Math.round((mondayOf(day).getTime() - mondayOf(base).getTime()) / msPerWeek);
+}

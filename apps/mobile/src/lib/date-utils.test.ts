@@ -7,6 +7,7 @@ import {
   parseDateKey,
   getWeekDays,
   getMonthCells,
+  weekOffsetOf,
 } from './date-utils';
 
 describe('formatDateKey', () => {
@@ -124,5 +125,29 @@ describe('getMonthCells', () => {
   it('should handle month offset', () => {
     const { month } = getMonthCells(new Date(2026, 0, 1), 2); // Jan + 2 = March
     expect(month.getMonth()).toBe(2);
+  });
+});
+
+describe('weekOffsetOf', () => {
+  const base = new Date(2026, 1, 10); // Tue Feb 10 2026
+
+  it('returns 0 for a day in the same week as base', () => {
+    expect(weekOffsetOf(new Date(2026, 1, 12), base)).toBe(0); // Thu same week
+  });
+
+  it('returns 1 for a day in the next week', () => {
+    expect(weekOffsetOf(new Date(2026, 1, 17), base)).toBe(1); // next Tue
+  });
+
+  it('returns -1 for a day in the previous week', () => {
+    expect(weekOffsetOf(new Date(2026, 1, 3), base)).toBe(-1); // prev Tue
+  });
+
+  it('respects Monday as the week start', () => {
+    // Mon Feb 9 and Sun Feb 15 are the same (Mon-based) week as base
+    expect(weekOffsetOf(new Date(2026, 1, 9), base)).toBe(0);
+    expect(weekOffsetOf(new Date(2026, 1, 15), base)).toBe(0);
+    // Mon Feb 16 starts the next week
+    expect(weekOffsetOf(new Date(2026, 1, 16), base)).toBe(1);
   });
 });
