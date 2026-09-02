@@ -24,10 +24,13 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
-  # One pnpm workspace, one lockfile at the root: this entry covers apps/api and
-  # apps/mobile too.
+  # One pnpm workspace with a single lockfile at the root, but each manifest is
+  # its own update target, so list all three directories.
   - package-ecosystem: npm
-    directory: /
+    directories:
+      - /
+      - /apps/api
+      - /apps/mobile
     schedule:
       interval: weekly
       day: monday
