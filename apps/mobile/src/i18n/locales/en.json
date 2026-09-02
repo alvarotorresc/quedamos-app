@@ -625,6 +625,7 @@
     "notPendingAnymore": "That question isn't pending anymore."
   },
   "share": {
+    "marca": "¿Quedamos?",
     "tarjetaCerrada": "The circle's closed. You're all free on {{fecha}}.",
     "tarjetaSellada": "It's on. {{titulo}}, {{fechaHora}}.",
     "cardCerrada": "The circle's closed.",

@@ -35,7 +35,7 @@ export function parseDateKey(key: string): Date {
 export function formatShareDate(date: Date, language: string): string {
   const opts: Intl.DateTimeFormatOptions = language.startsWith('en')
     ? { weekday: 'short', month: 'short', day: 'numeric' }
-    : { weekday: 'long', day: 'numeric' };
+    : { weekday: 'long', day: 'numeric', month: 'long' };
   return date.toLocaleDateString(language, opts);
 }
 

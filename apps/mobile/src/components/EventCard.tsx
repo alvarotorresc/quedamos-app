@@ -154,7 +154,7 @@ export function EventCard({
             fechaHora,
             memberColors: selladaMemberColors,
             theme,
-            marca: t('landing.brand'),
+            marca: t('share.marca'),
             pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
           });
           const texto = t('share.tarjetaSellada', { titulo: event.title, fechaHora });

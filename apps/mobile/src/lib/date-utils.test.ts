@@ -132,7 +132,7 @@ describe('formatShareDate', () => {
   const monday = new Date(2026, 8, 14); // Mon Sep 14 2026
 
   it('formats Spanish as "weekday day" (long weekday, no comma)', () => {
-    expect(formatShareDate(monday, 'es')).toBe('lunes 14');
+    expect(formatShareDate(monday, 'es')).toBe('lunes, 14 de septiembre');
   });
 
   it('formats English as "Weekday, Mon day" (short weekday + month)', () => {
@@ -140,7 +140,7 @@ describe('formatShareDate', () => {
   });
 
   it('treats region-tagged locales like their base language', () => {
-    expect(formatShareDate(monday, 'es-ES')).toBe('lunes 14');
+    expect(formatShareDate(monday, 'es-ES')).toBe('lunes, 14 de septiembre');
     expect(formatShareDate(monday, 'en-US')).toBe('Mon, Sep 14');
   });
 });

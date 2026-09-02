@@ -460,7 +460,7 @@ describe('EventCard', () => {
       await waitFor(() =>
         expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
           titulo: 'Cena en el centro',
-          fechaHora: 'miércoles 15',
+          fechaHora: 'miércoles, 15 de abril',
         }),
       );
     });
@@ -479,13 +479,13 @@ describe('EventCard', () => {
       await waitFor(() =>
         expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
           titulo: 'Cena en el centro',
-          fechaHora: 'miércoles 15 · 21:00',
+          fechaHora: 'miércoles, 15 de abril · 21:00',
         }),
       );
 
       await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
       const opts = mockRenderTarjetaSellada.mock.calls[0][0];
-      expect(opts.fechaHora).toBe('miércoles 15 · 21:00');
+      expect(opts.fechaHora).toBe('miércoles, 15 de abril · 21:00');
     });
 
     it('fallo del renderer muestra el toast errors.shareTarjetaFailed, sin lanzar', async () => {

@@ -5,25 +5,20 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createMockConfigService } from '../common/test-utils';
 import { NOTIFICATION_TYPES } from './dto/update-preference.dto';
 
-// Mock firebase-admin
-jest.mock('firebase-admin', () => {
-  const mockSendEachForMulticast = jest.fn();
-  return {
-    initializeApp: jest.fn(),
-    credential: {
-      cert: jest.fn().mockReturnValue({}),
-    },
-    messaging: jest.fn().mockReturnValue({
-      sendEachForMulticast: mockSendEachForMulticast,
-    }),
-    __mockSendEachForMulticast: mockSendEachForMulticast,
-  };
-});
+// Mock firebase-admin (v14 modular entry points)
+const mockSendEachForMulticast = jest.fn();
+jest.mock('firebase-admin/app', () => ({
+  initializeApp: jest.fn(),
+  cert: jest.fn().mockReturnValue({}),
+}));
+jest.mock('firebase-admin/messaging', () => ({
+  getMessaging: jest.fn().mockReturnValue({
+    sendEachForMulticast: (...args: unknown[]) => mockSendEachForMulticast(...args),
+  }),
+}));
 
-import * as admin from 'firebase-admin';
-
-const mockSendEachForMulticast = (admin as unknown as { __mockSendEachForMulticast: jest.Mock })
-  .__mockSendEachForMulticast;
+import * as adminApp from 'firebase-admin/app';
+const admin = { initializeApp: adminApp.initializeApp, credential: { cert: adminApp.cert } };
 
 describe('NotificationsService', () => {
   let service: NotificationsService;

@@ -17,10 +17,14 @@ describe('useWidgetGroupsSync', () => {
     expect(syncWidgetGroups).toHaveBeenCalledWith([{ id: 'g1', name: 'Cuadrilla', emoji: '👥' }]);
   });
 
-  it('does nothing while groups are undefined or empty', () => {
+  it('does nothing while groups are still loading', () => {
     renderHook(() => useWidgetGroupsSync(undefined));
-    renderHook(() => useWidgetGroupsSync([]));
     expect(syncWidgetGroups).not.toHaveBeenCalled();
+  });
+
+  it('pushes an empty list once loaded so a group you left disappears from the native picker', () => {
+    renderHook(() => useWidgetGroupsSync([]));
+    expect(syncWidgetGroups).toHaveBeenCalledWith([]);
   });
 
   it('re-syncs when the group list changes', () => {

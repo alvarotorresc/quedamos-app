@@ -625,6 +625,7 @@
     "notPendingAnymore": "Esa pregunta ya no está pendiente."
   },
   "share": {
+    "marca": "¿Quedamos?",
     "tarjetaCerrada": "El aro se ha cerrado. Podéis todos el {{fecha}}.",
     "tarjetaSellada": "Quedamos. {{titulo}}, {{fechaHora}}.",
     "cardCerrada": "El aro se ha cerrado.",

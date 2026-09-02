@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as admin from 'firebase-admin';
+import { initializeApp, cert } from 'firebase-admin/app';
+import { getMessaging, type MulticastMessage } from 'firebase-admin/messaging';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RegisterTokenDto } from './dto/register-token.dto';
 import {
@@ -39,8 +40,8 @@ export class NotificationsService implements OnModuleInit {
     }
 
     try {
-      admin.initializeApp({
-        credential: admin.credential.cert({
+      initializeApp({
+        credential: cert({
           projectId,
           clientEmail,
           privateKey: pem,
@@ -369,7 +370,7 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
-  ): admin.messaging.MulticastMessage {
+  ): MulticastMessage {
     return {
       tokens,
       notification: { title, body },
@@ -388,7 +389,7 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
-  ): admin.messaging.MulticastMessage {
+  ): MulticastMessage {
     return {
       tokens,
       data: {
@@ -401,10 +402,10 @@ export class NotificationsService implements OnModuleInit {
 
   private async sendBatch(
     tokens: string[],
-    message: admin.messaging.MulticastMessage,
+    message: MulticastMessage,
   ): Promise<{ sent: number; failed: number }> {
     try {
-      const response = await admin.messaging().sendEachForMulticast(message);
+      const response = await getMessaging().sendEachForMulticast(message);
 
       if (response.failureCount > 0) {
         const invalidTokens: string[] = [];
