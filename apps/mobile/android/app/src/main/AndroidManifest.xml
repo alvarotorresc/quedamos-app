@@ -41,6 +41,18 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <receiver
+            android:name="app.quedamos.widget.SemanaWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_semana_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_semana_info" />
+        </receiver>
     </application>
 
     <!-- Permissions -->
