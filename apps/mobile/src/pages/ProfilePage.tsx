@@ -220,7 +220,7 @@ export default function ProfilePage() {
   };
 
   const inputClass =
-    'w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary';
+    'w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark focus:border-primary';
 
   const notifTypes = NOTIF_SECTIONS.flatMap((section) => section.types);
   const enabledNotif = notifTypes.filter(

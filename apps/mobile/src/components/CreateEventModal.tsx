@@ -160,7 +160,7 @@ export function CreateEventModal({
   const fieldLabelClass =
     'block font-mono text-[10px] tracking-[0.14em] uppercase text-text-muted mb-1.5';
   const underlineInputClass =
-    'w-full bg-transparent border-0 border-b-[1.5px] border-strong text-sm text-text outline-none placeholder:text-text-dark py-2';
+    'w-full bg-transparent border-0 border-b-[1.5px] border-strong text-sm text-text placeholder:text-text-dark py-2';
   const underlineFieldStyle: React.CSSProperties = {
     background: 'transparent',
     border: 'none',

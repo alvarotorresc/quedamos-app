@@ -210,7 +210,7 @@ export default function GroupPage() {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       placeholder={t('group.groupNamePlaceholder')}
-                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark focus:border-primary"
                       autoFocus
                     />
                   </div>
@@ -268,7 +268,7 @@ export default function GroupPage() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
                       placeholder={t('group.inviteCodePlaceholder')}
-                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary text-center font-mono tracking-widest"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark focus:border-primary text-center font-mono tracking-widest"
                       maxLength={8}
                       autoFocus
                     />

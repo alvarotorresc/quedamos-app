@@ -123,7 +123,7 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('proposals.titlePlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
             style={inputStyle}
           />
         </div>
@@ -138,7 +138,7 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('proposals.descriptionPlaceholder')}
             rows={3}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark resize-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark resize-none"
             style={inputStyle}
           />
         </div>
@@ -165,7 +165,7 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
               value={meetingUrl}
               onChange={(e) => setMeetingUrl(e.target.value)}
               placeholder={t('online.meetingUrlPlaceholder')}
-              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
               style={inputStyle}
             />
           </div>
@@ -179,7 +179,7 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder={t('plans.create.locationPlaceholder')}
-              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
               style={inputStyle}
             />
           </div>
@@ -194,7 +194,7 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
             type="date"
             value={proposedDate}
             onChange={(e) => setProposedDate(e.target.value)}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text"
             style={inputStyle}
           />
         </div>

@@ -215,7 +215,7 @@ export function AvailabilityModal({
                     setToTime(idx < 48 ? `${h}:${m}` : '23:59');
                   }
                 }}
-                className="w-full rounded-[10px] p-2 text-sm text-text outline-none"
+                className="w-full rounded-[10px] p-2 text-sm text-text"
                 style={{
                   background: 'var(--app-bg-hover)',
                   border: '1px solid var(--app-border-strong)',
@@ -240,7 +240,7 @@ export function AvailabilityModal({
               <select
                 value={toTime}
                 onChange={(e) => setToTime(e.target.value)}
-                className="w-full rounded-[10px] p-2 text-sm text-text outline-none"
+                className="w-full rounded-[10px] p-2 text-sm text-text"
                 style={{
                   background: 'var(--app-bg-hover)',
                   border: '1px solid var(--app-border-strong)',

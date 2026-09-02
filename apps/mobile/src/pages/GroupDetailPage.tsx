@@ -567,7 +567,7 @@ export default function GroupDetailPage() {
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
                 placeholder={t('weather.searchCity')}
-                className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark mb-2 bg-bg-hover border border-strong"
+                className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark mb-2 bg-bg-hover border border-strong"
               />
               {cityResults.length > 0 && (
                 <div className="rounded-[10px] overflow-hidden bg-bg-card border border-subtle mb-2">

@@ -145,7 +145,7 @@ export default function ResetPasswordPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text focus:border-primary"
                     placeholder={t('common.passwordPlaceholder')}
                     required
                   />
@@ -199,7 +199,7 @@ export default function ResetPasswordPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text focus:border-primary"
                     placeholder={t('common.passwordPlaceholder')}
                     minLength={6}
                     required

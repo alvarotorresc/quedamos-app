@@ -55,6 +55,16 @@ describe('LoginPage', () => {
     search = '';
   });
 
+  it('los campos no anulan el foco visible global de index.css', () => {
+    render(<LoginPage />);
+    expect(screen.getByPlaceholderText('common.emailPlaceholder').className).not.toContain(
+      'outline-none',
+    );
+    expect(screen.getByPlaceholderText('common.passwordPlaceholder').className).not.toContain(
+      'outline-none',
+    );
+  });
+
   it('ofrece crear cuenta conservando el destino de la invitación', () => {
     search = '?redirect=%2Fjoin%2F48213956';
     render(<LoginPage />);

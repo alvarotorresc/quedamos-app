@@ -113,7 +113,7 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('proposals.titlePlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
             style={inputStyle}
           />
         </div>
@@ -129,7 +129,7 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t('proposals.descriptionPlaceholder')}
             rows={3}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark resize-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark resize-none"
             style={inputStyle}
           />
         </div>
@@ -157,7 +157,7 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
               value={meetingUrl}
               onChange={(e) => setMeetingUrl(e.target.value)}
               placeholder={t('online.meetingUrlPlaceholder')}
-              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
               style={inputStyle}
             />
           </div>
@@ -200,7 +200,7 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
             type="date"
             value={proposedDate}
             onChange={(e) => setProposedDate(e.target.value)}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text"
             style={inputStyle}
           />
         </div>
