@@ -11,6 +11,7 @@ import {
   HiOutlineVideoCamera,
   HiOutlineArrowDownTray,
   HiOutlineShare,
+  HiOutlineCalendar,
 } from 'react-icons/hi2';
 import { useRespondEvent } from '../hooks/useEvents';
 import { useGroupInvite } from '../hooks/useGroups';
@@ -48,6 +49,8 @@ interface EventCardProps {
   isDeleting?: boolean;
   isCancelling?: boolean;
   isConfirming?: boolean;
+  /** Ficha destacada de la próxima quedada: con borde, etiqueta y acciones en pastilla. */
+  featured?: boolean;
 }
 
 export function EventCard({
@@ -62,6 +65,7 @@ export function EventCard({
   isDeleting,
   isCancelling,
   isConfirming,
+  featured = false,
 }: EventCardProps) {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
@@ -173,51 +177,73 @@ export function EventCard({
     }
   };
 
-  return (
-    <div className="border-t border-subtle py-4">
-      {/* Header: attendee ring + title + meta + badge/actions */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-3 min-w-0 flex-1">
-          <motion.div
-            animate={motionSafe && justConfirmed ? { scale: [1, 1.06, 1] } : undefined}
-            transition={spring.bouncy}
+  const rootClass = featured
+    ? 'bg-bg-light border border-subtle rounded-lg p-4'
+    : 'border-t border-subtle py-4';
+
+  const ring = (
+    <motion.div
+      animate={motionSafe && justConfirmed ? { scale: [1, 1.06, 1] } : undefined}
+      transition={spring.bouncy}
+      className="shrink-0"
+    >
+      <Aro data-testid="attendee-ring" members={attendeeRing} size={featured ? 48 : 42}>
+        {event.status === 'confirmed' ? (
+          <svg
+            data-testid="attendee-ring-check"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-4 h-4 text-success"
+            aria-hidden="true"
           >
-            <Aro data-testid="attendee-ring" members={attendeeRing} size={42}>
-              {event.status === 'confirmed' ? (
-                <svg
-                  data-testid="attendee-ring-check"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-4 h-4 text-success"
-                  aria-hidden="true"
-                >
-                  <polyline points="4 12 9 17 20 6" />
-                </svg>
-              ) : undefined}
-            </Aro>
-          </motion.div>
-          <div className="min-w-0 flex-1">
-            <h4 className="text-[17px] font-bold text-text leading-snug flex items-center gap-1.5">
-              <span className="truncate">{event.title}</span>
-              {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
-            </h4>
+            <polyline points="4 12 9 17 20 6" />
+          </svg>
+        ) : undefined}
+      </Aro>
+    </motion.div>
+  );
+
+  const iconButtonClass =
+    'p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors disabled:opacity-40 disabled:pointer-events-none';
+
+  return (
+    <div className={rootClass}>
+      {featured && (
+        <div className="flex items-center gap-2 text-text-muted mb-3">
+          <HiOutlineCalendar className="w-4 h-4" />
+          <span className="font-mono text-[10px] tracking-[0.14em] uppercase">{t('plans.nextEvent')}</span>
+        </div>
+      )}
+      <div className="flex gap-3">
+        {/* Day column */}
+        <div
+          data-testid="event-day"
+          className={`flex flex-col items-center shrink-0 pt-0.5 ${featured ? 'w-[58px]' : 'w-11'}`}
+        >
+          <span className={`font-extrabold leading-none text-text ${featured ? 'text-[40px]' : 'text-[30px]'}`}>
+            {dateObj.getDate()}
+          </span>
+          <span className="font-mono text-[9px] tracking-[0.12em] text-text-muted mt-0.5">{weekdayShort}</span>
+        </div>
+
+        <div className="min-w-0 flex-1">
+      {/* Title + meta + ring */}
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h4 className="text-[17px] font-bold text-text leading-snug flex items-center gap-1.5">
+            <span className="truncate">{event.title}</span>
+            {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
+          </h4>
+          {(formattedTime || (!event.isOnline && weather && weather.length > 0)) && (
             <p className="font-mono text-[11px] text-text-muted flex items-center gap-1 mt-0.5">
-              <span>
-                {weekdayShort} {dateObj.getDate()}
-              </span>
-              {formattedTime && (
-                <>
-                  <span aria-hidden="true">·</span>
-                  <span>{formattedTime}</span>
-                </>
-              )}
+              {formattedTime && <span>{formattedTime}</span>}
               {!event.isOnline && weather && weather.length > 0 && (
                 <>
-                  <span aria-hidden="true">·</span>
+                  {formattedTime && <span aria-hidden="true">·</span>}
                   <button
                     onClick={() => setShowWeatherDetail((prev) => !prev)}
                     className="font-mono text-[11px] text-text-muted underline-offset-2 hover:underline bg-transparent border-none p-0 cursor-pointer"
@@ -229,45 +255,14 @@ export function EventCard({
                 </>
               )}
             </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            onClick={() => downloadICS(event)}
-            className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors"
-            title={t('calendar.eventDetail.download')}
-            aria-label={t('calendar.eventDetail.download')}
-          >
-            <HiOutlineArrowDownTray className="w-4 h-4 text-text-muted" />
-          </button>
-          {isCreator && onEdit && (
-            <button
-              onClick={() => onEdit(event)}
-              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors"
-              title={t('plans.editButton')}
-              aria-label={t('plans.editButton')}
-            >
-              <HiOutlinePencil className="w-4 h-4 text-text-muted" />
-            </button>
           )}
-          {event.status === 'confirmed' && (
-            <motion.button
-              initial={motionSafe && justConfirmed ? { scale: 0, opacity: 0 } : false}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={spring.bouncy}
-              onClick={handleShare}
-              disabled={sharing}
-              className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              title={t('group.share')}
-              aria-label={t('group.share')}
-            >
-              <HiOutlineShare className="w-4 h-4 text-text-muted" />
-            </motion.button>
+          {featured && event.status === 'confirmed' && (
+            <p className="text-[11px] text-success mt-1">
+              {t('plans.sealedWith', { count: confirmedAttendees.length })}
+            </p>
           )}
-          <Badge variant={STATUS_BADGE_VARIANT[event.status]}>
-            {t(`plans.status.${event.status}`)}
-          </Badge>
         </div>
+        {ring}
       </div>
 
       {/* Weather detail panel (all cities) */}
@@ -324,6 +319,82 @@ export function EventCard({
       {/* Description */}
       {event.description && (
         <p className="text-xs text-text-dark mt-2 line-clamp-2">{event.description}</p>
+      )}
+
+      {/* Status + actions */}
+      {featured ? (
+        <div className="flex gap-2 mt-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => downloadICS(event)}
+            aria-label={t('plans.addToCalendar')}
+            className="flex-1"
+          >
+            {t('plans.addToCalendar')}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleShare}
+            disabled={sharing}
+            aria-label={t('group.share')}
+            className="!px-3"
+          >
+            <HiOutlineShare className="w-4 h-4" />
+          </Button>
+          {isCreator && onEdit && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => onEdit(event)}
+              aria-label={t('plans.editButton')}
+              className="!px-3"
+            >
+              <HiOutlinePencil className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <Badge variant={STATUS_BADGE_VARIANT[event.status]}>
+            {t(`plans.status.${event.status}`)}
+          </Badge>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => downloadICS(event)}
+              className={iconButtonClass}
+              title={t('calendar.eventDetail.download')}
+              aria-label={t('calendar.eventDetail.download')}
+            >
+              <HiOutlineArrowDownTray className="w-4 h-4 text-text-muted" />
+            </button>
+            {isCreator && onEdit && (
+              <button
+                onClick={() => onEdit(event)}
+                className={iconButtonClass}
+                title={t('plans.editButton')}
+                aria-label={t('plans.editButton')}
+              >
+                <HiOutlinePencil className="w-4 h-4 text-text-muted" />
+              </button>
+            )}
+            {event.status === 'confirmed' && (
+              <motion.button
+                initial={motionSafe && justConfirmed ? { scale: 0, opacity: 0 } : false}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={spring.bouncy}
+                onClick={handleShare}
+                disabled={sharing}
+                className={iconButtonClass}
+                title={t('group.share')}
+                aria-label={t('group.share')}
+              >
+                <HiOutlineShare className="w-4 h-4 text-text-muted" />
+              </motion.button>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Going count */}
@@ -421,6 +492,8 @@ export function EventCard({
           )}
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }

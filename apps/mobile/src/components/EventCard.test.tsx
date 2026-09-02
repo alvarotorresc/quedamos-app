@@ -74,6 +74,7 @@ vi.mock('react-icons/hi2', () => ({
   HiOutlineVideoCamera: () => <span data-testid="icon-video" />,
   HiOutlineArrowDownTray: () => <span data-testid="icon-download" />,
   HiOutlineShare: () => <span data-testid="icon-share" />,
+  HiOutlineCalendar: () => <span data-testid="icon-calendar" />,
 }));
 
 // Mock ics-utils
@@ -562,5 +563,36 @@ describe('EventCard', () => {
       );
       expect(mockShareTarjeta).toHaveBeenCalledTimes(1);
     });
+  });
+});
+
+describe('EventCard · agenda y destacada', () => {
+  it('pinta el día en una columna con el número grande y el día de la semana', () => {
+    render(<EventCard event={createEvent({ date: '2026-04-15' })} {...defaultProps} />);
+    const day = screen.getByTestId('event-day');
+    expect(day).toHaveTextContent('15');
+    expect(day).toHaveTextContent('MIÉ');
+  });
+
+  it('la ficha destacada lleva su etiqueta, la pastilla de calendario y compartir', () => {
+    const event = createEvent({
+      status: 'confirmed',
+      attendees: [createAttendee(CURRENT_USER_ID, 'confirmed'), createAttendee(OTHER_USER_ID, 'confirmed')],
+    });
+    const { container } = render(<EventCard event={event} {...defaultProps} featured />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('rounded-lg');
+    expect(root.className).toContain('bg-bg-light');
+    expect(screen.getByText('plans.nextEvent')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'plans.addToCalendar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'group.share' })).toBeInTheDocument();
+    expect(mockT).toHaveBeenCalledWith('plans.sealedWith', { count: 2 });
+  });
+
+  it('sin destacar sigue siendo un bloque de lista con las acciones en iconos', () => {
+    render(<EventCard event={createEvent({ status: 'confirmed' })} {...defaultProps} />);
+    expect(screen.queryByText('plans.nextEvent')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'plans.addToCalendar' })).toBeNull();
+    expect(screen.getByTestId('icon-download')).toBeInTheDocument();
   });
 });
