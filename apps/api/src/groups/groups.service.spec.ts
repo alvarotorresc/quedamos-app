@@ -206,6 +206,32 @@ describe('GroupsService', () => {
       expect(prisma.eventAttendee.createMany).not.toHaveBeenCalled();
     });
 
+    it('should cut the backfill at UTC midnight whatever the server timezone', async () => {
+      const previousTz = process.env.TZ;
+      process.env.TZ = 'America/Los_Angeles';
+      try {
+        const group = createTestGroup();
+        prisma.group.findUnique.mockResolvedValue(group);
+        prisma.groupMember.findUnique.mockResolvedValue(null);
+        prisma.groupMember.create.mockResolvedValue({});
+        prisma.user.findUnique.mockResolvedValue(createTestUser());
+        prisma.event.findMany.mockResolvedValue([]);
+        prisma.group.findFirst.mockResolvedValue(group);
+
+        await service.joinByCode('user-1', '12345678');
+
+        const { where } = prisma.event.findMany.mock.calls[0][0] as {
+          where: { date: { gte: Date } };
+        };
+        // event.date is a @db.Date at UTC midnight: a local cutoff drops or keeps
+        // today's quedada depending on the hour the container happens to run in.
+        expect(where.date.gte.getUTCHours()).toBe(0);
+        expect(where.date.gte.getUTCMinutes()).toBe(0);
+      } finally {
+        process.env.TZ = previousTz;
+      }
+    });
+
     it('should send notification to group when joining', async () => {
       const group = createTestGroup();
       const user = createTestUser();
@@ -451,6 +477,51 @@ describe('GroupsService', () => {
       await expect(service.kickMember('group-1', 'user-2', 'user-1')).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('should clean up the availability of the kicked member', async () => {
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-2',
+        role: 'member',
+      });
+      prisma.groupMember.delete.mockResolvedValue({});
+      prisma.eventAttendee.deleteMany.mockResolvedValue({ count: 0 });
+
+      await service.kickMember('group-1', 'user-2', 'user-1');
+
+      expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
+        where: { groupId: 'group-1', userId: 'user-2' },
+      });
+    });
+
+    it('should cut the kicked attendance at UTC midnight, keeping today', async () => {
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-2',
+        role: 'member',
+      });
+      prisma.groupMember.delete.mockResolvedValue({});
+      prisma.eventAttendee.deleteMany.mockResolvedValue({ count: 0 });
+
+      await service.kickMember('group-1', 'user-2', 'user-1');
+
+      const { where } = prisma.eventAttendee.deleteMany.mock.calls[0][0] as {
+        where: { event: { date: { gte: Date } } };
+      };
+      // `new Date()` with the current hour always excluded today's quedada.
+      expect(where.event.date.gte.getUTCHours()).toBe(0);
+      expect(where.event.date.gte.getUTCMinutes()).toBe(0);
     });
 
     it('should clean event attendees on kick', async () => {

@@ -11,6 +11,7 @@ import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { getFrontendUrl } from '../common/frontend-url';
+import { startOfTodayUTC } from '../common/date-utils';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { AddCityDto } from './dto/add-city.dto';
@@ -147,8 +148,7 @@ export class GroupsService {
     });
 
     // Backfill: add new member as attendee to all active future events
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = startOfTodayUTC();
     const activeEvents = await this.prisma.event.findMany({
       where: {
         groupId: group.id,
@@ -211,14 +211,12 @@ export class GroupsService {
     });
 
     // Clean up user's attendance from future events in this group
-    const now = new Date();
-    now.setUTCHours(0, 0, 0, 0);
     await this.prisma.eventAttendee.deleteMany({
       where: {
         userId,
         event: {
           groupId,
-          date: { gte: now },
+          date: { gte: startOfTodayUTC() },
         },
       },
     });
@@ -373,12 +371,18 @@ export class GroupsService {
       where: { groupId_userId: { groupId, userId: targetUserId } },
     });
 
+    // Same cleanup as leave(): the kicked member leaves no availability behind and
+    // stops being a pending attendee of today's quedada too.
+    await this.prisma.availability.deleteMany({
+      where: { groupId, userId: targetUserId },
+    });
+
     await this.prisma.eventAttendee.deleteMany({
       where: {
         userId: targetUserId,
         event: {
           groupId,
-          date: { gte: new Date() },
+          date: { gte: startOfTodayUTC() },
         },
       },
     });

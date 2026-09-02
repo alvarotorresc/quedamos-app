@@ -18,3 +18,12 @@ export function isCalendarDate(value: string): boolean {
     parsed.getUTCDate() === day
   );
 }
+
+/**
+ * Midnight UTC of the current day — the cutoff for "today and later" over `@db.Date`
+ * columns, which are stored at UTC midnight. Using the server's local midnight (or the
+ * current instant) shifts the boundary with the container timezone and drops today.
+ */
+export function startOfTodayUTC(now: Date = new Date()): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
