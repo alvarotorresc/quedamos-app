@@ -51,12 +51,20 @@ describe('EventReminderService', () => {
       expect(result.toISOString()).toBe('2026-03-15T13:30:00.000Z');
     });
 
-    it('should default to midnight when time is null', () => {
+    it('should treat a timeless event as 10:00 Madrid wall-clock', () => {
       const date = new Date('2026-03-15T00:00:00.000Z');
       const result = combine(date, null);
 
-      expect(result.getUTCHours()).toBe(0);
-      expect(result.getUTCMinutes()).toBe(0);
+      // 10:00 Madrid (CET, UTC+1) === 09:00 UTC — not midnight UTC, which would
+      // fire the "es mañana" push at 02:00 Madrid.
+      expect(result.toISOString()).toBe('2026-03-15T09:00:00.000Z');
+    });
+
+    it('should apply the summer offset to a timeless event too (CEST, UTC+2)', () => {
+      const date = new Date('2026-07-15T00:00:00.000Z');
+      const result = combine(date, null);
+
+      expect(result.toISOString()).toBe('2026-07-15T08:00:00.000Z');
     });
 
     it('should handle time near midnight', () => {

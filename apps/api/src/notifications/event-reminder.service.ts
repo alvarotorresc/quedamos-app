@@ -10,6 +10,13 @@ import { NotificationsService } from './notifications.service';
  */
 const DEFAULT_TIMEZONE = 'Europe/Madrid';
 
+/**
+ * Wall-clock time assumed for events created without one. Reading a timeless
+ * event as midnight UTC fired the "es manana" push at 02:00 Madrid (01:00 in
+ * winter); 10:00 local is the first sensible hour of the day before.
+ */
+const DEFAULT_ALLDAY_TIME = '10:00';
+
 @Injectable()
 export class EventReminderService {
   private readonly logger = new Logger(EventReminderService.name);
@@ -95,11 +102,7 @@ export class EventReminderService {
 
   private combineDateTime(date: Date, time: string | null): Date {
     const d = new Date(date);
-    if (!time) {
-      return d;
-    }
-
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hours, minutes] = (time ?? DEFAULT_ALLDAY_TIME).split(':').map(Number);
 
     // Naive guess: read the wall-clock time as if it were UTC…
     const utcGuess = new Date(d);
