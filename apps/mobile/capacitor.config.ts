@@ -6,6 +6,10 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
+    // Serve the WebView from the public host instead of `localhost`: hCaptcha degrades on a
+    // localhost origin ("localhost detected" in logcat, random first-try failures in the
+    // forgot-password flow). One-off cost: the origin change logs existing installs out once.
+    hostname: 'quedamos.alvarotc.com',
   },
   plugins: {
     PushNotifications: {
