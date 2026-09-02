@@ -544,10 +544,7 @@
     },
     "cierre": {
       "quote": "“Nothing pending. The week's been answered.”",
-      "subtitle": "The empty state is the reward.",
-      "footer": {
-        "languages": "Español / English"
-      }
+      "subtitle": "The empty state is the reward."
     }
   },
   "online": {

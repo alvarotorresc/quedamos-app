@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Cierre } from './Cierre';
@@ -6,6 +6,15 @@ import { FEEDBACK_FORM_URL } from '../../lib/constants';
 import { GITHUB_URL } from './NavIsla';
 
 let motionSafeValue = true;
+const changeLanguageMock = vi.fn();
+let currentLanguage = 'es';
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (k: string) => k,
+    i18n: { language: currentLanguage, changeLanguage: changeLanguageMock },
+  }),
+}));
+
 vi.mock('../../lib/motion', () => ({
   spring: { gentle: {}, snappy: {}, bouncy: {} },
   useMotionSafe: () => motionSafeValue,
@@ -72,7 +81,6 @@ describe('Cierre', () => {
     const githubLink = screen.getByRole('link', { name: 'landing2.githubCta' });
     expect(githubLink).toHaveAttribute('href', GITHUB_URL);
     expect(githubLink).toHaveAttribute('target', '_blank');
-    expect(screen.getByText('landing2.cierre.footer.languages')).toBeInTheDocument();
   });
 
   it('el footer enlaza «Reportar un error» al formulario de feedback', () => {
@@ -85,6 +93,31 @@ describe('Cierre', () => {
     expect(feedbackLink).toHaveAttribute('href', FEEDBACK_FORM_URL);
     expect(feedbackLink).toHaveAttribute('target', '_blank');
     expect(feedbackLink).toHaveAttribute('rel', 'noreferrer');
+  });
+
+  it('el footer cambia de idioma de verdad: English llama a changeLanguage("en")', () => {
+    currentLanguage = 'es';
+    render(
+      <MemoryRouter>
+        <Cierre />
+      </MemoryRouter>,
+    );
+    const es = screen.getByRole('button', { name: 'Español' });
+    const en = screen.getByRole('button', { name: 'English' });
+    expect(es).toHaveAttribute('aria-pressed', 'true');
+    expect(en).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(en);
+    expect(changeLanguageMock).toHaveBeenCalledWith('en');
+  });
+
+  it('marca English como activo cuando el idioma actual es en', () => {
+    currentLanguage = 'en';
+    render(
+      <MemoryRouter>
+        <Cierre />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('la sección entra con fade-up con motion habilitado: lleva initial real', () => {

@@ -6,15 +6,22 @@ import { useMotionSafe } from '../../lib/motion';
 import { CtaArrow, GITHUB_URL } from './NavIsla';
 import { FEEDBACK_FORM_URL } from '../../lib/constants';
 
+// Language names stay in their own language on purpose: never translated.
+const LANGUAGES = [
+  { code: 'es', label: 'Español' },
+  { code: 'en', label: 'English' },
+] as const;
+
 /**
  * Cierre (zona 8): cita + CTA + footer. Mismo botón «Abrir Quedamos» que
  * NavIsla/HeroPregunta (comparte `CtaArrow`); «Ver el código en GitHub» enlaza
- * al repo y «Reportar un error» al formulario de feedback; «Español / English» del footer es texto
- * estático en el lienzo, no un selector funcional.
+ * al repo y «Reportar un error» al formulario de feedback; «Español / English»
+ * del footer cambia el idioma (el detector de i18n lo persiste).
  */
 export function Cierre(): JSX.Element {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const motionSafe = useMotionSafe();
+  const currentLanguage = i18n.language?.startsWith('en') ? 'en' : 'es';
   return (
     <motion.section
       data-testid="cierre-section"
@@ -43,7 +50,23 @@ export function Cierre(): JSX.Element {
         <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer" className="hover:text-text">
           {t('landing2.feedbackCta')}
         </a>
-        <span>{t('landing2.cierre.footer.languages')}</span>
+        <span className="flex items-center gap-2" role="group" aria-label="Idioma / Language">
+          {LANGUAGES.map(({ code, label }, i) => (
+            <span key={code} className="flex items-center gap-2">
+              {i > 0 && <span aria-hidden="true">/</span>}
+              <button
+                type="button"
+                onClick={() => i18n.changeLanguage(code)}
+                aria-pressed={currentLanguage === code}
+                className={`bg-transparent border-none p-0 text-sm hover:text-text ${
+                  currentLanguage === code ? 'text-text font-semibold' : 'text-text-muted'
+                }`}
+              >
+                {label}
+              </button>
+            </span>
+          ))}
+        </span>
       </div>
     </motion.section>
   );
