@@ -79,6 +79,12 @@
 }
 
 
+/* Botón de volver de Ionic: hereda el color de texto de la app, no el azul
+   por defecto del framework. */
+ion-back-button {
+  --color: var(--app-text);
+}
+
 /* Skeleton shimmer */
 @keyframes shimmer {
   0% {

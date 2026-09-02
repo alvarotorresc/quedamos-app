@@ -356,7 +356,7 @@
     "password": "Password",
     "tiles": {
       "notifications": "Alerts",
-      "activeOf": "on out of {{total}}",
+      "activeOf": "active of {{total}}",
       "theme": "Theme",
       "dark": "Dark",
       "light": "Light",
