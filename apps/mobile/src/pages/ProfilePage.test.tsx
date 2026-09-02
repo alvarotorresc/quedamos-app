@@ -128,7 +128,7 @@ describe('ProfilePage', () => {
 
   it('el idioma se cambia con las pastillas', () => {
     render(<ProfilePage />);
-    fireEvent.click(screen.getByRole('button', { name: 'EN' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'EN' }));
     expect(changeLanguageMock).toHaveBeenCalledWith('en');
   });
 
