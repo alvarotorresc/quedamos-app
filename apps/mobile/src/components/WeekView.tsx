@@ -1,7 +1,7 @@
 import { Fragment, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HiOutlineShare } from 'react-icons/hi2';
-import { getWeekDays, formatDateKey, isSameDay, formatShareDate } from '../lib/date-utils';
+import { getWeekDays, formatDateKey, isSameDay, formatShareDate, capitalizeFirst } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
 import { Aro, type AroMember } from '../ui/Aro';
 import { Button } from '../ui/Button';
@@ -124,7 +124,7 @@ export function WeekView({
         >
           ‹
         </button>
-        <span className="text-text-dark text-xs font-semibold capitalize">{monthLabel}</span>
+        <span className="text-text-dark text-xs font-semibold">{capitalizeFirst(monthLabel)}</span>
         <button
           onClick={() => onWeekChange(weekOffset + 1)}
           className="text-text-dark text-base px-2 py-1 bg-transparent border-none"

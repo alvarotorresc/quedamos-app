@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDateKey } from '../lib/date-utils';
+import { formatDateKey, capitalizeFirst } from '../lib/date-utils';
 import { useCreateAvailability, useDeleteAvailability } from '../hooks/useAvailability';
 import { useAuthStore } from '../stores/auth';
 import { DEFAULT_TIME_SLOTS, getSlotHours } from '../lib/time-slot-utils';
@@ -111,7 +111,7 @@ export function AvailabilityModal({
       isOpen={isOpen}
       onClose={onClose}
       title={t('calendar.availability.title')}
-      subtitle={<span className="capitalize">{dateLabel}</span>}
+      subtitle={capitalizeFirst(dateLabel)}
       footer={
         <>
           <Button

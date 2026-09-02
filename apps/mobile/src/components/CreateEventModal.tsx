@@ -10,7 +10,7 @@ import { Toggle } from '../ui/Toggle';
 import { Avatar } from '../ui/Avatar';
 import { WeatherBadge } from './WeatherWidget';
 import { LocationSearch } from './LocationSearch';
-import { formatDateKey } from '../lib/date-utils';
+import { formatDateKey, capitalizeFirst } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
 import { buildMemberColorMap } from '../lib/member-colors';
@@ -191,8 +191,8 @@ export function CreateEventModal({
       subtitle={
         prefill ? (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="capitalize">
-              {prefill.dateLabel} · {prefill.availableCount} {t('plans.create.available')}
+            <span>
+              {capitalizeFirst(prefill.dateLabel)} · {prefill.availableCount} {t('plans.create.available')}
             </span>
             {!isOnline && weatherToShow && weatherToShow.length > 0 && (
               <div className="flex items-center gap-1.5">

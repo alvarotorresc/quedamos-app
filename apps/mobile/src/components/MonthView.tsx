@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { getMonthCells, formatDateKey, isSameDay, isToday } from '../lib/date-utils';
+import { getMonthCells, formatDateKey, isSameDay, isToday, capitalizeFirst } from '../lib/date-utils';
 import { AvatarStack } from '../ui/AvatarStack';
 import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
@@ -75,7 +75,7 @@ export function MonthView({
         >
           ‹
         </button>
-        <span className="text-text-dark text-sm font-semibold capitalize">{monthLabel}</span>
+        <span className="text-text-dark text-sm font-semibold">{capitalizeFirst(monthLabel)}</span>
         <button
           onClick={() => onMonthChange(monthOffset + 1)}
           className="text-text-dark text-lg px-3 py-1 bg-transparent border-none"
@@ -173,12 +173,12 @@ export function MonthView({
             padding: '12px 14px',
           }}
         >
-          <div className="text-[13px] font-semibold text-text mb-1 capitalize">
-            {selectedDay.toLocaleDateString(locale, {
+          <div className="text-[13px] font-semibold text-text mb-1">
+            {capitalizeFirst(selectedDay.toLocaleDateString(locale, {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
-            })}
+            }))}
           </div>
 
           {selMembers.length > 0 ? (

@@ -11,7 +11,7 @@ import { AvatarStack } from '../ui/AvatarStack';
 import { openInMaps } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
 import { downloadICS } from '../lib/ics-utils';
-import { apiDateToKey } from '../lib/date-utils';
+import { apiDateToKey, capitalizeFirst } from '../lib/date-utils';
 import type { Event, EventStatus } from '../services/events';
 import { MEMBER_COLORS } from '../lib/constants';
 
@@ -84,7 +84,7 @@ export function EventDetailModal({
       }
     >
         <div className="flex items-center gap-3 text-xs text-text-muted mb-2">
-          <span className="capitalize">{formattedDate}</span>
+          <span>{capitalizeFirst(formattedDate)}</span>
           {formattedTime && (
             <span className="flex items-center gap-0.5">
               <HiOutlineClock className="w-3.5 h-3.5" />

@@ -5,7 +5,7 @@ import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
 import { useCreatePoll } from '../hooks/usePolls';
 import { useToast } from '../hooks/useToast';
-import { formatDateKey } from '../lib/date-utils';
+import { formatDateKey, capitalizeFirst } from '../lib/date-utils';
 import { SLOT_KEYS } from '../lib/availability-label';
 import { ApiError } from '../lib/api';
 import type { TimeSlot } from '../services/availability';
@@ -71,7 +71,7 @@ export function AskGroupSheet({ isOpen, onClose, groupId, day }: AskGroupSheetPr
       isOpen={isOpen}
       onClose={onClose}
       title={t('calendar.askTitle')}
-      subtitle={<span className="capitalize">{dateLabel}</span>}
+      subtitle={capitalizeFirst(dateLabel)}
       footer={
         <Button variant="primary" onClick={handleAsk} disabled={isAsking} className="w-full">
           {t('calendar.askAction')}

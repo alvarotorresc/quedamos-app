@@ -8,8 +8,7 @@ import {
   getWeekDays,
   getMonthCells,
   weekOffsetOf,
-  formatShareDate,
-} from './date-utils';
+  formatShareDate, capitalizeFirst } from './date-utils';
 
 describe('formatDateKey', () => {
   it('should format date as YYYY-MM-DD', () => {
@@ -167,5 +166,23 @@ describe('weekOffsetOf', () => {
     expect(weekOffsetOf(new Date(2026, 1, 15), base)).toBe(0);
     // Mon Feb 16 starts the next week
     expect(weekOffsetOf(new Date(2026, 1, 16), base)).toBe(1);
+  });
+});
+
+describe('capitalizeFirst', () => {
+  it('pone en mayúscula solo la primera letra', () => {
+    expect(capitalizeFirst('viernes, 5 de septiembre')).toBe('Viernes, 5 de septiembre');
+    expect(capitalizeFirst('agosto de 2026')).toBe('Agosto de 2026');
+  });
+
+  it('respeta lo que ya está en mayúscula y las letras acentuadas', () => {
+    expect(capitalizeFirst('Friday, September 5')).toBe('Friday, September 5');
+    expect(capitalizeFirst('éxito')).toBe('Éxito');
+  });
+
+  it('devuelve cadena vacía sin valor', () => {
+    expect(capitalizeFirst(undefined)).toBe('');
+    expect(capitalizeFirst(null)).toBe('');
+    expect(capitalizeFirst('')).toBe('');
   });
 });
