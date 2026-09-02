@@ -152,7 +152,7 @@ class SemanaWidgetProvider : AppWidgetProvider() {
             if (groupId != null) {
                 val intent = Intent(
                     Intent.ACTION_VIEW,
-                    Uri.parse("https://quedamos-app-mobile.vercel.app/tabs/calendar?groupId=$groupId"),
+                    Uri.parse(WidgetDeepLink.calendar(groupId)),
                 ).setPackage(ctx.packageName)
                 val pendingIntent = PendingIntent.getActivity(
                     ctx,

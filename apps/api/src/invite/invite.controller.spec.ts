@@ -31,7 +31,7 @@ describe('InviteController', () => {
       expect(groupsService.findByInviteCode).toHaveBeenCalledWith('12345678');
       expect(mockResponse.redirect).toHaveBeenCalledWith(
         302,
-        'https://quedamos-app-mobile.vercel.app/join/12345678',
+        'https://quedamos.alvarotc.com/join/12345678',
       );
     });
 

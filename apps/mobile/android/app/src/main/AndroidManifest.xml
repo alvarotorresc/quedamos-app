@@ -27,6 +27,8 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="quedamos.alvarotc.com" />
+                <!-- Host anterior: enlaces de invitación ya compartidos siguen abriendo la app -->
                 <data android:scheme="https" android:host="quedamos-app-mobile.vercel.app" />
             </intent-filter>
 
