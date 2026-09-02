@@ -422,6 +422,7 @@
   "landing2": {
     "cta": "Open Quedamos",
     "githubCta": "View the code on GitHub",
+    "feedbackCta": "Report a bug",
     "nav": {
       "brand": "¿Quedamos?",
       "codeOpen": "Open source"

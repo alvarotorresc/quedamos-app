@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Cierre } from './Cierre';
+import { FEEDBACK_FORM_URL } from '../../lib/constants';
 import { GITHUB_URL } from './NavIsla';
 
 let motionSafeValue = true;
@@ -72,6 +73,18 @@ describe('Cierre', () => {
     expect(githubLink).toHaveAttribute('href', GITHUB_URL);
     expect(githubLink).toHaveAttribute('target', '_blank');
     expect(screen.getByText('landing2.cierre.footer.languages')).toBeInTheDocument();
+  });
+
+  it('el footer enlaza «Reportar un error» al formulario de feedback', () => {
+    render(
+      <MemoryRouter>
+        <Cierre />
+      </MemoryRouter>,
+    );
+    const feedbackLink = screen.getByRole('link', { name: 'landing2.feedbackCta' });
+    expect(feedbackLink).toHaveAttribute('href', FEEDBACK_FORM_URL);
+    expect(feedbackLink).toHaveAttribute('target', '_blank');
+    expect(feedbackLink).toHaveAttribute('rel', 'noreferrer');
   });
 
   it('la sección entra con fade-up con motion habilitado: lleva initial real', () => {
