@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useUpdateProposal } from '../hooks/useProposals';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
+import { Toggle } from '../ui/Toggle';
 import type { Proposal, UpdateProposalDto } from '../services/proposals';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
@@ -149,15 +150,7 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
             style={inputStyle}
           >
             <span className="text-sm text-text">{t('online.toggle')}</span>
-            <button
-              type="button"
-              onClick={() => setIsOnline(!isOnline)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary-tint' : 'bg-toggle-off'}`}
-            >
-              <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform ${isOnline ? 'left-5 bg-primary' : 'left-0.5 bg-text-dark'}`}
-              />
-            </button>
+            <Toggle checked={isOnline} onChange={setIsOnline} label={t('online.toggle')} />
           </div>
         </div>
 

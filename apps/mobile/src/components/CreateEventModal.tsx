@@ -6,6 +6,7 @@ import { useForecast } from '../hooks/useWeather';
 import { useAuthStore } from '../stores/auth';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
+import { Toggle } from '../ui/Toggle';
 import { Avatar } from '../ui/Avatar';
 import { WeatherBadge } from './WeatherWidget';
 import { LocationSearch } from './LocationSearch';
@@ -239,15 +240,7 @@ export function CreateEventModal({
         <div className="mb-3">
           <div className="flex items-center justify-between border-b-[1.5px] border-strong py-2">
             <span className="text-sm text-text">{t('online.toggle')}</span>
-            <button
-              type="button"
-              onClick={() => setIsOnline(!isOnline)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary-tint' : 'bg-toggle-off'}`}
-            >
-              <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform ${isOnline ? 'left-5 bg-primary' : 'left-0.5 bg-text-dark'}`}
-              />
-            </button>
+            <Toggle checked={isOnline} onChange={setIsOnline} label={t('online.toggle')} />
           </div>
         </div>
 
