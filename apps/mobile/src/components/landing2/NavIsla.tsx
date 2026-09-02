@@ -62,7 +62,14 @@ export function NavIsla(): JSX.Element {
           style={{ backgroundColor: 'var(--app-border)' }}
           aria-hidden="true"
         />
-        <span className="text-sm text-text-muted">{t('landing2.nav.codeOpen')}</span>
+        <a
+          href={GITHUB_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="text-sm text-text-muted hover:text-text"
+        >
+          {t('landing2.nav.codeOpen')}
+        </a>
         <Link
           to="/login"
           className="flex items-center gap-2.5 h-11 pl-5 pr-1.5 rounded-pill bg-primary text-on-primary font-bold text-sm"
