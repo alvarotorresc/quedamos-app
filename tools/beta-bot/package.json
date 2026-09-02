@@ -9,13 +9,13 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.2",
-    "dotenv": "^17.3.1",
+    "@supabase/supabase-js": "^2.112.4",
+    "dotenv": "^17.4.2",
     "telegraf": "^4.16.3"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",
-    "tsx": "^4.19.2",
+    "tsx": "^4.23.13",
     "typescript": "^5.7.2"
   }
 }
