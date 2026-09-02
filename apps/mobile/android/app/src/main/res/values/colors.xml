@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_papel">#F5F1E8</color>
+    <color name="widget_tarjeta">#FCFAF4</color>
+    <color name="widget_filo">#E6DFD0</color>
+    <color name="widget_tinta">#33302A</color>
+    <color name="widget_tinta_suave">#6E6858</color>
+    <color name="widget_apagado">#C9C0AE</color>
+    <!-- Colores de miembro: idénticos en ambas luces (spec madre §5.1) -->
+    <color name="member_0">#60A5FA</color>
+    <color name="member_1">#F59E0B</color>
+    <color name="member_2">#F472B6</color>
+    <color name="member_3">#34D399</color>
+    <color name="member_4">#A78BFA</color>
+    <color name="member_5">#FB7185</color>
+</resources>

@@ -12,52 +12,8 @@ import {
   useNotificationPreferences,
   useUpdateNotificationPreference,
 } from '../hooks/useNotificationPreferences';
-import type { NotificationType } from '../services/notification-preferences';
+import { NOTIF_SECTIONS } from '../services/notification-preferences';
 import { useScreenView } from '../hooks/useAnalytics';
-
-interface NotifSection {
-  headerKey: string;
-  types: { type: NotificationType; labelKey: string }[];
-}
-
-const NOTIF_SECTIONS: NotifSection[] = [
-  {
-    headerKey: 'profile.notifications.groups.events',
-    types: [
-      { type: 'new_event', labelKey: 'profile.notifications.newEvent' },
-      { type: 'event_updated', labelKey: 'profile.notifications.eventUpdated' },
-      { type: 'event_deleted', labelKey: 'profile.notifications.eventDeleted' },
-      { type: 'event_cancelled', labelKey: 'profile.notifications.eventCancelled' },
-      { type: 'event_confirmed', labelKey: 'profile.notifications.eventConfirmed' },
-      { type: 'event_declined', labelKey: 'profile.notifications.eventDeclined' },
-      { type: 'event_reminder', labelKey: 'profile.notifications.eventReminder' },
-    ],
-  },
-  {
-    headerKey: 'profile.notifications.groups.proposals',
-    types: [
-      { type: 'new_proposal', labelKey: 'profile.notifications.newProposal' },
-      { type: 'proposal_voted', labelKey: 'profile.notifications.proposalVoted' },
-      { type: 'proposal_converted', labelKey: 'profile.notifications.proposalConverted' },
-    ],
-  },
-  {
-    headerKey: 'profile.notifications.groups.members',
-    types: [
-      { type: 'member_joined', labelKey: 'profile.notifications.memberJoined' },
-      { type: 'member_left', labelKey: 'profile.notifications.memberLeft' },
-      { type: 'role_changed', labelKey: 'profile.notifications.roleChanged' },
-      { type: 'member_kicked', labelKey: 'profile.notifications.memberKicked' },
-      { type: 'group_deleted', labelKey: 'profile.notifications.groupDeleted' },
-    ],
-  },
-  {
-    headerKey: 'profile.notifications.groups.reminders',
-    types: [
-      { type: 'weekly_availability_reminder', labelKey: 'profile.notifications.weeklyReminder' },
-    ],
-  },
-];
 
 export default function NotificationsSettingsPage() {
   useScreenView('NotificationSettings');
@@ -95,7 +51,7 @@ export default function NotificationsSettingsPage() {
                     >
                       <span className="text-sm text-text">{t(labelKey)}</span>
                       <div
-                        className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary/30' : 'bg-toggle-off'}`}
+                        className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary-tint' : 'bg-toggle-off'}`}
                       >
                         <div
                           className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${enabled ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`}

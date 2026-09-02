@@ -278,5 +278,90 @@ describe('group-sync', () => {
 
       expect(tempChannel.send).not.toHaveBeenCalled();
     });
+
+    it('removes the temporary channel when the subscription errors', () => {
+      const tempChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+      vi.mocked(supabase.channel).mockReturnValue(tempChannel as never);
+
+      broadcastSync('group-temp-err', 'events');
+
+      const subscribeCallback = vi.mocked(tempChannel.subscribe).mock.calls[0][0] as (
+        status: string,
+      ) => void;
+      subscribeCallback('CHANNEL_ERROR');
+
+      expect(tempChannel.send).not.toHaveBeenCalled();
+      expect(supabase.removeChannel).toHaveBeenCalledWith(tempChannel);
+    });
+
+    it('removes the temporary channel when the subscription times out', () => {
+      const tempChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+      vi.mocked(supabase.channel).mockReturnValue(tempChannel as never);
+
+      broadcastSync('group-temp-timeout', 'events');
+
+      const subscribeCallback = vi.mocked(tempChannel.subscribe).mock.calls[0][0] as (
+        status: string,
+      ) => void;
+      subscribeCallback('TIMED_OUT');
+
+      expect(tempChannel.send).not.toHaveBeenCalled();
+      expect(supabase.removeChannel).toHaveBeenCalledWith(tempChannel);
+    });
+
+    it('removes the temporary channel when the subscription closes', () => {
+      const tempChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+      vi.mocked(supabase.channel).mockReturnValue(tempChannel as never);
+
+      broadcastSync('group-temp-closed', 'events');
+
+      const subscribeCallback = vi.mocked(tempChannel.subscribe).mock.calls[0][0] as (
+        status: string,
+      ) => void;
+      subscribeCallback('CLOSED');
+
+      expect(tempChannel.send).not.toHaveBeenCalled();
+      expect(supabase.removeChannel).toHaveBeenCalledWith(tempChannel);
+    });
+
+    it('does not remove the temporary channel twice when SUBSCRIBED is followed by CLOSED', () => {
+      vi.useFakeTimers();
+
+      const tempChannel = {
+        on: vi.fn().mockReturnThis(),
+        subscribe: vi.fn().mockReturnThis(),
+        send: vi.fn(),
+      };
+      vi.mocked(supabase.channel).mockReturnValue(tempChannel as never);
+
+      broadcastSync('group-temp-once', 'events');
+
+      const subscribeCallback = vi.mocked(tempChannel.subscribe).mock.calls[0][0] as (
+        status: string,
+      ) => void;
+
+      // Happy path: SUBSCRIBED removes the channel after the send delay, which in turn
+      // fires the internal onClose with CLOSED — that must not remove it a second time.
+      subscribeCallback('SUBSCRIBED');
+      vi.advanceTimersByTime(1000);
+      subscribeCallback('CLOSED');
+
+      expect(supabase.removeChannel).toHaveBeenCalledTimes(1);
+      expect(supabase.removeChannel).toHaveBeenCalledWith(tempChannel);
+
+      vi.useRealTimers();
+    });
   });
 });

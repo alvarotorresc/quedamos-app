@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useUpdateProposal } from '../hooks/useProposals';
 import { Button } from '../ui/Button';
 import type { Proposal, UpdateProposalDto } from '../services/proposals';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 
 interface EditProposalModalProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ interface EditProposalModalProps {
 export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditProposalModalProps) {
   const { t } = useTranslation();
   const updateProposal = useUpdateProposal(groupId);
+  const { showError } = useToast();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -80,11 +83,15 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
       return;
     }
 
-    await updateProposal.mutateAsync({
-      proposalId: proposal.id,
-      data: changes,
-    });
-    onClose();
+    await runWithErrorToast(
+      () =>
+        updateProposal.mutateAsync({
+          proposalId: proposal.id,
+          data: changes,
+        }),
+      showError,
+      { onSuccess: onClose, errorKey: 'errors.updateProposalFailed' },
+    );
   };
 
   const handleDismiss = () => {
@@ -148,10 +155,10 @@ export function EditProposalModal({ isOpen, onClose, groupId, proposal }: EditPr
             <button
               type="button"
               onClick={() => setIsOnline(!isOnline)}
-              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary' : 'bg-[#2a3142]'}`}
+              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary-tint' : 'bg-toggle-off'}`}
             >
               <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${isOnline ? 'left-5' : 'left-0.5'}`}
+                className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform ${isOnline ? 'left-5 bg-primary' : 'left-0.5 bg-text-dark'}`}
               />
             </button>
           </div>

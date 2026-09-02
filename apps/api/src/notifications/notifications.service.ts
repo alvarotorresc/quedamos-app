@@ -78,15 +78,22 @@ export class NotificationsService implements OnModuleInit {
   private static readonly MAX_TOKENS_PER_USER = 10;
 
   async registerToken(userId: string, dto: RegisterTokenDto) {
-    const tokenCount = await this.prisma.pushToken.count({ where: { userId } });
-    if (tokenCount >= NotificationsService.MAX_TOKENS_PER_USER) {
-      // Delete oldest token to make room
-      const oldest = await this.prisma.pushToken.findFirst({
-        where: { userId },
-        orderBy: { createdAt: 'asc' },
-      });
-      if (oldest) {
-        await this.prisma.pushToken.delete({ where: { id: oldest.id } });
+    const existing = await this.prisma.pushToken.findUnique({
+      where: { userId_token: { userId, token: dto.token } },
+    });
+
+    if (!existing) {
+      const tokenCount = await this.prisma.pushToken.count({ where: { userId } });
+      if (tokenCount >= NotificationsService.MAX_TOKENS_PER_USER) {
+        // Delete oldest token to make room — only for a genuinely new token, never when
+        // the caller is just re-sending a token we already have registered.
+        const oldest = await this.prisma.pushToken.findFirst({
+          where: { userId },
+          orderBy: { createdAt: 'asc' },
+        });
+        if (oldest) {
+          await this.prisma.pushToken.delete({ where: { id: oldest.id } });
+        }
       }
     }
 
@@ -166,7 +173,7 @@ export class NotificationsService implements OnModuleInit {
     if (tokens.length === 0) return { sent: 0 };
 
     const result = await this.sendToTokens(
-      tokens.map((t) => t.token),
+      tokens.map((t) => ({ token: t.token, platform: t.platform })),
       title,
       body,
       data,
@@ -192,7 +199,7 @@ export class NotificationsService implements OnModuleInit {
     if (tokens.length === 0) return { sent: 0 };
 
     const result = await this.sendToTokens(
-      tokens.map((t) => t.token),
+      tokens.map((t) => ({ token: t.token, platform: t.platform })),
       title,
       body,
       data,
@@ -260,7 +267,7 @@ export class NotificationsService implements OnModuleInit {
     if (tokens.length === 0) return { sent: 0 };
 
     return this.sendToTokens(
-      tokens.map((t) => t.token),
+      tokens.map((t) => ({ token: t.token, platform: t.platform })),
       title,
       body,
       data,
@@ -302,15 +309,30 @@ export class NotificationsService implements OnModuleInit {
     if (tokens.length === 0) return { sent: 0 };
 
     return this.sendToTokens(
-      tokens.map((t) => t.token),
+      tokens.map((t) => ({ token: t.token, platform: t.platform })),
       title,
       body,
       data,
     );
   }
 
+  /**
+   * Splits the send by platform to avoid duplicate web notifications.
+   *
+   * @firebase/messaging shows its own notification whenever the FCM payload carries a
+   * top-level `notification` AND onBackgroundMessage also fires — the two are not
+   * mutually exclusive. Our service worker's onBackgroundMessage already shows the
+   * intended notification (with routing + action buttons), so the SDK's own copy was a
+   * duplicate. Web tokens now get a data-only payload (no `notification`, no
+   * `webpush.notification`); the SW and the foreground handler read title/body from
+   * `data` instead. Android is unaffected — same payload shape as before.
+   *
+   * Any token whose platform isn't recognized as 'web' is treated as native/android
+   * (today's full payload) — an unexpected or missing platform value must never silently
+   * degrade to a data-only push a user can't see.
+   */
   private async sendToTokens(
-    tokens: string[],
+    tokens: TokenEntry[],
     title: string,
     body: string,
     data?: Record<string, string>,
@@ -322,7 +344,33 @@ export class NotificationsService implements OnModuleInit {
       return { sent: 0, failed: 0, tokenCount: tokens.length };
     }
 
-    const message: admin.messaging.MulticastMessage = {
+    const webTokens = tokens.filter((t) => t.platform === 'web').map((t) => t.token);
+    const androidTokens = tokens.filter((t) => t.platform !== 'web').map((t) => t.token);
+
+    const [androidResult, webResult] = await Promise.all([
+      androidTokens.length > 0
+        ? this.sendBatch(androidTokens, this.buildAndroidMessage(androidTokens, title, body, data))
+        : Promise.resolve({ sent: 0, failed: 0 }),
+      webTokens.length > 0
+        ? this.sendBatch(webTokens, this.buildWebMessage(webTokens, title, body, data))
+        : Promise.resolve({ sent: 0, failed: 0 }),
+    ]);
+
+    const sent = androidResult.sent + webResult.sent;
+    const failed = androidResult.failed + webResult.failed;
+
+    this.logger.debug(`Sent "${title}" — ${sent} ok, ${failed} failed`);
+
+    return { sent, failed, tokenCount: tokens.length };
+  }
+
+  private buildAndroidMessage(
+    tokens: string[],
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ): admin.messaging.MulticastMessage {
+    return {
       tokens,
       notification: { title, body },
       data,
@@ -332,13 +380,29 @@ export class NotificationsService implements OnModuleInit {
           icon: 'ic_launcher',
         },
       },
-      webpush: {
-        notification: {
-          icon: '/logo.png',
-        },
+    };
+  }
+
+  private buildWebMessage(
+    tokens: string[],
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ): admin.messaging.MulticastMessage {
+    return {
+      tokens,
+      data: {
+        ...data,
+        title,
+        body,
       },
     };
+  }
 
+  private async sendBatch(
+    tokens: string[],
+    message: admin.messaging.MulticastMessage,
+  ): Promise<{ sent: number; failed: number }> {
     try {
       const response = await admin.messaging().sendEachForMulticast(message);
 
@@ -367,17 +431,10 @@ export class NotificationsService implements OnModuleInit {
         }
       }
 
-      this.logger.debug(
-        `Sent "${title}" — ${response.successCount} ok, ${response.failureCount} failed`,
-      );
-      return {
-        sent: response.successCount,
-        failed: response.failureCount,
-        tokenCount: tokens.length,
-      };
+      return { sent: response.successCount, failed: response.failureCount };
     } catch (error) {
       this.logger.error('FCM multicast error', error);
-      return { sent: 0, failed: tokens.length, tokenCount: tokens.length };
+      return { sent: 0, failed: tokens.length };
     }
   }
 
@@ -412,4 +469,9 @@ interface SendResult {
   sent: number;
   failed: number;
   tokenCount: number;
+}
+
+interface TokenEntry {
+  token: string;
+  platform: string;
 }

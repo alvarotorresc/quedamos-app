@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { api } from '../lib/api';
 import { unregisterFromBackend } from '../lib/push-notifications';
+import { syncWidgetSession, clearWidgetSession } from '../lib/widget-bridge';
 import {
   sanitizeTimeSlots,
   validateTimeSlots,
@@ -19,7 +20,7 @@ interface User {
   timeSlots?: TimeSlotPreferences;
 }
 
-export function mapSessionUser(sessionUser: {
+function mapSessionUser(sessionUser: {
   id: string;
   email?: string | null;
   user_metadata?: { name?: string; avatarEmoji?: string; timeSlots?: unknown };
@@ -33,7 +34,7 @@ export function mapSessionUser(sessionUser: {
   };
 }
 
-export function usersEqual(a: User | null, b: User | null): boolean {
+function usersEqual(a: User | null, b: User | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return (
@@ -91,6 +92,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signOut: async () => {
     await unregisterFromBackend().catch(() => {});
+    await clearWidgetSession();
     await supabase.auth.signOut();
     set({ user: null });
   },
@@ -102,6 +104,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (session?.user) {
       set({ user: mapSessionUser(session.user), isLoading: false });
+      void syncWidgetSession();
     } else {
       set({ user: null, isLoading: false });
     }
@@ -110,6 +113,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       authSubscription.unsubscribe();
     }
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        void syncWidgetSession();
+      }
       const next = session?.user ? mapSessionUser(session.user) : null;
       set((state) => (usersEqual(state.user, next) ? state : { user: next }));
     });

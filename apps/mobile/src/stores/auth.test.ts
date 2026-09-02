@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuthStore } from './auth';
 import { supabase } from '../lib/supabase';
+import { syncWidgetSession, clearWidgetSession } from '../lib/widget-bridge';
 
 type GetSessionResult = Awaited<ReturnType<typeof supabase.auth.getSession>>;
 type SignInResult = Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
@@ -14,6 +15,11 @@ vi.mock('../lib/api', () => ({
   api: {
     patch: vi.fn().mockResolvedValue(undefined),
   },
+}));
+
+vi.mock('../lib/widget-bridge', () => ({
+  syncWidgetSession: vi.fn().mockResolvedValue(undefined),
+  clearWidgetSession: vi.fn().mockResolvedValue(undefined),
 }));
 
 describe('useAuthStore', () => {
@@ -120,6 +126,26 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState().user).toBeNull();
       expect(supabase.auth.signOut).toHaveBeenCalled();
     });
+
+    it('should clear the widget session before calling supabase signOut', async () => {
+      useAuthStore.setState({
+        user: { id: '1', email: 'a@b.com', name: 'Test', avatarEmoji: '😊' },
+      });
+      vi.mocked(supabase.auth.signOut).mockResolvedValue({ error: null });
+      const callOrder: string[] = [];
+      vi.mocked(clearWidgetSession).mockImplementationOnce(async () => {
+        callOrder.push('clearWidgetSession');
+      });
+      vi.mocked(supabase.auth.signOut).mockImplementationOnce(async () => {
+        callOrder.push('supabase.auth.signOut');
+        return { error: null };
+      });
+
+      await useAuthStore.getState().signOut();
+
+      expect(clearWidgetSession).toHaveBeenCalled();
+      expect(callOrder).toEqual(['clearWidgetSession', 'supabase.auth.signOut']);
+    });
   });
 
   describe('updateName', () => {
@@ -206,7 +232,7 @@ describe('useAuthStore', () => {
 
   it('keeps the same user object reference across repeated auth events', async () => {
     let captured: ((event: string, session: unknown) => void) | null = null;
-    vi.mocked(supabase.auth.onAuthStateChange).mockImplementation((cb) => {
+    vi.mocked(supabase.auth.onAuthStateChange).mockImplementationOnce((cb) => {
       captured = cb as never;
       return { data: { subscription: { unsubscribe: vi.fn() } } } as never;
     });
@@ -282,6 +308,92 @@ describe('useAuthStore', () => {
       await useAuthStore.getState().initialize();
 
       expect(useAuthStore.getState().user?.timeSlots).toBeUndefined();
+    });
+  });
+
+  describe('widget bridge integration', () => {
+    it('initialize with a session syncs the widget session once', async () => {
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'user-1',
+              email: 'test@test.com',
+              user_metadata: { name: 'Test User', avatarEmoji: '🎉' },
+            },
+          },
+        },
+        error: null,
+      } as unknown as GetSessionResult);
+
+      await useAuthStore.getState().initialize();
+
+      expect(syncWidgetSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('initialize without a session does not sync the widget session', async () => {
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as unknown as GetSessionResult);
+
+      await useAuthStore.getState().initialize();
+
+      expect(syncWidgetSession).not.toHaveBeenCalled();
+    });
+
+    it('onAuthStateChange with a session syncs the widget session (login / TOKEN_REFRESHED)', async () => {
+      let captured: ((event: string, session: unknown) => void) | null = null;
+      vi.mocked(supabase.auth.onAuthStateChange).mockImplementationOnce((cb) => {
+        captured = cb as never;
+        return { data: { subscription: { unsubscribe: vi.fn() } } } as never;
+      });
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: { session: null },
+        error: null,
+      } as unknown as GetSessionResult);
+
+      await useAuthStore.getState().initialize();
+      expect(syncWidgetSession).not.toHaveBeenCalled();
+
+      captured!('SIGNED_IN', {
+        user: {
+          id: 'user-1',
+          email: 'a@b.com',
+          user_metadata: { name: 'A', avatarEmoji: '😊' },
+        },
+      });
+
+      expect(syncWidgetSession).toHaveBeenCalledTimes(1);
+    });
+
+    it('a rejected syncWidgetSession does not break initialize', async () => {
+      const rejected = Promise.reject(new Error('boom'));
+      rejected.catch(() => {}); // avoid unhandled-rejection noise for this fire-and-forget call
+      vi.mocked(syncWidgetSession).mockReturnValueOnce(rejected);
+      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+        data: {
+          session: {
+            user: {
+              id: 'user-1',
+              email: 'test@test.com',
+              user_metadata: { name: 'Test User', avatarEmoji: '🎉' },
+            },
+          },
+        },
+        error: null,
+      } as unknown as GetSessionResult);
+
+      await expect(useAuthStore.getState().initialize()).resolves.toBeUndefined();
+
+      const state = useAuthStore.getState();
+      expect(state.user).toEqual({
+        id: 'user-1',
+        email: 'test@test.com',
+        name: 'Test User',
+        avatarEmoji: '🎉',
+      });
+      expect(state.isLoading).toBe(false);
     });
   });
 });

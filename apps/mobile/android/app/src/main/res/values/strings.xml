@@ -7,4 +7,17 @@
     <string name="default_notification_channel_id">default</string>
     <string name="default_notification_channel_name">Notificaciones</string>
     <string name="default_notification_channel_description">Notificaciones de quedadas y disponibilidad</string>
+    <!-- Widgets -->
+    <string name="widget_semana_label">Quedamos — Semana</string>
+    <string name="widget_semana_description">El aro de tu cuadrilla, día a día</string>
+    <string name="widget_mejor_dia_label">Quedamos — Mejor día</string>
+    <string name="widget_mejor_dia_description">El día que más gente puede</string>
+    <string name="widget_best_day_question">«¿Quedamos el %1$s?»</string>
+    <string name="widget_can_count">Pueden %1$d el %2$s</string>
+    <string name="widget_all_can">Podéis los %1$d</string>
+    <string name="widget_nothing_yet">Nada en el aire aún</string>
+    <string name="widget_open_app">Abre Quedamos para empezar</string>
+    <string name="widget_config_title">Elige la cuadrilla</string>
+    <string name="widget_config_empty">Abre Quedamos e inicia sesión</string>
+    <string name="widget_config_open">Abrir Quedamos</string>
 </resources>

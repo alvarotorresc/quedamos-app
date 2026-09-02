@@ -4,14 +4,14 @@
     "email": "Email",
     "password": "Password",
     "emailPlaceholder": "you@email.com",
-    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
+    "passwordPlaceholder": "••••••••",
     "captchaError": "Could not verify captcha. Please try again.",
     "unexpectedError": "An unexpected error occurred",
     "cancel": "Cancel",
     "optional": "optional"
   },
   "splash": {
-    "title": "\u00bfQuedamos?",
+    "title": "¿Quedamos?",
     "tagline": "The perfect moment to meet up with your group.",
     "login": "Sign in",
     "register": "Create account"
@@ -99,15 +99,28 @@
     "daysWithAvailability": "Days with availability",
     "recommended": "Recommended",
     "secondRecommended": "Another day",
-    "bestDay": "Best day",
-    "secondBestDay": "Another day",
     "noAvailability": "Nobody available",
     "you": "You",
     "allDay": "All day",
     "markAvailable": "I'm available",
+    "ask": "Ask",
+    "askTitle": "Ask the group",
+    "askAction": "Ask",
+    "askHint": "Everyone answers with one tap, no calendar needed.",
+    "askDuplicate": "You already asked that. Try another slot.",
+    "askNotNotified": "Saved to the deck — the group was already notified today.",
     "editAvailability": "Edit availability",
     "available": "Available",
     "createEvent": "Create plan",
+    "canCount": "{{count}} can",
+    "canCountOne": "1 can",
+    "allCan": "All {{count}} of you can",
+    "bestDayQuestion": "Meet on {{weekday}}?",
+    "letsMeet": "Let's meet",
+    "cannot": "{{name}} can't",
+    "emptyTitle": "When are you free?",
+    "emptyDescription": "Tap a day to mark when you're free. Your group will see when you match.",
+    "emptyAction": "I'm available",
     "weekdays": ["M", "T", "W", "T", "F", "S", "S"],
     "monthStats": {
       "activeDays": "Active days",
@@ -156,8 +169,9 @@
     "confirmed": "confirmed",
     "confirm": "Confirm",
     "decline": "Decline",
-    "youConfirmed": "You confirmed attendance",
+    "youConfirmed": "You're in. Noted.",
     "youDeclined": "You declined this event",
+    "goingCount": "{{confirmed}} going, {{missing}} to go",
     "editButton": "Edit",
     "deleteEvent": "Delete plan",
     "deleteConfirm": "This action cannot be undone",
@@ -175,14 +189,9 @@
       "plans": "Plans",
       "proposals": "Proposals"
     },
-    "filter": {
-      "all": "All",
-      "online": "Online",
-      "inPerson": "In-person"
-    },
     "tapToChange": "Tap to change",
     "status": {
-      "pending": "Pending",
+      "pending": "Up in the air",
       "confirmed": "Confirmed",
       "cancelled": "Cancelled"
     },
@@ -190,13 +199,15 @@
       "title": "New plan",
       "name": "Title",
       "namePlaceholder": "Hike, dinner, movies...",
+      "defaultTitle": "{{weekday}} hangout",
       "time": "Time",
       "location": "Place",
       "locationPlaceholder": "Downtown, park...",
+      "locationOptional": "Optional — decide later",
       "submit": "Create plan",
       "creating": "Creating...",
       "available": "available",
-      "attendees": "Attendees",
+      "whoCan": "Everyone who can, goes",
       "selectAttendees": "Invite specific members",
       "allMembersDefault": "All group members will be invited by default",
       "suggested": "Suggested",
@@ -217,7 +228,7 @@
     "groupName": "Group name",
     "groupNamePlaceholder": "E.g.: School friends",
     "emoji": "Emoji",
-    "emojiPlaceholder": "\ud83d\udc65",
+    "emojiPlaceholder": "👥",
     "creating": "Creating...",
     "inviteCode": "Invite code",
     "inviteCodePlaceholder": "12345678",
@@ -235,7 +246,7 @@
     "leaveGroup": "Leave group",
     "leaveConfirm": "Are you sure you want to leave this group?",
     "leaving": "Leaving...",
-    "shareMessage": "Join my group on \u00bfQuedamos?",
+    "shareMessage": "Join my group on ¿Quedamos?",
     "memberCount_one": "{{count}} member",
     "memberCount_other": "{{count}} members",
     "createError": "Error creating group",
@@ -296,6 +307,7 @@
       "title": "Notifications",
       "groups": {
         "events": "Events",
+        "questions": "Questions",
         "proposals": "Proposals",
         "members": "Members",
         "reminders": "Reminders"
@@ -307,6 +319,8 @@
       "eventConfirmed": "Plan confirmed by all",
       "eventDeclined": "Someone declined a plan",
       "eventReminder": "24h reminder before a plan",
+      "newPoll": "New group questions",
+      "pollCompleted": "The ring closes",
       "newProposal": "New proposal created",
       "proposalVoted": "Someone voted on a proposal",
       "proposalConverted": "Proposal converted to plan",
@@ -341,112 +355,136 @@
     "defaultName": "User"
   },
   "landing": {
-    "brand": "¿Quedamos?",
-    "header": {
-      "login": "Sign in",
-      "register": "Get started"
+    "brand": "¿Quedamos?"
+  },
+  "landing2": {
+    "cta": "Open Quedamos",
+    "githubCta": "View the code on GitHub",
+    "nav": {
+      "brand": "¿Quedamos?",
+      "codeOpen": "Open source"
     },
     "hero": {
-      "title": "¿Quedamos?",
-      "tagline": "Coordinate meetups with your friend group. Mark when you're free, find the best day, and make plans.",
-      "cta": "Get started free",
-      "login": "I have an account"
-    },
-    "features": {
-      "title": "Everything you need",
-      "subtitle": "Organizing plans with friends has never been easier.",
-      "calendar": {
-        "title": "Shared calendar",
-        "description": "Each member marks when they're available. See everyone's availability at a glance."
-      },
-      "groups": {
-        "title": "Friend groups",
-        "description": "Create a group and invite your friends with a code or a link."
-      },
-      "plans": {
-        "title": "Create plans",
-        "description": "When schedules align, create a plan. Everyone gets notified."
-      },
-      "notifications": {
-        "title": "Notifications",
-        "description": "Get alerts for new plans, confirmations, and reminders."
+      "title": "Your group wants to hang.",
+      "subtitle": "Nobody knows when. Quedamos asks the group and pings you when everyone's free.",
+      "mockup": {
+        "today": "Today",
+        "month": "Sep 2026",
+        "asks": "Iris asks",
+        "question": "Free Saturday the 14th?",
+        "canGo": "I'm in",
+        "cannotGo": "Can't",
+        "fri": "Fri",
+        "sat": "Sat",
+        "allCan": "Everyone's in",
+        "askCta": "Meet up?"
       }
     },
-    "mockup": {
-      "title": "Find the best day",
-      "description": "See at a glance when each person is available. The calendar highlights days with the most availability.",
-      "weekLabel": "Week",
-      "monthLabel": "February 2026",
-      "bestDay": "Best day",
-      "bestDayDate": "Friday 14 — 4 available"
+    "banda": {
+      "title": "The whole app fits in a circle.",
+      "subtitle": "Each arc is a person, in their color. The gap is whoever hasn't answered. When the circle closes, everyone's free.",
+      "weekday": "saturday",
+      "dayNumber": "14",
+      "pending": "Up in the air: one hasn't answered, one can't make it.",
+      "sealed": "Sealed: plan, time and place confirmed."
     },
-    "cta": {
-      "title": "What are you waiting for?",
-      "subtitle": "Create your group and start coordinating plans with your friends.",
-      "button": "Create free account",
-      "hasAccount": "Already have an account?",
-      "login": "Sign in"
-    },
-    "screenshots": {
-      "title": "See the app in action",
-      "subtitle": "A closer look",
-      "calendar": {
-        "label": "Calendar",
-        "header": "Week"
+    "pantallas": {
+      "title": "Three screens. Not one more.",
+      "subtitle": "You ask, you see who's free, you seal the plan. That's the whole app.",
+      "week": {
+        "title": "Week",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun",
+        "allCan": "Everyone's in",
+        "askCta": "Meet up?"
       },
       "events": {
-        "label": "Plans",
-        "title": "Upcoming plans",
+        "title": "Plans",
         "upcoming": "Upcoming",
         "past": "Past",
-        "event1": "Hike in Monachil",
-        "location1": "Monachil",
-        "event2": "Sunday brunch",
-        "location2": "Downtown",
+        "dinnerTitle": "Dinner at Iris's",
+        "dinnerTime": "Sat 14 · 9:00 PM",
         "confirmed": "Confirmed",
-        "pending": "Pending"
+        "padelTitle": "Tennis and beers",
+        "padelTime": "Sun 22 · 12:00 PM",
+        "pending": "Up in the air",
+        "propose": "Propose a plan"
       },
       "group": {
-        "label": "Group",
-        "name": "Granada Friends",
-        "memberCount": "{{count}} members",
-        "inviteCode": "Invite code"
+        "title": "Crew",
+        "of6": "{{count}} of 6",
+        "invite": "Invite the group"
       }
     },
-    "roadmap": {
-      "title": "Built to grow",
-      "subtitle": "Roadmap",
-      "available": {
-        "title": "Available now",
-        "subtitle": "Features you can use today",
-        "features": {
-          "sharedCalendar": "Shared calendar",
-          "groups": "Friend groups",
-          "events": "Create and manage plans",
-          "pushNotifications": "Push notifications",
-          "realtimeSync": "Real-time sync",
-          "darkLightTheme": "Dark and light theme",
-          "multiLanguage": "English and Spanish",
-          "androidWeb": "Android and Web"
-        }
-      },
-      "upcoming": {
-        "title": "Coming soon",
-        "subtitle": "What's coming in future versions",
-        "badge": "Soon",
-        "features": {
-          "ios": "iOS app",
-          "aiSuggestions": "AI-powered suggestions",
-          "weather": "Weather integration",
-          "voting": "Group voting",
-          "editEvents": "Edit plans",
-          "multiAdmin": "Multiple admins"
+    "cuadrilla": {
+      "title": "Six colors. Yours is yours.",
+      "names": {
+        "vera": "Vera",
+        "hugo": "Hugo",
+        "noa": "Noa",
+        "leo": "Leo",
+        "iris": "Iris",
+        "teo": "Teo"
+      }
+    },
+    "proceso": {
+      "title": "From the question to the plan",
+      "steps": {
+        "sondear": {
+          "index": "01",
+          "title": "Ask",
+          "description": "Ask the group about a day from the calendar. Everyone answers when they can."
+        },
+        "cierra": {
+          "index": "02",
+          "title": "The circle closes",
+          "description": "When everyone can, you get the ping. Zero taps, zero calendar to read."
+        },
+        "quedamos": {
+          "index": "03",
+          "title": "It's on",
+          "description": "Someone proposes a plan, time and place. Confirming closes your arc."
         }
       }
     },
-    "footer": {
-      "madeWith": "Made with",
-      "by": "by"
+    "renuncias": {
+      "title": "What Quedamos will never do",
+      "subtitle": "Crossed out on purpose. This isn't a roadmap.",
+      "items": {
+        "interrogate": {
+          "label": "Interrogate you",
+          "description": "One question a day, tops. Nothing to ask, nothing pings."
+        },
+        "confetti": {
+          "label": "Confetti",
+          "description": "The celebration is the circle closing."
+        },
+        "streaks": {
+          "label": "Streaks and points",
+          "description": "No levels, no guilt for skipping a week."
+        },
+        "punish": {
+          "label": "Punish absence",
+          "description": "Whoever doesn't answer is a gap, not a strike."
+        },
+        "shoutEmoji": {
+          "label": "Shouty emoji",
+          "description": "The voice stays plain and direct. It only claims what's true."
+        },
+        "aiPlan": {
+          "label": "An AI in your plan",
+          "description": "Your plan is yours."
+        }
+      }
+    },
+    "cierre": {
+      "quote": "“Nothing pending. The week's been answered.”",
+      "subtitle": "The empty state is the reward.",
+      "footer": {
+        "languages": "Español / English"
+      }
     }
   },
   "online": {
@@ -513,6 +551,35 @@
     "rateLimitSeconds": "For security, you can only do this once every 60 seconds",
     "rateLimitExceeded": "Too many attempts. Please wait a few minutes"
   },
+  "mazo": {
+    "canYou": "Free on {{weekday}}?",
+    "canYouSlot": "Free on {{weekday}} {{slot}}?",
+    "slotMorning": "morning",
+    "slotAfternoon": "afternoon",
+    "slotNight": "night",
+    "goingQuestion": "{{title}}. Going?",
+    "iCan": "I can",
+    "iCant": "I can't",
+    "going": "I'm going",
+    "notGoing": "Not going",
+    "unsure": "Not sure yet",
+    "toMap": "To the map",
+    "pending_one": "{{count}} pending question",
+    "pending_other": "{{count}} pending questions",
+    "done": "Done.",
+    "asks": "{{name}} asks",
+    "answered": "Answered.",
+    "notPendingAnymore": "That question isn't pending anymore."
+  },
+  "share": {
+    "tarjetaCerrada": "The circle's closed. You're all free on {{fecha}}.",
+    "tarjetaSellada": "It's on. {{titulo}}, {{fechaHora}}.",
+    "cardCerrada": "The circle's closed.",
+    "cardSubCerrada": "All {{count}} of you are free.",
+    "cardSellada": "It's on.",
+    "linkCopied": "Link copied. Card downloaded.",
+    "cardDownloaded": "Card downloaded."
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "saveAvailabilityFailed": "Couldn't save your availability",
@@ -521,12 +588,17 @@
     "updateEventFailed": "Couldn't save your changes",
     "createProposalFailed": "Couldn't create the proposal",
     "convertProposalFailed": "Couldn't convert the proposal",
+    "updateProposalFailed": "Couldn't update the proposal",
     "addCityFailed": "Couldn't add the city",
+    "removeCityFailed": "Couldn't remove the city",
     "regenerateCodeFailed": "Couldn't regenerate the code",
     "leaveGroupFailed": "Couldn't leave the group",
     "updateRoleFailed": "Couldn't update the role",
     "kickMemberFailed": "Couldn't remove the member",
     "deleteGroupFailed": "Couldn't delete the group",
-    "copyFailed": "Couldn't copy the code"
+    "copyFailed": "Couldn't copy the code",
+    "answerPollFailed": "Couldn't save your answer",
+    "respondEventFailed": "Couldn't save your response",
+    "shareTarjetaFailed": "Couldn't create the card"
   }
 }

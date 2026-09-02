@@ -28,6 +28,17 @@ export function parseDateKey(key: string): Date {
   return new Date(key + 'T00:00:00');
 }
 
+/**
+ * Localized date for share-card copy: "lunes 14" in Spanish, "Mon, Sep 14" in English.
+ * Any non-English `language` (e.g. 'es', 'es-ES') gets the Spanish format.
+ */
+export function formatShareDate(date: Date, language: string): string {
+  const opts: Intl.DateTimeFormatOptions = language.startsWith('en')
+    ? { weekday: 'short', month: 'short', day: 'numeric' }
+    : { weekday: 'long', day: 'numeric' };
+  return date.toLocaleDateString(language, opts);
+}
+
 export function getWeekDays(base: Date, weekOffset: number): Date[] {
   const d = new Date(base);
   d.setDate(d.getDate() + weekOffset * 7);
@@ -52,4 +63,19 @@ export function getMonthCells(
   for (let i = 1; i <= last; i++)
     cells.push(new Date(d.getFullYear(), d.getMonth(), i));
   return { cells, month: d };
+}
+
+/**
+ * Number of Monday-based weeks between base's week and day's week.
+ * Matches WeekView, which renders getWeekDays(new Date(), weekOffset).
+ */
+export function weekOffsetOf(day: Date, base: Date = new Date()): number {
+  const mondayOf = (d: Date): Date => {
+    const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  };
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  // Round to absorb the 1-hour DST wobble across a week boundary.
+  return Math.round((mondayOf(day).getTime() - mondayOf(base).getTime()) / msPerWeek);
 }

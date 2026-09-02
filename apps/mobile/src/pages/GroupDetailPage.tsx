@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   IonPage,
   IonContent,
@@ -27,6 +27,8 @@ import {
 import { useGroupSync } from '../hooks/useGroupSync';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
+import { useToast } from '../hooks/useToast';
+import { runWithErrorToast } from '../lib/mutation-utils';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { Badge } from '../ui/Badge';
@@ -35,8 +37,11 @@ import { WeatherWidget } from '../components/WeatherWidget';
 import { useGroupWeather } from '../hooks/useWeather';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
-import { searchCities, type GeocodingResult } from '../services/weather';
+import { useCitySearch } from '../hooks/useCitySearch';
+import type { GeocodingResult } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
+import { buildMemberColorMap } from '../lib/member-colors';
+import { GroupRing } from '../components/GroupRing';
 import { HiOutlineArrowPath } from 'react-icons/hi2';
 
 function formatCode(code: string): string {
@@ -60,6 +65,7 @@ export default function GroupDetailPage() {
   const deleteGroup = useDeleteGroup();
 
   const { track } = useAnalytics();
+  const { showError } = useToast();
   const [copied, setCopied] = useState(false);
   const [showLeaveAlert, setShowLeaveAlert] = useState(false);
   const [showRegenerateAlert, setShowRegenerateAlert] = useState(false);
@@ -78,14 +84,21 @@ export default function GroupDetailPage() {
   const addCity = useAddCity(id);
   const removeCity = useRemoveCity(id);
   const [citySearch, setCitySearch] = useState('');
-  const [cityResults, setCityResults] = useState<GeocodingResult[]>([]);
+  const cityResults = useCitySearch(citySearch);
   const [showCitySearch, setShowCitySearch] = useState(false);
+
+  // Member color map (userId -> color), by join order within the group
+  const colorMap = useMemo(() => buildMemberColorMap(group?.members ?? []), [group?.members]);
 
   const handleCopy = async () => {
     if (!invite?.inviteCode) return;
-    await navigator.clipboard.writeText(invite.inviteCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(invite.inviteCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showError('errors.copyFailed');
+    }
   };
 
   const handleShare = async () => {
@@ -118,44 +131,58 @@ export default function GroupDetailPage() {
     }
   };
 
-  const handleCitySearch = async (query: string) => {
-    setCitySearch(query);
-    if (query.length >= 2) {
-      const results = await searchCities(query);
-      setCityResults(results);
-    } else {
-      setCityResults([]);
-    }
+  const handleAddCity = async (result: GeocodingResult) => {
+    await runWithErrorToast(
+      () =>
+        addCity.mutateAsync({
+          name: result.name,
+          lat: result.latitude,
+          lon: result.longitude,
+        }),
+      showError,
+      {
+        onSuccess: () => {
+          setCitySearch('');
+          setShowCitySearch(false);
+        },
+        errorKey: 'errors.addCityFailed',
+      },
+    );
   };
 
-  const handleAddCity = async (result: GeocodingResult) => {
-    await addCity.mutateAsync({
-      name: result.name,
-      lat: result.latitude,
-      lon: result.longitude,
+  const handleRemoveCity = async (cityId: string) => {
+    await runWithErrorToast(() => removeCity.mutateAsync(cityId), showError, {
+      errorKey: 'errors.removeCityFailed',
     });
-    setCitySearch('');
-    setCityResults([]);
-    setShowCitySearch(false);
   };
 
   const handleRegenerate = async () => {
-    await refreshInvite.mutateAsync(id);
-    setRegeneratedFeedback(true);
-    setTimeout(() => setRegeneratedFeedback(false), 2000);
+    await runWithErrorToast(() => refreshInvite.mutateAsync(id), showError, {
+      onSuccess: () => {
+        setRegeneratedFeedback(true);
+        setTimeout(() => setRegeneratedFeedback(false), 2000);
+      },
+      errorKey: 'errors.regenerateCodeFailed',
+    });
   };
 
   const handleLeave = async () => {
-    await leaveGroup.mutateAsync(id);
-    history.replace('/tabs/group');
+    await runWithErrorToast(() => leaveGroup.mutateAsync(id), showError, {
+      onSuccess: () => history.replace('/tabs/group'),
+      errorKey: 'errors.leaveGroupFailed',
+    });
   };
 
   const handleUpdateRole = async (userId: string, role: 'admin' | 'member') => {
-    await updateRole.mutateAsync({ userId, role });
+    await runWithErrorToast(() => updateRole.mutateAsync({ userId, role }), showError, {
+      errorKey: 'errors.updateRoleFailed',
+    });
   };
 
   const handleKick = async (userId: string) => {
-    await kickMember.mutateAsync(userId);
+    await runWithErrorToast(() => kickMember.mutateAsync(userId), showError, {
+      errorKey: 'errors.kickMemberFailed',
+    });
   };
 
   const getActionButtons = () => {
@@ -184,8 +211,10 @@ export default function GroupDetailPage() {
   };
 
   const handleDeleteGroup = async () => {
-    await deleteGroup.mutateAsync(id);
-    history.replace('/tabs/group');
+    await runWithErrorToast(() => deleteGroup.mutateAsync(id), showError, {
+      onSuccess: () => history.replace('/tabs/group'),
+      errorKey: 'errors.deleteGroupFailed',
+    });
   };
 
   if (isLoading) {
@@ -212,13 +241,16 @@ export default function GroupDetailPage() {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/tabs/group" text="" />
           </IonButtons>
-          <IonTitle>
-            {group.emoji} {group.name}
-          </IonTitle>
+          <IonTitle>{group.name}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
         <div className="max-w-md mx-auto px-4">
+          {/* Héroe: la Cuadrilla */}
+          <div className="flex justify-center mb-6">
+            <GroupRing members={group.members} emoji={group.emoji} />
+          </div>
+
           {/* Members */}
           <section className="mb-6">
             <h3 className="text-xs font-semibold text-text-dark uppercase tracking-wider mb-3">
@@ -235,16 +267,16 @@ export default function GroupDetailPage() {
                   <div className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3">
                     <Avatar
                       name={member.user.name}
-                      color={getMemberColorByUserId(member.userId)}
+                      color={colorMap.get(member.userId) ?? getMemberColorByUserId(member.userId)}
                       size={36}
                     />
                     <div className="flex-1 min-w-0 flex items-center gap-2">
                       <span className="text-sm text-text truncate">{member.user.name}</span>
                       {member.userId === group.createdById && (
-                        <Badge color="#F59E0B">{t('group.creator')}</Badge>
+                        <Badge variant="neutral">{t('group.creator')}</Badge>
                       )}
                       {member.role === 'admin' && member.userId !== group.createdById && (
-                        <Badge color="#60A5FA">{t('group.admin')}</Badge>
+                        <Badge variant="neutral">{t('group.admin')}</Badge>
                       )}
                       {member.userId === currentUserId && (
                         <span className="text-xs text-text-muted">{t('group.memberYou')}</span>
@@ -294,7 +326,7 @@ export default function GroupDetailPage() {
                 <input
                   type="text"
                   value={citySearch}
-                  onChange={(e) => handleCitySearch(e.target.value)}
+                  onChange={(e) => setCitySearch(e.target.value)}
                   placeholder={t('weather.searchCity')}
                   className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark mb-1"
                   style={{
@@ -345,7 +377,7 @@ export default function GroupDetailPage() {
                     📍 {city.name}
                     {isAdmin && (
                       <button
-                        onClick={() => removeCity.mutate(city.id)}
+                        onClick={() => handleRemoveCity(city.id)}
                         className="text-text-dark hover:text-danger ml-0.5 border-none bg-transparent text-[10px]"
                       >
                         ✕
@@ -399,8 +431,8 @@ export default function GroupDetailPage() {
           </section>
 
           {/* Danger zone */}
-          <section className="mb-8 rounded-xl border border-danger/20 p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-danger/70">
+          <section className="mb-8 rounded-xl border border-subtle p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-error">
               {t('group.dangerZone')}
             </h3>
 
@@ -418,7 +450,7 @@ export default function GroupDetailPage() {
                 <Button
                   variant="ghost"
                   onClick={() => setShowDeleteGroupAlert(true)}
-                  className="w-full !bg-danger/10 !text-danger border border-danger/20"
+                  className="w-full !bg-error-tint !text-danger border border-subtle"
                 >
                   {t('group.deleteGroup')}
                 </Button>

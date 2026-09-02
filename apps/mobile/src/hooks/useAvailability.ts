@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { availabilityService, CreateAvailabilityDto } from '../services/availability';
 import { broadcastSync } from '../lib/group-sync';
 import { logEvent } from '../lib/firebase';
+import { notifyWidgetDataChanged } from '../lib/widget-bridge';
 
 export function useAvailability(groupId: string) {
   return useQuery({
@@ -27,6 +28,7 @@ export function useCreateAvailability(groupId: string) {
     onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
       broadcastSync(groupId, 'availability');
+      void notifyWidgetDataChanged();
       logEvent('mark_availability', { type: vars.type }).catch(() => {});
     },
   });
@@ -40,6 +42,7 @@ export function useDeleteAvailability(groupId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
       broadcastSync(groupId, 'availability');
+      void notifyWidgetDataChanged();
     },
   });
 }

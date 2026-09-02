@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth';
 import { useJoinGroup } from '../hooks/useGroups';
 import { useScreenView } from '../hooks/useAnalytics';
 import { Button } from '../ui/Button';
+import { ApiError } from '../lib/api';
 
 export default function JoinGroupPage() {
   useScreenView('JoinGroup');
@@ -19,6 +20,27 @@ export default function JoinGroupPage() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const joinedCodeRef = useRef<string | null>(null);
+  // True for as long as this component instance is actually on screen. A plain
+  // per-effect-run flag isn't enough: StrictMode mounts, cleans up, and remounts
+  // effects synchronously in dev, which would otherwise mark the in-flight
+  // request "cancelled" even though the component never really went away.
+  const mountedRef = useRef(true);
+  const navTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      // Safety net for real unmount: the join effect below may have last run
+      // its early-return branch (StrictMode re-run for the same code), which
+      // registers no cleanup of its own, so this is the only cleanup
+      // guaranteed to fire and clear a pending nav timeout.
+      if (navTimeoutRef.current) {
+        clearTimeout(navTimeoutRef.current);
+        navTimeoutRef.current = undefined;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -39,19 +61,24 @@ export default function JoinGroupPage() {
     if (joinedCodeRef.current === cleanCode) return;
     joinedCodeRef.current = cleanCode;
 
-    let navTimeout: ReturnType<typeof setTimeout> | undefined;
+    // A stale result is one where the page is gone, or the tracked code has
+    // moved on to a different join link — not merely "this effect run's
+    // cleanup fired", since StrictMode fires that for the same code too.
+    const isStale = () => !mountedRef.current || joinedCodeRef.current !== cleanCode;
+
     joinGroup
       .mutateAsync(cleanCode)
       .then((group) => {
+        if (isStale()) return;
         setStatus('success');
-        navTimeout = setTimeout(() => {
+        navTimeoutRef.current = setTimeout(() => {
           history.replace(`/tabs/group/${group.id}`);
         }, 1000);
       })
       .catch((e: unknown) => {
+        if (isStale()) return;
         setStatus('error');
-        const message = e instanceof Error ? e.message : '';
-        if (message.includes('Already a member')) {
+        if (e instanceof ApiError && e.status === 409) {
           setErrorMessage(t('group.alreadyMember'));
         } else {
           setErrorMessage(t('joinGroup.error'));
@@ -59,7 +86,14 @@ export default function JoinGroupPage() {
       });
 
     return () => {
-      if (navTimeout) clearTimeout(navTimeout);
+      // Not redundant with the mount effect's clear above: this fires when
+      // [user, code] change without a real unmount (e.g. a still-pending nav
+      // timeout from a success right before the user identity changes), a
+      // window the mount effect's cleanup never sees.
+      if (navTimeoutRef.current) {
+        clearTimeout(navTimeoutRef.current);
+        navTimeoutRef.current = undefined;
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, code]);

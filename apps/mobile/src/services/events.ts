@@ -51,15 +51,15 @@ export interface CreateEventDto {
 
 export interface UpdateEventDto {
   title?: string;
-  description?: string;
-  location?: string;
-  locationLat?: number;
-  locationLon?: number;
+  description?: string | null;
+  location?: string | null;
+  locationLat?: number | null;
+  locationLon?: number | null;
   isOnline?: boolean;
-  meetingUrl?: string;
+  meetingUrl?: string | null;
   date?: string;
-  time?: string;
-  endTime?: string;
+  time?: string | null;
+  endTime?: string | null;
 }
 
 export const eventsService = {

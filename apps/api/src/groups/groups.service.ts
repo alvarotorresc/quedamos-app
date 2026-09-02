@@ -5,6 +5,7 @@ import {
   BadRequestException,
   ForbiddenException,
   InternalServerErrorException,
+  ConflictException,
 } from '@nestjs/common';
 import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -131,7 +132,8 @@ export class GroupsService {
     });
 
     if (existingMember) {
-      throw new BadRequestException('Already a member of this group');
+      // This message literal is load-bearing: pre-v1.0.0 clients detect membership conflicts by matching this exact string.
+      throw new ConflictException('Already a member of this group');
     }
 
     await this.prisma.groupMember.create({

@@ -47,6 +47,7 @@ import {
   setCurrentToken,
   setupWebForegroundHandler,
   resetNativePushSetup,
+  registerForPush,
 } from './push-notifications';
 import { getFirebaseMessaging } from './firebase';
 import { onMessage } from 'firebase/messaging';
@@ -79,6 +80,47 @@ describe('push-notifications', () => {
       expect(api.post).toHaveBeenCalledWith('/notifications/register-token', {
         token: 'native-token-456',
         platform: 'android',
+      });
+    });
+  });
+
+  describe('registerForPush (native token rotation)', () => {
+    it('resends a new token to the backend when the registration listener fires again after the initial token', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+
+      const registerPromise = registerForPush();
+
+      // Wait for the 'registration' listener to be registered via addListener.
+      await vi.waitFor(() => {
+        const registered = vi
+          .mocked(PushNotifications.addListener)
+          .mock.calls.some((call) => call[0] === 'registration');
+        expect(registered).toBe(true);
+      });
+
+      const registrationCall = vi
+        .mocked(PushNotifications.addListener)
+        .mock.calls.find((call) => call[0] === 'registration');
+      const registrationCallback = registrationCall![1] as (t: { value: string }) => void;
+
+      // Initial token arrives — resolves registerForPush() as today.
+      registrationCallback({ value: 'initial-token' });
+
+      const { token } = await registerPromise;
+      expect(token).toBe('initial-token');
+
+      vi.mocked(api.post).mockClear();
+
+      // FCM rotates the token after the initial registration.
+      registrationCallback({ value: 'rotated-token' });
+
+      await vi.waitFor(() => {
+        expect(api.post).toHaveBeenCalledWith('/notifications/register-token', {
+          token: 'rotated-token',
+          platform: 'android',
+        });
       });
     });
   });
@@ -371,14 +413,207 @@ describe('push-notifications', () => {
         '00000000-0000-0000-0000-000000000005',
       );
     });
+
+    it('should navigate to calendar with pollId for new_poll', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_poll',
+            pollId: '00000000-0000-0000-0000-000000000010',
+            groupId: '00000000-0000-0000-0000-000000000011',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?pollId=00000000-0000-0000-0000-000000000010&groupId=00000000-0000-0000-0000-000000000011',
+      );
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'quedamos_current_group_id',
+        '00000000-0000-0000-0000-000000000011',
+      );
+    });
+
+    it('should navigate to calendar with pollId only when groupId is not a valid UUID', async () => {
+      // groupId travels alongside pollId so the service worker's notificationclick path
+      // (which has no access to localStorage, unlike navigateFromPush) can still select
+      // the right group on reload. Each field validates independently — garbage in one
+      // must not suppress the other.
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_poll',
+            pollId: '00000000-0000-0000-0000-000000000020',
+            groupId: 'not-a-uuid',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?pollId=00000000-0000-0000-0000-000000000020',
+      );
+    });
+
+    it('should navigate to calendar with groupId only when pollId is not a valid UUID', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_poll',
+            pollId: 'not-a-uuid',
+            groupId: '00000000-0000-0000-0000-000000000021',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/calendar?groupId=00000000-0000-0000-0000-000000000021',
+      );
+    });
+
+    it('should navigate to calendar WITHOUT pollId for poll_completed, even with a valid pollId present', async () => {
+      // poll_completed is informational only ("El aro se cierra") — its poll is already
+      // `completed`, so usePendingQuestions filters it out by definition and the mazo can
+      // never consume a focused pollId for it. Routing it into the deep-link param would
+      // just leak an unconsumable ?pollId= into the URL forever. Only new_poll (an actual
+      // open question) gets the pollId param.
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: { type: 'poll_completed', pollId: '00000000-0000-0000-0000-000000000012' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
+
+    it('should navigate to calendar without pollId when it is not a valid UUID', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+      const { PushNotifications } = await import(
+        '@capacitor/push-notifications'
+      );
+      const { setupPushListeners } = await import('./push-notifications');
+
+      setupPushListeners();
+
+      const actionCall = vi.mocked(PushNotifications.addListener).mock.calls.find(
+        (call) => call[0] === 'pushNotificationActionPerformed',
+      );
+      if (!actionCall) throw new Error('pushNotificationActionPerformed listener not registered');
+      const callback = actionCall[1] as (action: {
+        notification: { data: Record<string, string> };
+      }) => void;
+
+      callback({
+        notification: {
+          data: { type: 'new_poll', pollId: 'not-a-uuid' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
   });
 
   describe('setupWebForegroundHandler', () => {
     // IMPORTANT: The module-level `webForegroundSetup` flag persists across
-    // tests within the same module instance. Tests are ordered carefully:
+    // tests within the same module instance (there is no reset export for it,
+    // unlike resetNativePushSetup). Tests are ordered carefully:
     // 1. Native platform test (does not set the flag)
-    // 2. Full web test (sets the flag, verifies getFirebaseMessaging + onMessage)
+    // 2. Full web test (sets the flag, verifies getFirebaseMessaging + onMessage,
+    //    and captures the registered onMessage callback into
+    //    `capturedOnMessageCallback` for reuse below — the flag being permanently
+    //    set means onMessage is only ever registered once for this module instance)
+    // 2a-2c. Payload-handling tests that invoke the captured callback directly with
+    //    different payload shapes (data-first read + fallback to `notification`)
     // 3. Idempotency test (verifies the flag prevents a second setup)
+
+    type ForegroundPayload = {
+      notification?: { title?: string; body?: string };
+      data?: Record<string, string>;
+    };
+    let capturedOnMessageCallback: ((payload: ForegroundPayload) => void) | null = null;
+    let notificationCtor: ReturnType<typeof vi.fn>;
+
+    function stubNotificationApi(): void {
+      notificationCtor = vi.fn().mockImplementation(function (
+        this: { onclick: (() => void) | null; close: () => void },
+      ) {
+        this.onclick = null;
+        this.close = vi.fn();
+      });
+      Object.defineProperty(notificationCtor, 'permission', {
+        value: 'granted',
+        configurable: true,
+      });
+      vi.stubGlobal('Notification', notificationCtor);
+    }
 
     it('should not set up handler on native platform', () => {
       vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
@@ -404,6 +639,60 @@ describe('push-notifications', () => {
           expect.any(Function),
         );
       });
+
+      // Capture the registered callback for the payload-handling tests below — the
+      // webForegroundSetup flag makes onMessage a one-time registration for this
+      // module instance, so later tests reuse this same function reference instead
+      // of trying to trigger a fresh setupWebForegroundHandler() call.
+      const call = vi.mocked(onMessage).mock.calls[0];
+      capturedOnMessageCallback = call[1] as (payload: ForegroundPayload) => void;
+    });
+
+    it('should show a notification using title/body from payload.data when notification is absent', () => {
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+
+      capturedOnMessageCallback({
+        data: { type: 'new_event', title: 'From data', body: 'Data body', eventId: 'e-1' },
+      });
+
+      expect(notificationCtor).toHaveBeenCalledWith(
+        'From data',
+        expect.objectContaining({ body: 'Data body', icon: '/logo.png' }),
+      );
+    });
+
+    it('should prefer payload.data over payload.notification when both are present', () => {
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+
+      capturedOnMessageCallback({
+        notification: { title: 'From notification', body: 'Notification body' },
+        data: { type: 'new_event', title: 'From data', body: 'Data body' },
+      });
+
+      expect(notificationCtor).toHaveBeenCalledWith(
+        'From data',
+        expect.objectContaining({ body: 'Data body' }),
+      );
+    });
+
+    it('should fall back to payload.notification when payload.data has no title/body', () => {
+      // Resilience during rollout: an old backend still sends `notification` with no
+      // title/body inside `data`. This case already worked before this change too — it
+      // guards the deploy-window fallback rather than reproducing the duplicate-push bug.
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+
+      capturedOnMessageCallback({
+        notification: { title: 'From notification', body: 'Notification body' },
+        data: { type: 'new_event' },
+      });
+
+      expect(notificationCtor).toHaveBeenCalledWith(
+        'From notification',
+        expect.objectContaining({ body: 'Notification body' }),
+      );
     });
 
     it('should be idempotent - calling twice only sets up once', () => {

@@ -33,6 +33,9 @@ model User {
   notificationLogs        NotificationLog[]
   createdProposals        PlanProposal[]           @relation("CreatedProposals")
   proposalVotes           PlanVote[]
+  createdPolls            AvailabilityPoll[]       @relation("PollCreator")
+  pollResponses           PollResponse[]
+  widgetTokens            WidgetToken[]
 
   @@map("users")
 }
@@ -53,6 +56,7 @@ model Group {
   events       Event[]
   proposals    PlanProposal[]
   cities       GroupCity[]
+  polls        AvailabilityPoll[]
 
   @@map("groups")
 }
@@ -146,6 +150,19 @@ model PushToken {
   @@map("push_tokens")
 }
 
+model WidgetToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("widget_tokens")
+}
+
 model NotificationPreference {
   userId  String  @map("user_id") @db.Uuid
   type    String  // 'new_event' | 'event_confirmed' | 'event_declined' | 'member_joined' | 'member_left'
@@ -226,4 +243,37 @@ model PlanVote {
 
   @@id([proposalId, userId])
   @@map("plan_votes")
+}
+
+model AvailabilityPoll {
+  id          String    @id @default(uuid()) @db.Uuid
+  groupId     String    @map("group_id") @db.Uuid
+  createdById String    @map("created_by") @db.Uuid
+  date        DateTime  @db.Date
+  slot        String? // 'Mañana' | 'Tarde' | 'Noche' | null = todo el día
+  status      String    @default("open") // 'open' | 'completed' | 'closed'
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy User           @relation("PollCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  responses PollResponse[]
+
+  @@index([groupId, status])
+  @@map("availability_polls")
+}
+
+model PollResponse {
+  pollId      String   @map("poll_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  answer      String // 'yes' | 'no' | 'unsure'
+  respondedAt DateTime @default(now()) @map("responded_at") @db.Timestamptz
+
+  // Relations
+  poll AvailabilityPoll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  user User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([pollId, userId])
+  @@map("poll_responses")
 }

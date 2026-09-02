@@ -19,6 +19,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [expired, setExpired] = useState(false);
   const [success, setSuccess] = useState(false);
 
   const checks = useMemo(() => getPasswordChecks(password, t), [password, t]);
@@ -26,23 +27,34 @@ export default function ResetPasswordPage() {
   const allChecksPassed = checks.every((c) => c.ok);
 
   useEffect(() => {
+    let settled = false;
+
+    const markReady = () => {
+      settled = true;
+      setReady(true);
+    };
+
     // Check if recovery session already exists (event fired before mount)
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true);
-      }
+      if (session) markReady();
     });
 
     // Also listen for the event in case it hasn't fired yet
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setReady(true);
-      }
+      if (event === 'PASSWORD_RECOVERY') markReady();
     });
 
-    return () => subscription.unsubscribe();
+    // No recovery session and no event within the window → link is invalid/expired
+    const timeout = setTimeout(() => {
+      if (!settled) setExpired(true);
+    }, 8000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,6 +96,17 @@ export default function ResetPasswordPage() {
               </h2>
               <p className="text-text-muted text-sm">{t('resetPassword.success.redirecting')}</p>
             </div>
+          ) : expired ? (
+            <div className="flex flex-col items-center gap-4 text-center max-w-md w-full">
+              <div className="text-4xl">⏳</div>
+              <h2 className="text-lg font-semibold text-text">
+                {t('resetPassword.expired.title')}
+              </h2>
+              <p className="text-text-muted text-sm">{t('resetPassword.expired.message')}</p>
+              <Button onClick={() => history.replace('/forgot-password')} className="mt-2">
+                {t('resetPassword.expired.resend')}
+              </Button>
+            </div>
           ) : !ready ? (
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="text-text-muted text-sm">{t('resetPassword.verifying')}</div>
@@ -95,7 +118,7 @@ export default function ResetPasswordPage() {
               <p className="text-text-muted text-sm">{t('resetPassword.description')}</p>
 
               {error && (
-                <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
+                <div className="bg-error-tint border border-subtle rounded-btn p-3 text-danger text-sm">
                   {error}
                 </div>
               )}

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventCard } from './EventCard';
 import type { Event } from '../services/events';
@@ -20,6 +20,45 @@ vi.mock('../stores/auth', () => ({
   ),
 }));
 
+// Invite link the shareable card links back to — mutable per test via `mockInvite`.
+let mockInvite: { inviteUrl: string } | undefined;
+vi.mock('../hooks/useGroups', () => ({
+  useGroupInvite: () => ({ data: mockInvite }),
+}));
+
+const mockShowError = vi.fn();
+const mockShowInfo = vi.fn();
+vi.mock('../hooks/useToast', () => ({
+  useToast: () => ({ showError: mockShowError, showSuccess: vi.fn(), showInfo: mockShowInfo }),
+}));
+
+const mockTrack = vi.fn();
+vi.mock('../hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
+
+const mockRenderTarjetaSellada = vi.fn();
+vi.mock('../lib/tarjeta', () => ({
+  renderTarjetaSellada: (...args: unknown[]) => mockRenderTarjetaSellada(...args),
+}));
+
+const mockShareTarjeta = vi.fn();
+vi.mock('../lib/share-tarjeta', () => ({
+  shareTarjeta: (...args: unknown[]) => mockShareTarjeta(...args),
+}));
+
+// Mock react-i18next locally (overrides the global setup.ts mock for this file) so we can
+// assert on the exact key + interpolation params passed to t(), not just the rendered key text.
+const mockT = vi.fn((key: string) => key);
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: mockT,
+    i18n: { language: 'es', changeLanguage: vi.fn() },
+  }),
+  Trans: ({ children }: { children: React.ReactNode }) => children,
+  initReactI18next: { type: '3rdParty', init: vi.fn() },
+}));
+
 // Mock Ionic
 vi.mock('@ionic/react', () => ({
   IonSpinner: ({ className }: { className?: string }) => (
@@ -34,6 +73,7 @@ vi.mock('react-icons/hi2', () => ({
   HiOutlinePencil: () => <span data-testid="icon-pencil" />,
   HiOutlineVideoCamera: () => <span data-testid="icon-video" />,
   HiOutlineArrowDownTray: () => <span data-testid="icon-download" />,
+  HiOutlineShare: () => <span data-testid="icon-share" />,
 }));
 
 // Mock ics-utils
@@ -94,6 +134,9 @@ describe('EventCard', () => {
   beforeEach(() => {
     mockUserId = CURRENT_USER_ID;
     vi.clearAllMocks();
+    mockInvite = { inviteUrl: 'https://quedamos.app/i/ABC123' };
+    mockRenderTarjetaSellada.mockReset().mockResolvedValue(new Blob(['png'], { type: 'image/png' }));
+    mockShareTarjeta.mockReset().mockResolvedValue({ shared: true });
   });
 
   // --- Test 1: Invited user with pending status sees confirm/decline buttons ---
@@ -195,7 +238,7 @@ describe('EventCard', () => {
     expect(screen.getByText('Partido de padel')).toBeInTheDocument();
   });
 
-  it('should show attendee counts', () => {
+  it('should show attendee counts via the attendee ring and going-count line', () => {
     const event = createEvent({
       attendees: [
         createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'),
@@ -206,10 +249,78 @@ describe('EventCard', () => {
 
     render(<EventCard event={event} {...defaultProps} />);
 
-    // 2 confirmed out of 3 total
-    expect(screen.getByText('2/3')).toBeInTheDocument();
-    // 1 declined out of 3 total
-    expect(screen.getByText('1/3')).toBeInTheDocument();
+    // Ring: 1 base track circle + 1 arc per confirmed member (2 confirmed of 3 members)
+    const ring = screen.getByTestId('attendee-ring');
+    expect(ring.querySelectorAll('circle')).toHaveLength(3);
+
+    // Going-count line uses the new i18n key (mocked t() returns the key itself)
+    expect(screen.getByText('plans.goingCount')).toBeInTheDocument();
+  });
+
+  it('should compute the going-count line against invited attendees, not the whole group', () => {
+    // Group has 4 members, but only 2 (Alvaro, Misa) are invited to this event and both
+    // confirmed. missing must be 0 (invite-list-relative), not 2 (full-group-relative).
+    const fourMemberColorMap = new Map<string, string>([
+      [CURRENT_USER_ID, '#60A5FA'],
+      [OTHER_USER_ID, '#F59E0B'],
+      [CREATOR_ID, '#34D399'],
+      ['user-4', '#A78BFA'],
+    ]);
+    const event = createEvent({
+      attendees: [
+        createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'),
+        createAttendee(OTHER_USER_ID, 'confirmed', 'Misa'),
+      ],
+    });
+
+    render(<EventCard event={event} groupId="group-1" memberColorMap={fourMemberColorMap} />);
+
+    expect(mockT).toHaveBeenCalledWith('plans.goingCount', { confirmed: 2, missing: 0 });
+  });
+
+  it('should render an attendee ring in the header', () => {
+    const event = createEvent();
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    expect(screen.getByTestId('attendee-ring')).toBeInTheDocument();
+  });
+
+  it('should show the confirmed status in a bg-success badge', () => {
+    const event = createEvent({ status: 'confirmed' });
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    const badge = screen.getByText('plans.status.confirmed');
+    expect(badge.className).toContain('bg-success');
+  });
+
+  it('should overlay a check mark on the ring when the event is confirmed', () => {
+    const event = createEvent({ status: 'confirmed' });
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    expect(screen.getByTestId('attendee-ring-check')).toBeInTheDocument();
+  });
+
+  it('should not overlay a check mark on the ring when the event is not confirmed', () => {
+    const event = createEvent({ status: 'pending' });
+
+    render(<EventCard event={event} {...defaultProps} />);
+
+    expect(screen.queryByTestId('attendee-ring-check')).not.toBeInTheDocument();
+  });
+
+  it('should render as a hairline block instead of a card', () => {
+    const event = createEvent();
+
+    const { container } = render(<EventCard event={event} {...defaultProps} />);
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain('border-t');
+    expect(root.className).toContain('border-subtle');
+    expect(root.className).not.toContain('bg-bg-light');
+    expect(root.className).not.toContain('rounded-lg');
   });
 
   describe('online events', () => {
@@ -261,6 +372,195 @@ describe('EventCard', () => {
       render(<EventCard event={event} {...defaultProps} />);
 
       expect(screen.getByText('Retiro Park')).toBeInTheDocument();
+    });
+  });
+
+  describe('compartir la tarjeta sellada', () => {
+    it('muestra el botón Compartir solo cuando el evento está confirmado', () => {
+      const confirmedEvent = createEvent({ status: 'confirmed' });
+      const { rerender } = render(<EventCard event={confirmedEvent} {...defaultProps} />);
+      expect(screen.getByRole('button', { name: 'group.share' })).toBeInTheDocument();
+
+      const pendingEvent = createEvent({ status: 'pending' });
+      rerender(<EventCard event={pendingEvent} {...defaultProps} />);
+      expect(screen.queryByRole('button', { name: 'group.share' })).not.toBeInTheDocument();
+    });
+
+    it('al pulsar Compartir renderiza la tarjeta sellada y la comparte con el blob y el inviteUrl', async () => {
+      const blob = new Blob(['png'], { type: 'image/png' });
+      mockRenderTarjetaSellada.mockResolvedValue(blob);
+      const event = createEvent({ status: 'confirmed', title: 'Cena en el centro' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
+      const call = mockShareTarjeta.mock.calls[0][0];
+      expect(call.blob).toBe(blob);
+      expect(call.inviteUrl).toBe('https://quedamos.app/i/ABC123');
+      expect(call.filename).toBe('quedamos-tarjeta.png');
+      expect(call.showInfo).toBe(mockShowInfo);
+
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.plan).toBe('Cena en el centro');
+      // Sin adjuntos confirmados en el evento, cae al grupo entero (fallback de seguridad).
+      expect(opts.memberColors).toEqual(['#60A5FA', '#F59E0B', '#34D399']);
+    });
+
+    it('usa share.cardSellada como título de la tarjeta sellada, no calendar.letsMeet', async () => {
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.titulo).toBe('share.cardSellada');
+    });
+
+    it('pasa el inviteUrl sin esquema como pie de la tarjeta', async () => {
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.pie).toBe('quedamos.app/i/ABC123');
+    });
+
+    it('la tarjeta sellada solo pinta a quienes confirmaron asistencia, en orden de slot', async () => {
+      const event = createEvent({
+        status: 'confirmed',
+        attendees: [
+          createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'),
+          createAttendee(CREATOR_ID, 'confirmed', 'Creator'),
+          createAttendee(OTHER_USER_ID, 'declined', 'Misa'),
+        ],
+      });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      // CURRENT_USER_ID y CREATOR_ID confirmaron; OTHER_USER_ID rechazó y queda fuera.
+      // El orden sigue siendo el de slot de memberColorMap, no el de attendees.
+      expect(opts.memberColors).toEqual(['#60A5FA', '#34D399']);
+    });
+
+    it('interpola share.tarjetaSellada con el título y la fecha localizada del evento, sin hora si no hay', async () => {
+      const event = createEvent({ status: 'confirmed', title: 'Cena en el centro', date: '2026-04-15' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      // Mock i18n.language es 'es' (ver mock arriba): "miércoles 15", sin franja horaria.
+      await waitFor(() =>
+        expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
+          titulo: 'Cena en el centro',
+          fechaHora: 'miércoles 15',
+        }),
+      );
+    });
+
+    it('añade la franja horaria a fechaHora cuando el evento tiene hora', async () => {
+      const event = createEvent({
+        status: 'confirmed',
+        title: 'Cena en el centro',
+        date: '2026-04-15',
+        time: '21:00:00',
+      });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() =>
+        expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
+          titulo: 'Cena en el centro',
+          fechaHora: 'miércoles 15 · 21:00',
+        }),
+      );
+
+      await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
+      const opts = mockRenderTarjetaSellada.mock.calls[0][0];
+      expect(opts.fechaHora).toBe('miércoles 15 · 21:00');
+    });
+
+    it('fallo del renderer muestra el toast errors.shareTarjetaFailed, sin lanzar', async () => {
+      mockRenderTarjetaSellada.mockRejectedValue(new Error('boom'));
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.shareTarjetaFailed'));
+      expect(mockShareTarjeta).not.toHaveBeenCalled();
+    });
+
+    it('la cancelación de shareTarjeta no muestra ningún toast de error ni trackea', async () => {
+      mockShareTarjeta.mockResolvedValue({ shared: false }); // shareTarjeta resuelve { shared: false } al cancelar
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledOnce());
+      expect(mockShowError).not.toHaveBeenCalled();
+      expect(mockTrack).not.toHaveBeenCalled();
+    });
+
+    it('trackea share_tarjeta con momento sellada cuando shareTarjeta resuelve shared: true', async () => {
+      mockShareTarjeta.mockResolvedValue({ shared: true });
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() =>
+        expect(mockTrack).toHaveBeenCalledWith('share_tarjeta', { momento: 'sellada' }),
+      );
+    });
+
+    it('sin inviteUrl cargado todavía, no renderiza ni comparte nada (no crashea)', async () => {
+      mockInvite = undefined;
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      // Da tiempo a cualquier microtask pendiente antes de comprobar que no pasó nada.
+      await Promise.resolve();
+      expect(mockRenderTarjetaSellada).not.toHaveBeenCalled();
+      expect(mockShareTarjeta).not.toHaveBeenCalled();
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
+
+    it('el doble click rápido en Compartir solo llama a shareTarjeta una vez (guard en vuelo)', async () => {
+      let resolveShare!: (value: { shared: boolean }) => void;
+      mockShareTarjeta.mockImplementation(
+        () =>
+          new Promise<{ shared: boolean }>((resolve) => {
+            resolveShare = resolve;
+          }),
+      );
+      const event = createEvent({ status: 'confirmed' });
+
+      render(<EventCard event={event} {...defaultProps} />);
+
+      // Re-query after each interaction instead of holding a stale node reference —
+      // motion.button remounts its underlying DOM element on prop-driven re-renders.
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(mockShareTarjeta).toHaveBeenCalledTimes(1));
+      expect(screen.getByRole('button', { name: 'group.share' })).toBeDisabled();
+
+      resolveShare({ shared: true });
+      await waitFor(() =>
+        expect(screen.getByRole('button', { name: 'group.share' })).not.toBeDisabled(),
+      );
+      expect(mockShareTarjeta).toHaveBeenCalledTimes(1);
     });
   });
 });

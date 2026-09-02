@@ -101,12 +101,12 @@ export default function RegisterPage() {
               <span className="text-lg leading-none">&larr;</span> {t('common.back')}
             </button>
 
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-[#60A5FA] to-[#8B5CF6] bg-clip-text text-transparent mb-2">
+            <h1 className="text-2xl font-bold text-text mb-2">
               {t('register.title')}
             </h1>
 
             {error && (
-              <div className="bg-danger/10 border border-danger/20 rounded-btn p-3 text-danger text-sm">
+              <div className="bg-error-tint border border-subtle rounded-btn p-3 text-danger text-sm">
                 {error}
               </div>
             )}
@@ -198,7 +198,7 @@ export default function RegisterPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`w-full bg-bg-input border rounded-md px-4 py-3 pr-11 text-text outline-none focus:border-primary ${
                     confirmPassword.length > 0 && password !== confirmPassword
-                      ? 'border-danger/50'
+                      ? 'border-error'
                       : 'border-strong'
                   }`}
                   placeholder={t('common.passwordPlaceholder')}

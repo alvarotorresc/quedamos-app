@@ -54,29 +54,65 @@ async function registerNative(): Promise<{
     resolveToken = resolve;
   });
 
+  let initialTokenReceived = false;
+
   const registrationHandle = await PushNotifications.addListener('registration', (t) => {
+    const previousToken = currentToken;
     currentToken = t.value;
-    resolveToken(t.value);
+
+    if (!initialTokenReceived) {
+      initialTokenReceived = true;
+      resolveToken(t.value);
+      return;
+    }
+
+    // FCM rotated the token after the initial registration (e.g. token expiry or app
+    // reinstall) — or a resume re-ran registerNative() while this listener was still
+    // attached (it's only removed once the NEW registerNative() call resolves), so the
+    // same native event can reach this branch with a token that hasn't actually
+    // changed. Only resend when it did: on native, the hook itself unconditionally
+    // resends whatever token IT resolves with on every resume, so resending an
+    // unchanged token here too would double-POST for a single resume.
+    if (t.value === previousToken) return;
+
+    // The endpoint is an idempotent upsert (UNIQUE(user_id, token)), so re-sending is
+    // always safe.
+    void sendTokenToBackend(t.value).catch((err) => {
+      if (import.meta.env.DEV) {
+        console.error('[Push] Failed to resend rotated token:', err);
+      }
+    });
   });
 
   const errorHandle = await PushNotifications.addListener('registrationError', (error) => {
     if (import.meta.env.DEV) {
       console.error('[Push] Native registration error:', error);
     }
+    // Settle the promise even though no token arrived, so a LATER real 'registration'
+    // event (e.g. a retry after this error) is treated as a resend instead of routed
+    // into the (already-resolved) initial-token branch above, where resolveToken()
+    // would silently no-op on an already-settled promise and the token would vanish.
+    initialTokenReceived = true;
     resolveToken(null);
   });
 
-  await PushNotifications.register();
-
-  const token = await tokenPromise;
-
-  return {
-    token,
-    cleanup: () => {
-      registrationHandle.remove();
-      errorHandle.remove();
-    },
+  const cleanup = () => {
+    registrationHandle.remove();
+    errorHandle.remove();
   };
+
+  try {
+    await PushNotifications.register();
+    const token = await tokenPromise;
+    return { token, cleanup };
+  } catch (err) {
+    // register() (or, in principle, awaiting tokenPromise) threw after the listeners
+    // were already attached above — without this, registerNative() throws before ever
+    // returning a cleanup function, and the caller has no way to remove the handles it
+    // never received. Tear them down here instead of leaking them.
+    cleanup();
+    throw err;
+  }
 }
 
 async function registerWeb(): Promise<string | null> {
@@ -144,7 +180,7 @@ const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function navigateFromPush(data: Record<string, string>): void {
-  const { type, groupId, eventId } = data;
+  const { type, groupId, eventId, pollId } = data;
 
   // Validate UUIDs before using in URLs or storage
   const validGroupId = groupId && UUID_RE.test(groupId) ? groupId : undefined;
@@ -156,6 +192,23 @@ function navigateFromPush(data: Record<string, string>): void {
 
   if (type === 'member_joined' || type === 'member_left') {
     window.location.href = validGroupId ? `/tabs/group/${validGroupId}` : '/tabs/group';
+  } else if (type === 'new_poll') {
+    // poll_completed is informational only ("El aro se cierra") — its poll is already
+    // `completed`, so the mazo can never focus/consume a pollId for it. Only an open
+    // question (new_poll) gets the deep-link param.
+    //
+    // groupId travels alongside pollId (not just in localStorage above) because the
+    // service worker's notificationclick path replicates this same routing but has no
+    // access to the page's localStorage — the URL is the only channel that reaches it.
+    // Each field validates independently: garbage in one must not suppress the other.
+    const pollOk = typeof pollId === 'string' && UUID_RE.test(pollId);
+    const pollParams = new URLSearchParams();
+    if (pollOk) pollParams.set('pollId', pollId);
+    if (validGroupId) pollParams.set('groupId', validGroupId);
+    const pollQuery = pollParams.toString();
+    window.location.href = pollQuery ? `/tabs/calendar?${pollQuery}` : '/tabs/calendar';
+  } else if (type === 'poll_completed') {
+    window.location.href = '/tabs/calendar';
   } else if (validEventId) {
     window.location.href = `/tabs/plans?eventId=${validEventId}`;
   } else {
@@ -176,8 +229,13 @@ export function setupWebForegroundHandler(): void {
     if (!messaging) return;
 
     onMessage(messaging, (payload) => {
-      const { title, body } = payload.notification ?? {};
+      // Web tokens now receive a data-only payload (no top-level `notification`) — the
+      // backend splits sends by platform to avoid @firebase/messaging showing its own
+      // duplicate notification. Read title/body from `data` first, with a fallback to
+      // `notification` for resilience during rollout (old backend + new client).
       const data = payload.data as Record<string, string> | undefined;
+      const title = data?.title ?? payload.notification?.title;
+      const body = data?.body ?? payload.notification?.body;
       if (title && 'Notification' in window && Notification.permission === 'granted') {
         const notification = new Notification(title, {
           body: body ?? '',

@@ -2,23 +2,23 @@
   "common": {
     "back": "Volver",
     "email": "Email",
-    "password": "Contrase\u00f1a",
+    "password": "Contraseña",
     "emailPlaceholder": "tu@email.com",
-    "passwordPlaceholder": "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
-    "captchaError": "No se pudo verificar el captcha. Int\u00e9ntalo de nuevo.",
+    "passwordPlaceholder": "••••••••",
+    "captchaError": "No se pudo verificar el captcha. Inténtalo de nuevo.",
     "unexpectedError": "Ha ocurrido un error inesperado",
     "cancel": "Cancelar",
     "optional": "opcional"
   },
   "splash": {
-    "title": "\u00bfQuedamos?",
+    "title": "¿Quedamos?",
     "tagline": "El momento perfecto para quedar con tu grupo.",
-    "login": "Iniciar sesi\u00f3n",
+    "login": "Iniciar sesión",
     "register": "Crear cuenta"
   },
   "login": {
-    "title": "Iniciar sesi\u00f3n",
-    "forgotPassword": "\u00bfOlvidaste tu contrase\u00f1a?",
+    "title": "Iniciar sesión",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
     "submit": "Entrar",
     "submitting": "Entrando..."
   },
@@ -26,53 +26,53 @@
     "title": "Crear cuenta",
     "nameLabel": "Nombre",
     "namePlaceholder": "Tu nombre",
-    "confirmPasswordLabel": "Repetir contrase\u00f1a",
+    "confirmPasswordLabel": "Repetir contraseña",
     "submit": "Crear cuenta",
     "submitting": "Creando...",
-    "passwordRequirementsError": "La contrase\u00f1a no cumple todos los requisitos",
-    "passwordsMismatch": "Las contrase\u00f1as no coinciden",
+    "passwordRequirementsError": "La contraseña no cumple todos los requisitos",
+    "passwordsMismatch": "Las contraseñas no coinciden",
     "checks": {
       "minLength": "Al menos 8 caracteres",
-      "uppercase": "Una letra may\u00fascula",
-      "number": "Un n\u00famero",
-      "special": "Un car\u00e1cter especial (!@#$...)"
+      "uppercase": "Una letra mayúscula",
+      "number": "Un número",
+      "special": "Un carácter especial (!@#$...)"
     },
     "strength": {
-      "weak": "D\u00e9bil",
+      "weak": "Débil",
       "fair": "Regular",
       "good": "Buena",
       "strong": "Fuerte"
     },
     "success": {
       "title": "Revisa tu email",
-      "message": "Te hemos enviado un email de confirmaci\u00f3n a <1>{{email}}</1>. Haz click en el enlace para activar tu cuenta.",
+      "message": "Te hemos enviado un email de confirmación a <1>{{email}}</1>. Haz click en el enlace para activar tu cuenta.",
       "spam": "Si no lo ves, revisa la carpeta de spam."
     }
   },
   "forgotPassword": {
-    "title": "Recuperar contrase\u00f1a",
-    "description": "Introduce tu email y te enviaremos un enlace para restablecer tu contrase\u00f1a.",
+    "title": "Recuperar contraseña",
+    "description": "Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.",
     "submit": "Enviar enlace",
     "submitting": "Enviando...",
     "success": {
       "title": "Email enviado",
-      "message": "Te hemos enviado un email con instrucciones para restablecer tu contrase\u00f1a. Revisa tu bandeja de entrada.",
+      "message": "Te hemos enviado un email con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada.",
       "resend": "Enviar de nuevo"
     }
   },
   "resetPassword": {
-    "title": "Nueva contrase\u00f1a",
-    "description": "Introduce tu nueva contrase\u00f1a.",
-    "newPasswordLabel": "Nueva contrase\u00f1a",
-    "confirmPasswordLabel": "Confirmar contrase\u00f1a",
-    "submit": "Cambiar contrase\u00f1a",
+    "title": "Nueva contraseña",
+    "description": "Introduce tu nueva contraseña.",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "submit": "Cambiar contraseña",
     "submitting": "Guardando...",
     "verifying": "Verificando enlace...",
-    "passwordsMismatch": "Las contrase\u00f1as no coinciden",
-    "minLengthError": "La contrase\u00f1a debe tener al menos 6 caracteres",
-    "genericError": "Error al cambiar la contrase\u00f1a",
+    "passwordsMismatch": "Las contraseñas no coinciden",
+    "minLengthError": "La contraseña debe tener al menos 6 caracteres",
+    "genericError": "Error al cambiar la contraseña",
     "success": {
-      "title": "Contrase\u00f1a actualizada",
+      "title": "Contraseña actualizada",
       "redirecting": "Redirigiendo..."
     },
     "expired": {
@@ -99,15 +99,28 @@
     "daysWithAvailability": "Días con disponibilidad",
     "recommended": "Recomendado",
     "secondRecommended": "Otro día",
-    "bestDay": "Mejor día",
-    "secondBestDay": "Otro día",
     "noAvailability": "Nadie disponible",
     "you": "Tú",
     "allDay": "Todo el día",
     "markAvailable": "Estoy disponible",
+    "ask": "Preguntar",
+    "askTitle": "Preguntar al grupo",
+    "askAction": "Preguntar",
+    "askHint": "Cada uno responde con un toque, sin abrir el calendario.",
+    "askDuplicate": "Ya has preguntado eso. Prueba otra franja.",
+    "askNotNotified": "Queda en el mazo; hoy ya se avisó al grupo.",
     "editAvailability": "Editar disponibilidad",
     "available": "Disponible",
     "createEvent": "Crear quedada",
+    "canCount": "Pueden {{count}}",
+    "canCountOne": "Puede 1",
+    "allCan": "Podéis los {{count}}",
+    "bestDayQuestion": "¿Quedamos el {{weekday}}?",
+    "letsMeet": "Quedamos",
+    "cannot": "{{name}} no",
+    "emptyTitle": "¿Cuándo puedes?",
+    "emptyDescription": "Toca un día para marcar cuándo estás disponible. Tu grupo verá cuándo coincidís.",
+    "emptyAction": "Estoy disponible",
     "weekdays": ["L", "M", "X", "J", "V", "S", "D"],
     "monthStats": {
       "activeDays": "Días activos",
@@ -156,8 +169,9 @@
     "confirmed": "confirmados",
     "confirm": "Confirmar",
     "decline": "Rechazar",
-    "youConfirmed": "Has confirmado asistencia",
+    "youConfirmed": "Vas. Que conste.",
     "youDeclined": "Has rechazado esta quedada",
+    "goingCount": "van {{confirmed}}, faltan {{missing}}",
     "editButton": "Editar",
     "deleteEvent": "Eliminar quedada",
     "deleteConfirm": "Esta accion no se puede deshacer",
@@ -175,14 +189,9 @@
       "plans": "Quedadas",
       "proposals": "Propuestas"
     },
-    "filter": {
-      "all": "Todas",
-      "online": "Online",
-      "inPerson": "Presencial"
-    },
     "tapToChange": "Toca para cambiar",
     "status": {
-      "pending": "Pendiente",
+      "pending": "En el aire",
       "confirmed": "Confirmada",
       "cancelled": "Cancelada"
     },
@@ -190,13 +199,15 @@
       "title": "Nueva quedada",
       "name": "Título",
       "namePlaceholder": "Ruta, cena, cine...",
+      "defaultTitle": "Quedada del {{weekday}}",
       "time": "Hora",
       "location": "Lugar",
       "locationPlaceholder": "Monachil, centro...",
+      "locationOptional": "Opcional — se puede decidir luego",
       "submit": "Crear quedada",
       "creating": "Creando...",
       "available": "disponibles",
-      "attendees": "Asistentes",
+      "whoCan": "Van los que pueden",
       "selectAttendees": "Invitar miembros específicos",
       "allMembersDefault": "Todos los miembros del grupo serán invitados por defecto",
       "suggested": "Sugerido",
@@ -210,37 +221,37 @@
   },
   "group": {
     "title": "Grupo",
-    "noGroup": "No perteneces a ning\u00fan grupo",
-    "noGroupSubtitle": "Crea un grupo o \u00fanete a uno para empezar",
+    "noGroup": "No perteneces a ningún grupo",
+    "noGroupSubtitle": "Crea un grupo o únete a uno para empezar",
     "createGroup": "Crear grupo",
-    "joinWithCode": "Unirme con c\u00f3digo",
+    "joinWithCode": "Unirme con código",
     "groupName": "Nombre del grupo",
     "groupNamePlaceholder": "Ej: Amigos del cole",
     "emoji": "Emoji",
-    "emojiPlaceholder": "\ud83d\udc65",
+    "emojiPlaceholder": "👥",
     "creating": "Creando...",
-    "inviteCode": "C\u00f3digo de invitaci\u00f3n",
+    "inviteCode": "Código de invitación",
     "inviteCodePlaceholder": "12345678",
-    "joining": "Uni\u00e9ndose...",
+    "joining": "Uniéndose...",
     "members": "Miembros",
-    "memberYou": "(t\u00fa)",
+    "memberYou": "(tú)",
     "inviteFriends": "Invitar amigos",
-    "copyCode": "Copiar c\u00f3digo",
-    "codeCopied": "C\u00f3digo copiado",
+    "copyCode": "Copiar código",
+    "codeCopied": "Código copiado",
     "share": "Compartir",
-    "regenerateCode": "Regenerar c\u00f3digo",
-    "regenerateConfirm": "\u00bfRegenerar el c\u00f3digo de invitaci\u00f3n? El c\u00f3digo actual dejar\u00e1 de funcionar.",
+    "regenerateCode": "Regenerar código",
+    "regenerateConfirm": "¿Regenerar el código de invitación? El código actual dejará de funcionar.",
     "regenerating": "Regenerando...",
     "dangerZone": "Zona de peligro",
     "leaveGroup": "Salir del grupo",
-    "leaveConfirm": "\u00bfSeguro que quieres salir de este grupo?",
+    "leaveConfirm": "¿Seguro que quieres salir de este grupo?",
     "leaving": "Saliendo...",
-    "shareMessage": "\u00danete a mi grupo en \u00bfQuedamos?",
+    "shareMessage": "Únete a mi grupo en ¿Quedamos?",
     "memberCount_one": "{{count}} miembro",
     "memberCount_other": "{{count}} miembros",
     "createError": "Error al crear el grupo",
     "joinError": "Error al unirse al grupo",
-    "invalidCode": "C\u00f3digo de invitaci\u00f3n inv\u00e1lido",
+    "invalidCode": "Código de invitación inválido",
     "alreadyMember": "Ya eres miembro de este grupo",
     "leaveTitle": "Salir del grupo",
     "leaveMessage": "¿Seguro que quieres salir de este grupo? No podrás volver a entrar sin una nueva invitación.",
@@ -263,39 +274,40 @@
     "creator": "Fundador"
   },
   "joinGroup": {
-    "joining": "Uni\u00e9ndose al grupo...",
-    "success": "\u00a1Te has unido al grupo!",
+    "joining": "Uniéndose al grupo...",
+    "success": "¡Te has unido al grupo!",
     "redirecting": "Redirigiendo...",
     "error": "No se pudo unir al grupo",
-    "invalidCode": "El c\u00f3digo de invitaci\u00f3n no es v\u00e1lido",
+    "invalidCode": "El código de invitación no es válido",
     "goToGroups": "Ir a mis grupos"
   },
   "profile": {
     "title": "Perfil",
     "editName": "Editar nombre",
     "changeEmail": "Cambiar email",
-    "changePassword": "Cambiar contrase\u00f1a",
+    "changePassword": "Cambiar contraseña",
     "newName": "Nuevo nombre",
     "newEmail": "Nuevo email",
-    "newPassword": "Nueva contrase\u00f1a",
-    "confirmPassword": "Confirmar contrase\u00f1a",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar contraseña",
     "save": "Guardar",
     "saving": "Guardando...",
-    "sendConfirmation": "Enviar confirmaci\u00f3n",
+    "sendConfirmation": "Enviar confirmación",
     "sending": "Enviando...",
     "emailSent": "Revisa tu nuevo email para confirmar el cambio",
     "sameEmailError": "El nuevo email debe ser diferente al actual",
     "confirmEmail": "Confirmar nuevo email",
     "emailsMismatch": "Los emails no coinciden",
     "nameUpdated": "Nombre actualizado",
-    "passwordUpdated": "Contrase\u00f1a actualizada",
-    "passwordsMismatch": "Las contrase\u00f1as no coinciden",
-    "minLengthError": "La contrase\u00f1a debe tener al menos 6 caracteres",
+    "passwordUpdated": "Contraseña actualizada",
+    "passwordsMismatch": "Las contraseñas no coinciden",
+    "minLengthError": "La contraseña debe tener al menos 6 caracteres",
     "theme": "Tema oscuro",
     "notifications": {
       "title": "Notificaciones",
       "groups": {
         "events": "Quedadas",
+        "questions": "Preguntas",
         "proposals": "Propuestas",
         "members": "Miembros",
         "reminders": "Recordatorios"
@@ -307,6 +319,8 @@
       "eventConfirmed": "Quedada confirmada por todos",
       "eventDeclined": "Alguien rechazó una quedada",
       "eventReminder": "Recordatorio 24h antes de una quedada",
+      "newPoll": "Nuevas preguntas al grupo",
+      "pollCompleted": "El aro se cierra",
       "newProposal": "Nueva propuesta creada",
       "proposalVoted": "Alguien votó en una propuesta",
       "proposalConverted": "Propuesta convertida en quedada",
@@ -341,112 +355,136 @@
     "defaultName": "Usuario"
   },
   "landing": {
-    "brand": "¿Quedamos?",
-    "header": {
-      "login": "Iniciar sesión",
-      "register": "Empezar"
+    "brand": "¿Quedamos?"
+  },
+  "landing2": {
+    "cta": "Abrir Quedamos",
+    "githubCta": "Ver el código en GitHub",
+    "nav": {
+      "brand": "¿Quedamos?",
+      "codeOpen": "Código abierto"
     },
     "hero": {
-      "title": "¿Quedamos?",
-      "tagline": "Coordina quedadas con tu grupo de amigos. Marca cuándo puedes, encuentra el mejor día y crea planes.",
-      "cta": "Empieza gratis",
-      "login": "Ya tengo cuenta"
-    },
-    "features": {
-      "title": "Todo lo que necesitas",
-      "subtitle": "Organizar planes con amigos nunca fue tan fácil.",
-      "calendar": {
-        "title": "Calendario compartido",
-        "description": "Cada miembro marca cuándo puede. Ve la disponibilidad de todos de un vistazo."
-      },
-      "groups": {
-        "title": "Grupos de amigos",
-        "description": "Crea un grupo e invita a tus amigos con un código o un enlace."
-      },
-      "plans": {
-        "title": "Crea quedadas",
-        "description": "Cuando coincidáis, crea una quedada. Todos reciben una notificación."
-      },
-      "notifications": {
-        "title": "Notificaciones",
-        "description": "Recibe avisos de nuevas quedadas, confirmaciones y recordatorios."
+      "title": "Tu grupo quiere verse.",
+      "subtitle": "Nadie sabe cuándo. Quedamos hace la pregunta y os avisa cuando podéis todos.",
+      "mockup": {
+        "today": "Hoy",
+        "month": "sep 2026",
+        "asks": "Iris pregunta",
+        "question": "¿Podéis el sábado 14?",
+        "canGo": "Puedo",
+        "cannotGo": "No puedo",
+        "fri": "vie",
+        "sat": "sáb",
+        "allCan": "Podéis los seis",
+        "askCta": "¿Quedamos?"
       }
     },
-    "mockup": {
-      "title": "Encuentra el mejor día",
-      "description": "Ve de un vistazo cuándo puede quedar cada persona. El calendario resalta los días con más disponibilidad.",
-      "weekLabel": "Semana",
-      "monthLabel": "Febrero 2026",
-      "bestDay": "Mejor día",
-      "bestDayDate": "Viernes 14 — 4 disponibles"
+    "banda": {
+      "title": "Toda la app cabe en un círculo.",
+      "subtitle": "Cada arco es una persona con su color. El hueco es quien no ha respondido. Cuando el aro se cierra, podéis todos.",
+      "weekday": "sábado",
+      "dayNumber": "14",
+      "pending": "En el aire: falta uno por responder y uno no puede.",
+      "sealed": "Sellada: plan, hora y sitio confirmados."
     },
-    "cta": {
-      "title": "¿A qué esperas?",
-      "subtitle": "Crea tu grupo y empieza a coordinar quedadas con tus amigos.",
-      "button": "Crear cuenta gratis",
-      "hasAccount": "¿Ya tienes cuenta?",
-      "login": "Inicia sesión"
-    },
-    "screenshots": {
-      "title": "Conoce la app por dentro",
-      "subtitle": "Así se ve",
-      "calendar": {
-        "label": "Calendario",
-        "header": "Semana"
+    "pantallas": {
+      "title": "Tres pantallas. Ninguna de más.",
+      "subtitle": "Preguntas, ves quién puede y selláis la quedada. No hay más que aprender.",
+      "week": {
+        "title": "Semana",
+        "thu": "jue",
+        "fri": "vie",
+        "sat": "sáb",
+        "sun": "dom",
+        "allCan": "Podéis los seis",
+        "askCta": "¿Quedamos?"
       },
       "events": {
-        "label": "Quedadas",
-        "title": "Próximas quedadas",
+        "title": "Quedadas",
         "upcoming": "Próximas",
         "past": "Pasadas",
-        "event1": "Ruta por Monachil",
-        "location1": "Monachil",
-        "event2": "Brunch dominguero",
-        "location2": "Centro",
+        "dinnerTitle": "Cena en casa de Iris",
+        "dinnerTime": "sáb 14 · 21:00",
         "confirmed": "Confirmada",
-        "pending": "Pendiente"
+        "padelTitle": "Pádel y cañas",
+        "padelTime": "dom 22 · 12:00",
+        "pending": "En el aire",
+        "propose": "Proponer quedada"
       },
       "group": {
-        "label": "Grupo",
-        "name": "Amigos Granada",
-        "memberCount": "{{count}} miembros",
-        "inviteCode": "Código de invitación"
+        "title": "Cuadrilla",
+        "of6": "{{count}} de 6",
+        "invite": "Invitar al grupo"
       }
     },
-    "roadmap": {
-      "title": "Hecho para crecer",
-      "subtitle": "Roadmap",
-      "available": {
-        "title": "Disponible ahora",
-        "subtitle": "Funcionalidades que ya puedes usar",
-        "features": {
-          "sharedCalendar": "Calendario compartido",
-          "groups": "Grupos de amigos",
-          "events": "Crear y gestionar quedadas",
-          "pushNotifications": "Notificaciones push",
-          "realtimeSync": "Sincronización en tiempo real",
-          "darkLightTheme": "Tema claro y oscuro",
-          "multiLanguage": "Español e inglés",
-          "androidWeb": "Android y Web"
-        }
-      },
-      "upcoming": {
-        "title": "Próximamente",
-        "subtitle": "Lo que viene en las próximas versiones",
-        "badge": "Pronto",
-        "features": {
-          "ios": "App para iOS",
-          "aiSuggestions": "Sugerencias con IA",
-          "weather": "Integración con el clima",
-          "voting": "Votaciones en grupo",
-          "editEvents": "Editar quedadas",
-          "multiAdmin": "Múltiples administradores"
+    "cuadrilla": {
+      "title": "Seis colores. El tuyo es el tuyo.",
+      "names": {
+        "vera": "Vera",
+        "hugo": "Hugo",
+        "noa": "Noa",
+        "leo": "Leo",
+        "iris": "Iris",
+        "teo": "Teo"
+      }
+    },
+    "proceso": {
+      "title": "De la pregunta al plan",
+      "steps": {
+        "sondear": {
+          "index": "01",
+          "title": "Sondear",
+          "description": "Pregunta un día al grupo desde el calendario. Cada uno contesta cuando puede."
+        },
+        "cierra": {
+          "index": "02",
+          "title": "El aro se cierra",
+          "description": "Cuando todos pueden, te llega el aviso. Cero toques, cero calendario que leer."
+        },
+        "quedamos": {
+          "index": "03",
+          "title": "Quedamos",
+          "description": "Alguien propone plan, hora y sitio. Quien confirma cierra su arco."
         }
       }
     },
-    "footer": {
-      "madeWith": "Hecho con",
-      "by": "por"
+    "renuncias": {
+      "title": "Lo que Quedamos no va a hacer nunca",
+      "subtitle": "Tachado a propósito. No es un roadmap.",
+      "items": {
+        "interrogate": {
+          "label": "Interrogarte",
+          "description": "Una pregunta al día, como mucho. Si no hay nada, no suena."
+        },
+        "confetti": {
+          "label": "El confeti",
+          "description": "La celebración es el aro cerrándose."
+        },
+        "streaks": {
+          "label": "Rachas y puntos",
+          "description": "Ni niveles, ni culpa por no salir."
+        },
+        "punish": {
+          "label": "Castigar la ausencia",
+          "description": "Quien no responde es un hueco, no una falta."
+        },
+        "shoutEmoji": {
+          "label": "Los emojis a gritos",
+          "description": "La voz es seca y tutea. Afirma solo cuando es verdad."
+        },
+        "aiPlan": {
+          "label": "Una IA en vuestro plan",
+          "description": "Vuestro plan es vuestro."
+        }
+      }
+    },
+    "cierre": {
+      "quote": "«Nada pendiente. La semana está respondida.»",
+      "subtitle": "El vacío es recompensa.",
+      "footer": {
+        "languages": "Español / English"
+      }
     }
   },
   "online": {
@@ -502,16 +540,45 @@
     "votes": "{{yes}} a favor, {{no}} en contra"
   },
   "authErrors": {
-    "invalidCredentials": "Email o contrase\u00f1a incorrectos",
-    "emailNotConfirmed": "Debes confirmar tu email antes de iniciar sesi\u00f3n",
-    "userAlreadyRegistered": "Este email ya est\u00e1 registrado",
-    "passwordTooShort": "La contrase\u00f1a debe tener al menos 6 caracteres",
-    "invalidEmailFormat": "El formato del email no es v\u00e1lido",
-    "passwordRequired": "Debes introducir una contrase\u00f1a",
+    "invalidCredentials": "Email o contraseña incorrectos",
+    "emailNotConfirmed": "Debes confirmar tu email antes de iniciar sesión",
+    "userAlreadyRegistered": "Este email ya está registrado",
+    "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+    "invalidEmailFormat": "El formato del email no es válido",
+    "passwordRequired": "Debes introducir una contraseña",
     "emailRequired": "Debes introducir un email",
-    "userNotFound": "No se encontr\u00f3 ninguna cuenta con ese email",
+    "userNotFound": "No se encontró ninguna cuenta con ese email",
     "rateLimitSeconds": "Por seguridad, solo puedes hacer esto una vez cada 60 segundos",
     "rateLimitExceeded": "Demasiados intentos. Espera unos minutos"
+  },
+  "mazo": {
+    "canYou": "¿Puedes el {{weekday}}?",
+    "canYouSlot": "¿Puedes el {{weekday}} {{slot}}?",
+    "slotMorning": "por la mañana",
+    "slotAfternoon": "por la tarde",
+    "slotNight": "por la noche",
+    "goingQuestion": "{{title}}. ¿Vas?",
+    "iCan": "Puedo",
+    "iCant": "No puedo",
+    "going": "Voy",
+    "notGoing": "No voy",
+    "unsure": "Aún no sé",
+    "toMap": "Al mapa",
+    "pending_one": "{{count}} pregunta pendiente",
+    "pending_other": "{{count}} preguntas pendientes",
+    "done": "Ya está.",
+    "asks": "Pregunta {{name}}",
+    "answered": "Respondido.",
+    "notPendingAnymore": "Esa pregunta ya no está pendiente."
+  },
+  "share": {
+    "tarjetaCerrada": "El aro se ha cerrado. Podéis todos el {{fecha}}.",
+    "tarjetaSellada": "Quedamos. {{titulo}}, {{fechaHora}}.",
+    "cardCerrada": "El aro se ha cerrado.",
+    "cardSubCerrada": "Podéis los {{count}}.",
+    "cardSellada": "Quedamos.",
+    "linkCopied": "Enlace copiado. Tarjeta descargada.",
+    "cardDownloaded": "Tarjeta descargada."
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
@@ -521,12 +588,17 @@
     "updateEventFailed": "No se pudieron guardar los cambios",
     "createProposalFailed": "No se pudo crear la propuesta",
     "convertProposalFailed": "No se pudo convertir la propuesta",
+    "updateProposalFailed": "No se pudo actualizar la propuesta",
     "addCityFailed": "No se pudo añadir la ciudad",
+    "removeCityFailed": "No se pudo quitar la ciudad",
     "regenerateCodeFailed": "No se pudo regenerar el código",
     "leaveGroupFailed": "No se pudo salir del grupo",
     "updateRoleFailed": "No se pudo actualizar el rol",
     "kickMemberFailed": "No se pudo expulsar al miembro",
     "deleteGroupFailed": "No se pudo eliminar el grupo",
-    "copyFailed": "No se pudo copiar el código"
+    "copyFailed": "No se pudo copiar el código",
+    "answerPollFailed": "No se pudo guardar tu respuesta",
+    "respondEventFailed": "No se pudo guardar tu asistencia",
+    "shareTarjetaFailed": "No se pudo crear la tarjeta"
   }
 }

@@ -3,7 +3,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Nunito', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['Bricolage Grotesque', 'Segoe UI', 'system-ui', 'sans-serif'],
+        mono: ['Geist Mono', 'ui-monospace', 'monospace'],
       },
       colors: {
         bg: 'var(--app-bg)',
@@ -16,14 +17,23 @@ export default {
         'toggle-off': 'var(--app-toggle-off)',
         primary: 'var(--app-primary)',
         'primary-dark': 'var(--app-primary-solid)',
+        'primary-solid': 'var(--app-primary-solid)',
         'primary-hover': 'var(--app-primary-hover)',
         accent: 'var(--app-accent)',
         text: 'var(--app-text)',
         'text-muted': 'var(--app-text-muted)',
         'text-dark': 'var(--app-text-dark)',
+        'on-primary': 'var(--app-on-primary)',
+        apagado: 'var(--app-apagado)',
+        'muted-panel': 'var(--app-text-muted-panel)',
         success: 'var(--app-success)',
         warning: 'var(--app-warning)',
         danger: 'var(--app-error)',
+        error: 'var(--app-error)',
+        'primary-tint': 'var(--app-primary-tint)',
+        'success-tint': 'var(--app-success-tint)',
+        'warning-tint': 'var(--app-warning-tint)',
+        'error-tint': 'var(--app-error-tint)',
         member: {
           blue: '#60A5FA',
           orange: '#F59E0B',
@@ -44,6 +54,7 @@ export default {
         lg: '16px',
         btn: '12px',
         xl: '20px',
+        pill: '9999px',
       },
     },
   },

@@ -42,6 +42,8 @@ export function suggestBestTime(
   }
 }
 
+const MIN_ATTENDEES = 2;
+
 export function calculateTopDays(
   availabilityByDate: Map<string, Availability[]>,
   today: string,
@@ -50,7 +52,9 @@ export function calculateTopDays(
   const entries: Array<{ dateKey: string; count: number }> = [];
 
   availabilityByDate.forEach((avails, dateKey) => {
-    if (dateKey >= today) {
+    // Only surface days where at least MIN_ATTENDEES people are available
+    // (spec: calculateBestDays filters availableCount >= 2).
+    if (dateKey >= today && avails.length >= MIN_ATTENDEES) {
       entries.push({ dateKey, count: avails.length });
     }
   });

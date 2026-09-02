@@ -4,73 +4,79 @@ import { Badge } from './Badge';
 
 describe('Badge', () => {
   it('renders text content', () => {
-    render(<Badge color="#34D399">Confirmed</Badge>);
+    render(<Badge variant="confirmed">Confirmed</Badge>);
     expect(screen.getByText('Confirmed')).toBeInTheDocument();
   });
 
   it('renders as a span element', () => {
-    render(<Badge color="#34D399">Status</Badge>);
+    render(<Badge variant="confirmed">Status</Badge>);
     const badge = screen.getByText('Status');
     expect(badge.tagName).toBe('SPAN');
   });
 
-  it('applies color to text via inline style', () => {
-    render(<Badge color="#FB7185">Cancelled</Badge>);
+  it('defaults to the neutral variant when none is passed', () => {
+    render(<Badge>Default</Badge>);
+    const badge = screen.getByText('Default');
+    expect(badge.className).toContain('border-strong');
+    expect(badge.className).toContain('text-text');
+    expect(badge.className).toContain('bg-transparent');
+  });
+
+  it('applies confirmed variant classes', () => {
+    render(<Badge variant="confirmed">Confirmed</Badge>);
+    const badge = screen.getByText('Confirmed');
+    expect(badge.className).toContain('bg-success');
+    expect(badge.className).toContain('text-on-primary');
+  });
+
+  it('applies pending variant classes', () => {
+    render(<Badge variant="pending">Pending</Badge>);
+    const badge = screen.getByText('Pending');
+    expect(badge.className).toContain('bg-warning');
+    expect(badge.className).toContain('text-on-primary');
+  });
+
+  it('applies cancelled variant classes', () => {
+    render(<Badge variant="cancelled">Cancelled</Badge>);
     const badge = screen.getByText('Cancelled');
-    expect(badge).toHaveStyle({ color: '#FB7185' });
+    expect(badge.className).toContain('bg-error');
+    expect(badge.className).toContain('text-on-primary');
   });
 
-  it('applies gradient background with color + alpha', () => {
-    render(<Badge color="#F59E0B">Pending</Badge>);
-    const badge = screen.getByText('Pending');
-    expect(badge).toHaveStyle({
-      background: 'linear-gradient(135deg, #F59E0B2E, #F59E0B14)',
-    });
+  it('applies neutral variant classes', () => {
+    render(<Badge variant="neutral">Neutral</Badge>);
+    const badge = screen.getByText('Neutral');
+    expect(badge.className).toContain('border-strong');
+    expect(badge.className).toContain('bg-transparent');
   });
 
-  it('applies border with color + alpha', () => {
-    render(<Badge color="#F59E0B">Pending</Badge>);
-    const badge = screen.getByText('Pending');
-    expect(badge.style.border).toContain('1px solid');
-    expect(badge.style.border).toContain('245, 158, 11');
-  });
-
-  it('renders with different color variants correctly', () => {
-    const { rerender } = render(<Badge color="#34D399">Success</Badge>);
+  it('re-renders with different variants correctly', () => {
+    const { rerender } = render(<Badge variant="confirmed">Success</Badge>);
     let badge = screen.getByText('Success');
-    expect(badge).toHaveStyle({
-      color: '#34D399',
-      background: 'linear-gradient(135deg, #34D3992E, #34D39914)',
-    });
+    expect(badge.className).toContain('bg-success');
 
-    rerender(<Badge color="#FB7185">Danger</Badge>);
+    rerender(<Badge variant="cancelled">Danger</Badge>);
     badge = screen.getByText('Danger');
-    expect(badge).toHaveStyle({
-      color: '#FB7185',
-      background: 'linear-gradient(135deg, #FB71852E, #FB718514)',
-    });
+    expect(badge.className).toContain('bg-error');
 
-    rerender(<Badge color="#F59E0B">Warning</Badge>);
+    rerender(<Badge variant="pending">Warning</Badge>);
     badge = screen.getByText('Warning');
-    expect(badge).toHaveStyle({
-      color: '#F59E0B',
-      background: 'linear-gradient(135deg, #F59E0B2E, #F59E0B14)',
-    });
+    expect(badge.className).toContain('bg-warning');
   });
 
   it('applies base layout classes', () => {
-    render(<Badge color="#60A5FA">Info</Badge>);
+    render(<Badge variant="neutral">Info</Badge>);
     const badge = screen.getByText('Info');
     expect(badge.className).toContain('inline-flex');
     expect(badge.className).toContain('items-center');
     expect(badge.className).toContain('gap-1');
-    expect(badge.className).toContain('rounded-full');
-    expect(badge.className).toContain('font-extrabold');
+    expect(badge.className).toContain('rounded-pill');
+    expect(badge.className).toContain('font-bold');
   });
 
   it('applies custom className', () => {
     render(
-      <Badge color="#60A5FA" className="ml-2">
+      <Badge variant="neutral" className="ml-2">
         Custom
       </Badge>,
     );
@@ -80,7 +86,7 @@ describe('Badge', () => {
 
   it('passes through native span attributes', () => {
     render(
-      <Badge color="#60A5FA" data-testid="badge-el" title="Status badge">
+      <Badge variant="neutral" data-testid="badge-el" title="Status badge">
         With attrs
       </Badge>,
     );
@@ -90,7 +96,7 @@ describe('Badge', () => {
 
   it('renders complex children (JSX)', () => {
     render(
-      <Badge color="#A78BFA">
+      <Badge variant="confirmed">
         <span data-testid="icon">*</span>
         Active
       </Badge>,
@@ -99,37 +105,13 @@ describe('Badge', () => {
     expect(screen.getByText('Active')).toBeInTheDocument();
   });
 
-  describe('glow variant', () => {
-    it('defaults to glow=false (no box-shadow)', () => {
-      render(<Badge color="#34D399">Default</Badge>);
-      const badge = screen.getByText('Default');
-      expect(badge.style.boxShadow).toBe('');
-    });
-
-    it('applies glow alphas and box-shadow when glow=true', () => {
-      render(
-        <Badge color="#34D399" glow>
-          Glowing
-        </Badge>,
-      );
-      const badge = screen.getByText('Glowing');
-      expect(badge).toHaveStyle({
-        background: 'linear-gradient(135deg, #34D39940, #34D3991F)',
-      });
-      expect(badge.style.border).toContain('1px solid');
-      expect(badge.style.border).toContain('52, 211, 153');
-      expect(badge.style.boxShadow).toBe('0 0 10px #34D39926');
-    });
-  });
-
   it('merges custom style prop', () => {
     render(
-      <Badge color="#60A5FA" style={{ marginTop: '8px' }}>
+      <Badge variant="neutral" style={{ marginTop: '8px' }}>
         Styled
       </Badge>,
     );
     const badge = screen.getByText('Styled');
     expect(badge).toHaveStyle({ marginTop: '8px' });
-    expect(badge).toHaveStyle({ color: '#60A5FA' });
   });
 });

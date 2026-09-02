@@ -2,27 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Button } from './Button';
 
-vi.mock('framer-motion', () => ({
-  motion: {
-    button: ({
-      children,
-      whileTap,
-      ...props
-    }: React.ComponentProps<'button'> & { whileTap?: unknown }) => (
-      <button {...props}>{children}</button>
-    ),
-    span: ({
-      children,
-      animate,
-      transition,
-      ...props
-    }: React.ComponentProps<'span'> & {
-      animate?: unknown;
-      transition?: unknown;
-    }) => <span {...props}>{children}</span>,
-  },
-}));
-
 describe('Button', () => {
   it('renders children text correctly', () => {
     render(<Button>Click me</Button>);
@@ -37,15 +16,15 @@ describe('Button', () => {
   it('applies primary variant styles by default', () => {
     render(<Button>Primary</Button>);
     const button = screen.getByRole('button', { name: 'Primary' });
-    expect(button.className).toContain('bg-gradient-to-br');
-    expect(button.className).toContain('text-white');
+    expect(button.className).toContain('bg-primary-solid');
+    expect(button.className).toContain('text-on-primary');
   });
 
   it('applies secondary variant styles when variant is secondary', () => {
     render(<Button variant="secondary">Secondary</Button>);
     const button = screen.getByRole('button', { name: 'Secondary' });
-    expect(button.className).toContain('bg-bg-surface');
-    expect(button.className).toContain('text-text-muted');
+    expect(button.className).toContain('bg-transparent');
+    expect(button.className).toContain('text-text');
     expect(button.className).toContain('border');
   });
 
@@ -85,9 +64,24 @@ describe('Button', () => {
   it('applies base styles regardless of variant', () => {
     render(<Button>Base</Button>);
     const button = screen.getByRole('button', { name: 'Base' });
-    expect(button.className).toContain('rounded-btn');
+    expect(button.className).toContain('rounded-pill');
     expect(button.className).toContain('font-bold');
     expect(button.className).toContain('transition-[filter]');
+  });
+
+  it('applies md size styles by default', () => {
+    render(<Button>Default size</Button>);
+    const button = screen.getByRole('button', { name: 'Default size' });
+    expect(button.className).toContain('py-3');
+    expect(button.className).toContain('text-sm');
+  });
+
+  it('applies sm size styles when size is sm', () => {
+    render(<Button size="sm">Small</Button>);
+    const button = screen.getByRole('button', { name: 'Small' });
+    expect(button.className).toContain('py-2');
+    expect(button.className).toContain('text-xs');
+    expect(button.className).not.toContain('py-3');
   });
 
   it('passes through native button attributes', () => {

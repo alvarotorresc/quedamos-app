@@ -1,5 +1,6 @@
 import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
+import { availabilityLabel } from '../lib/availability-label';
 import { Avatar } from '../ui/Avatar';
 import type { Availability } from '../services/availability';
 
@@ -30,21 +31,7 @@ export function AvailabilityDetailModal({
   });
 
   function getAvailLabel(a: Availability): string {
-    if (a.type === 'day') return t('calendar.allDay');
-    if (a.type === 'slots' && a.slots) {
-      return a.slots
-        .map((s) => {
-          if (s === 'Mañana') return t('calendar.availability.morning');
-          if (s === 'Tarde') return t('calendar.availability.afternoon');
-          if (s === 'Noche') return t('calendar.availability.night');
-          return s;
-        })
-        .join(', ');
-    }
-    if (a.type === 'range' && a.startTime && a.endTime) {
-      return `${a.startTime.slice(0, 5)} – ${a.endTime.slice(0, 5)}`;
-    }
-    return '';
+    return availabilityLabel(a, t);
   }
 
   return (

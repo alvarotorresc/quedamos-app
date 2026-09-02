@@ -19,6 +19,9 @@ Table users {
   notificationLogs notification_logs [not null]
   createdProposals plan_proposals [not null]
   proposalVotes plan_votes [not null]
+  createdPolls availability_polls [not null]
+  pollResponses poll_responses [not null]
+  widgetTokens widget_tokens [not null]
 }
 
 Table groups {
@@ -35,6 +38,7 @@ Table groups {
   events events [not null]
   proposals plan_proposals [not null]
   cities group_cities [not null]
+  polls availability_polls [not null]
 }
 
 Table group_members {
@@ -118,6 +122,15 @@ Table push_tokens {
   }
 }
 
+Table widget_tokens {
+  id String [pk]
+  userId String [not null]
+  tokenHash String [unique, not null]
+  createdAt DateTime [default: `now()`, not null]
+  lastUsedAt DateTime
+  user users [not null]
+}
+
 Table notification_preferences {
   userId String [not null]
   type String [not null]
@@ -185,6 +198,33 @@ Table plan_votes {
   }
 }
 
+Table availability_polls {
+  id String [pk]
+  groupId String [not null]
+  createdById String [not null]
+  date DateTime [not null]
+  slot String
+  status String [not null, default: 'open']
+  completedAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  group groups [not null]
+  createdBy users [not null]
+  responses poll_responses [not null]
+}
+
+Table poll_responses {
+  pollId String [not null]
+  userId String [not null]
+  answer String [not null]
+  respondedAt DateTime [default: `now()`, not null]
+  poll availability_polls [not null]
+  user users [not null]
+
+  indexes {
+    (pollId, userId) [pk]
+  }
+}
+
 Ref: groups.createdById > users.id
 
 Ref: group_members.groupId > groups.id [delete: Cascade]
@@ -205,6 +245,8 @@ Ref: event_attendees.userId > users.id [delete: Cascade]
 
 Ref: push_tokens.userId > users.id [delete: Cascade]
 
+Ref: widget_tokens.userId > users.id [delete: Cascade]
+
 Ref: notification_preferences.userId > users.id [delete: Cascade]
 
 Ref: notification_logs.userId > users.id [delete: Cascade]
@@ -220,3 +262,11 @@ Ref: plan_proposals.convertedEventId - events.id
 Ref: plan_votes.proposalId > plan_proposals.id [delete: Cascade]
 
 Ref: plan_votes.userId > users.id [delete: Cascade]
+
+Ref: availability_polls.groupId > groups.id [delete: Cascade]
+
+Ref: availability_polls.createdById > users.id [delete: Cascade]
+
+Ref: poll_responses.pollId > availability_polls.id [delete: Cascade]
+
+Ref: poll_responses.userId > users.id [delete: Cascade]
