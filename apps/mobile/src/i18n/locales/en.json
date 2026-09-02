@@ -179,7 +179,8 @@
     "pendingCount_other": "{{count}} up in the air",
     "nextEvent": "Next plan",
     "addToCalendar": "Add to calendar",
-    "sealedWith_one": "Sealed · just you",
+    "sealedWithYou": "Sealed · just you",
+    "sealedWith_one": "Sealed · {{name}} is going",
     "sealedWith_other": "Sealed · {{count}} going",
     "past": "Past",
     "confirmed": "confirmed",
@@ -240,6 +241,11 @@
     "noGroup": "You don't belong to any group",
     "noGroupSubtitle": "Create a group or join one to get started",
     "createGroup": "Create group",
+    "welcome": {
+      "title": "Welcome to Quedamos!",
+      "description": "Create a group with your friends or ask for an invite code.",
+      "haveCode": "I have a code"
+    },
     "joinWithCode": "Join with code",
     "groupName": "Group name",
     "groupNamePlaceholder": "E.g.: School friends",
@@ -589,6 +595,7 @@
     "edit": "Edit proposal",
     "editSaving": "Saving...",
     "empty": "No proposals",
+    "emptyDescription": "When someone proposes a plan without a fixed date, it will show up here for voting.",
     "closed": "Closed",
     "votes": "{{yes}} in favor, {{no}} against"
   },

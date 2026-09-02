@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDateKey, capitalizeFirst } from '../lib/date-utils';
 import { useCreateAvailability, useDeleteAvailability } from '../hooks/useAvailability';
@@ -39,15 +39,22 @@ export function AvailabilityModal({
   const [fromTime, setFromTime] = useState('16:00');
   const [toTime, setToTime] = useState('22:00');
 
+  // Seed the form when the sheet opens or when it points at a different row. A refetch that
+  // hands us a new object for the same row (realtime sync) must not wipe an edit in progress.
+  const latestExisting = useRef(existingAvailability);
+  latestExisting.current = existingAvailability;
+  const existingId = existingAvailability?.id;
   useEffect(() => {
-    if (existingAvailability) {
-      setType(existingAvailability.type);
-      setSelectedSlots(existingAvailability.slots ?? []);
-      if (existingAvailability.startTime) {
-        setFromTime(existingAvailability.startTime.slice(0, 5));
+    if (!isOpen) return;
+    const existing = latestExisting.current;
+    if (existing) {
+      setType(existing.type);
+      setSelectedSlots(existing.slots ?? []);
+      if (existing.startTime) {
+        setFromTime(existing.startTime.slice(0, 5));
       }
-      if (existingAvailability.endTime) {
-        setToTime(existingAvailability.endTime.slice(0, 5));
+      if (existing.endTime) {
+        setToTime(existing.endTime.slice(0, 5));
       }
     } else {
       setType('day');
@@ -55,7 +62,7 @@ export function AvailabilityModal({
       setFromTime('16:00');
       setToTime('22:00');
     }
-  }, [existingAvailability, isOpen]);
+  }, [isOpen, existingId]);
 
   const toggleSlot = (slot: TimeSlot) => {
     setSelectedSlots((prev) =>

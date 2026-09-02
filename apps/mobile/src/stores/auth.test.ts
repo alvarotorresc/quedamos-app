@@ -436,4 +436,22 @@ describe('useAuthStore', () => {
       expect(state.isLoading).toBe(false);
     });
   });
+
+  describe('updateEmail', () => {
+    it('uses the public web url as the confirmation redirect base on native platforms', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      vi.mocked(supabase.auth.updateUser).mockResolvedValue({
+        data: { user: null },
+        error: null,
+      } as unknown as UpdateUserResult);
+
+      await useAuthStore.getState().updateEmail('nuevo@test.com');
+
+      expect(supabase.auth.updateUser).toHaveBeenCalledWith(
+        { email: 'nuevo@test.com' },
+        { emailRedirectTo: 'https://quedamos.alvarotc.com/tabs/profile' },
+      );
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+    });
+  });
 });

@@ -126,12 +126,12 @@ export default function GroupPage() {
           ) : !hasGroups && formMode === null ? (
             <EmptyState
               emoji="👋"
-              title="¡Bienvenido a Quedamos!"
-              description="Crea un grupo con tus amigos o pide un código de invitación."
-              action="Crear grupo"
+              title={t('group.welcome.title')}
+              description={t('group.welcome.description')}
+              action={t('group.createGroup')}
               actionVariant="accent"
               onAction={() => toggleForm('create')}
-              secondaryAction="Tengo un código"
+              secondaryAction={t('group.welcome.haveCode')}
               onSecondaryAction={() => toggleForm('join')}
             />
           ) : (

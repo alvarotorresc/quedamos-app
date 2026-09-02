@@ -586,7 +586,25 @@ describe('EventCard · agenda y destacada', () => {
     expect(screen.getByText('plans.nextEvent')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'plans.addToCalendar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'group.share' })).toBeInTheDocument();
-    expect(mockT).toHaveBeenCalledWith('plans.sealedWith', { count: 2 });
+    expect(mockT).toHaveBeenCalledWith('plans.sealedWith', expect.objectContaining({ count: 2 }));
+  });
+
+  it('con una sola confirmación que no es la mía, "sellada" nombra a quien va', () => {
+    const event = createEvent({
+      status: 'confirmed',
+      attendees: [createAttendee(OTHER_USER_ID, 'confirmed', 'Misa'), createAttendee(CURRENT_USER_ID, 'pending', 'Alvaro')],
+    });
+    render(<EventCard event={event} {...defaultProps} featured />);
+    expect(mockT).toHaveBeenCalledWith('plans.sealedWith', { count: 1, name: 'Misa' });
+  });
+
+  it('si la única confirmación es la mía, dice que voy yo', () => {
+    const event = createEvent({
+      status: 'confirmed',
+      attendees: [createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'), createAttendee(OTHER_USER_ID, 'pending', 'Misa')],
+    });
+    render(<EventCard event={event} {...defaultProps} featured />);
+    expect(mockT).toHaveBeenCalledWith('plans.sealedWithYou');
   });
 
   it('sin destacar sigue siendo un bloque de lista con las acciones en iconos', () => {

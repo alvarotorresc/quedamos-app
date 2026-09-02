@@ -86,4 +86,12 @@ describe('useAutoSelectGroup', () => {
 
     expect(setCurrentGroupSpy).not.toHaveBeenCalled();
   });
+
+  it('si el usuario se queda sin grupos, limpia el grupo actual', () => {
+    useGroupStore.setState({ currentGroup: group('g1'), groups: [] });
+
+    renderHook(() => useAutoSelectGroup([], null));
+
+    expect(useGroupStore.getState().currentGroup).toBeNull();
+  });
 });

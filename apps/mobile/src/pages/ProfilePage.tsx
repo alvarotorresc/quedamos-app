@@ -228,6 +228,8 @@ export default function ProfilePage() {
   ).length;
   const groupCount = groups?.length ?? 0;
   const lang = i18n.language?.startsWith('es') ? 'es' : 'en';
+  // slotPrefs is only the editing buffer; the tile preview shows what is actually saved.
+  const savedSlots: TimeSlotPreferences = user?.timeSlots ?? DEFAULT_TIME_SLOTS;
   const slotRows: { key: 'morning' | 'afternoon' | 'night'; start: keyof TimeSlotPreferences; end: keyof TimeSlotPreferences; color: string }[] = [
     { key: 'morning', start: 'morningStart', end: 'morningEnd', color: '#F59E0B' },
     { key: 'afternoon', start: 'afternoonStart', end: 'afternoonEnd', color: myColor },
@@ -318,7 +320,7 @@ export default function ProfilePage() {
                     <div className="h-1.5 rounded-pill" style={{ background: color }} />
                     <p className="text-[10px] text-text-muted mt-1">{t(`profile.timeSlots.${key}`)}</p>
                     <p className="font-mono text-[10px] text-text-dark">
-                      {slotPrefs[start]}–{slotPrefs[end]}
+                      {savedSlots[start]}–{savedSlots[end]}
                     </p>
                   </div>
                 ))}

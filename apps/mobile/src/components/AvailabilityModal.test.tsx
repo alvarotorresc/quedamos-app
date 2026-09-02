@@ -125,4 +125,31 @@ describe('AvailabilityModal success', () => {
     await vi.waitFor(() => expect(onClose).toHaveBeenCalledOnce());
     expect(showErrorMock).not.toHaveBeenCalled();
   });
+
+  it('un refresco de la disponibilidad existente con la misma id no pisa la edición en curso', () => {
+    const existing = {
+      id: 'a1',
+      userId: 'u1',
+      groupId: 'g1',
+      date: '2026-03-10',
+      type: 'slots' as const,
+      slots: ['Tarde' as const],
+    };
+    const { rerender } = render(
+      <AvailabilityModal isOpen onClose={() => {}} selectedDay={SELECTED_DAY} groupId="g1" existingAvailability={existing} />,
+      { wrapper: createWrapper() },
+    );
+
+    const morning = screen.getByText('calendar.availability.morning').closest('button') as HTMLButtonElement;
+    fireEvent.click(morning);
+    expect(morning.style.color).toBe('var(--app-text)');
+
+    // Realtime refetch: same row, new object reference.
+    rerender(
+      <AvailabilityModal isOpen onClose={() => {}} selectedDay={SELECTED_DAY} groupId="g1" existingAvailability={{ ...existing }} />,
+    );
+
+    const morningAfter = screen.getByText('calendar.availability.morning').closest('button') as HTMLButtonElement;
+    expect(morningAfter.style.color).toBe('var(--app-text)');
+  });
 });

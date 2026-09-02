@@ -26,7 +26,12 @@ export function useAutoSelectGroup(groups: Group[] | undefined, deepLinkGroupId:
   const deepLinkConsumed = useRef(false);
 
   useEffect(() => {
-    if (!groups || groups.length === 0) return;
+    if (!groups) return;
+    if (groups.length === 0) {
+      // Left or was removed from the last group: nothing selectable remains.
+      if (currentGroup) setCurrentGroup(null);
+      return;
+    }
 
     if (!deepLinkConsumed.current && deepLinkGroupId) {
       deepLinkConsumed.current = true;

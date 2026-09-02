@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PlansPage from './PlansPage';
 
@@ -38,14 +38,15 @@ vi.mock('../stores/auth', () => ({
   }),
 }));
 const GROUP = { id: 'g1', name: 'La cuadrilla', emoji: '🏔️', createdById: 'u1', createdAt: '', members: [] };
+let groupsList: (typeof GROUP)[] = [GROUP];
 vi.mock('../stores/group', () => ({
-  useGroupStore: vi.fn((selector?: (s: { currentGroup: typeof GROUP; setCurrentGroup: () => void }) => unknown) => {
-    const state = { currentGroup: GROUP, setCurrentGroup: vi.fn() };
+  useGroupStore: vi.fn((selector?: (s: { currentGroup: typeof GROUP | null; setCurrentGroup: () => void }) => unknown) => {
+    const state = { currentGroup: groupsList[0] ?? null, setCurrentGroup: vi.fn() };
     return selector ? selector(state) : state;
   }),
 }));
 vi.mock('../hooks/useGroups', () => ({
-  useGroups: () => ({ data: [GROUP], isLoading: false }),
+  useGroups: () => ({ data: groupsList, isLoading: false }),
   useGroup: () => ({ data: GROUP, isLoading: false }),
   useGroupInvite: () => ({ data: undefined }),
 }));
@@ -90,6 +91,7 @@ const ev = (id: string, title: string, date: string, status: string, myStatus = 
 describe('PlansPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    groupsList = [GROUP];
     events = [
       ev('e2', 'Pádel y cañas', '2099-02-01', 'pending', 'pending'),
       ev('e1', 'Cena en casa de Iris', '2099-01-05', 'confirmed'),
@@ -121,5 +123,20 @@ describe('PlansPage', () => {
     render(<PlansPage />);
     expect(screen.getByTestId('icon-calendar')).toBeInTheDocument();
     expect(screen.getByText('plans.upcoming')).toBeInTheDocument();
+  });
+
+  it('sin grupos, el botón de ir a grupos usa el primario del sistema', () => {
+    groupsList = [];
+    render(<PlansPage />);
+    const btn = screen.getByRole('button', { name: 'plans.goToGroups' });
+    expect(btn.className).toContain('bg-primary-solid');
+    expect(btn.className).not.toContain('bg-primary-dark');
+  });
+
+  it('el vacío de propuestas describe con una clave real de i18n', () => {
+    events = [];
+    render(<PlansPage />);
+    fireEvent.click(screen.getByText('plans.tabs.proposals'));
+    expect(mockT).toHaveBeenCalledWith('proposals.emptyDescription');
   });
 });

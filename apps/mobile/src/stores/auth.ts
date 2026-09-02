@@ -148,9 +148,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   updateEmail: async (email) => {
+    const base = Capacitor.isNativePlatform() ? PUBLIC_WEB_URL : window.location.origin;
     const { error } = await supabase.auth.updateUser(
       { email },
-      { emailRedirectTo: `${window.location.origin}/tabs/profile` },
+      { emailRedirectTo: `${base}/tabs/profile` },
     );
     if (error) throw error;
   },

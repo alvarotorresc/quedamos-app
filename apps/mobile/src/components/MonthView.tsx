@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { getMonthCells, formatDateKey, isSameDay, isToday, capitalizeFirst } from '../lib/date-utils';
 import { AvatarStack } from '../ui/AvatarStack';
+import { Button } from '../ui/Button';
 import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
 import type { WeatherData } from '../services/weather';
@@ -215,12 +216,9 @@ export function MonthView({
           )}
 
           <div className="flex gap-1.5 mt-2">
-            <button
-              onClick={onMarkAvailability}
-              className="flex-1 py-[7px] text-xs font-semibold rounded-btn bg-primary-dark text-white border-none"
-            >
+            <Button size="sm" className="flex-1 py-[7px]" onClick={onMarkAvailability}>
               {selMyAvail ? t('calendar.editAvailability') : t('calendar.available')}
-            </button>
+            </Button>
             {selMembers.length >= 2 && selectedDay && (
               <button
                 onClick={() => onCreateEvent(selectedDay)}

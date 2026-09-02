@@ -3,7 +3,7 @@ import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle } from '@ionic/rea
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { Avatar } from '../ui/Avatar';
-import { EmptyState, SkeletonCard, SegmentedPills } from '../ui';
+import { EmptyState, SkeletonCard, SegmentedPills, Button } from '../ui';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
@@ -280,12 +280,7 @@ export default function CalendarPage() {
             <div className="text-5xl mb-4">📆</div>
             <h2 className="text-lg font-bold text-text mb-1">{t('calendar.noGroups')}</h2>
             <p className="text-sm text-text-muted mb-8">{t('calendar.noGroupsSubtitle')}</p>
-            <button
-              onClick={() => history.push('/tabs/group')}
-              className="px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
-            >
-              {t('calendar.goToGroups')}
-            </button>
+            <Button onClick={() => history.push('/tabs/group')}>{t('calendar.goToGroups')}</Button>
           </div>
         </IonContent>
       </IonPage>
@@ -370,6 +365,9 @@ export default function CalendarPage() {
               onChange={(v) => {
                 setCalView(v);
                 setSelectedDay(null);
+                // Each view opens on today; an offset left over from a previous visit is confusing.
+                setWeekOffset(0);
+                setMonthOffset(0);
               }}
             />
           </div>

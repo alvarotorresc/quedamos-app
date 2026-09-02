@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useHistory, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
+import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { SkeletonCard } from '../ui/SkeletonCard';
 import { SegmentedPills } from '../ui/SegmentedPills';
@@ -216,12 +217,7 @@ export default function PlansPage() {
             <div className="text-5xl mb-4">📋</div>
             <h2 className="text-lg font-bold text-text mb-1">{t('plans.noGroups')}</h2>
             <p className="text-sm text-text-muted mb-8">{t('plans.noGroupsSubtitle')}</p>
-            <button
-              onClick={() => history.push('/tabs/group')}
-              className="px-5 py-2.5 bg-primary-dark text-white text-sm font-semibold rounded-btn border-none"
-            >
-              {t('plans.goToGroups')}
-            </button>
+            <Button onClick={() => history.push('/tabs/group')}>{t('plans.goToGroups')}</Button>
           </div>
         </IonContent>
       </IonPage>
@@ -356,7 +352,7 @@ export default function PlansPage() {
               <EmptyState
                 emoji="💡"
                 title={t('proposals.empty')}
-                description={t('proposals.emptyDescription', { defaultValue: '' })}
+                description={t('proposals.emptyDescription')}
                 action={`+ ${t('proposals.create')}`}
                 actionVariant="primary"
                 onAction={() => setShowCreateProposal(true)}

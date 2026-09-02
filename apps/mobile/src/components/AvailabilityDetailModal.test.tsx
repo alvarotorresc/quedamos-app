@@ -64,4 +64,20 @@ describe('AvailabilityDetailModal', () => {
     expect(onMark).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });
+
+  it('el botón de marcar usa el primario del sistema y no el azul heredado', () => {
+    render(
+      <AvailabilityDetailModal
+        isOpen
+        onClose={() => {}}
+        selectedDay={DAY}
+        availabilities={[]}
+        memberColorMap={new Map()}
+        onMarkAvailability={() => {}}
+      />,
+    );
+    const btn = screen.getByRole('button', { name: 'calendar.markAvailable' });
+    expect(btn.className).toContain('bg-primary-solid');
+    expect(btn.className).not.toContain('bg-primary-dark');
+  });
 });

@@ -179,7 +179,8 @@
     "pendingCount_other": "{{count}} en el aire",
     "nextEvent": "Próxima quedada",
     "addToCalendar": "Añadir al calendario",
-    "sealedWith_one": "Sellada · vas tú",
+    "sealedWithYou": "Sellada · vas tú",
+    "sealedWith_one": "Sellada · va {{name}}",
     "sealedWith_other": "Sellada · vais {{count}}",
     "past": "Pasadas",
     "confirmed": "confirmados",
@@ -240,6 +241,11 @@
     "noGroup": "No perteneces a ningún grupo",
     "noGroupSubtitle": "Crea un grupo o únete a uno para empezar",
     "createGroup": "Crear grupo",
+    "welcome": {
+      "title": "¡Bienvenido a Quedamos!",
+      "description": "Crea un grupo con tus amigos o pide un código de invitación.",
+      "haveCode": "Tengo un código"
+    },
     "joinWithCode": "Unirme con código",
     "groupName": "Nombre del grupo",
     "groupNamePlaceholder": "Ej: Amigos del cole",
@@ -589,6 +595,7 @@
     "edit": "Editar propuesta",
     "editSaving": "Guardando...",
     "empty": "No hay propuestas",
+    "emptyDescription": "Cuando alguien proponga un plan sin fecha cerrada, aparecerá aquí para votarlo.",
     "closed": "Cerradas",
     "votes": "{{yes}} a favor, {{no}} en contra"
   },

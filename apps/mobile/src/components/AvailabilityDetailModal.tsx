@@ -3,6 +3,7 @@ import { capitalizeFirst } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
 import { Avatar } from '../ui/Avatar';
 import { Sheet } from '../ui/Sheet';
+import { Button } from '../ui/Button';
 import type { Availability } from '../services/availability';
 
 interface AvailabilityDetailModalProps {
@@ -42,15 +43,16 @@ export function AvailabilityDetailModal({
       title={t('calendar.availabilityDetail.title')}
       subtitle={capitalizeFirst(dateLabel)}
       footer={
-        <button
+        <Button
+          size="sm"
+          className="w-full"
           onClick={() => {
             onClose();
             setTimeout(onMarkAvailability, 300);
           }}
-          className="w-full py-2.5 text-xs font-semibold rounded-btn bg-primary-dark text-white border-none"
         >
           {t('calendar.markAvailable')}
-        </button>
+        </Button>
       }
     >
         {availabilities.length === 0 ? (

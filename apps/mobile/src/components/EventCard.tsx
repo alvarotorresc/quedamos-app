@@ -258,7 +258,12 @@ export function EventCard({
           )}
           {featured && event.status === 'confirmed' && (
             <p className="text-[11px] text-success mt-1">
-              {t('plans.sealedWith', { count: confirmedAttendees.length })}
+              {confirmedAttendees.length === 1 && confirmedAttendees[0].userId === user?.id
+                ? t('plans.sealedWithYou')
+                : t('plans.sealedWith', {
+                    count: confirmedAttendees.length,
+                    name: confirmedAttendees[0]?.user.name,
+                  })}
             </p>
           )}
         </div>
