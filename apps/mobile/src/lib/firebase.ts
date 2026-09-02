@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { initializeApp } from 'firebase/app';
 import { getMessaging, isSupported, Messaging } from 'firebase/messaging';
 import {
@@ -39,7 +40,15 @@ export async function getFirebaseMessaging(): Promise<Messaging | null> {
 
 let analyticsPromise: Promise<Analytics | null> | null = null;
 
+type UmamiTracker = { track: (name: string, data?: Record<string, unknown>) => void };
+
+/**
+ * Firebase Analytics only on the native app. On the web it would load gtag,
+ * which the CSP blocks, and Umami (index.html) already covers page views and
+ * custom events there.
+ */
 export function getFirebaseAnalytics(): Promise<Analytics | null> {
+  if (!Capacitor.isNativePlatform()) return Promise.resolve(null);
   if (!analyticsPromise) {
     analyticsPromise = isAnalyticsSupported().then((supported) => {
       if (!supported) return null;
@@ -54,6 +63,10 @@ export async function logEvent(
   params?: Record<string, string | number | boolean>,
 ): Promise<void> {
   try {
+    if (!Capacitor.isNativePlatform()) {
+      (window as Window & { umami?: UmamiTracker }).umami?.track(eventName, params);
+      return;
+    }
     const analytics = await getFirebaseAnalytics();
     if (!analytics) return;
     firebaseLogEvent(analytics, eventName, params);

@@ -61,4 +61,15 @@ describe('LandingPage', () => {
     expect(main).toContainElement(screen.getByText('landing2.hero.title'));
     expect(main).toContainElement(screen.getByText('landing2.cierre.quote'));
   });
+
+  it('focuses the scroll container on mount so the keyboard scrolls the page', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <LandingPage />
+      </MemoryRouter>,
+    );
+    const scroller = container.firstElementChild as HTMLElement;
+    expect(scroller).toHaveAttribute('tabindex', '-1');
+    expect(document.activeElement).toBe(scroller);
+  });
 });

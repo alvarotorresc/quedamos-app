@@ -51,7 +51,9 @@ function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(objectUrl);
+  // Revoking in the same tick makes Firefox cancel the download; give the
+  // browser a moment to open the blob first.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
 
 async function shareNative(opts: ShareTarjetaOpts): Promise<{ shared: boolean }> {

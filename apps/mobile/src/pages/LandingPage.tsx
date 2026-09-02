@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { JSX } from 'react';
 import { useScreenView } from '../hooks/useAnalytics';
 import { NavIsla } from '../components/landing2/NavIsla';
@@ -24,13 +25,25 @@ interface LandingPageProps {
 export default function LandingPage(_props: LandingPageProps): JSX.Element {
   useScreenView('Landing');
 
+  // The scroll container below is a plain div, so until something inside it
+  // has focus the arrow and page keys scroll nothing. Focus it on mount
+  // (without scrolling) and keyboard users get the page from the first key.
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    scrollerRef.current?.focus({ preventScroll: true });
+  }, []);
+
   return (
     // Ionic's core CSS pins <body> (position: fixed; height: 100%; overflow:
     // hidden) globally, even on this route (App.tsx renders LandingPage
     // outside IonApp, but that stylesheet still applies to body). This div is
     // therefore the actual scroll container — NavIsla stays viewport-anchored
     // either way since nothing in the tree has a transform.
-    <div className="h-screen overflow-y-auto overflow-x-hidden bg-bg text-text">
+    <div
+      ref={scrollerRef}
+      tabIndex={-1}
+      className="h-screen overflow-y-auto overflow-x-hidden bg-bg text-text outline-none"
+    >
       <NavIsla />
       <main>
         <HeroPregunta />

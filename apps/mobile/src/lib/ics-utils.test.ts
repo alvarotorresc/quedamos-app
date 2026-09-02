@@ -184,7 +184,11 @@ describe('downloadICS', () => {
     const revokeUrlSpy = vi.fn();
     globalThis.URL.revokeObjectURL = revokeUrlSpy;
 
+    vi.useFakeTimers();
     await downloadICS(createEvent({ time: '18:00' }));
+    expect(revokeUrlSpy).not.toHaveBeenCalled(); // not before the browser opened the blob
+    vi.runAllTimers();
+    vi.useRealTimers();
 
     expect(createElementSpy).toHaveBeenCalledWith('a');
     expect(clickSpy).toHaveBeenCalled();

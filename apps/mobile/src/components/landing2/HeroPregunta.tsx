@@ -46,7 +46,7 @@ export function HeroPregunta(): JSX.Element {
         className="absolute -right-2.5 top-[110px] pointer-events-none"
         aria-hidden="true"
         animate={motionSafe ? { scale: [1, 1.006, 1] } : undefined}
-        transition={motionSafe ? { duration: 6, repeat: Infinity, ease: 'easeInOut' } : undefined}
+        transition={motionSafe ? { duration: 6, repeat: 4, ease: 'easeInOut' } : undefined}
         data-testid="hero-halo"
         data-motion={motionSafe ? 'breathing' : 'static'}
       >

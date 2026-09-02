@@ -133,6 +133,8 @@ export async function downloadICS(event: Event): Promise<void> {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    // Revoking in the same tick makes Firefox cancel the download; give the
+    // browser a moment to open the blob first.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 }

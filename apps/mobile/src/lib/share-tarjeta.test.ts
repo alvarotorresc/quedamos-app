@@ -124,12 +124,17 @@ describe('shareTarjeta', () => {
 
     const showInfo = vi.fn();
 
+    vi.useFakeTimers();
+
     const result = await shareTarjeta(baseOpts({ showInfo }));
 
     expect(createElementSpy).toHaveBeenCalledWith('a');
     expect(clickSpy).toHaveBeenCalled();
     expect(appendSpy).toHaveBeenCalled();
     expect(removeSpy).toHaveBeenCalled();
+    expect(revokeUrlSpy).not.toHaveBeenCalled(); // not before the browser opened the blob
+    vi.runAllTimers();
+    vi.useRealTimers();
     expect(revokeUrlSpy).toHaveBeenCalled();
     expect(writeText).toHaveBeenCalledWith('https://quedamos.app/i/ABC123');
     expect(showInfo).toHaveBeenCalledWith('share.linkCopied');
