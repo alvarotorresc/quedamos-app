@@ -7,6 +7,7 @@ import {
 import { NOTIF_SECTIONS } from '../services/notification-preferences';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useMyColor } from '../hooks/useMyColor';
+import { useToast } from '../hooks/useToast';
 import { Toggle } from '../ui/Toggle';
 
 export default function NotificationsSettingsPage() {
@@ -15,6 +16,7 @@ export default function NotificationsSettingsPage() {
   const { data: notifPrefs } = useNotificationPreferences();
   const updatePref = useUpdateNotificationPreference();
   const myColor = useMyColor();
+  const { showError } = useToast();
 
   const isEnabled = (type: string): boolean =>
     notifPrefs?.find((p) => p.type === type)?.enabled ?? true;
@@ -59,7 +61,17 @@ export default function NotificationsSettingsPage() {
                       <span className="text-sm text-text">{t(labelKey)}</span>
                       <Toggle
                         checked={enabled}
-                        onChange={(next) => updatePref.mutate({ type, enabled: next })}
+                        onChange={(next) =>
+                          // The hook already rolls the optimistic flip back on error;
+                          // without this the switch just snaps back with no explanation.
+                          updatePref.mutate(
+                            { type, enabled: next },
+                            {
+                              onError: () =>
+                                showError('errors.updateNotificationPreferenceFailed'),
+                            },
+                          )
+                        }
                         label={t(labelKey)}
                         color={myColor}
                       />

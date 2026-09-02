@@ -661,6 +661,7 @@
     "answerPollFailed": "No se pudo guardar tu respuesta",
     "respondEventFailed": "No se pudo guardar tu asistencia",
     "shareTarjetaFailed": "No se pudo crear la tarjeta",
-    "downloadICSFailed": "No se pudo descargar la quedada"
+    "downloadICSFailed": "No se pudo descargar la quedada",
+    "updateNotificationPreferenceFailed": "No se pudo guardar el aviso"
   }
 }

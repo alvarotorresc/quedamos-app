@@ -661,6 +661,7 @@
     "answerPollFailed": "Couldn't save your answer",
     "respondEventFailed": "Couldn't save your response",
     "shareTarjetaFailed": "Couldn't create the card",
-    "downloadICSFailed": "Couldn't download the plan"
+    "downloadICSFailed": "Couldn't download the plan",
+    "updateNotificationPreferenceFailed": "Couldn't save that notification"
   }
 }
