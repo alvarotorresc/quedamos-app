@@ -12,7 +12,7 @@ class WidgetBridgePlugin : Plugin() {
     @PluginMethod
     fun hasSession(call: PluginCall) {
         val result = JSObject()
-        result.put("value", WidgetPrefs.token(context) != null)
+        result.put("value", WidgetPrefs.token(context) != null && !WidgetPrefs.unauthorized(context))
         call.resolve(result)
     }
 

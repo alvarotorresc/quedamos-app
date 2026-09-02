@@ -47,6 +47,9 @@ object WidgetPrefs {
     fun setSummaryJson(ctx: Context, groupId: String, json: String) =
         prefs(ctx).edit().putString(PREFIX_SUMMARY + groupId, json).apply()
 
+    fun removeSummary(ctx: Context, groupId: String) =
+        prefs(ctx).edit().remove(PREFIX_SUMMARY + groupId).apply()
+
     fun unauthorized(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_UNAUTHORIZED, false)
     fun setUnauthorized(ctx: Context, value: Boolean) =
         prefs(ctx).edit().putBoolean(KEY_UNAUTHORIZED, value).apply()

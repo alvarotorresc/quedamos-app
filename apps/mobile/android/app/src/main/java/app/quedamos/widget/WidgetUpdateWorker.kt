@@ -28,6 +28,8 @@ class WidgetUpdateWorker(
                             WidgetPrefs.setUnauthorized(ctx, false)
                         }
                         status == 401 -> WidgetPrefs.setUnauthorized(ctx, true)
+                        // te echaron del grupo o ya no existe: fuera el snapshot stale
+                        status == 403 || status == 404 -> WidgetPrefs.removeSummary(ctx, groupId)
                         // otros fallos: se conserva el último snapshot
                         else -> {}
                     }
