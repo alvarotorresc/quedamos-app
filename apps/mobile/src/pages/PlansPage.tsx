@@ -15,6 +15,7 @@ import { Avatar } from '../ui/Avatar';
 import { EmptyState } from '../ui/EmptyState';
 import { SkeletonCard } from '../ui/SkeletonCard';
 import { SegmentedPills } from '../ui/SegmentedPills';
+import { HiOutlineCalendar } from 'react-icons/hi2';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
@@ -145,6 +146,10 @@ export default function PlansPage() {
     return { upcoming: up, past: pa };
   }, [events]);
 
+  const pendingCount = upcoming.filter((ev) => ev.status === 'pending').length;
+  // La próxima quedada, si ya está sellada, va destacada en su propia ficha.
+  const featuredId = upcoming[0]?.status === 'confirmed' ? upcoming[0].id : null;
+
   const openProposals = (proposals ?? []).filter((p) => p.status === 'open');
   const closedOrConvertedProposals = (proposals ?? []).filter((p) => p.status !== 'open');
   const allProposals = [...openProposals, ...closedOrConvertedProposals];
@@ -270,7 +275,6 @@ export default function PlansPage() {
     <IonPage>
       <IonHeader className="ion-no-border">
         <IonToolbar className="py-2">
-          <IonTitle>{t('plans.title')}</IonTitle>
           <div slot="end" className="pr-4">
             <Avatar
               name={user?.name ?? 'U'}
@@ -284,6 +288,15 @@ export default function PlansPage() {
       </IonHeader>
       <IonContent className="ion-padding">
         <div className="max-w-md mx-auto px-4 pt-2">
+          {/* Page header */}
+          <div className="mb-3">
+            <h1 className="text-[27px] font-extrabold tracking-tight text-text">{t('plans.title')}</h1>
+            <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-text-muted">
+              {t('plans.upcomingCount', { count: upcoming.length })} ·{' '}
+              {t('plans.pendingCount', { count: pendingCount })}
+            </p>
+          </div>
+
           {/* Group selector */}
           {groups.length > 1 && (
             <div className="flex gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar">
@@ -357,7 +370,8 @@ export default function PlansPage() {
                   {/* Upcoming events */}
                   {upcoming.length > 0 && (
                     <div className="mb-4">
-                      <h3 className="text-xs font-bold text-text-muted uppercase tracking-wider mb-2">
+                      <h3 className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-text-muted mb-2 ml-1">
+                        <HiOutlineCalendar className="w-3.5 h-3.5" />
                         {t('plans.upcoming')}
                       </h3>
                       <div>
@@ -368,13 +382,14 @@ export default function PlansPage() {
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                            className={`transition-all duration-500 ${i === upcoming.length - 1 ? 'border-b border-subtle' : ''} ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg' : ''}`}
+                            className={`transition-all duration-500 ${ev.id === featuredId ? 'mb-3' : ''} ${i === upcoming.length - 1 && ev.id !== featuredId ? 'border-b border-subtle' : ''} ${highlightEventId === ev.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg rounded-lg' : ''}`}
                           >
                             <EventCard
                               event={ev}
                               groupId={groupId}
                               memberColorMap={memberColorMap}
                               weather={weatherByDate.get(apiDateToKey(ev.date))}
+                              featured={ev.id === featuredId}
                               onEdit={handleEdit}
                               onDelete={handleDelete}
                               onCancel={handleCancel}
@@ -394,7 +409,7 @@ export default function PlansPage() {
                     <div className="mb-4">
                       <button
                         onClick={() => setShowPast(!showPast)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-text-dark uppercase tracking-wider mb-2 border-none bg-transparent"
+                        className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-text-muted mb-2 ml-1 border-none bg-transparent"
                       >
                         <span
                           className="transition-transform text-[10px]"
@@ -488,7 +503,7 @@ export default function PlansPage() {
                     <div className="mb-4">
                       <button
                         onClick={() => setShowClosedProposals(!showClosedProposals)}
-                        className="flex items-center gap-1.5 text-xs font-bold text-text-dark uppercase tracking-wider mb-2 border-none bg-transparent"
+                        className="flex items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] uppercase text-text-muted mb-2 ml-1 border-none bg-transparent"
                       >
                         <span
                           className="transition-transform text-[10px]"

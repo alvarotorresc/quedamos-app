@@ -4,7 +4,6 @@ import {
   IonContent,
   IonHeader,
   IonToolbar,
-  IonTitle,
   IonButtons,
   IonBackButton,
   IonSpinner,
@@ -31,9 +30,6 @@ import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
-import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
-import { WeatherWidget } from '../components/WeatherWidget';
 import { useGroupWeather } from '../hooks/useWeather';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useGroupCities, useAddCity, useRemoveCity } from '../hooks/useGroupCities';
@@ -42,7 +38,33 @@ import type { GeocodingResult } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
 import { buildMemberColorMap } from '../lib/member-colors';
 import { GroupRing } from '../components/GroupRing';
-import { HiOutlineArrowPath } from 'react-icons/hi2';
+import {
+  HiOutlineArrowPath,
+  HiOutlineCalendar,
+  HiOutlineQuestionMarkCircle,
+  HiOutlineShare,
+  HiOutlineDocumentDuplicate,
+  HiOutlineSun,
+  HiOutlineUsers,
+  HiOutlineUser,
+  HiOutlineEllipsisHorizontal,
+} from 'react-icons/hi2';
+import { Tile } from '../ui/Tile';
+import { Aro, type AroMember } from '../ui/Aro';
+import { useEvents } from '../hooks/useEvents';
+import { usePolls } from '../hooks/usePolls';
+import { apiDateToKey, formatDateKey, capitalizeFirst } from '../lib/date-utils';
+import { SLOT_KEYS } from '../lib/availability-label';
+import { getWeatherIcon } from '../components/WeatherWidget';
+
+const COLOR_NAME_KEY: Record<string, string> = {
+  '#60A5FA': 'colors.blue',
+  '#F59E0B': 'colors.orange',
+  '#F472B6': 'colors.pink',
+  '#34D399': 'colors.green',
+  '#A78BFA': 'colors.purple',
+  '#FB7185': 'colors.red',
+};
 
 function formatCode(code: string): string {
   return code.slice(0, 4) + '-' + code.slice(4);
@@ -89,6 +111,28 @@ export default function GroupDetailPage() {
 
   // Member color map (userId -> color), by join order within the group
   const colorMap = useMemo(() => buildMemberColorMap(group?.members ?? []), [group?.members]);
+
+  const { i18n } = useTranslation();
+  const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
+  const { data: events } = useEvents(id);
+  const { data: polls } = usePolls(id);
+  const today = formatDateKey(new Date());
+
+  const nextEvent = useMemo(() => {
+    const upcoming = (events ?? []).filter(
+      (ev) => ev.status !== 'cancelled' && apiDateToKey(ev.date) >= today,
+    );
+    upcoming.sort((a, b) => apiDateToKey(a.date).localeCompare(apiDateToKey(b.date)));
+    return upcoming[0] ?? null;
+  }, [events, today]);
+
+  const openPoll = useMemo(() => {
+    const open = (polls ?? []).filter((p) => p.status === 'open' && apiDateToKey(p.date) >= today);
+    open.sort((a, b) => apiDateToKey(a.date).localeCompare(apiDateToKey(b.date)));
+    return open[0] ?? null;
+  }, [polls, today]);
+
+  const myColor = currentUserId ? colorMap.get(currentUserId) : undefined;
 
   const handleCopy = async () => {
     if (!invite?.inviteCode) return;
@@ -234,58 +278,263 @@ export default function GroupDetailPage() {
 
   if (!group) return null;
 
+  const dayOf = (dateStr: string) => new Date(apiDateToKey(dateStr) + 'T00:00:00');
+  const weekdayShort = (d: Date) =>
+    d.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '').toUpperCase();
+  const memberRing = (onIds: Set<string>): AroMember[] =>
+    [...colorMap.entries()].map(([userId, color]) => ({
+      color,
+      state: onIds.has(userId) ? 'on' : 'off',
+    }));
+  const cityEditorOpen = showCitySearch;
+  const sinceMonth = group.createdAt
+    ? new Date(group.createdAt).toLocaleDateString(locale, { month: 'long' })
+    : '';
+  const answered = new Set(openPoll?.responses.map((r) => r.userId) ?? []);
+  const missing = openPoll
+    ? group.members.filter((m) => !answered.has(m.userId)).map((m) => m.user.name)
+    : [];
+  const pollLabel = openPoll
+    ? `${capitalizeFirst(dayOf(openPoll.date).toLocaleDateString(locale, { weekday: 'long' }))}${
+        openPoll.slot && SLOT_KEYS[openPoll.slot] ? ` ${t(SLOT_KEYS[openPoll.slot]).toLowerCase()}` : ''
+      }`
+    : '';
+  const firstWeather = weather && weather.length > 0 ? weather[0] : null;
+  const iconButtonClass =
+    'p-2 -m-1 rounded-lg border-none bg-transparent active:bg-bg-hover transition-colors';
+
   return (
     <IonPage>
       <IonHeader className="ion-no-border">
-        <IonToolbar>
+        <IonToolbar className="py-2">
           <IonButtons slot="start">
             <IonBackButton defaultHref="/tabs/group" text="" />
           </IonButtons>
-          <IonTitle>{group.name}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <div className="max-w-md mx-auto px-4">
-          {/* Héroe: la Cuadrilla */}
-          <div className="flex justify-center mb-6">
+        <div className="max-w-md mx-auto px-4 pb-6">
+          {/* Identidad: el aro de la cuadrilla */}
+          <div className="flex flex-col items-center text-center pt-1 pb-5">
             <GroupRing members={group.members} emoji={group.emoji} />
+            <h1 className="text-[22px] font-extrabold tracking-tight text-text leading-tight mt-3.5">
+              {group.name}
+            </h1>
+            {myColor && COLOR_NAME_KEY[myColor] && (
+              <p className="text-xs text-text-muted mt-0.5">
+                {t('group.heroSubtitle', { color: t(COLOR_NAME_KEY[myColor]) })}
+              </p>
+            )}
+            <p
+              className="font-mono text-[10px] tracking-[0.12em] uppercase mt-2"
+              style={{ color: myColor ?? 'var(--app-text-muted)' }}
+            >
+              {sinceMonth && t('group.since', { month: sinceMonth })}
+              {sinceMonth && invite && ' · '}
+              {invite && t('group.code', { code: formatCode(invite.inviteCode) })}
+            </p>
           </div>
 
-          {/* Members */}
-          <section className="mb-6">
-            <h3 className="text-xs font-semibold text-text-dark uppercase tracking-wider mb-3">
-              {t('group.members')} ({group.members.length})
-            </h3>
-            <div className="flex flex-col gap-2">
-              {group.members.map((member, i) => (
-                <motion.div
-                  key={member.userId}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06, duration: 0.35 }}
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* Próxima quedada */}
+            <Tile
+              label={t('group.tiles.nextEvent')}
+              icon={<HiOutlineCalendar className="w-4 h-4" />}
+              span={2}
+              onClick={() =>
+                history.push(nextEvent ? `/tabs/plans?eventId=${nextEvent.id}` : '/tabs/calendar')
+              }
+            >
+              {nextEvent ? (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-baseline gap-1 w-[54px] shrink-0">
+                    <span className="text-[34px] font-extrabold leading-none text-text">
+                      {dayOf(nextEvent.date).getDate()}
+                    </span>
+                    <span className="font-mono text-[9px] tracking-[0.12em] text-text-muted">
+                      {weekdayShort(dayOf(nextEvent.date))}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-bold text-text truncate">{nextEvent.title}</p>
+                    <p className="font-mono text-[11px] text-text-muted mt-0.5 truncate">
+                      {[nextEvent.time?.slice(0, 5), nextEvent.location].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                  <Aro
+                    members={memberRing(
+                      new Set(
+                        nextEvent.attendees
+                          .filter((a) => a.status === 'confirmed')
+                          .map((a) => a.userId),
+                      ),
+                    )}
+                    size={40}
+                  />
+                </div>
+              ) : (
+                <p className="text-sm text-text-muted">{t('group.tiles.nextEventEmpty')}</p>
+              )}
+            </Tile>
+
+            {/* En el aire */}
+            <Tile
+              label={t('group.tiles.openQuestion')}
+              icon={<HiOutlineQuestionMarkCircle className="w-4 h-4" />}
+              onClick={openPoll ? () => history.push('/tabs/calendar') : undefined}
+            >
+              {openPoll ? (
+                <div className="flex items-center gap-2.5">
+                  <Aro members={memberRing(answered)} size={40} />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-bold text-text truncate">{pollLabel}</p>
+                    <p className="text-[11px] text-text-muted truncate">
+                      {missing.length > 0
+                        ? t('group.tiles.missing', { names: missing.join(', '), count: missing.length })
+                        : t('group.tiles.everyoneAnswered')}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-[13px] text-text-muted">{t('group.tiles.noQuestion')}</p>
+              )}
+            </Tile>
+
+            {/* Invitar */}
+            <Tile label={t('group.tiles.invite')} icon={<HiOutlineShare className="w-4 h-4" />}>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-[15px] font-bold tracking-[0.08em] text-text whitespace-nowrap">
+                  {invite ? formatCode(invite.inviteCode) : '····-····'}
+                </span>
+                <span className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleCopy}
+                    className={iconButtonClass}
+                    aria-label={copied ? t('group.codeCopied') : t('group.copyCode')}
+                    title={copied ? t('group.codeCopied') : t('group.copyCode')}
+                  >
+                    <HiOutlineDocumentDuplicate
+                      className={`w-4 h-4 ${copied ? 'text-success' : 'text-text-dark'}`}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className={iconButtonClass}
+                    aria-label={t('group.share')}
+                    title={t('group.share')}
+                  >
+                    <HiOutlineShare className="w-4 h-4 text-text-dark" />
+                  </button>
+                </span>
+              </div>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setShowRegenerateAlert(true)}
+                  disabled={refreshInvite.isPending}
+                  className="inline-flex items-center gap-1 self-start text-[11px] text-text-muted bg-transparent border-none p-0"
                 >
-                  <div className="flex items-center gap-3 bg-bg-card border border-subtle rounded-btn px-4 py-3">
+                  <HiOutlineArrowPath className="w-3 h-3" />
+                  {regeneratedFeedback
+                    ? t('group.codeRegenerated')
+                    : refreshInvite.isPending
+                      ? t('group.regenerating')
+                      : t('group.regenerateCode')}
+                </button>
+              )}
+            </Tile>
+
+            {/* El tiempo */}
+            <Tile
+              label={t('group.tiles.weather')}
+              icon={<HiOutlineSun className="w-4 h-4" />}
+              onClick={isAdmin ? () => setShowCitySearch((v) => !v) : undefined}
+            >
+              {firstWeather ? (
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-bold text-text truncate">{firstWeather.city}</p>
+                    <p className="text-[11px] text-text-muted">
+                      {Math.round(firstWeather.tempMax)}° / {Math.round(firstWeather.tempMin)}°
+                    </p>
+                  </div>
+                  <span className="text-[22px] leading-none" aria-hidden="true">
+                    {getWeatherIcon(firstWeather.weatherCode)}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[13px] text-text-muted">
+                  {isAdmin ? `+ ${t('weather.addCity')}` : t('group.tiles.noCity')}
+                </p>
+              )}
+            </Tile>
+
+            {/* Grupo */}
+            <Tile label={t('group.tiles.group')} icon={<HiOutlineUsers className="w-4 h-4" />}>
+              <div className="flex flex-col gap-1 text-[13px]">
+                <div className="flex justify-between gap-2">
+                  <span className="text-text">{t('group.tiles.name')}</span>
+                  <span className="text-text-muted truncate">
+                    {group.name} {group.emoji}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <span className="text-text">{t('group.tiles.cities')}</span>
+                  <span className="text-text-muted">{cities?.length ?? 0}</span>
+                </div>
+              </div>
+            </Tile>
+
+            {/* Miembros */}
+            <Tile
+              label={`${t('group.tiles.members')} · ${group.members.length}`}
+              icon={<HiOutlineUser className="w-4 h-4" />}
+              span={2}
+            >
+              <div className="flex flex-col">
+                {group.members.map((member, i) => (
+                  <motion.div
+                    key={member.userId}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05, duration: 0.3 }}
+                    className={`flex items-center gap-2.5 py-2 ${
+                      i < group.members.length - 1 ? 'border-b border-subtle' : ''
+                    }`}
+                  >
                     <Avatar
                       name={member.user.name}
                       color={colorMap.get(member.userId) ?? getMemberColorByUserId(member.userId)}
-                      size={36}
+                      size={28}
                     />
-                    <div className="flex-1 min-w-0 flex items-center gap-2">
-                      <span className="text-sm text-text truncate">{member.user.name}</span>
-                      {member.userId === group.createdById && (
-                        <Badge variant="neutral">{t('group.creator')}</Badge>
-                      )}
-                      {member.role === 'admin' && member.userId !== group.createdById && (
-                        <Badge variant="neutral">{t('group.admin')}</Badge>
-                      )}
-                      {member.userId === currentUserId && (
-                        <span className="text-xs text-text-muted">{t('group.memberYou')}</span>
-                      )}
-                    </div>
+                    <span className="flex-1 min-w-0 text-[13px] text-text truncate">
+                      {member.user.name}
+                    </span>
+                    {member.userId === group.createdById && (
+                      <span className="font-mono text-[9px] tracking-[0.06em] uppercase text-text-muted border border-strong rounded-pill px-2 py-px">
+                        {t('group.creator')}
+                      </span>
+                    )}
+                    {member.role === 'admin' && member.userId !== group.createdById && (
+                      <span className="font-mono text-[9px] tracking-[0.06em] uppercase text-text-muted border border-strong rounded-pill px-2 py-px">
+                        {t('group.admin')}
+                      </span>
+                    )}
+                    {member.userId === currentUserId && (
+                      <span
+                        className="font-mono text-[9px] tracking-[0.06em] uppercase"
+                        style={{ color: myColor ?? 'var(--app-text-muted)' }}
+                      >
+                        {t('group.memberYou')}
+                      </span>
+                    )}
                     {isAdmin &&
                       member.userId !== currentUserId &&
                       member.userId !== group.createdById && (
                         <button
+                          type="button"
                           onClick={() =>
                             setActionMember({
                               userId: member.userId,
@@ -293,170 +542,86 @@ export default function GroupDetailPage() {
                               role: member.role,
                             })
                           }
-                          className="text-text-dark hover:text-text text-lg px-1 border-none bg-transparent shrink-0"
+                          className={iconButtonClass}
+                          aria-label={member.user.name}
                         >
-                          &#x22EF;
+                          <HiOutlineEllipsisHorizontal className="w-4 h-4 text-text-dark" />
                         </button>
                       )}
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </section>
-
-          {/* Weather & Cities */}
-          <section className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-text-dark uppercase tracking-wider">
-                {t('weather.title')}
-              </h3>
-              {isAdmin && (
-                <button
-                  onClick={() => setShowCitySearch(!showCitySearch)}
-                  className="text-[11px] font-semibold text-primary border-none bg-transparent"
-                >
-                  + {t('weather.addCity')}
-                </button>
-              )}
-            </div>
-
-            {/* City search */}
-            {showCitySearch && (
-              <div className="mb-3">
-                <input
-                  type="text"
-                  value={citySearch}
-                  onChange={(e) => setCitySearch(e.target.value)}
-                  placeholder={t('weather.searchCity')}
-                  className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark mb-1"
-                  style={{
-                    background: 'var(--app-bg-hover)',
-                    border: '1px solid var(--app-border-strong)',
-                  }}
-                />
-                {cityResults.length > 0 && (
-                  <div
-                    className="rounded-[10px] overflow-hidden"
-                    style={{
-                      background: 'var(--app-bg-card)',
-                      border: '1px solid var(--app-border)',
-                    }}
-                  >
-                    {cityResults.map((r, i) => (
-                      <button
-                        key={`${r.name}-${r.latitude}-${i}`}
-                        onClick={() => handleAddCity(r)}
-                        className="w-full text-left px-3 py-2 text-sm text-text border-none hover:bg-bg-hover"
-                        style={{
-                          borderBottom:
-                            i < cityResults.length - 1 ? '1px solid var(--app-border)' : 'none',
-                          background: 'transparent',
-                        }}
-                      >
-                        {r.name}
-                        {r.admin1 ? `, ${r.admin1}` : ''} — {r.country}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                  </motion.div>
+                ))}
               </div>
-            )}
+            </Tile>
+          </div>
 
-            {/* City list */}
-            {cities && cities.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {cities.map((city) => (
-                  <span
-                    key={city.id}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] text-text-muted"
-                    style={{
-                      background: 'var(--app-bg-card)',
-                      border: '1px solid var(--app-border)',
-                    }}
-                  >
-                    📍 {city.name}
-                    {isAdmin && (
+          {/* Editor de ciudades (admin), desplegado desde la ficha del tiempo */}
+          {isAdmin && cityEditorOpen && (
+            <div className="mt-3 bg-bg-light border border-subtle rounded-lg p-3.5">
+              <input
+                type="text"
+                value={citySearch}
+                onChange={(e) => setCitySearch(e.target.value)}
+                placeholder={t('weather.searchCity')}
+                className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark mb-2 bg-bg-hover border border-strong"
+              />
+              {cityResults.length > 0 && (
+                <div className="rounded-[10px] overflow-hidden bg-bg-card border border-subtle mb-2">
+                  {cityResults.map((r, i) => (
+                    <button
+                      key={`${r.name}-${r.latitude}-${i}`}
+                      onClick={() => handleAddCity(r)}
+                      className={`w-full text-left px-3 py-2 text-sm text-text border-none bg-transparent hover:bg-bg-hover ${
+                        i < cityResults.length - 1 ? 'border-b border-subtle' : ''
+                      }`}
+                    >
+                      {r.name}
+                      {r.admin1 ? `, ${r.admin1}` : ''} — {r.country}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {cities && cities.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {cities.map((city) => (
+                    <span
+                      key={city.id}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] text-text-muted bg-bg-card border border-subtle"
+                    >
+                      📍 {city.name}
                       <button
                         onClick={() => handleRemoveCity(city.id)}
                         className="text-text-dark hover:text-danger ml-0.5 border-none bg-transparent text-[10px]"
+                        aria-label={`${t('group.cancel')} ${city.name}`}
                       >
                         ✕
                       </button>
-                    )}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Weather data */}
-            {weather && weather.length > 0 && <WeatherWidget weather={weather} />}
-          </section>
-
-          {/* Invite */}
-          <section className="mb-6">
-            <h3 className="text-xs font-semibold text-text-dark uppercase tracking-wider mb-3">
-              {t('group.inviteFriends')}
-            </h3>
-            <div className="bg-bg-card border border-subtle rounded-btn p-4">
-              <p className="text-xs text-text-muted mb-2">{t('group.inviteCode')}</p>
-              <p className="text-2xl font-mono font-bold text-text tracking-widest mb-4">
-                {invite ? formatCode(invite.inviteCode) : '····-····'}
-              </p>
-              <div className="flex gap-2">
-                <Button variant="primary" onClick={handleShare} className="flex-1">
-                  {t('group.share')}
-                </Button>
-                <Button variant="secondary" onClick={handleCopy} className="flex-1">
-                  {copied ? t('group.codeCopied') : t('group.copyCode')}
-                </Button>
-              </div>
-              {isAdmin && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowRegenerateAlert(true)}
-                  disabled={refreshInvite.isPending}
-                  className="w-full mt-3 !text-xs !py-2 !font-normal text-text-muted"
-                >
-                  <span className="inline-flex items-center gap-1">
-                    <HiOutlineArrowPath className="w-3 h-3" />
-                    {regeneratedFeedback
-                      ? t('group.codeRegenerated')
-                      : refreshInvite.isPending
-                        ? t('group.regenerating')
-                        : t('group.regenerateCode')}
-                  </span>
-                </Button>
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
-          </section>
+          )}
 
-          {/* Danger zone */}
-          <section className="mb-8 rounded-xl border border-subtle p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-error">
-              {t('group.dangerZone')}
-            </h3>
-
-            <div className="flex flex-col gap-3">
-              <Button
-                variant="danger"
-                onClick={() => setShowLeaveAlert(true)}
-                disabled={leaveGroup.isPending}
-                className="w-full"
+          {/* Salir / eliminar */}
+          <div className="flex flex-col items-center gap-1 mt-5">
+            <button
+              type="button"
+              onClick={() => setShowLeaveAlert(true)}
+              disabled={leaveGroup.isPending}
+              className="py-3 px-4 text-[13px] font-bold text-danger bg-transparent border-none"
+            >
+              {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
+            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowDeleteGroupAlert(true)}
+                className="py-2 px-4 text-[11px] text-text-dark bg-transparent border-none"
               >
-                {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
-              </Button>
-
-              {isAdmin && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowDeleteGroupAlert(true)}
-                  className="w-full !bg-error-tint !text-danger border border-subtle"
-                >
-                  {t('group.deleteGroup')}
-                </Button>
-              )}
-            </div>
-          </section>
+                {t('group.deleteGroup')}
+              </button>
+            )}
+          </div>
 
           {/* Alerts */}
           <IonAlert
