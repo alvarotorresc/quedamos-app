@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { HiOutlineVideoCamera } from 'react-icons/hi2';
 import { useConvertProposal } from '../hooks/useProposals';
 import { Button } from '../ui/Button';
+import { Sheet } from '../ui/Sheet';
 import type { Proposal } from '../services/proposals';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
@@ -70,19 +70,17 @@ export function ConvertProposalModal({
   const today = formatDateKey(new Date());
 
   return (
-    <IonModal
+    <Sheet
       isOpen={isOpen}
-      onDidDismiss={handleDismiss}
-      breakpoints={[0, 1]}
-      initialBreakpoint={1}
-      className="convert-proposal-modal"
+      onClose={handleDismiss}
+      title={t('proposals.convert')}
+      subtitle={proposal?.title}
+      footer={
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
+          {isConverting ? t('proposals.converting') : t('proposals.convert')}
+        </Button>
+      }
     >
-      <div className="px-5 pt-5 pb-9 bg-bg-light">
-        {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
-
-        <h3 className="text-[17px] font-bold text-text mb-0.5">{t('proposals.convert')}</h3>
-        {proposal && <p className="text-xs text-text-dark mb-1">{proposal.title}</p>}
         {proposal?.isOnline && (
           <div className="flex items-center gap-1.5 text-xs text-primary mb-2">
             <HiOutlineVideoCamera className="w-3.5 h-3.5" />
@@ -136,11 +134,6 @@ export function ConvertProposalModal({
           )}
         </div>
 
-        {/* Submit */}
-        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
-          {isConverting ? t('proposals.converting') : t('proposals.convert')}
-        </Button>
-      </div>
-    </IonModal>
+    </Sheet>
   );
 }
