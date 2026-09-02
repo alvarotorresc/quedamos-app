@@ -195,6 +195,14 @@ export class PollsService {
           )
           .catch((err) => this.logger.error('poll_completed push failed', err));
       }
+    } else if (!allYes && poll.status === 'completed') {
+      // The ring shows the current state: a completed poll reopens the moment
+      // unanimity breaks (someone swaps their yes for a no). Only `closed`, which its
+      // creator sets by hand, is final. Reopening is silent — no push.
+      await this.prisma.availabilityPoll.updateMany({
+        where: { id: pollId, status: 'completed' },
+        data: { status: 'open', completedAt: null },
+      });
     }
 
     return this.findOne(groupId, pollId, userId);

@@ -244,6 +244,37 @@ describe('PollsService', () => {
       expect(notifications.sendToGroup).not.toHaveBeenCalled();
     });
 
+    // Regla: el aro refleja el estado actual. Un sondeo `completed` vuelve a `open` en
+    // cuanto deja de haber unanimidad; solo `closed` (lo cierra su creador) es final.
+    it('reabre el aro si alguien cambia su sí por un no', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue({ ...openPoll, status: 'completed' });
+      prisma.pollResponse.findMany.mockResolvedValue([
+        { userId: 'u1', answer: 'yes' },
+        { userId: 'u2', answer: 'yes' },
+        { userId: 'u3', answer: 'no' },
+      ]);
+      prisma.availabilityPoll.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.respond('g1', 'p1', 'u3', { answer: 'no' });
+
+      expect(prisma.availabilityPoll.updateMany).toHaveBeenCalledWith({
+        where: { id: 'p1', status: 'completed' },
+        data: { status: 'open', completedAt: null },
+      });
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+    });
+
+    it('no reabre un sondeo completado que sigue siendo unánime', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue({ ...openPoll, status: 'completed' });
+      prisma.pollResponse.findMany.mockResolvedValue(
+        MEMBERS.map((m) => ({ userId: m.userId, answer: 'yes' })),
+      );
+
+      await service.respond('g1', 'p1', 'u3', { answer: 'yes' });
+
+      expect(prisma.availabilityPoll.updateMany).not.toHaveBeenCalled();
+    });
+
     it('rechaza responder un sondeo no abierto', async () => {
       prisma.availabilityPoll.findFirst.mockResolvedValue({ ...openPoll, status: 'closed' });
 
