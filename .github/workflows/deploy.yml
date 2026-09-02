@@ -26,20 +26,52 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/quedamos-api:latest
 
+      # The deploy used to stay green when the pull failed (a stale ghcr login on the
+      # VPS kept the old container running for months). Now every step fails loudly:
+      # the pull must succeed, the container must run the image we just pushed, and
+      # /health must answer with Firebase initialised before the job goes green.
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
+        env:
+          EXPECTED_DIGEST: ${{ steps.build.outputs.digest }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          envs: EXPECTED_DIGEST
           script: |
+            set -euo pipefail
             cd /opt/services
             docker logout ghcr.io || true
             docker compose pull quedamos-api
             docker compose up -d quedamos-api
+            running=$(docker inspect quedamos-api --format '{{.Image}}')
+            latest=$(docker image inspect ghcr.io/alvarotorresc/quedamos-api:latest --format '{{.Id}}')
+            if [ "$running" != "$latest" ]; then
+              echo "container runs $running but latest image is $latest"; exit 1
+            fi
+            pushed=$(docker image inspect ghcr.io/alvarotorresc/quedamos-api:latest --format '{{join .RepoDigests ","}}')
+            case "$pushed" in
+              *"$EXPECTED_DIGEST"*) echo "running the image pushed by this run ($EXPECTED_DIGEST)";;
+              *) echo "latest on the VPS ($pushed) is not the image pushed by this run ($EXPECTED_DIGEST)"; exit 1;;
+            esac
+
+      - name: Verify /health
+        run: |
+          for i in $(seq 1 20); do
+            body=$(curl -fsS -m 10 https://quedamos.api.alvarotc.com/health || true)
+            echo "attempt $i: ${body:-no response}"
+            if echo "$body" | grep -q '"status":"ok"' && echo "$body" | grep -q '"firebaseInitialized":true'; then
+              exit 0
+            fi
+            sleep 6
+          done
+          echo "the API did not report a healthy, Firebase-initialised state within 2 minutes"
+          exit 1
