@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_semana_label">Quedamos — Week</string>
+    <string name="widget_semana_description">Your crew\'s ring, day by day</string>
+    <string name="widget_mejor_dia_label">Quedamos — Best day</string>
+    <string name="widget_mejor_dia_description">The day most people can make it</string>
+    <string name="widget_best_day_question">«Shall we meet on %1$s?»</string>
+    <string name="widget_can_count">%1$d can on %2$s</string>
+    <string name="widget_all_can">All %1$d of you can</string>
+    <string name="widget_nothing_yet">Nothing in the air yet</string>
+    <string name="widget_open_app">Open Quedamos to get started</string>
+    <string name="widget_config_title">Pick your crew</string>
+    <string name="widget_config_empty">Open Quedamos and sign in</string>
+</resources>
