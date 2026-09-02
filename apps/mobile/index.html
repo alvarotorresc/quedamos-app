@@ -9,13 +9,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icon-256.png" />
     <title>¿Quedamos?</title>
-    <script>
-      try {
-        if (localStorage.getItem('theme') === 'light') {
-          document.documentElement.classList.add('light');
-        }
-      } catch (e) { /* almacenamiento bloqueado: se queda la noche por defecto */ }
-    </script>
+    <!-- Sincrónico a propósito: aplica el tema antes del primer pintado (sin destello) -->
+    <script src="/theme-init.js"></script>
     <script defer src="https://analytics.alvarotc.com/script.js" data-website-id="907ea9ec-1555-44b0-aaa5-68976c8db431"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
