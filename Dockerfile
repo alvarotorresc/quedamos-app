@@ -4,7 +4,7 @@
 # ============================================================
 
 # ---------- Stage 1: Build ----------
-FROM node:22-slim AS build
+FROM node:26-slim AS build
 
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
@@ -25,7 +25,7 @@ WORKDIR /app/apps/api
 RUN npx prisma generate && npx nest build
 
 # ---------- Stage 2: Production ----------
-FROM node:22-slim AS production
+FROM node:26-slim AS production
 
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
