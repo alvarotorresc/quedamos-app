@@ -281,8 +281,10 @@ export class EventsService {
       throw new ForbiddenException('Only the creator can delete this event');
     }
 
-    // Send notification before delete (attendees are cascade-deleted with the event)
-    this.notificationsService
+    // Send notification before delete and await it to avoid a race with the CASCADE:
+    // the push reads event_attendees, which the delete takes away. Same shape as
+    // deleteGroup — the catch keeps a failing push from blocking the deletion.
+    await this.notificationsService
       .sendToEventAttendees(
         eventId,
         'Quedada eliminada',

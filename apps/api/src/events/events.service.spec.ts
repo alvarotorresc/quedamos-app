@@ -1005,6 +1005,47 @@ describe('EventsService', () => {
       );
     });
 
+    it('should send the deletion notification before removing the event', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      const order: string[] = [];
+      // The push reads event_attendees, which the delete cascades away: it has to
+      // finish first, not merely have been started.
+      notifications.sendToEventAttendees.mockImplementation(async () => {
+        await Promise.resolve();
+        order.push('notified');
+        return { sent: 1 };
+      });
+      prisma.event.delete.mockImplementation(async () => {
+        order.push('deleted');
+        return event;
+      });
+
+      await service.delete('group-1', 'event-1', 'user-1');
+
+      expect(order).toEqual(['notified', 'deleted']);
+    });
+
+    it('should still delete the event when the notification fails', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.delete.mockResolvedValue(event);
+      notifications.sendToEventAttendees.mockRejectedValue(new Error('FCM down'));
+
+      await expect(service.delete('group-1', 'event-1', 'user-1')).resolves.toEqual({
+        success: true,
+      });
+      expect(prisma.event.delete).toHaveBeenCalled();
+    });
+
     it('should reject delete from non-creator', async () => {
       const event = {
         ...createTestEvent(),
