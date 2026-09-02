@@ -24,6 +24,7 @@ import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import DesktopFrame from './components/DesktopFrame';
 import { usePushNotifications } from './hooks/usePushNotifications';
+import { resolveDeepLinkPath, navigateToDeepLink } from './lib/deep-link';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -148,19 +149,13 @@ export default function App() {
     initializeTheme();
   }, [initialize, initializeTheme]);
 
-  // Deep link handler for native app (reset password, join group)
+  // Deep link handler for native app (reset password, join group).
+  // La URL la puede fabricar cualquier app instalada lanzando un Intent VIEW contra
+  // MainActivity, así que resolveDeepLinkPath filtra host, esquema y ruta antes de navegar.
   useEffect(() => {
-    const ALLOWED_PREFIXES = ['/reset-password', '/join/', '/tabs/'];
     const listener = CapApp.addListener('appUrlOpen', (event) => {
-      try {
-        const url = new URL(event.url);
-        const path = url.pathname + url.search + url.hash;
-        if (path && ALLOWED_PREFIXES.some((p) => path.startsWith(p))) {
-          window.location.href = path;
-        }
-      } catch {
-        // Invalid URL — ignore
-      }
+      const path = resolveDeepLinkPath(event.url);
+      if (path) navigateToDeepLink(path);
     });
     return () => {
       listener.then((l) => l.remove());
