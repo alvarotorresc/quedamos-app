@@ -67,6 +67,30 @@ describe('PollsService', () => {
       expect(result.notified).toBe(true);
     });
 
+    it('devuelve 409 si la creacion choca con el indice unico parcial', async () => {
+      // Doble toque en «preguntar» con red lenta: el findFirst de los dos no ve
+      // nada y el segundo INSERT es el que rebota contra el indice.
+      prisma.availabilityPoll.findFirst.mockResolvedValue(null);
+      prisma.availabilityPoll.create.mockRejectedValue(
+        Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }),
+      );
+
+      await expect(service.create('g1', 'u1', { date: '2026-02-13' })).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
+    it('no traga otros errores de prisma como si fueran un duplicado', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue(null);
+      prisma.availabilityPoll.create.mockRejectedValue(
+        Object.assign(new Error('connection lost'), { code: 'P1001' }),
+      );
+
+      await expect(service.create('g1', 'u1', { date: '2026-02-13' })).rejects.toThrow(
+        'connection lost',
+      );
+    });
+
     it('con franja, la pregunta la nombra y la disponibilidad va por slots', async () => {
       prisma.availabilityPoll.findFirst.mockResolvedValue(null);
       prisma.availabilityPoll.create.mockResolvedValue({
