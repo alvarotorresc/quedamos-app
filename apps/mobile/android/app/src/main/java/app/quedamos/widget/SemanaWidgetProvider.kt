@@ -135,10 +135,15 @@ class SemanaWidgetProvider : AppWidgetProvider() {
                     views.setTextColor(LETTER_IDS[i], if (day?.date == today) tintaColor else tintaSuaveColor)
                 }
 
+                // Parseo único por render: un bestDay.date corrupto se trata como
+                // ausente (sin resalte, texto "nada en el aire") en vez de crashear
+                // el receiver en cada onUpdate.
                 val bestDay = summary?.bestDay
-                views.setTextViewText(R.id.widget_best_text, bestDayText(ctx, bestDay, days))
+                val bestDayDate = bestDay?.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                val validBestDay = if (bestDayDate != null) bestDay else null
+                views.setTextViewText(R.id.widget_best_text, bestDayText(ctx, validBestDay, bestDayDate, days))
 
-                val bestIndex = bestDay?.let { bd -> days.indexOfFirst { it.date == bd.date } } ?: -1
+                val bestIndex = validBestDay?.let { bd -> days.indexOfFirst { it.date == bd.date } } ?: -1
                 if (bestIndex in 0..6) {
                     views.setInt(CELL_IDS[bestIndex], "setBackgroundResource", R.drawable.widget_day_best)
                 }
@@ -156,15 +161,30 @@ class SemanaWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
                 views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+            } else {
+                // Sin grupo configurado: el CTA "abre la app" debe abrir la app.
+                ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)?.let { launchIntent ->
+                    val pendingIntent = PendingIntent.getActivity(
+                        ctx,
+                        appWidgetId,
+                        launchIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
+                    views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+                }
             }
 
             manager.updateAppWidget(appWidgetId, views)
         }
 
         /** Texto inferior siempre referido al mejor día global (spec §D5). */
-        private fun bestDayText(ctx: Context, bestDay: WidgetBestDay?, days: List<WidgetDay>): String {
-            if (bestDay == null) return ctx.getString(R.string.widget_nothing_yet)
-            val date = LocalDate.parse(bestDay.date)
+        private fun bestDayText(
+            ctx: Context,
+            bestDay: WidgetBestDay?,
+            date: LocalDate?,
+            days: List<WidgetDay>,
+        ): String {
+            if (bestDay == null || date == null) return ctx.getString(R.string.widget_nothing_yet)
             return if (bestDay.closesAro) {
                 val weekdayLong = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
                 ctx.getString(R.string.widget_best_day_question, weekdayLong)

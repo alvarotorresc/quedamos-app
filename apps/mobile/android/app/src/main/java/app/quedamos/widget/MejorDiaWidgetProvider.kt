@@ -70,12 +70,17 @@ class MejorDiaWidgetProvider : AppWidgetProvider() {
                 // Con sesión pero sin summary cacheado aún (primer refresh no ha llegado):
                 // se trata igual que "sin datos" (bestDay null) — ya hay sesión, solo falta
                 // la primera sincronización. Fluye solo por null-safety.
+                // Parseo único por render: un bestDay.date corrupto se trata como
+                // ausente (aro neutro, texto "nada en el aire") en vez de crashear
+                // el receiver en cada onUpdate.
                 val bestDay = summary?.bestDay
+                val bestDayDate = bestDay?.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                val validBestDay = if (bestDayDate != null) bestDay else null
                 val days = summary?.days.orEmpty()
-                val dayInWeek = bestDay?.let { bd -> days.firstOrNull { it.date == bd.date } }
+                val dayInWeek = validBestDay?.let { bd -> days.firstOrNull { it.date == bd.date } }
 
-                views.setTextViewText(R.id.widget_best_date, bestDateText(bestDay))
-                views.setTextViewText(R.id.widget_best_count, bestCountText(ctx, bestDay, days))
+                views.setTextViewText(R.id.widget_best_date, bestDateText(validBestDay, bestDayDate))
+                views.setTextViewText(R.id.widget_best_count, bestCountText(ctx, validBestDay, bestDayDate, days))
 
                 // Limitación consciente (spec §D5 / task 14): el endpoint solo trae
                 // availableMemberIds para los días de la semana visible (`days`). Si el
@@ -93,7 +98,7 @@ class MejorDiaWidgetProvider : AppWidgetProvider() {
                 // cercano) trae los datos y pinta los arcos normalmente.
                 val states = when {
                     summary == null -> emptyList()
-                    bestDay != null && dayInWeek != null ->
+                    validBestDay != null && dayInWeek != null ->
                         summary.members.map { m ->
                             m.colorIndex to
                                 if (dayInWeek.availableMemberIds.contains(m.id)) AroState.ON else AroState.OFF
@@ -118,25 +123,39 @@ class MejorDiaWidgetProvider : AppWidgetProvider() {
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
                 views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+            } else {
+                // Sin grupo configurado: el CTA "abre la app" debe abrir la app.
+                ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)?.let { launchIntent ->
+                    val pendingIntent = PendingIntent.getActivity(
+                        ctx,
+                        appWidgetId,
+                        launchIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                    )
+                    views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+                }
             }
 
             manager.updateAppWidget(appWidgetId, views)
         }
 
         /** Fecha del mejor día, ej. «viernes 6» (weekday largo localizado + día del mes). */
-        private fun bestDateText(bestDay: WidgetBestDay?): String {
-            if (bestDay == null) return ""
-            val date = LocalDate.parse(bestDay.date)
+        private fun bestDateText(bestDay: WidgetBestDay?, date: LocalDate?): String {
+            if (bestDay == null || date == null) return ""
             val weekdayLong = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault())
             return "$weekdayLong ${date.dayOfMonth}"
         }
 
         /** Texto de estado bajo el aro. */
-        private fun bestCountText(ctx: Context, bestDay: WidgetBestDay?, days: List<WidgetDay>): String {
-            if (bestDay == null) return ctx.getString(R.string.widget_nothing_yet)
+        private fun bestCountText(
+            ctx: Context,
+            bestDay: WidgetBestDay?,
+            date: LocalDate?,
+            days: List<WidgetDay>,
+        ): String {
+            if (bestDay == null || date == null) return ctx.getString(R.string.widget_nothing_yet)
             if (bestDay.closesAro) return ctx.getString(R.string.widget_all_can, bestDay.count)
 
-            val date = LocalDate.parse(bestDay.date)
             val weekdayShort = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
             val inWeek = days.any { it.date == bestDay.date }
             val weekdayLabel = if (inWeek) weekdayShort else "$weekdayShort ${date.dayOfMonth}"
