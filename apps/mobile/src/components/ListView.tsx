@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { formatDateKey, parseDateKey } from '../lib/date-utils';
+import { formatDateKey, parseDateKey, capitalizeFirst } from '../lib/date-utils';
 import { AvatarStack } from '../ui/AvatarStack';
 import { getWeatherIcon } from './WeatherWidget';
 import type { Availability } from '../services/availability';
@@ -72,12 +72,12 @@ export function ListView({
             >
               <div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[13px] font-semibold text-text capitalize">
-                    {day.toLocaleDateString(locale, {
+                  <span className="text-[13px] font-semibold text-text">
+                    {capitalizeFirst(day.toLocaleDateString(locale, {
                       weekday: 'long',
                       day: 'numeric',
                       month: 'short',
-                    })}
+                    }))}
                   </span>
                   {isBest && (
                     <span

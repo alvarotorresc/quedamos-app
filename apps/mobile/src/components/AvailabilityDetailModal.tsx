@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { capitalizeFirst } from '../lib/date-utils';
 import { availabilityLabel } from '../lib/availability-label';
 import { Avatar } from '../ui/Avatar';
 import { Sheet } from '../ui/Sheet';
@@ -39,7 +40,7 @@ export function AvailabilityDetailModal({
       isOpen={isOpen}
       onClose={onClose}
       title={t('calendar.availabilityDetail.title')}
-      subtitle={<span className="capitalize">{dateLabel}</span>}
+      subtitle={capitalizeFirst(dateLabel)}
       footer={
         <button
           onClick={() => {

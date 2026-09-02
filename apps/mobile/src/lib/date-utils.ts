@@ -79,3 +79,9 @@ export function weekOffsetOf(day: Date, base: Date = new Date()): number {
   // Round to absorb the 1-hour DST wobble across a week boundary.
   return Math.round((mondayOf(day).getTime() - mondayOf(base).getTime()) / msPerWeek);
 }
+
+/** Primera letra en mayúscula y el resto tal cual: para las fechas de toLocaleDateString. */
+export function capitalizeFirst(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1);
+}
