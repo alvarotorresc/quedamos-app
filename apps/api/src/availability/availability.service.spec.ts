@@ -337,9 +337,31 @@ describe('AvailabilityService', () => {
 
       await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
 
+      // Los nulls son deliberados: la rama iguala a la de 'range' para no dejar
+      // horas fantasma en filas anteriores al arreglo de create()/update().
       expect(prisma.availability.update).toHaveBeenCalledWith({
         where: { id: 'a1' },
-        data: { type: 'day', slots: [] },
+        data: { type: 'day', slots: [], startTime: null, endTime: null },
+      });
+    });
+
+    it('fila existente type=slots con hora antigua y sondeo sin franja: limpia el rango fantasma', async () => {
+      // Filas anteriores al arreglo de create/update pueden ser type=slots conservando
+      // start_time; al ampliarlas a day hay que borrarlo o el modal lo repinta.
+      prisma.availability.findUnique.mockResolvedValue({
+        id: 'a1',
+        type: 'slots',
+        slots: ['Tarde'],
+        startTime: '18:00',
+        endTime: '22:00',
+      });
+      prisma.availability.update.mockResolvedValue({});
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
+
+      expect(prisma.availability.update).toHaveBeenCalledWith({
+        where: { id: 'a1' },
+        data: { type: 'day', slots: [], startTime: null, endTime: null },
       });
     });
 

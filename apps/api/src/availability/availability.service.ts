@@ -176,7 +176,9 @@ export class AvailabilityService {
     if (!slot) {
       return this.prisma.availability.update({
         where: { id: existing.id },
-        data: { type: 'day', slots: [] },
+        // Nulls like the range branch above: a row written before create()/update()
+        // learnt to clear them can be 'slots' and still carry a stale range.
+        data: { type: 'day', slots: [], startTime: null, endTime: null },
       });
     }
 
