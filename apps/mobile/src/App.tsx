@@ -25,6 +25,7 @@ import { useThemeStore } from './stores/theme';
 import DesktopFrame from './components/DesktopFrame';
 import { usePushNotifications } from './hooks/usePushNotifications';
 import { resolveDeepLinkPath, navigateToDeepLink } from './lib/deep-link';
+import { takePendingRedirect } from './lib/pending-redirect';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -90,6 +91,36 @@ function ProtectedRoute({ component: Component, ...rest }: { component: React.Co
   );
 }
 
+/**
+ * Resumes the invite someone parked before they had an account.
+ *
+ * Confirming the sign-up email lands back on the root of the app with a session,
+ * where GuestRoute would otherwise send them straight to /tabs and the invite
+ * would be lost — same story when they close the app and come back later. This is
+ * the single place the parked destination is consumed, whatever route the session
+ * shows up on.
+ *
+ * Two destinations it deliberately leaves alone:
+ * - /reset-password, which a Supabase recovery link also opens *with* a session:
+ *   jumping to the invite there would strand the user without a new password.
+ * - the destination it is already on, because the login form navigates there by
+ *   itself; a second replace to the same path would remount the page and join twice.
+ */
+export function PendingRedirectGate({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const history = useHistory();
+  const { pathname, search } = useLocation();
+
+  useEffect(() => {
+    if (!user) return;
+    if (pathname === '/reset-password') return;
+    const pending = takePendingRedirect();
+    if (pending && pending !== `${pathname}${search}`) history.replace(pending);
+  }, [user, pathname, search, history]);
+
+  return <>{children}</>;
+}
+
 function GuestRoute({ component: Component, ...rest }: { component: React.ComponentType; path: string; exact?: boolean }) {
   const user = useAuthStore((s) => s.user);
   return (
@@ -125,15 +156,17 @@ function AppContent() {
   return (
     <DesktopFrame>
       <IonApp>
-        <IonRouterOutlet>
-          <GuestRoute exact path="/" component={SplashPage} />
-          <GuestRoute exact path="/login" component={LoginPage} />
-          <GuestRoute exact path="/register" component={RegisterPage} />
-          <GuestRoute exact path="/forgot-password" component={ForgotPasswordPage} />
-          <Route exact path="/reset-password" component={ResetPasswordPage} />
-          <ProtectedRoute path="/tabs" component={AppTabs} />
-          <Route exact path="/join/:code" component={JoinGroupPage} />
-        </IonRouterOutlet>
+        <PendingRedirectGate>
+          <IonRouterOutlet>
+            <GuestRoute exact path="/" component={SplashPage} />
+            <GuestRoute exact path="/login" component={LoginPage} />
+            <GuestRoute exact path="/register" component={RegisterPage} />
+            <GuestRoute exact path="/forgot-password" component={ForgotPasswordPage} />
+            <Route exact path="/reset-password" component={ResetPasswordPage} />
+            <ProtectedRoute path="/tabs" component={AppTabs} />
+            <Route exact path="/join/:code" component={JoinGroupPage} />
+          </IonRouterOutlet>
+        </PendingRedirectGate>
       </IonApp>
     </DesktopFrame>
   );
