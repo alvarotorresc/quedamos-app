@@ -27,3 +27,11 @@ export function isCalendarDate(value: string): boolean {
 export function startOfTodayUTC(now: Date = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 }
+
+/**
+ * Weekday in Spanish for the group timezone. v0.1 hardcodes Europe/Madrid, like the
+ * reminders and the poll copy.
+ */
+export function weekdayEs(date: Date): string {
+  return date.toLocaleDateString('es-ES', { weekday: 'long', timeZone: 'Europe/Madrid' });
+}

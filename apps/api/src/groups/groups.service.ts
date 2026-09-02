@@ -11,7 +11,7 @@ import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { getFrontendUrl } from '../common/frontend-url';
-import { startOfTodayUTC } from '../common/date-utils';
+import { startOfTodayUTC, weekdayEs } from '../common/date-utils';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { AddCityDto } from './dto/add-city.dto';
@@ -227,6 +227,9 @@ export class GroupsService {
       },
     });
 
+    await this.removeMemberTraces(groupId, userId);
+    await this.recomputeAfterMemberRemoval(groupId);
+
     if (user && group) {
       this.notificationsService
         .sendToGroup(
@@ -241,6 +244,110 @@ export class GroupsService {
     }
 
     return { success: true };
+  }
+
+  /**
+   * Drops what the member leaves behind in the group's polls and proposals. Their
+   * answers no longer count for anybody, and a stale vote would put a non-member in
+   * the attendee list of a proposal converted later on.
+   */
+  private async removeMemberTraces(groupId: string, userId: string) {
+    await this.prisma.pollResponse.deleteMany({
+      where: { userId, poll: { groupId } },
+    });
+    await this.prisma.planVote.deleteMany({
+      where: { userId, proposal: { groupId } },
+    });
+  }
+
+  /**
+   * "Everybody confirmed" and "everybody answered" were only ever evaluated when
+   * somebody responded, so removing the last person still to answer left the quedada
+   * stuck in pending and the ring open for good — with no way back, since the app no
+   * longer offers those buttons to the people who already answered.
+   *
+   * Best-effort: the member is already out, so a failure here must not turn a
+   * successful leave into a 500.
+   */
+  private async recomputeAfterMemberRemoval(groupId: string) {
+    try {
+      await this.confirmFullyConfirmedEvents(groupId);
+      await this.completeFullyAnsweredPolls(groupId);
+    } catch (err) {
+      this.logger.error('Failed to recompute group state after removing a member', err);
+    }
+  }
+
+  private async confirmFullyConfirmedEvents(groupId: string) {
+    const events = await this.prisma.event.findMany({
+      where: { groupId, status: 'pending', date: { gte: startOfTodayUTC() } },
+      select: { id: true, title: true, attendees: { select: { status: true } } },
+    });
+
+    for (const event of events) {
+      // An event nobody attends is not a confirmed one.
+      if (event.attendees.length === 0) continue;
+      if (!event.attendees.every((attendee) => attendee.status === 'confirmed')) continue;
+
+      // Same conditional write + count === 1 gate as respond(): only the writer that
+      // flips the row notifies, and a cancelled event is left alone.
+      const { count } = await this.prisma.event.updateMany({
+        where: { id: event.id, status: 'pending' },
+        data: { status: 'confirmed' },
+      });
+      if (count !== 1) continue;
+
+      this.notificationsService
+        .sendToEventAttendees(
+          event.id,
+          'Quedada confirmada',
+          `Todos han confirmado "${event.title}"`,
+          undefined,
+          { type: 'event_confirmed', eventId: event.id, groupId },
+          'event_confirmed',
+          'confirmed',
+        )
+        .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+    }
+  }
+
+  private async completeFullyAnsweredPolls(groupId: string) {
+    const polls = await this.prisma.availabilityPoll.findMany({
+      where: { groupId, status: 'open' },
+      select: { id: true, date: true, responses: { select: { userId: true, answer: true } } },
+    });
+    if (polls.length === 0) return;
+
+    const members = await this.prisma.groupMember.findMany({
+      where: { groupId },
+      select: { userId: true },
+    });
+    // every() on an empty list is vacuously true: an emptied group closes nothing.
+    if (members.length === 0) return;
+
+    for (const poll of polls) {
+      const yes = new Set(
+        poll.responses.filter((response) => response.answer === 'yes').map((r) => r.userId),
+      );
+      if (!members.every((member) => yes.has(member.userId))) continue;
+
+      const { count } = await this.prisma.availabilityPoll.updateMany({
+        where: { id: poll.id, status: 'open' },
+        data: { status: 'completed', completedAt: new Date() },
+      });
+      if (count !== 1) continue;
+
+      this.notificationsService
+        .sendToGroup(
+          groupId,
+          'El aro se cierra',
+          `Podéis todos el ${weekdayEs(poll.date)}`,
+          undefined,
+          { type: 'poll_completed', pollId: poll.id, groupId },
+          'poll_completed',
+        )
+        .catch((err) => this.logger.error('poll_completed push failed', err));
+    }
   }
 
   async getMembers(groupId: string, userId: string) {
@@ -386,6 +493,9 @@ export class GroupsService {
         },
       },
     });
+
+    await this.removeMemberTraces(groupId, targetUserId);
+    await this.recomputeAfterMemberRemoval(groupId);
 
     this.notificationsService
       .sendToUser(

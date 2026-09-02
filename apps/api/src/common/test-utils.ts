@@ -91,6 +91,7 @@ interface MockPrismaModels {
     create: jest.Mock;
     upsert: jest.Mock;
     delete: jest.Mock;
+    deleteMany: jest.Mock;
   }>;
   groupCity: MockModel<{
     findUnique: jest.Mock;
@@ -124,6 +125,7 @@ interface MockPrismaModels {
     updateMany: jest.Mock;
     upsert: jest.Mock;
     delete: jest.Mock;
+    deleteMany: jest.Mock;
     count: jest.Mock;
   }>;
   widgetToken: MockModel<{
@@ -232,6 +234,7 @@ export function createMockPrisma(): MockPrisma {
       create: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     groupCity: {
       findUnique: jest.fn(),
@@ -265,6 +268,7 @@ export function createMockPrisma(): MockPrisma {
       updateMany: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
       count: jest.fn(),
     },
     widgetToken: {
