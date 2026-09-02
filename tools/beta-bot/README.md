@@ -66,7 +66,7 @@ Rellena los valores:
 TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
 SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-BETA_INVITE_CODE=QUEDAMOSBETAPRIVADA2026
+BETA_INVITE_CODE=YOUR_INVITE_CODE_HERE
 ADMIN_TELEGRAM_ID=123456789
 WEB_URL=https://quedamos-app-mobile.vercel.app
 ```
@@ -175,7 +175,7 @@ El bot muestra:
 ### Flujo completo
 
 1. Habla con el bot: `/start`
-2. Introduce código: `QUEDAMOSBETAPRIVADA2026`
+2. Introduce código: `YOUR_INVITE_CODE_HERE`
 3. Nombre: `Test User`
 4. Email: `test@example.com`
 5. Verifica recepción de credenciales
