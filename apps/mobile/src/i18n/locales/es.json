@@ -305,6 +305,7 @@
     "theme": "Tema oscuro",
     "notifications": {
       "title": "Notificaciones",
+      "subtitle": "{{enabled}} de {{total}} activos",
       "groups": {
         "events": "Quedadas",
         "questions": "Preguntas",
@@ -346,6 +347,23 @@
       "resetDefaults": "Restaurar"
     },
     "reportBug": "Reportar error",
+    "subtitle": "Cuenta y preferencias",
+    "yourColor": "Tu color",
+    "groupsCount_one": "{{count}} grupo",
+    "groupsCount_other": "{{count}} grupos",
+    "name": "Nombre",
+    "email": "Email",
+    "password": "Contraseña",
+    "tiles": {
+      "notifications": "Avisos",
+      "activeOf": "activos de {{total}}",
+      "theme": "Tema",
+      "dark": "Oscuro",
+      "light": "Claro",
+      "timeSlots": "Franjas",
+      "help": "Ayuda",
+      "account": "Cuenta"
+    },
     "logout": "Cerrar sesión"
   },
   "settings": {
