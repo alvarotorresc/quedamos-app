@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useMotionSafe } from '../../lib/motion';
 import { CtaArrow, GITHUB_URL } from './NavIsla';
+import { FEEDBACK_FORM_URL } from '../../lib/constants';
 
 /**
  * Cierre (zona 8): cita + CTA + footer. Mismo botón «Abrir Quedamos» que
- * NavIsla/HeroPregunta (comparte `CtaArrow`); «Ver el código en GitHub» es
- * el único enlace real al repo; «Español / English» del footer es texto
+ * NavIsla/HeroPregunta (comparte `CtaArrow`); «Ver el código en GitHub» enlaza
+ * al repo y «Reportar un error» al formulario de feedback; «Español / English» del footer es texto
  * estático en el lienzo, no un selector funcional.
  */
 export function Cierre(): JSX.Element {
@@ -38,6 +39,9 @@ export function Cierre(): JSX.Element {
         <span>{t('landing2.nav.codeOpen')}</span>
         <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-text">
           {t('landing2.githubCta')}
+        </a>
+        <a href={FEEDBACK_FORM_URL} target="_blank" rel="noreferrer" className="hover:text-text">
+          {t('landing2.feedbackCta')}
         </a>
         <span>{t('landing2.cierre.footer.languages')}</span>
       </div>
