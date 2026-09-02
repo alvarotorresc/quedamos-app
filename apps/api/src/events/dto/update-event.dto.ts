@@ -47,15 +47,17 @@ export class UpdateEventDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   date?: string;
 
+  // `null` clears the field: @IsOptional() skips validation for it and the service
+  // tells it apart from "not sent" with an explicit `!== undefined` check.
   @IsOptional()
   @IsString()
   @Matches(/^\d{2}:\d{2}$/)
-  time?: string;
+  time?: string | null;
 
   @IsOptional()
   @IsString()
   @Matches(/^\d{2}:\d{2}$/)
-  endTime?: string;
+  endTime?: string | null;
 
   @IsOptional()
   @IsBoolean()

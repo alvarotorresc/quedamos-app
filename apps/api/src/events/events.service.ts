@@ -204,8 +204,10 @@ export class EventsService {
       }
     }
 
-    const finalTime = dto.time ?? event.time;
-    const finalEndTime = dto.endTime ?? event.endTime;
+    // `??` would treat an explicit null (clear the field) as "not sent" and validate
+    // the stored value instead, rejecting perfectly valid edits.
+    const finalTime = dto.time !== undefined ? dto.time : event.time;
+    const finalEndTime = dto.endTime !== undefined ? dto.endTime : event.endTime;
     if (finalTime && finalEndTime && finalEndTime <= finalTime) {
       throw new BadRequestException('End time must be after start time');
     }

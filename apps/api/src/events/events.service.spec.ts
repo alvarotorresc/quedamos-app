@@ -861,6 +861,25 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should allow moving the start time and clearing the end time at once', async () => {
+      const event = {
+        ...createTestEvent({ time: '18:00', endTime: '19:00' }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, time: '20:00', endTime: null });
+
+      await service.update('group-1', 'event-1', 'user-1', { time: '20:00', endTime: null });
+
+      // The stale 19:00 must not be validated against the new 20:00.
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ time: '20:00', endTime: null }),
+        }),
+      );
+    });
+
     it('should allow valid endTime update', async () => {
       const event = {
         ...createTestEvent({ time: '16:00', endTime: '20:00' }),
