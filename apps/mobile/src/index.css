@@ -237,10 +237,40 @@ ion-action-sheet .action-sheet-cancel .action-sheet-button-inner {
   color: var(--app-error) !important;
 }
 
-ion-modal.availability-modal,
-ion-modal.create-event-modal {
+/* Hoja inferior (ui/Sheet): anclada abajo, alto = contenido, máximo 90 % con
+   scroll interno. Es un IonModal normal (sin breakpoints) para conservar foco,
+   botón atrás y teclado; el aspecto viene del prototipo. */
+ion-modal.sheet {
+  --height: auto;
+  --max-height: 90%;
+  --width: 100%;
+  --max-width: 430px;
+  --border-radius: 20px 20px 0 0;
   --background: var(--app-bg-light);
-  --border-radius: 26px 26px 0 0;
+  --box-shadow: none;
+  --ion-backdrop-color: #14120e;
+  --backdrop-opacity: 0.55;
+  align-items: flex-end;
+}
+
+ion-modal.sheet::part(backdrop) {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+ion-modal.sheet::part(content) {
+  border-top: 1px solid var(--app-border);
+}
+
+/* Ionic React envuelve el contenido en .ion-page (absoluto y con contain de
+   tamaño): hay que soltarlo para que el modal mida lo que contiene. */
+ion-modal.sheet .ion-page {
+  position: relative;
+  contain: content;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  max-height: 90dvh;
 }
 
 .no-scrollbar::-webkit-scrollbar {
@@ -363,8 +393,9 @@ ion-modal.create-event-modal {
     --max-height: 100%;
   }
 
-  .desktop-frame-phone ion-modal.modal-sheet {
-    --height: calc(100% - 10px);
+  .desktop-frame-phone ion-modal.sheet {
+    --height: auto;
+    --max-height: 90%;
   }
 
   .desktop-frame-phone ion-alert {

@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useCreateEvent } from '../hooks/useEvents';
 import { useGroup } from '../hooks/useGroups';
 import { useForecast } from '../hooks/useWeather';
 import { useAuthStore } from '../stores/auth';
 import { Button } from '../ui/Button';
+import { Sheet } from '../ui/Sheet';
 import { Avatar } from '../ui/Avatar';
 import { WeatherBadge } from './WeatherWidget';
 import { LocationSearch } from './LocationSearch';
@@ -183,23 +183,16 @@ export function CreateEventModal({
     [...selectedMemberIds].every((id) => prefillIds.has(id));
 
   return (
-    <IonModal
+    <Sheet
       isOpen={isOpen}
-      onDidDismiss={resetAndClose}
-      breakpoints={[0, 1]}
-      initialBreakpoint={1}
-      className="create-event-modal"
-    >
-      <div className="px-5 pt-5 pb-9 bg-bg-light">
-        {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
-
-        <h3 className="text-[17px] font-bold text-text mb-0.5">{t('plans.create.title')}</h3>
-        {prefill ? (
-          <div className="flex items-center gap-2 mb-3.5 flex-wrap">
-            <p className="text-xs text-text-dark capitalize">
+      onClose={resetAndClose}
+      title={t('plans.create.title')}
+      subtitle={
+        prefill ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="capitalize">
               {prefill.dateLabel} · {prefill.availableCount} {t('plans.create.available')}
-            </p>
+            </span>
             {!isOnline && weatherToShow && weatherToShow.length > 0 && (
               <div className="flex items-center gap-1.5">
                 {weatherToShow.map((w) => (
@@ -208,10 +201,14 @@ export function CreateEventModal({
               </div>
             )}
           </div>
-        ) : (
-          <div className="h-3.5 mb-0.5" />
-        )}
-
+        ) : undefined
+      }
+      footer={
+        <Button variant="primary" onClick={handleSubmit} disabled={!canSubmit} className="w-full">
+          {isCreating ? t('plans.create.creating') : t('plans.create.submit')}
+        </Button>
+      }
+    >
         {/* Date — only shown when not coming from calendar */}
         {!prefill && (
           <div className="mb-3">
@@ -450,11 +447,6 @@ export function CreateEventModal({
           </div>
         )}
 
-        {/* Submit */}
-        <Button variant="primary" onClick={handleSubmit} disabled={!canSubmit} className="w-full">
-          {isCreating ? t('plans.create.creating') : t('plans.create.submit')}
-        </Button>
-      </div>
-    </IonModal>
+    </Sheet>
   );
 }

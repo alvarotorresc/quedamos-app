@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { formatDateKey } from '../lib/date-utils';
 import { useCreateAvailability, useDeleteAvailability } from '../hooks/useAvailability';
@@ -7,6 +6,7 @@ import { useAuthStore } from '../stores/auth';
 import { DEFAULT_TIME_SLOTS, getSlotHours } from '../lib/time-slot-utils';
 import type { Availability, AvailabilityType, TimeSlot } from '../services/availability';
 import { Button } from '../ui/Button';
+import { Sheet } from '../ui/Sheet';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
 
@@ -107,22 +107,38 @@ export function AvailabilityModal({
   ];
 
   return (
-    <IonModal
+    <Sheet
       isOpen={isOpen}
-      onDidDismiss={onClose}
-      breakpoints={[0, 1]}
-      initialBreakpoint={1}
-      className="availability-modal"
+      onClose={onClose}
+      title={t('calendar.availability.title')}
+      subtitle={<span className="capitalize">{dateLabel}</span>}
+      footer={
+        <>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving || (type === 'slots' && selectedSlots.length === 0)}
+            className="w-full"
+          >
+            {isSaving ? t('calendar.availability.saving') : t('calendar.availability.save')}
+          </Button>
+
+          {existingAvailability && (
+            <button
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="w-full mt-1.5 py-2.5 rounded-btn text-xs font-semibold transition-colors"
+              style={{
+                background: 'var(--app-bg-hover)',
+                color: '#FB7185',
+                border: '1px solid rgba(251,113,133,0.15)',
+              }}
+            >
+              {isDeleting ? t('calendar.availability.deleting') : t('calendar.availability.delete')}
+            </button>
+          )}
+        </>
+      }
     >
-      <div className="px-5 pt-5 pb-9 bg-bg-light">
-        {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
-
-        <h3 className="text-[17px] font-bold text-text mb-0.5">
-          {t('calendar.availability.title')}
-        </h3>
-        <p className="text-xs text-text-dark mb-3.5 capitalize">{dateLabel}</p>
-
         {/* Type selector */}
         <div className="flex gap-1 mb-3.5">
           {typeOptions.map(({ key, label }) => (
@@ -240,31 +256,6 @@ export function AvailabilityModal({
           </div>
         )}
 
-        {/* Save button */}
-        <Button
-          onClick={handleSave}
-          disabled={isSaving || (type === 'slots' && selectedSlots.length === 0)}
-          className="w-full mb-1.5"
-        >
-          {isSaving ? t('calendar.availability.saving') : t('calendar.availability.save')}
-        </Button>
-
-        {/* Delete button */}
-        {existingAvailability && (
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="w-full py-2.5 rounded-btn text-xs font-semibold transition-colors"
-            style={{
-              background: 'var(--app-bg-hover)',
-              color: '#FB7185',
-              border: '1px solid rgba(251,113,133,0.15)',
-            }}
-          >
-            {isDeleting ? t('calendar.availability.deleting') : t('calendar.availability.delete')}
-          </button>
-        )}
-      </div>
-    </IonModal>
+    </Sheet>
   );
 }

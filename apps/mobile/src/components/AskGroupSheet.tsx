@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { SegmentedPills } from '../ui/SegmentedPills';
 import { Button } from '../ui/Button';
+import { Sheet } from '../ui/Sheet';
 import { useCreatePoll } from '../hooks/usePolls';
 import { useToast } from '../hooks/useToast';
 import { formatDateKey } from '../lib/date-utils';
@@ -67,29 +67,21 @@ export function AskGroupSheet({ isOpen, onClose, groupId, day }: AskGroupSheetPr
   ];
 
   return (
-    <IonModal
+    <Sheet
       isOpen={isOpen}
-      onDidDismiss={onClose}
-      breakpoints={[0, 1]}
-      initialBreakpoint={1}
-      className="availability-modal"
-    >
-      <div className="px-5 pt-5 pb-9 bg-bg-light">
-        {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
-
-        <h3 className="text-[17px] font-bold text-text mb-0.5">{t('calendar.askTitle')}</h3>
-        <p className="text-xs text-text-dark mb-3.5 capitalize">{dateLabel}</p>
-
-        <SegmentedPills options={options} value={slot} onChange={setSlot} className="mb-3.5" />
-
-        <p className="text-xs text-text-muted mb-4">{t('calendar.askHint')}</p>
-
+      onClose={onClose}
+      title={t('calendar.askTitle')}
+      subtitle={<span className="capitalize">{dateLabel}</span>}
+      footer={
         <Button variant="primary" onClick={handleAsk} disabled={isAsking} className="w-full">
           {t('calendar.askAction')}
         </Button>
-      </div>
-    </IonModal>
+      }
+    >
+      <SegmentedPills options={options} value={slot} onChange={setSlot} className="mb-3.5" />
+
+      <p className="text-xs text-text-muted">{t('calendar.askHint')}</p>
+    </Sheet>
   );
 }
 

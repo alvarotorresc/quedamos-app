@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useCreateProposal } from '../hooks/useProposals';
 import { useForecast } from '../hooks/useWeather';
 import { Button } from '../ui/Button';
+import { Sheet } from '../ui/Sheet';
 import { WeatherBadge } from './WeatherWidget';
 import { LocationSearch } from './LocationSearch';
 import { useToast } from '../hooks/useToast';
@@ -94,19 +94,16 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
   };
 
   return (
-    <IonModal
+    <Sheet
       isOpen={isOpen}
-      onDidDismiss={handleDismiss}
-      breakpoints={[0, 1]}
-      initialBreakpoint={1}
-      className="create-proposal-modal"
+      onClose={handleDismiss}
+      title={t('proposals.create')}
+      footer={
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
+          {isCreating ? t('proposals.creating') : t('proposals.create')}
+        </Button>
+      }
     >
-      <div className="px-5 pt-5 pb-9 bg-bg-light">
-        {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
-
-        <h3 className="text-[17px] font-bold text-text mb-3.5">{t('proposals.create')}</h3>
-
         {/* Title */}
         <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.name')}</label>
@@ -226,11 +223,6 @@ export function CreateProposalModal({ isOpen, onClose, groupId }: CreateProposal
 
         {(!weatherToShow || isOnline) && <div className="mb-4" />}
 
-        {/* Submit */}
-        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
-          {isCreating ? t('proposals.creating') : t('proposals.create')}
-        </Button>
-      </div>
-    </IonModal>
+    </Sheet>
   );
 }

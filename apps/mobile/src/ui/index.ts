@@ -9,5 +9,6 @@ export { DotLoader } from './DotLoader';
 export { Aro } from './Aro';
 export type { AroMember } from './Aro';
 export { SegmentedPills } from './SegmentedPills';
+export { Sheet } from './Sheet';
 export { Logo } from './Logo';
 export type { LogoProps } from './Logo';
