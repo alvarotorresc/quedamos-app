@@ -31,7 +31,7 @@
     "@emoji-mart/react": "^1.1.1",
     "@hcaptcha/react-hcaptcha": "^2.0.2",
     "@ionic/react": "^8.4.1",
-    "@ionic/react-router": "^8.4.1",
+    "@ionic/react-router": "^9.0.1",
     "@supabase/supabase-js": "^2.47.12",
     "@tanstack/react-query": "^5.62.9",
     "firebase": "^12.9.0",
