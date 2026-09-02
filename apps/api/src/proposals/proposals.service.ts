@@ -215,25 +215,46 @@ export class ProposalsService {
       attendeeStatusMap[vote.userId] = vote.vote === 'yes' ? 'confirmed' : 'declined';
     }
 
+    // Claim the proposal atomically: two concurrent converts both pass the checks
+    // above, but only one updateMany finds it still open, so only one event is born.
+    const claimed = await this.prisma.planProposal.updateMany({
+      where: { id: proposalId, groupId, status: 'open' },
+      data: { status: 'converted' },
+    });
+    if (claimed.count !== 1) {
+      throw new ForbiddenException('Cannot convert a closed or converted proposal');
+    }
+
     // Create event using EventsService (status map passed as internal param, not in DTO).
     // skipNewEventNotification: the group already gets the more specific
     // proposal_converted push below — avoid the duplicate new_event push.
-    const event = await this.eventsService.create(
-      groupId,
-      userId,
-      {
-        title: proposal.title,
-        description: proposal.description ?? undefined,
-        location: proposal.location ?? undefined,
-        isOnline: proposal.isOnline,
-        meetingUrl: proposal.meetingUrl ?? undefined,
-        date: dto.date,
-        time: dto.time,
-        endTime: dto.endTime,
-      },
-      attendeeStatusMap,
-      { skipNewEventNotification: true },
-    );
+    let event: Awaited<ReturnType<EventsService['create']>>;
+    try {
+      event = await this.eventsService.create(
+        groupId,
+        userId,
+        {
+          title: proposal.title,
+          description: proposal.description ?? undefined,
+          location: proposal.location ?? undefined,
+          isOnline: proposal.isOnline,
+          meetingUrl: proposal.meetingUrl ?? undefined,
+          date: dto.date,
+          time: dto.time,
+          endTime: dto.endTime,
+        },
+        attendeeStatusMap,
+        { skipNewEventNotification: true },
+      );
+    } catch (error) {
+      // Hand the proposal back so the creator can retry instead of leaving it
+      // marked converted with no event behind it.
+      await this.prisma.planProposal.updateMany({
+        where: { id: proposalId, status: 'converted', convertedEventId: null },
+        data: { status: 'open' },
+      });
+      throw error;
+    }
 
     // Mark proposal as converted
     const updated = await this.prisma.planProposal.update({

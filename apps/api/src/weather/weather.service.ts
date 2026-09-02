@@ -65,7 +65,9 @@ export class WeatherService {
     lon: number,
     days: number = 7,
   ): Promise<WeatherData[]> {
-    const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)},${days}`;
+    // Open-Meteo rejects anything above 16 forecast days; clamp instead of failing.
+    const forecastDays = Math.min(Math.max(1, Math.floor(days)), MAX_FORECAST_DAYS);
+    const cacheKey = `${lat.toFixed(2)},${lon.toFixed(2)},${forecastDays}`;
     const cached = this.cache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
@@ -79,7 +81,7 @@ export class WeatherService {
     url.searchParams.set('longitude', String(lon));
     url.searchParams.set('daily', 'temperature_2m_max,temperature_2m_min,weathercode');
     url.searchParams.set('timezone', 'auto');
-    url.searchParams.set('forecast_days', String(days));
+    url.searchParams.set('forecast_days', String(forecastDays));
 
     let response: Response;
     try {

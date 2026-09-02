@@ -506,6 +506,59 @@ describe('EventsService', () => {
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     });
 
+    it('runs the respond transaction at serializable isolation and retries once on a serialization failure', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-1',
+        status: 'pending',
+      });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'pending' },
+      ]);
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      // Primer intento: Postgres aborta por serialización (P2034); el segundo entra.
+      prisma.$transaction.mockRejectedValueOnce(
+        Object.assign(new Error('serialization failure'), { code: 'P2034' }),
+      );
+
+      await service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+      expect(prisma.$transaction).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({ isolationLevel: 'Serializable' }),
+      );
+    });
+
+    it('gives up after three serialization failures', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-1',
+        status: 'pending',
+      });
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      const failure = Object.assign(new Error('serialization failure'), { code: 'P2034' });
+      prisma.$transaction
+        .mockRejectedValueOnce(failure)
+        .mockRejectedValueOnce(failure)
+        .mockRejectedValueOnce(failure);
+
+      await expect(
+        service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' }),
+      ).rejects.toThrow('serialization failure');
+      expect(prisma.$transaction).toHaveBeenCalledTimes(3);
+    });
+
     it('should throw when not invited', async () => {
       prisma.eventAttendee.findUnique.mockResolvedValue(null);
 

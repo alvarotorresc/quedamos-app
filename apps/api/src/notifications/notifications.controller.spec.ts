@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '../auth/auth.guard';
@@ -155,6 +156,32 @@ describe('NotificationsController', () => {
       expect(result).toEqual(debugInfo);
       expect(mockNotificationsService.getDebugInfo).toHaveBeenCalledWith('user-1');
       expect(mockNotificationsService.getDebugInfo).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('getDebugInfo', () => {
+    const originalEnv = process.env.NODE_ENV;
+    afterEach(() => {
+      process.env.NODE_ENV = originalEnv;
+      delete process.env.ENABLE_NOTIFICATIONS_DEBUG;
+    });
+
+    it('returns the debug info outside production', async () => {
+      process.env.NODE_ENV = 'test';
+      mockNotificationsService.getDebugInfo.mockResolvedValue({ tokens: [] });
+
+      await expect(controller.getDebugInfo({ id: 'user-1' })).resolves.toEqual({ tokens: [] });
+    });
+
+    it('is not found in production unless explicitly enabled', async () => {
+      process.env.NODE_ENV = 'production';
+
+      await expect(controller.getDebugInfo({ id: 'user-1' })).rejects.toThrow(NotFoundException);
+      expect(mockNotificationsService.getDebugInfo).not.toHaveBeenCalled();
+
+      process.env.ENABLE_NOTIFICATIONS_DEBUG = 'true';
+      mockNotificationsService.getDebugInfo.mockResolvedValue({ tokens: [] });
+      await expect(controller.getDebugInfo({ id: 'user-1' })).resolves.toEqual({ tokens: [] });
     });
   });
 });

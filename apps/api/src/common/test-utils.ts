@@ -81,7 +81,7 @@ interface MockPrismaModels {
     create: jest.Mock;
     update: jest.Mock;
     delete: jest.Mock;
-  }>;
+  }> & { updateMany: jest.Mock };
   planVote: MockModel<{
     findUnique: jest.Mock;
     findFirst: jest.Mock;
@@ -217,6 +217,7 @@ export function createMockPrisma(): MockPrisma {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      updateMany: jest.fn(),
     },
     planVote: {
       findUnique: jest.fn(),

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import {
   BadRequestException,
   ForbiddenException,
@@ -381,44 +382,52 @@ export class EventsService {
     // the pre-update status with the post-update result, so concurrent responds
     // or re-confirmations on an already confirmed event never re-send the
     // event_confirmed notification.
-    const { justReachedAllConfirmed, eventTitle } = await this.prisma.$transaction(async (tx) => {
-      const preEvent = await tx.event.findUnique({
-        where: { id: eventId },
-        select: { status: true, title: true },
-      });
+    // Serializable so two last-minute confirmations cannot each miss the other's
+    // row and leave the event pending with nobody notified; Postgres aborts one
+    // of them with P2034 and we simply run it again.
+    const { justReachedAllConfirmed, eventTitle } = await this.withSerializationRetry(async () =>
+      this.prisma.$transaction(
+        async (tx) => {
+          const preEvent = await tx.event.findUnique({
+            where: { id: eventId },
+            select: { status: true, title: true },
+          });
 
-      await tx.eventAttendee.update({
-        where: { eventId_userId: { eventId, userId } },
-        data: {
-          status: dto.status,
-          respondedAt: new Date(),
+          await tx.eventAttendee.update({
+            where: { eventId_userId: { eventId, userId } },
+            data: {
+              status: dto.status,
+              respondedAt: new Date(),
+            },
+          });
+
+          const allAttendees = await tx.eventAttendee.findMany({
+            where: { eventId },
+          });
+
+          const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
+          const anyDeclined = allAttendees.some((a) => a.status === 'declined');
+
+          if (allConfirmed) {
+            await tx.event.update({
+              where: { id: eventId },
+              data: { status: 'confirmed' },
+            });
+          } else if (anyDeclined) {
+            await tx.event.update({
+              where: { id: eventId },
+              data: { status: 'pending' },
+            });
+          }
+
+          return {
+            justReachedAllConfirmed: allConfirmed && preEvent?.status !== 'confirmed',
+            eventTitle: preEvent?.title ?? event.title,
+          };
         },
-      });
-
-      const allAttendees = await tx.eventAttendee.findMany({
-        where: { eventId },
-      });
-
-      const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
-      const anyDeclined = allAttendees.some((a) => a.status === 'declined');
-
-      if (allConfirmed) {
-        await tx.event.update({
-          where: { id: eventId },
-          data: { status: 'confirmed' },
-        });
-      } else if (anyDeclined) {
-        await tx.event.update({
-          where: { id: eventId },
-          data: { status: 'pending' },
-        });
-      }
-
-      return {
-        justReachedAllConfirmed: allConfirmed && preEvent?.status !== 'confirmed',
-        eventTitle: preEvent?.title ?? event.title,
-      };
-    });
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      ),
+    );
 
     // Notifications outside transaction (fire-and-forget)
     if (dto.status === 'confirmed' && justReachedAllConfirmed) {
@@ -453,5 +462,19 @@ export class EventsService {
     }
 
     return this.findById(groupId, eventId, userId);
+  }
+
+  /** Runs `work` up to three times while Postgres reports a serialization failure (P2034). */
+  private async withSerializationRetry<T>(work: () => Promise<T>): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await work();
+      } catch (error) {
+        lastError = error;
+        if ((error as { code?: string } | null)?.code !== 'P2034') throw error;
+      }
+    }
+    throw lastError;
   }
 }

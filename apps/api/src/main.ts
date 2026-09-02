@@ -11,6 +11,10 @@ import { corsOrigins } from './common/frontend-url';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // One reverse proxy (Caddy) in front: trust its X-Forwarded-For so the
+  // throttler and logs see the client's IP instead of the proxy's.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   app.use(json({ limit: '100kb' }));
 
   app.use(

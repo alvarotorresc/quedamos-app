@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { GroupsService } from '../groups/groups.service';
 import { getFrontendUrl } from '../common/frontend-url';
@@ -19,6 +20,7 @@ export class InviteController {
   constructor(private groupsService: GroupsService) {}
 
   @Get(':code')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   async redirectToApp(@Param('code') code: string, @Res() res: Response): Promise<void> {
     if (!INVITE_CODE_REGEX.test(code)) {
       throw new BadRequestException('Invalid invite code format');

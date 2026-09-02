@@ -88,6 +88,13 @@ describe('WeatherService', () => {
     expect(calledUrl.searchParams.get('forecast_days')).toBe('11');
   });
 
+  it('caps forecast_days at the Open-Meteo maximum of 16', async () => {
+    await service.getForecast('Madrid', 40.42, -3.7, 40);
+
+    const calledUrl = mockFetch.mock.calls[0][0] as URL;
+    expect(calledUrl.searchParams.get('forecast_days')).toBe('16');
+  });
+
   it('should return null without calling the API for dates beyond 16 days', async () => {
     const result = await service.getForDate('Madrid', 40.42, -3.7, '2026-03-20');
 

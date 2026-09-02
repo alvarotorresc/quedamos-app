@@ -39,6 +39,8 @@ describe('ProposalsService', () => {
 
   beforeEach(() => {
     prisma = createMockPrisma();
+    // El reclamo atómico de convert() encuentra la propuesta abierta salvo que un test diga lo contrario.
+    prisma.planProposal.updateMany.mockResolvedValue({ count: 1 });
     groupsService = {
       findById: jest.fn().mockResolvedValue({}),
     };
@@ -210,6 +212,68 @@ describe('ProposalsService', () => {
   });
 
   describe('convert', () => {
+    beforeEach(() => {
+      prisma.planProposal.updateMany.mockResolvedValue({ count: 1 });
+    });
+
+    it('claims the proposal atomically before creating the event', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+      prisma.planProposal.update.mockResolvedValue({
+        ...createTestProposal({ status: 'converted' }),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-03-15' });
+
+      expect(prisma.planProposal.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'proposal-1', status: 'open' }),
+          data: expect.objectContaining({ status: 'converted' }),
+        }),
+      );
+      const claimOrder = prisma.planProposal.updateMany.mock.invocationCallOrder[0];
+      const createOrder = (eventsService.create as jest.Mock).mock.invocationCallOrder[0];
+      expect(claimOrder).toBeLessThan(createOrder);
+    });
+
+    it('refuses a second convert that lost the race and creates no event', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+      prisma.planProposal.updateMany.mockResolvedValue({ count: 0 });
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-03-15' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(eventsService.create).not.toHaveBeenCalled();
+    });
+
+    it('reopens the proposal when the event could not be created', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [],
+      });
+      (eventsService.create as jest.Mock).mockRejectedValueOnce(new Error('boom'));
+
+      await expect(
+        service.convert('group-1', 'proposal-1', 'user-1', { date: '2026-03-15' }),
+      ).rejects.toThrow('boom');
+      expect(prisma.planProposal.updateMany).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: 'proposal-1', status: 'converted' }),
+          data: expect.objectContaining({ status: 'open' }),
+        }),
+      );
+    });
+
     it('should convert proposal to event', async () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),

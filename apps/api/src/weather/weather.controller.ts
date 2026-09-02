@@ -6,6 +6,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { GroupsService } from '../groups/groups.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { GetForecastQueryDto } from './dto/get-forecast-query.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Weather')
 @ApiBearerAuth()
@@ -19,6 +20,7 @@ export class WeatherController {
   ) {}
 
   @Get()
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   async getGroupWeather(
     @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
@@ -39,6 +41,7 @@ export class WeatherController {
   }
 
   @Get('forecast')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   async getForecast(
     @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() user: { id: string },
