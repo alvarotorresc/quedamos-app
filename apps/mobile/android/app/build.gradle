@@ -26,6 +26,11 @@ android {
     kotlinOptions {
         jvmTarget = '21'
     }
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
 }
 
 repositories {
@@ -41,6 +46,7 @@ dependencies {
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
     implementation project(':capacitor-android')
     implementation "androidx.work:work-runtime-ktx:$workManagerVersion"
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.3'
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
