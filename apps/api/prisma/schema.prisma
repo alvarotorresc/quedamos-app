@@ -35,6 +35,7 @@ model User {
   proposalVotes           PlanVote[]
   createdPolls            AvailabilityPoll[]       @relation("PollCreator")
   pollResponses           PollResponse[]
+  widgetTokens            WidgetToken[]
 
   @@map("users")
 }
@@ -147,6 +148,19 @@ model PushToken {
 
   @@unique([userId, token])
   @@map("push_tokens")
+}
+
+model WidgetToken {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  tokenHash  String    @unique @map("token_hash")
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("widget_tokens")
 }
 
 model NotificationPreference {

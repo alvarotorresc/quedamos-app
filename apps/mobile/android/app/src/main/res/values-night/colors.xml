@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_papel">#14120E</color>
+    <color name="widget_tarjeta">#191712</color>
+    <color name="widget_filo">#2B2822</color>
+    <color name="widget_tinta">#F2EFE7</color>
+    <color name="widget_tinta_suave">#8F887A</color>
+    <color name="widget_apagado">#5E584C</color>
+</resources>

@@ -6,6 +6,7 @@ import { useEvents } from './useEvents';
 import { broadcastSync } from '../lib/group-sync';
 import { useAuthStore } from '../stores/auth';
 import { logEvent } from '../lib/firebase';
+import { notifyWidgetDataChanged } from '../lib/widget-bridge';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
 
 export function usePolls(groupId: string) {
@@ -40,6 +41,7 @@ export function useRespondPoll(groupId: string) {
       queryClient.invalidateQueries({ queryKey: ['polls', groupId] });
       queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
       broadcastSync(groupId, 'polls');
+      void notifyWidgetDataChanged();
       logEvent('respond_poll').catch(() => {});
     },
   });

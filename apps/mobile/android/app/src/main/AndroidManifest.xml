@@ -32,6 +32,15 @@
 
         </activity>
 
+        <activity
+            android:name="app.quedamos.widget.WidgetConfigActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.Light.Dialog">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -41,6 +50,30 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <receiver
+            android:name="app.quedamos.widget.SemanaWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_semana_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_semana_info" />
+        </receiver>
+
+        <receiver
+            android:name="app.quedamos.widget.MejorDiaWidgetProvider"
+            android:exported="false"
+            android:label="@string/widget_mejor_dia_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_mejor_dia_info" />
+        </receiver>
     </application>
 
     <!-- Permissions -->

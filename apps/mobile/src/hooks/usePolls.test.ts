@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { usePolls, useCreatePoll, useRespondPoll, usePendingQuestions } from './usePolls';
 import { pollsService, type Poll } from '../services/polls';
 import { eventsService, type Event } from '../services/events';
+import { notifyWidgetDataChanged } from '../lib/widget-bridge';
 import { useAuthStore } from '../stores/auth';
 import { createWrapper, renderHookWithClient } from '../test/test-utils';
 import { formatDateKey } from '../lib/date-utils';
@@ -23,6 +24,10 @@ vi.mock('../services/events', () => ({
 
 vi.mock('../lib/group-sync', () => ({
   broadcastSync: vi.fn(),
+}));
+
+vi.mock('../lib/widget-bridge', () => ({
+  notifyWidgetDataChanged: vi.fn(),
 }));
 
 vi.mock('../stores/auth', () => ({
@@ -138,6 +143,17 @@ describe('useRespondPoll', () => {
     expect(pollsService.respond).toHaveBeenCalledWith('group-1', 'poll-1', 'yes');
     expect(spy).toHaveBeenCalledWith({ queryKey: ['polls', 'group-1'] });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['availability', 'group-1'] });
+  });
+
+  it('should notify the widget of data changes on success', async () => {
+    vi.mocked(pollsService.respond).mockResolvedValue(createTestPoll());
+
+    const { result } = renderHookWithClient(() => useRespondPoll('group-1'));
+
+    result.current.mutate({ pollId: 'poll-1', answer: 'yes' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(notifyWidgetDataChanged).toHaveBeenCalled();
   });
 });
 

@@ -123,6 +123,14 @@ interface MockPrismaModels {
     delete: jest.Mock;
     count: jest.Mock;
   }>;
+  widgetToken: MockModel<{
+    findUnique: jest.Mock;
+    findMany: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+    deleteMany: jest.Mock;
+  }>;
 }
 
 export interface MockPrisma extends MockPrismaModels {
@@ -250,6 +258,14 @@ export function createMockPrisma(): MockPrisma {
       upsert: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
+    },
+    widgetToken: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
   };
   return {
