@@ -167,7 +167,7 @@ describe('useAuthStore', () => {
       await useAuthStore.getState().resetPassword('test@test.com', 'captcha');
 
       expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('test@test.com', {
-        redirectTo: 'https://quedamos-app-mobile.vercel.app/reset-password',
+        redirectTo: 'https://quedamos.alvarotc.com/reset-password',
         captchaToken: 'captcha',
       });
     });

@@ -2,7 +2,7 @@
 // platforms. Capacitor's WebView reports `window.location.origin` as
 // `https://localhost`, which isn't in Supabase's redirect allowlist, so native auth
 // redirects must use this canonical URL instead.
-export const PUBLIC_WEB_URL = 'https://quedamos-app-mobile.vercel.app';
+export const PUBLIC_WEB_URL = 'https://quedamos.alvarotc.com';
 
 export const MEMBER_COLORS = [
   '#60A5FA',
