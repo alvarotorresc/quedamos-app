@@ -7,6 +7,7 @@ import { useJoinGroup } from '../hooks/useGroups';
 import { useScreenView } from '../hooks/useAnalytics';
 import { Button } from '../ui/Button';
 import { ApiError } from '../lib/api';
+import { savePendingRedirect } from '../lib/pending-redirect';
 
 export default function JoinGroupPage() {
   useScreenView('JoinGroup');
@@ -44,6 +45,10 @@ export default function JoinGroupPage() {
 
   useEffect(() => {
     if (!user) {
+      // The `?redirect=` below only survives while the tab stays open: confirming
+      // the email reopens the app at its root. Park the invite so the session,
+      // whenever it shows up, still knows where the user was heading.
+      savePendingRedirect(`/join/${code}`);
       history.replace(`/login?redirect=/join/${code}`);
       return;
     }

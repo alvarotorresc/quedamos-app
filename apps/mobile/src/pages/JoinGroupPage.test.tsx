@@ -3,6 +3,7 @@ import { render, screen, act } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import JoinGroupPage from './JoinGroupPage';
 import { ApiError } from '../lib/api';
+import { takePendingRedirect } from '../lib/pending-redirect';
 
 // A promise we can resolve/reject on our own schedule, to simulate the join
 // request settling after the page has already unmounted.
@@ -30,10 +31,12 @@ vi.mock('react-router-dom', () => ({
   useHistory: () => ({ replace: historyReplaceMock, push: vi.fn() }),
 }));
 
-// Logged-in user — otherwise the effect redirects to /login before it ever joins.
+// Logged-in user by default — otherwise the effect redirects to /login before it
+// ever joins. The holder lets one test play the visitor without an account.
+const authState = vi.hoisted(() => ({ user: { id: 'user-1' } as { id: string } | null }));
 vi.mock('../stores/auth', () => ({
   useAuthStore: vi.fn((selector: (s: { user: { id: string } | null }) => unknown) =>
-    selector({ user: { id: 'user-1' } }),
+    selector(authState),
   ),
 }));
 
@@ -47,6 +50,22 @@ vi.mock('../hooks/useGroups', () => ({
 }));
 
 describe('JoinGroupPage', () => {
+  describe('sin cuenta', () => {
+    afterEach(() => {
+      authState.user = { id: 'user-1' };
+    });
+
+    it('guarda la invitación antes de mandar a login, para que sobreviva al email', () => {
+      authState.user = null;
+
+      render(<JoinGroupPage />);
+
+      expect(historyReplaceMock).toHaveBeenCalledWith('/login?redirect=/join/12345678');
+      expect(takePendingRedirect()).toBe('/join/12345678');
+      expect(joinGroupMock).not.toHaveBeenCalled();
+    });
+  });
+
   it('un 409 muestra group.alreadyMember aunque el mensaje no lo mencione (se detecta por status)', async () => {
     joinGroupMock.mockRejectedValueOnce(new ApiError('Conflict', 409));
 
