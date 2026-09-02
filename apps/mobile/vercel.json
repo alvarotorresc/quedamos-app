@@ -19,6 +19,14 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/:path((?!\\.well-known/).*)",
+      "has": [{ "type": "host", "value": "quedamos-app-mobile.vercel.app" }],
+      "destination": "https://quedamos.alvarotc.com/:path",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/.well-known/(.*)", "destination": "/.well-known/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
