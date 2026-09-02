@@ -1,28 +1,109 @@
+***Español** · [English](README.en.md)*
+
+<img src="apps/mobile/public/logo.png" width="96" alt="Logo de Quedamos">
+
 # ¿Quedamos?
 
-App para coordinar quedadas con tu grupo de amigos. Marca tu disponibilidad en un calendario compartido, propón planes y vota, y crea eventos cuando haya coincidencia.
+**Tu grupo quiere verse. Nadie sabe cuándo.**
 
-**Plataformas:** Web + Android | **Versión actual:** v0.2
+Quedamos hace la pregunta y os avisa cuando podéis todos. Un calendario compartido para tu cuadrilla, sin más pantallas de las necesarias.
 
-## Tech Stack
+[![Abrir Quedamos](https://img.shields.io/badge/Abrir%20Quedamos-quedamos.alvarotc.com-F2EFE7?style=for-the-badge&labelColor=14120E)](https://quedamos.alvarotc.com)
 
-| Capa | Tecnología |
-|------|------------|
-| Frontend | React + Ionic + Capacitor + Tailwind + Vite |
-| Backend | NestJS (API REST) |
-| Base de datos | PostgreSQL (Supabase) |
-| Auth | Supabase Auth (email + password) |
-| Push Notifications | Firebase Cloud Messaging |
-| Clima | Open-Meteo API (gratuita, sin API key) |
-| Monorepo | pnpm workspaces + Turborepo |
-| Pre-commit | Lefthook (lint + format) |
+[![CI](https://github.com/alvarotorresc/quedamos-app/actions/workflows/ci.yml/badge.svg)](https://github.com/alvarotorresc/quedamos-app/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/alvarotorresc/quedamos-app?labelColor=14120E&color=F2EFE7)](https://github.com/alvarotorresc/quedamos-app/releases/latest)
+[![Licencia MIT](https://img.shields.io/github/license/alvarotorresc/quedamos-app?labelColor=14120E&color=F2EFE7)](./LICENSE)
+![Web y Android 6.0+](https://img.shields.io/badge/Web-Android%206.0%2B-7FA98B?style=flat-square&labelColor=14120E)
+![Español / English](https://img.shields.io/badge/Espa%C3%B1ol-English-60A5FA?style=flat-square&labelColor=14120E)
 
-## Requisitos
+Versión 1.0.0 · Web y Android · Gratis, sin anuncios, código bajo MIT
 
-- Node.js >= 20
-- pnpm >= 9
+## Abrir o instalar
 
-## Instalación
+- **Web**: [quedamos.alvarotc.com](https://quedamos.alvarotc.com). Funciona en cualquier navegador del móvil o del ordenador.
+- **Android**: [descarga el APK de la última release](https://github.com/alvarotorresc/quedamos-app/releases/latest). Android avisará de que viene de fuera de Google Play; es lo normal, no algo particular de Quedamos. Abre el archivo, permite la instalación si te lo pide y pulsa **Instalar**. La versión Android añade notificaciones push y widgets en la pantalla de inicio.
+
+Solo hace falta un email para crear la cuenta. Un grupo se crea en un toque y se comparte con un enlace.
+
+## Qué hace
+
+Quedar con seis personas es una cadena de mensajes que nadie quiere leer. Quedamos la sustituye por tres pasos.
+
+1. **Sondear.** Alguien pregunta un día desde el calendario: «¿Podéis el sábado por la noche?». Cada uno contesta con un toque: puedo, no puedo, aún no sé.
+2. **El aro se cierra.** Cada persona es un arco de un color en un círculo. El hueco es quien no ha respondido. Cuando el aro se cierra, podéis todos y os llega el aviso. Cero toques, cero calendario que leer.
+3. **Quedamos.** Alguien propone plan, hora y sitio. Quien confirma cierra su arco. La quedada queda sellada y va al calendario de cada uno.
+
+Y para cuando hace falta más:
+
+- **Disponibilidad como te salga** — día completo, franjas de mañana, tarde y noche con las horas que tú definas, o un rango exacto. Vistas de semana, mes y lista, con el mejor día calculado.
+- **Propuestas** — «¿Escapada a la Alpujarra?» se vota a favor o en contra y, si sale, se convierte en quedada con un toque.
+- **Quedadas de verdad** — con sitio que abre el mapa, enlace de reunión si es online, descarga para tu calendario y una tarjeta para compartir por donde quieras.
+- **Avisos que valen la pena** — nueva quedada, el aro que se cierra, un recordatorio 24 horas antes, quién no viene. Cada tipo se apaga por separado.
+- **Widgets en Android** — la semana y el mejor día en la pantalla de inicio, sin abrir la app.
+- **Seis colores. El tuyo es el tuyo.** Cada miembro tiene un color en el grupo y lo lleva a todas partes: al aro, a las quedadas, a su perfil.
+
+## Cómo se ve
+
+El calendario de la semana, con el aro de cada día y las acciones del día elegido:
+
+<img src=".github/readme/calendario.png" width="260" alt="Calendario semanal con un aro por día y las acciones del sábado seleccionado">
+
+| Preguntar al grupo | Quedadas | Grupo |
+|---|---|---|
+| <img src=".github/readme/preguntar.png" width="220" alt="Hoja para preguntar al grupo por un día y una franja"> | <img src=".github/readme/quedadas.png" width="220" alt="Lista de quedadas con el aro de confirmaciones de cada una"> | <img src=".github/readme/grupo.png" width="220" alt="Pantalla de grupo con los miembros y sus colores"> |
+
+<details>
+<summary>Más pantallas</summary>
+<br>
+
+| Perfil | Tema claro |
+|---|---|
+| <img src=".github/readme/perfil.png" width="220" alt="Perfil con la identidad del usuario y los ajustes en mosaico"> | <img src=".github/readme/calendario-claro.png" width="220" alt="El calendario semanal en tema claro"> |
+
+</details>
+
+_Las capturas muestran la versión en español con datos de ejemplo. La app está entera en español e inglés y tiene tema oscuro y claro._
+
+## Lo que Quedamos no va a hacer nunca
+
+Una lista de funciones cambia cuando conviene. Esto no: es la forma de la app.
+
+- **Nunca** interrogarte. Una pregunta al día, como mucho. Si no hay nada, no suena.
+- **Nunca** confeti. La celebración es el aro cerrándose.
+- **Nunca** rachas ni puntos. Ni niveles, ni culpa por no salir.
+- **Nunca** castigar la ausencia. Quien no responde es un hueco, no una falta.
+- **Nunca** emojis a gritos. La voz es seca y tutea. Afirma solo cuando es verdad.
+- **Nunca** una IA en vuestro plan. Vuestro plan es vuestro.
+
+<details>
+<summary><strong>Detalles técnicos</strong></summary>
+
+### Por dentro
+
+| | |
+|---|---|
+| **1.400** | tests que corren en cada cambio: 608 en la API y 792 en la app |
+| **2** | idiomas, español e inglés, interfaz entera |
+| **2** | temas, oscuro y claro |
+| **100 %** | del código bajo MIT |
+
+### Cómo está hecho
+
+Un monorepo con dos aplicaciones. La app es una web que Capacitor empaqueta para Android; la API es un servicio NestJS. Supabase pone la base de datos, la autenticación y la sincronización en tiempo real; Firebase Cloud Messaging, las notificaciones push.
+
+| | |
+|---|---|
+| App | React 18 · Ionic 8 · Capacitor 7 · Tailwind 3 · Vite 6 · Vitest |
+| Widgets Android | Kotlin · RemoteViews · WorkManager |
+| API | NestJS 10 · Prisma 6 · PostgreSQL · Jest |
+| Plataforma | Supabase (Postgres, Auth, Realtime) · Firebase Cloud Messaging |
+| Datos externos | Open-Meteo para el tiempo · Nominatim para buscar sitios |
+| Despliegue | Web en Vercel · API en Docker tras Caddy · CI en GitHub Actions |
+| Android | mínimo Android 6.0 (API 23) · objetivo Android 15 (API 35) |
+
+### Montarlo en local
+
+Requisitos: Node 20 o superior y pnpm 9.
 
 ```bash
 git clone https://github.com/alvarotorresc/quedamos-app.git
@@ -30,234 +111,47 @@ cd quedamos-app
 pnpm install
 ```
 
-### Variables de entorno
-
-Copia los archivos `.env.example` y configura:
-
-**`apps/api/.env`**
-```
-DATABASE_URL=postgresql://...
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_SERVICE_KEY=xxx
-SUPABASE_JWT_SECRET=xxx
-```
-
-**`apps/mobile/.env`**
-```
-VITE_API_URL=http://localhost:3000
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=xxx
-```
-
-## Comandos
-
-### Desarrollo
+Copia `apps/api/.env.example` y `apps/mobile/.env.example` a `.env` y rellena las claves de tu proyecto de Supabase y de Firebase.
 
 ```bash
-# Todo a la vez (API + Mobile)
-pnpm dev
-
-# Solo API (NestJS) - http://localhost:3000
-pnpm --filter @quedamos/api dev
-
-# Solo Mobile (Vite) - http://localhost:5173
-pnpm --filter @quedamos/mobile dev
+pnpm --filter @quedamos/api dev       # API en http://localhost:3000
+pnpm --filter @quedamos/mobile dev    # app en http://localhost:5173
 ```
 
-### Build y verificación
+Tests, lint y tipos, por aplicación:
 
 ```bash
-pnpm build            # Build de todos los packages
-pnpm typecheck        # TypeScript check
-pnpm lint             # ESLint
-pnpm lint:fix         # ESLint con autofix
-pnpm test             # Tests (289 backend + frontend)
+pnpm --filter @quedamos/api exec jest
+pnpm --filter @quedamos/mobile exec vitest run
+pnpm lint && pnpm typecheck
 ```
 
-### Base de datos (Prisma)
+Ojo con `pnpm build` en `apps/api`: además de compilar, aplica las migraciones de Prisma a la base de datos de `DATABASE_URL`. Para trabajar con migraciones usa una base de datos desechable.
 
-```bash
-cd apps/api
+### Android
 
-npx prisma generate                      # Generar cliente Prisma
-npx prisma migrate dev --name mi_cambio  # Nueva migración
-npx prisma studio                        # UI para explorar la BD
-npx prisma db seed                       # Seed de datos
-```
-
-### Android (Capacitor)
+Hace falta Android Studio con el SDK 35 y el `google-services.json` de tu proyecto de Firebase en `apps/mobile/android/app/` (está ignorado por git y el build se niega a continuar sin él).
 
 ```bash
 cd apps/mobile
-
-pnpm cap:sync          # Sincronizar web assets con native
-pnpm cap:android       # Abrir en Android Studio
-pnpm cap:run:android   # Ejecutar en emulador/dispositivo
+pnpm build && pnpm cap:sync     # compila la web y la copia al proyecto Android
+pnpm cap:android                # abre Android Studio
 ```
 
-## Estructura del proyecto
+### Estructura
 
 ```
-quedamos-app/
-├── apps/
-│   ├── api/                    # NestJS backend
-│   │   ├── src/
-│   │   │   ├── auth/           # JWT validation, guards
-│   │   │   ├── users/          # User profile
-│   │   │   ├── groups/         # Grupos, invitaciones, roles, ciudades
-│   │   │   ├── availability/   # Disponibilidad calendario
-│   │   │   ├── events/         # Quedadas (CRUD + asistencia)
-│   │   │   ├── proposals/      # Votaciones de planes
-│   │   │   ├── weather/        # Clima (Open-Meteo)
-│   │   │   ├── notifications/  # Push notifications + preferencias
-│   │   │   └── common/         # Decorators, filters, pipes, Prisma helpers
-│   │   └── prisma/             # Schema y migrations
-│   │
-│   └── mobile/                 # Ionic + React + Capacitor
-│       ├── public/             # Favicon, icons
-│       └── src/
-│           ├── components/     # EventCard, ProposalCard, WeatherWidget...
-│           ├── hooks/          # React Query hooks
-│           ├── i18n/           # Internacionalización (es/en)
-│           ├── lib/            # Utils (calendar, maps, weather, sync)
-│           ├── pages/          # Páginas/rutas
-│           ├── services/       # API calls
-│           ├── stores/         # Estado global (Zustand)
-│           ├── types/          # TypeScript types
-│           └── ui/             # Design system (Button, Card...)
-│
-├── packages/
-│   └── shared/                 # Tipos compartidos API <-> Mobile
-│
-├── CLAUDE.md                   # Instrucciones para AI agents
-├── lefthook.yml                # Pre-commit hooks (lint + format)
-└── quedamos-prototype.jsx      # Prototipo UI de referencia
+apps/api       NestJS: auth, grupos, disponibilidad, quedadas, propuestas, preguntas, notificaciones, widget
+apps/mobile    React + Ionic: páginas, componentes, design system en src/ui, i18n en src/i18n
+packages/shared  tipos compartidos entre las dos
 ```
 
-## Features
+</details>
 
-### Auth
-- [x] Registro con email + password + confirmación por email
-- [x] Login / logout
-- [x] Recuperar contraseña (email con enlace de reset)
-- [x] Indicador de fuerza de contraseña
-- [x] hCaptcha invisible en formularios
-- [x] Errores de auth traducidos
+## Licencia
 
-### Grupos
-- [x] Crear grupo (nombre + emoji)
-- [x] Código/URL de invitación (regenerable por admins)
-- [x] Unirse por código o URL
-- [x] Ver miembros con roles (Admin / Miembro / Fundador)
-- [x] Salir del grupo (creador no puede abandonar)
-- [x] Sistema de roles: fundador → admin → miembro
-- [x] Promover/degradar admins (multi-admin)
-- [x] Expulsar miembros (limpia asistencia a eventos futuros)
-- [x] Eliminar grupo (solo fundador, con confirmación)
+[MIT](./LICENSE), todo el código. Haz con él lo que quieras; si lo publicas con otro nombre, mejor para todos.
 
-### Calendario compartido
-- [x] Vista semanal, mensual y lista
-- [x] Marcar disponibilidad: día completo, franjas horarias, rango
-- [x] Ver disponibilidad de todos los miembros
-- [x] "Mejor día" y "Otro día" recomendados
-- [x] Iconos de clima en cada día del calendario
-- [x] Estadísticas mensuales (días activos, mejor coincidencia, miembros activos)
+---
 
-### Quedadas (eventos)
-- [x] Crear quedada (título, descripción, lugar, fecha, hora inicio/fin)
-- [x] Editar quedada (solo creador)
-- [x] Eliminar quedada (solo creador, con confirmación)
-- [x] Cancelar quedada (marcar como cancelada)
-- [x] Confirmar/rechazar asistencia (toggle interactivo)
-- [x] Lista de próximas y pasadas (colapsable)
-- [x] Ubicación clickable → abre Google Maps
-- [x] Badge de clima en cada evento
-
-### Propuestas (votaciones)
-- [x] Crear propuesta (título, descripción, lugar, fecha propuesta opcional)
-- [x] Editar propuesta (solo creador)
-- [x] Votar a favor / en contra (puede cambiar voto)
-- [x] Barra visual de votos (verde/rojo con porcentaje)
-- [x] Convertir propuesta en quedada
-- [x] Cerrar propuesta
-- [x] Propuestas cerradas con toggle colapsable
-- [x] Tabs separadas: Quedadas | Propuestas
-
-### Clima
-- [x] Ciudades por grupo (admin añade/elimina)
-- [x] Widget de clima en la página de grupo
-- [x] Badge de clima en eventos (clickable, detalle por ciudad)
-- [x] Iconos de clima en calendario (semana, mes, lista)
-- [x] Descripciones traducidas (ES/EN)
-- [x] Cache de 30min para evitar llamadas excesivas
-
-### Notificaciones
-- [x] Push: nueva quedada, confirmación, recordatorio 24h, rechazo
-- [x] Push: nuevo/salida de miembro, cambio de rol, expulsión
-- [x] Push: nueva propuesta, voto, conversión
-- [x] Preferencias por tipo (página dedicada)
-
-### UI/UX
-- [x] Dark theme con paleta custom
-- [x] Internacionalización completa (ES/EN, ~200 keys)
-- [x] Landing page
-- [x] Diseño responsive centrado para móvil
-- [x] Desktop frame decorativo
-- [x] Componentes UI: Button, Card, Avatar, AvatarStack, Badge
-
-### Infraestructura
-- [x] Monorepo con pnpm + Turborepo
-- [x] TypeScript estricto en todo el código
-- [x] Lefthook pre-commit (lint + format)
-- [x] 289 tests backend (25 suites)
-- [x] Tiempo real con Supabase Broadcast
-- [x] Build Android con Capacitor
-- [x] CI/CD con GitHub Actions
-
-### Seguridad
-- [x] No se exponen emails en responses (PUBLIC_USER_SELECT)
-- [x] No se expone inviteCode en responses generales
-- [x] Validación de input en boundaries (DTOs con class-validator)
-- [x] Rate limiting en endpoints sensibles (@Throttle)
-- [x] Protección contra mass assignment (whitelists explícitas)
-- [x] IDOR checks en operaciones de ciudades
-- [x] URLs construidas con URLSearchParams (sin interpolación)
-
-## Historial de versiones
-
-### v0.2 (actual)
-- Hora fin en eventos (rango horario)
-- Editar, eliminar y cancelar quedadas
-- Sistema de roles (fundador/admin/miembro) con multi-admin
-- Expulsar miembros y eliminar grupo
-- Segundo mejor día en calendario
-- Ubicación clickable con Google Maps
-- Sistema de propuestas/votaciones completo
-- Integración de clima (Open-Meteo) en grupo, calendario y eventos
-- Notificaciones en página separada
-- 14 fixes de seguridad aplicados
-- De 159 a 289 tests
-
-### v0.1
-- Auth completo (registro, login, reset password, hCaptcha)
-- Grupos (crear, unirse por código/link, compartir)
-- Calendario compartido (vistas semanal/mensual/lista, disponibilidad, mejor día)
-- Eventos (crear, confirmar/rechazar asistencia)
-- Push notifications (FCM, preferencias, recordatorio 24h)
-- Tiempo real (Supabase Broadcast)
-- i18n (ES/EN), dark mode, landing page
-- Bot de Telegram para beta privada
-- 159 tests (64 backend + 95 frontend)
-
-## Roadmap v0.3
-
-- [ ] Widgets Android (Kotlin + Jetpack Glance)
-- [ ] iOS app
-- [ ] Social login (Google/Apple)
-- [ ] Chat IA / sugerencias inteligentes
-- [ ] Badge in-app de notificaciones pendientes
-
-## Problemas conocidos
-
-- `@ionic/react-router` requiere react-router v5 como peer dependency
-- Supabase necesita Session Pooler (puerto 5432) para conexiones IPv4
+¿Quedamos? · software libre bajo MIT · [Web](https://quedamos.alvarotc.com) · [Código](https://github.com/alvarotorresc/quedamos-app) · [Licencia](./LICENSE) · [Reportar un error](https://tally.so/r/ODMzOa)

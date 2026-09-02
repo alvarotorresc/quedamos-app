@@ -3,6 +3,8 @@ export { Card } from './Card';
 export { Avatar } from './Avatar';
 export { AvatarStack } from './AvatarStack';
 export { Badge } from './Badge';
+export { Toggle } from './Toggle';
+export { Tile } from './Tile';
 export { EmptyState } from './EmptyState';
 export { SkeletonCard } from './SkeletonCard';
 export { DotLoader } from './DotLoader';

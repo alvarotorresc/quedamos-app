@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useUpdateEvent } from '../hooks/useEvents';
 import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
+import { Toggle } from '../ui/Toggle';
 import type { Event } from '../services/events';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
@@ -105,10 +106,9 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
             style={inputStyle}
           >
             <span className="text-sm text-text">{t('online.toggle')}</span>
-            <button
-              type="button"
-              onClick={() => {
-                const next = !isOnline;
+            <Toggle
+              checked={isOnline}
+              onChange={(next) => {
                 setIsOnline(next);
                 if (next) {
                   setLocation('');
@@ -116,12 +116,8 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
                   setMeetingUrl('');
                 }
               }}
-              className={`relative w-10 h-5 rounded-full transition-colors ${isOnline ? 'bg-primary-tint' : 'bg-toggle-off'}`}
-            >
-              <div
-                className={`absolute top-0.5 w-4 h-4 rounded-full transition-transform ${isOnline ? 'left-5 bg-primary' : 'left-0.5 bg-text-dark'}`}
-              />
-            </button>
+              label={t('online.toggle')}
+            />
           </div>
         </div>
 

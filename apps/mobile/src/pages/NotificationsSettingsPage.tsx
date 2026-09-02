@@ -1,12 +1,4 @@
-import {
-  IonPage,
-  IonContent,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
-  IonButtons,
-  IonBackButton,
-} from '@ionic/react';
+import { IonPage, IonContent, IonHeader, IonToolbar, IonButtons, IonBackButton } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import {
   useNotificationPreferences,
@@ -14,12 +6,20 @@ import {
 } from '../hooks/useNotificationPreferences';
 import { NOTIF_SECTIONS } from '../services/notification-preferences';
 import { useScreenView } from '../hooks/useAnalytics';
+import { useMyColor } from '../hooks/useMyColor';
+import { Toggle } from '../ui/Toggle';
 
 export default function NotificationsSettingsPage() {
   useScreenView('NotificationSettings');
   const { t } = useTranslation();
   const { data: notifPrefs } = useNotificationPreferences();
   const updatePref = useUpdateNotificationPreference();
+  const myColor = useMyColor();
+
+  const isEnabled = (type: string): boolean =>
+    notifPrefs?.find((p) => p.type === type)?.enabled ?? true;
+  const allTypes = NOTIF_SECTIONS.flatMap((section) => section.types);
+  const enabledCount = allTypes.filter(({ type }) => isEnabled(type)).length;
 
   return (
     <IonPage>
@@ -28,40 +28,46 @@ export default function NotificationsSettingsPage() {
           <IonButtons slot="start">
             <IonBackButton defaultHref="/tabs/profile" text="" />
           </IonButtons>
-          <IonTitle>{t('profile.notifications.title')}</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent className="ion-padding">
-        <div className="max-w-md mx-auto px-4 pt-2">
+        <div className="max-w-md mx-auto px-4 pt-2 pb-6">
+          <div className="mb-3">
+            <h1 className="text-[27px] font-extrabold tracking-tight text-text">
+              {t('profile.notifications.title')}
+            </h1>
+            <p className="font-mono text-[10px] tracking-[0.16em] uppercase text-text-muted">
+              {t('profile.notifications.subtitle', { enabled: enabledCount, total: allTypes.length })}
+            </p>
+          </div>
+
           {NOTIF_SECTIONS.map((section) => (
-            <div key={section.headerKey} className="mb-5">
-              <h3 className="text-xs font-medium text-text-muted uppercase tracking-wider mb-2 px-1">
+            <section key={section.headerKey}>
+              <h3 className="font-mono text-[10px] tracking-[0.14em] uppercase text-text-muted mt-4 mb-2 ml-1">
                 {t(section.headerKey)}
               </h3>
-              <div className="flex flex-col gap-2">
-                {section.types.map(({ type, labelKey }) => {
-                  const pref = notifPrefs?.find((p) => p.type === type);
-                  const enabled = pref?.enabled ?? true;
+              <div className="bg-bg-light border border-subtle rounded-lg overflow-hidden">
+                {section.types.map(({ type, labelKey }, i) => {
+                  const enabled = isEnabled(type);
                   return (
-                    <button
+                    <div
                       key={type}
-                      type="button"
-                      onClick={() => updatePref.mutate({ type, enabled: !enabled })}
-                      className="w-full bg-bg-card border border-subtle rounded-btn px-4 py-3.5 flex items-center justify-between"
+                      className={`flex items-center justify-between gap-3 px-3.5 py-3 ${
+                        i < section.types.length - 1 ? 'border-b border-subtle' : ''
+                      }`}
                     >
                       <span className="text-sm text-text">{t(labelKey)}</span>
-                      <div
-                        className={`w-10 h-6 rounded-full relative transition-colors ${enabled ? 'bg-primary-tint' : 'bg-toggle-off'}`}
-                      >
-                        <div
-                          className={`absolute top-0.5 w-5 h-5 rounded-full transition-all ${enabled ? 'right-0.5 bg-primary' : 'left-0.5 bg-text-dark'}`}
-                        />
-                      </div>
-                    </button>
+                      <Toggle
+                        checked={enabled}
+                        onChange={(next) => updatePref.mutate({ type, enabled: next })}
+                        label={t(labelKey)}
+                        color={myColor}
+                      />
+                    </div>
                   );
                 })}
               </div>
-            </div>
+            </section>
           ))}
         </div>
       </IonContent>

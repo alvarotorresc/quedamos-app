@@ -4,6 +4,9 @@
 // redirects must use this canonical URL instead.
 export const PUBLIC_WEB_URL = 'https://quedamos.alvarotc.com';
 
+/** Formulario público de Tally para reportar errores y sugerencias. */
+export const FEEDBACK_FORM_URL = 'https://tally.so/r/ODMzOa';
+
 export const MEMBER_COLORS = [
   '#60A5FA',
   '#F59E0B',

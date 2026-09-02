@@ -305,6 +305,7 @@
     "theme": "Dark theme",
     "notifications": {
       "title": "Notifications",
+      "subtitle": "{{enabled}} of {{total}} on",
       "groups": {
         "events": "Events",
         "questions": "Questions",
@@ -346,6 +347,23 @@
       "resetDefaults": "Reset"
     },
     "reportBug": "Report bug",
+    "subtitle": "Account and preferences",
+    "yourColor": "Your colour",
+    "groupsCount_one": "{{count}} group",
+    "groupsCount_other": "{{count}} groups",
+    "name": "Name",
+    "email": "Email",
+    "password": "Password",
+    "tiles": {
+      "notifications": "Alerts",
+      "activeOf": "active of {{total}}",
+      "theme": "Theme",
+      "dark": "Dark",
+      "light": "Light",
+      "timeSlots": "Time slots",
+      "help": "Help",
+      "account": "Account"
+    },
     "logout": "Sign out"
   },
   "settings": {
