@@ -19,4 +19,5 @@
     <string name="widget_open_app">Abre Quedamos para empezar</string>
     <string name="widget_config_title">Elige la cuadrilla</string>
     <string name="widget_config_empty">Abre Quedamos e inicia sesión</string>
+    <string name="widget_config_open">Abrir Quedamos</string>
 </resources>

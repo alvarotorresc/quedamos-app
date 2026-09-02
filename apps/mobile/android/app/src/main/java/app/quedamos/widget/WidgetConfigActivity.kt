@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
 import android.widget.ArrayAdapter
+import android.widget.Button
 import android.widget.ListView
 import android.widget.TextView
 import org.json.JSONArray
@@ -31,10 +32,15 @@ class WidgetConfigActivity : Activity() {
         val groups = parseGroups(WidgetPrefs.groupsJson(this))
         val list = findViewById<ListView>(R.id.config_list)
         val empty = findViewById<TextView>(R.id.config_empty)
+        val openApp = findViewById<Button>(R.id.config_open_app)
 
         if (groups.isEmpty()) {
             empty.visibility = android.view.View.VISIBLE
             list.visibility = android.view.View.GONE
+            openApp.visibility = android.view.View.VISIBLE
+            openApp.setOnClickListener {
+                packageManager.getLaunchIntentForPackage(packageName)?.let { startActivity(it) }
+            }
             return
         }
 
@@ -67,6 +73,10 @@ class WidgetConfigActivity : Activity() {
         WidgetPrefs.setWidgetGroupId(this, appWidgetId, groupId)
         WidgetScheduler.schedulePeriodic(this)
         WidgetScheduler.refreshNow(this)
+        // Con configure activity Android no dispara el onUpdate inicial: sin esto
+        // el widget se queda en initialLayout en blanco hasta el próximo refresh.
+        SemanaWidgetProvider.updateAll(this)
+        MejorDiaWidgetProvider.updateAll(this)
         val result = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
         setResult(RESULT_OK, result)
         finish()

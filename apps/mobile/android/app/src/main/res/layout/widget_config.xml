@@ -31,4 +31,13 @@
         android:textColor="@color/widget_tinta_suave"
         android:visibility="gone" />
 
+    <Button
+        android:id="@+id/config_open_app"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/widget_config_open"
+        android:textColor="@color/widget_tinta"
+        android:visibility="gone" />
+
 </LinearLayout>
