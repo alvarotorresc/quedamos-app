@@ -660,6 +660,7 @@
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",
     "respondEventFailed": "Couldn't save your response",
-    "shareTarjetaFailed": "Couldn't create the card"
+    "shareTarjetaFailed": "Couldn't create the card",
+    "downloadICSFailed": "Couldn't download the plan"
   }
 }

@@ -225,6 +225,26 @@ describe('downloadICS', () => {
     );
   });
 
+  it('resolves when the native share sheet is dismissed', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+    const { Share } = await import('@capacitor/share');
+    vi.mocked(Share.share).mockRejectedValueOnce(new DOMException('canceled', 'AbortError'));
+
+    await expect(downloadICS(createEvent({ time: '18:00' }))).resolves.toBeUndefined();
+  });
+
+  it('rethrows a real native share failure', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+
+    const { Share } = await import('@capacitor/share');
+    vi.mocked(Share.share).mockRejectedValueOnce(new Error('no activity found'));
+
+    await expect(downloadICS(createEvent({ time: '18:00' }))).rejects.toThrow('no activity found');
+  });
+
   it('should slugify filename correctly', async () => {
     const { Capacitor } = await import('@capacitor/core');
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);

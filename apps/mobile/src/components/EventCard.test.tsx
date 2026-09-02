@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventCard } from './EventCard';
 import type { Event } from '../services/events';
+import { downloadICS } from '../lib/ics-utils';
 
 // Mock hooks
 const mockMutate = vi.fn();
@@ -612,5 +613,34 @@ describe('EventCard · agenda y destacada', () => {
     expect(screen.queryByText('plans.nextEvent')).toBeNull();
     expect(screen.queryByRole('button', { name: 'plans.addToCalendar' })).toBeNull();
     expect(screen.getByTestId('icon-download')).toBeInTheDocument();
+  });
+
+  describe('descarga del .ics', () => {
+    it('avisa con un toast si la descarga falla desde la ficha destacada', async () => {
+      vi.mocked(downloadICS).mockRejectedValueOnce(new Error('boom'));
+      render(<EventCard event={createEvent({ status: 'confirmed' })} {...defaultProps} featured />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'plans.addToCalendar' }));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.downloadICSFailed'));
+    });
+
+    it('avisa con un toast si la descarga falla desde el bloque de lista', async () => {
+      vi.mocked(downloadICS).mockRejectedValueOnce(new Error('boom'));
+      render(<EventCard event={createEvent({ status: 'confirmed' })} {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'calendar.eventDetail.download' }));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.downloadICSFailed'));
+    });
+
+    it('no molesta con un toast cuando la descarga va bien', async () => {
+      render(<EventCard event={createEvent({ status: 'confirmed' })} {...defaultProps} featured />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'plans.addToCalendar' }));
+
+      await waitFor(() => expect(downloadICS).toHaveBeenCalled());
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
   });
 });

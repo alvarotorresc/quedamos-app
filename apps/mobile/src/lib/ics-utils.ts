@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { apiDateToKey } from './date-utils';
+import { isShareCancel } from './share-tarjeta';
 import type { Event } from '../services/events';
 
 const TIMEZONE = 'Europe/Madrid';
@@ -118,11 +119,17 @@ export async function downloadICS(event: Event): Promise<void> {
       directory: Directory.Cache,
     });
 
-    await Share.share({
-      title: event.title,
-      url: result.uri,
-      dialogTitle: filename,
-    });
+    try {
+      await Share.share({
+        title: event.title,
+        url: result.uri,
+        dialogTitle: filename,
+      });
+    } catch (error) {
+      // Dismissing the share sheet is not a failure — only a real plugin error is.
+      if (isShareCancel(error)) return;
+      throw error;
+    }
   } else {
     // On web, trigger download via Blob
     const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
