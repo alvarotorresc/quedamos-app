@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# Cancel superseded pull request runs, but let a run on main finish: Deploy API
+# keys off its conclusion, and a cancelled run would silently skip the deploy.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     name: Tests & Build

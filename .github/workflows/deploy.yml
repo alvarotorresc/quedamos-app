@@ -6,6 +6,12 @@ on:
     types: [completed]
     branches: [main]
 
+# One deploy at a time: concurrent runs would race on the VPS, and the digest
+# check would then fail for the run that lost the race.
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Build & Deploy to VPS
