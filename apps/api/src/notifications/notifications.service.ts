@@ -268,12 +268,15 @@ export class NotificationsService implements OnModuleInit {
 
     if (tokens.length === 0) return { sent: 0 };
 
-    return this.sendToTokens(
+    const result = await this.sendToTokens(
       tokens.map((t) => ({ token: t.token, platform: t.platform })),
       title,
       body,
       data,
     );
+    await this.logNotificationPerUser(tokens, title, body, data, notificationType, result);
+
+    return { sent: result.sent, failed: result.failed, tokenCount: result.tokenCount };
   }
 
   async sendToEventAttendees(
@@ -310,12 +313,15 @@ export class NotificationsService implements OnModuleInit {
 
     if (tokens.length === 0) return { sent: 0 };
 
-    return this.sendToTokens(
+    const result = await this.sendToTokens(
       tokens.map((t) => ({ token: t.token, platform: t.platform })),
       title,
       body,
       data,
     );
+    await this.logNotificationPerUser(tokens, title, body, data, notificationType, result);
+
+    return { sent: result.sent, failed: result.failed, tokenCount: result.tokenCount };
   }
 
   /**
@@ -338,24 +344,30 @@ export class NotificationsService implements OnModuleInit {
     title: string,
     body: string,
     data?: Record<string, string>,
-  ): Promise<SendResult> {
+  ): Promise<DetailedSendResult> {
     if (!this.firebaseInitialized) {
       this.logger.debug(
         `Would send "${title}" to ${tokens.length} devices (Firebase not initialized)`,
       );
-      return { sent: 0, failed: 0, tokenCount: tokens.length };
+      return {
+        sent: 0,
+        failed: 0,
+        tokenCount: tokens.length,
+        byToken: new Map(tokens.map((t) => [t.token, 'skipped' as TokenOutcome])),
+      };
     }
 
     const webTokens = tokens.filter((t) => t.platform === 'web').map((t) => t.token);
     const androidTokens = tokens.filter((t) => t.platform !== 'web').map((t) => t.token);
 
+    const empty = (): BatchResult => ({ sent: 0, failed: 0, byToken: new Map() });
     const [androidResult, webResult] = await Promise.all([
       androidTokens.length > 0
         ? this.sendBatch(androidTokens, this.buildAndroidMessage(androidTokens, title, body, data))
-        : Promise.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve(empty()),
       webTokens.length > 0
         ? this.sendBatch(webTokens, this.buildWebMessage(webTokens, title, body, data))
-        : Promise.resolve({ sent: 0, failed: 0 }),
+        : Promise.resolve(empty()),
     ]);
 
     const sent = androidResult.sent + webResult.sent;
@@ -363,7 +375,12 @@ export class NotificationsService implements OnModuleInit {
 
     this.logger.debug(`Sent "${title}" — ${sent} ok, ${failed} failed`);
 
-    return { sent, failed, tokenCount: tokens.length };
+    return {
+      sent,
+      failed,
+      tokenCount: tokens.length,
+      byToken: new Map([...androidResult.byToken, ...webResult.byToken]),
+    };
   }
 
   private buildAndroidMessage(
@@ -401,43 +418,74 @@ export class NotificationsService implements OnModuleInit {
     };
   }
 
-  private async sendBatch(
-    tokens: string[],
-    message: MulticastMessage,
-  ): Promise<{ sent: number; failed: number }> {
+  private async sendBatch(tokens: string[], message: MulticastMessage): Promise<BatchResult> {
     try {
       const response = await getMessaging().sendEachForMulticast(message);
 
-      if (response.failureCount > 0) {
-        const invalidTokens: string[] = [];
-        response.responses.forEach((resp, idx) => {
-          if (resp.error) {
-            this.logger.warn(
-              `FCM error for token ${tokens[idx].slice(0, 8)}...: ${resp.error.code} — ${resp.error.message}`,
-            );
-          }
+      const byToken = new Map<string, TokenOutcome>();
+      const invalidTokens: string[] = [];
+      response.responses.forEach((resp, idx) => {
+        byToken.set(tokens[idx], resp.error ? 'failed' : 'sent');
+        if (resp.error) {
+          this.logger.warn(
+            `FCM error for token ${tokens[idx].slice(0, 8)}...: ${resp.error.code} — ${resp.error.message}`,
+          );
           if (
-            resp.error &&
-            (resp.error.code === 'messaging/registration-token-not-registered' ||
-              resp.error.code === 'messaging/invalid-registration-token')
+            resp.error.code === 'messaging/registration-token-not-registered' ||
+            resp.error.code === 'messaging/invalid-registration-token'
           ) {
             invalidTokens.push(tokens[idx]);
           }
-        });
-
-        if (invalidTokens.length > 0) {
-          await this.prisma.pushToken.deleteMany({
-            where: { token: { in: invalidTokens } },
-          });
-          this.logger.log(`Cleaned ${invalidTokens.length} invalid token(s)`);
         }
+      });
+
+      if (invalidTokens.length > 0) {
+        await this.prisma.pushToken.deleteMany({
+          where: { token: { in: invalidTokens } },
+        });
+        this.logger.log(`Cleaned ${invalidTokens.length} invalid token(s)`);
       }
 
-      return { sent: response.successCount, failed: response.failureCount };
+      return { sent: response.successCount, failed: response.failureCount, byToken };
     } catch (error) {
       this.logger.error('FCM multicast error', error);
-      return { sent: 0, failed: tokens.length };
+      return {
+        sent: 0,
+        failed: tokens.length,
+        byToken: new Map(tokens.map((t) => [t, 'failed' as TokenOutcome])),
+      };
     }
+  }
+
+  /**
+   * Fan-out sends resolve their recipients themselves, so without this every push that
+   * matters — nueva quedada, confirmada, cancelada, propuesta, el aro, miembro nuevo —
+   * was invisible in notification_logs and in GET /notifications/debug. Attribution is
+   * per token, so one recipient's FCM failure is not charged to the rest.
+   */
+  private async logNotificationPerUser(
+    tokens: { userId: string; token: string }[],
+    title: string,
+    body: string,
+    data: Record<string, string> | undefined,
+    notificationType: string | undefined,
+    result: DetailedSendResult,
+  ): Promise<void> {
+    const perUser = new Map<string, SendResult>();
+    for (const { userId, token } of tokens) {
+      const entry = perUser.get(userId) ?? { sent: 0, failed: 0, tokenCount: 0 };
+      entry.tokenCount += 1;
+      const outcome = result.byToken.get(token);
+      if (outcome === 'sent') entry.sent += 1;
+      else if (outcome === 'failed') entry.failed += 1;
+      perUser.set(userId, entry);
+    }
+
+    await Promise.all(
+      [...perUser].map(([userId, counts]) =>
+        this.logNotification(userId, title, body, data, notificationType, counts),
+      ),
+    );
   }
 
   private async logNotification(
@@ -471,6 +519,19 @@ interface SendResult {
   sent: number;
   failed: number;
   tokenCount: number;
+}
+
+type TokenOutcome = 'sent' | 'failed' | 'skipped';
+
+/** Internal only: the per-token breakdown never leaves the service. */
+interface DetailedSendResult extends SendResult {
+  byToken: Map<string, TokenOutcome>;
+}
+
+interface BatchResult {
+  sent: number;
+  failed: number;
+  byToken: Map<string, TokenOutcome>;
 }
 
 interface TokenEntry {
