@@ -129,7 +129,8 @@ ion-back-button {
 
 .light ion-alert .alert-wrapper {
   background: #ffffff !important;
-  border: 1px solid var(--app-border);
+  border: 1px solid var(--app-border-strong);
+  box-shadow: 0 18px 48px rgba(51, 48, 42, 0.18);
 }
 
 .light ion-alert .alert-title {
@@ -144,7 +145,11 @@ ion-back-button {
   color: var(--app-primary) !important;
 }
 
-.light ion-alert .alert-button[role='destructive'] {
+.light ion-alert .alert-button.alert-button-role-cancel {
+  color: var(--app-text-muted) !important;
+}
+
+.light ion-alert .alert-button.alert-button-role-destructive {
   color: var(--app-error) !important;
 }
 
@@ -173,14 +178,18 @@ ion-tab-button {
 }
 
 ion-alert {
-  --background: var(--app-bg-light);
+  --background: var(--app-bg-surface);
   --backdrop-opacity: 0.6;
+  --ion-backdrop-color: #14120e;
 }
 
+/* Surface one step above the page + a strong border and a shadow: on the dark
+   theme `--app-bg-light` over the dimmed backdrop read as a black hole. */
 ion-alert .alert-wrapper {
-  background: var(--app-bg-light) !important;
-  border: 1px solid var(--app-border);
-  border-radius: 14px;
+  background: var(--app-bg-surface) !important;
+  border: 1px solid var(--app-border-strong);
+  border-radius: 20px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
 }
 
 ion-alert .alert-head {
@@ -190,7 +199,8 @@ ion-alert .alert-head {
 ion-alert .alert-title {
   color: var(--app-text) !important;
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 ion-alert .alert-message {
@@ -198,16 +208,28 @@ ion-alert .alert-message {
   font-size: 14px;
 }
 
-ion-alert .alert-button {
-  color: var(--app-primary) !important;
+ion-alert .alert-button-group {
+  border-top: 1px solid var(--app-border);
+  padding-top: 4px;
 }
 
-ion-alert .alert-button[role='destructive'] {
+ion-alert .alert-button {
+  color: var(--app-primary) !important;
+  font-weight: 700;
+}
+
+/* Ionic sets `alert-button-role-<role>` classes on the buttons (no `role` attribute). */
+ion-alert .alert-button.alert-button-role-cancel {
+  color: var(--app-text-muted) !important;
+  font-weight: 600;
+}
+
+ion-alert .alert-button.alert-button-role-destructive {
   color: var(--app-error) !important;
 }
 
 ion-action-sheet {
-  --background: var(--app-bg-light);
+  --background: var(--app-bg-surface);
   --button-background: transparent;
   --button-color: var(--app-text);
   --button-background-activated: rgba(255, 255, 255, 0.04);
@@ -215,9 +237,10 @@ ion-action-sheet {
 }
 
 ion-action-sheet .action-sheet-container .action-sheet-group {
-  background: var(--app-bg-light) !important;
-  border: 1px solid var(--app-border);
-  border-radius: 14px;
+  background: var(--app-bg-surface) !important;
+  border: 1px solid var(--app-border-strong);
+  border-radius: 20px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
 }
 
 ion-action-sheet .action-sheet-title {
