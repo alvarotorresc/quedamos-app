@@ -105,14 +105,17 @@ describe('NotificationsService', () => {
   });
 
   describe('registerToken', () => {
-    it('should upsert push token', async () => {
-      prisma.pushToken.count.mockResolvedValue(0);
+    beforeEach(() => {
+      prisma.pushToken.findMany.mockResolvedValue([]);
+      prisma.pushToken.deleteMany.mockResolvedValue({ count: 0 });
       prisma.pushToken.upsert.mockResolvedValue({
         userId: 'user-1',
         token: 'tok',
         platform: 'web',
       });
+    });
 
+    it('should upsert push token', async () => {
       const result = await service.registerToken('user-1', { token: 'tok', platform: 'web' });
 
       expect(result).toBeDefined();
@@ -123,67 +126,62 @@ describe('NotificationsService', () => {
       );
     });
 
-    it('should evict oldest token when at max capacity', async () => {
-      prisma.pushToken.count.mockResolvedValue(10);
-      prisma.pushToken.findFirst.mockResolvedValue({ id: 'old-token-id', token: 'old' });
-      prisma.pushToken.delete.mockResolvedValue({});
-      prisma.pushToken.upsert.mockResolvedValue({
-        userId: 'user-1',
-        token: 'new-tok',
-        platform: 'web',
-      });
+    it('should touch updatedAt on re-registration so the device counts as recently used', async () => {
+      await service.registerToken('user-1', { token: 'tok', platform: 'android' });
+
+      expect(prisma.pushToken.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: { platform: 'android', updatedAt: expect.any(Date) },
+        }),
+      );
+    });
+
+    it('should evict the least recently used token, not the oldest one', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([{ id: 'least-recently-used' }]);
+      prisma.pushToken.deleteMany.mockResolvedValue({ count: 1 });
 
       await service.registerToken('user-1', { token: 'new-tok', platform: 'web' });
 
-      expect(prisma.pushToken.findFirst).toHaveBeenCalledWith({
+      // LRU by updatedAt, never FIFO by createdAt: the phone used every day keeps
+      // its slot even when it was the first one registered.
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { updatedAt: 'desc' },
+        skip: 10,
+        select: { id: true },
       });
-      expect(prisma.pushToken.delete).toHaveBeenCalledWith({
-        where: { id: 'old-token-id' },
+      expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['least-recently-used'] } },
       });
-      expect(prisma.pushToken.upsert).toHaveBeenCalled();
     });
 
-    it('should not evict when under max capacity', async () => {
-      prisma.pushToken.count.mockResolvedValue(5);
-      prisma.pushToken.upsert.mockResolvedValue({
-        userId: 'user-1',
-        token: 'tok',
-        platform: 'web',
+    it('should not evict anything when under max capacity', async () => {
+      await service.registerToken('user-1', { token: 'tok', platform: 'web' });
+
+      expect(prisma.pushToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('should prune after the upsert so the token just registered is never the victim', async () => {
+      const callOrder: string[] = [];
+      prisma.pushToken.upsert.mockImplementation(async () => {
+        callOrder.push('upsert');
+        return { userId: 'user-1', token: 'tok', platform: 'web' };
+      });
+      prisma.pushToken.findMany.mockImplementation(async () => {
+        callOrder.push('findMany');
+        return [];
       });
 
       await service.registerToken('user-1', { token: 'tok', platform: 'web' });
 
-      expect(prisma.pushToken.findFirst).not.toHaveBeenCalled();
-      expect(prisma.pushToken.delete).not.toHaveBeenCalled();
+      expect(callOrder).toEqual(['upsert', 'findMany']);
     });
 
-    it('should not evict when at max capacity but the token already exists (mobile re-sends on every resume)', async () => {
-      prisma.pushToken.count.mockResolvedValue(10);
-      prisma.pushToken.findUnique.mockResolvedValue({
-        userId: 'user-1',
-        token: 'existing-tok',
-        platform: 'web',
-      });
-      // Configured exactly like the sibling "evict oldest token" test so this test would
-      // catch a real deletion (not just an un-configured mock resolving to undefined) if
-      // the fix regressed and the eviction path ran anyway.
-      prisma.pushToken.findFirst.mockResolvedValue({ id: 'old-token-id', token: 'old' });
-      prisma.pushToken.upsert.mockResolvedValue({
-        userId: 'user-1',
-        token: 'existing-tok',
-        platform: 'android',
-      });
+    it('should not read the token back before upserting (no count/findUnique race)', async () => {
+      await service.registerToken('user-1', { token: 'tok', platform: 'web' });
 
-      await service.registerToken('user-1', { token: 'existing-tok', platform: 'android' });
-
-      expect(prisma.pushToken.delete).not.toHaveBeenCalled();
-      expect(prisma.pushToken.findUnique).toHaveBeenCalledWith({
-        where: { userId_token: { userId: 'user-1', token: 'existing-tok' } },
-      });
-      expect(prisma.pushToken.findFirst).not.toHaveBeenCalled();
-      expect(prisma.pushToken.upsert).toHaveBeenCalled();
+      expect(prisma.pushToken.count).not.toHaveBeenCalled();
+      expect(prisma.pushToken.findUnique).not.toHaveBeenCalled();
     });
   });
 

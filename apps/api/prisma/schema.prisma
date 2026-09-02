@@ -146,6 +146,10 @@ model PushToken {
   token     String
   platform  String   // 'web' | 'android'
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  // Last time the device re-registered this token. Drives the LRU eviction in
+  // NotificationsService.registerToken; @default(now()) keeps the ADD COLUMN
+  // valid on the existing production rows.
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

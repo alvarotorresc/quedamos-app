@@ -79,26 +79,7 @@ export class NotificationsService implements OnModuleInit {
   private static readonly MAX_TOKENS_PER_USER = 10;
 
   async registerToken(userId: string, dto: RegisterTokenDto) {
-    const existing = await this.prisma.pushToken.findUnique({
-      where: { userId_token: { userId, token: dto.token } },
-    });
-
-    if (!existing) {
-      const tokenCount = await this.prisma.pushToken.count({ where: { userId } });
-      if (tokenCount >= NotificationsService.MAX_TOKENS_PER_USER) {
-        // Delete oldest token to make room — only for a genuinely new token, never when
-        // the caller is just re-sending a token we already have registered.
-        const oldest = await this.prisma.pushToken.findFirst({
-          where: { userId },
-          orderBy: { createdAt: 'asc' },
-        });
-        if (oldest) {
-          await this.prisma.pushToken.delete({ where: { id: oldest.id } });
-        }
-      }
-    }
-
-    return this.prisma.pushToken.upsert({
+    const registered = await this.prisma.pushToken.upsert({
       where: {
         userId_token: {
           userId,
@@ -107,6 +88,7 @@ export class NotificationsService implements OnModuleInit {
       },
       update: {
         platform: dto.platform,
+        updatedAt: new Date(),
       },
       create: {
         userId,
@@ -114,6 +96,25 @@ export class NotificationsService implements OnModuleInit {
         platform: dto.platform,
       },
     });
+
+    // LRU eviction, ordered by last registration and applied AFTER the upsert:
+    // the device that re-registers on every resume stays at the top instead of
+    // being the first to fall for having been added first, the token just
+    // registered can never be its own victim, and two concurrent registrations
+    // both converge on the cap instead of racing a count().
+    const surplus = await this.prisma.pushToken.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      skip: NotificationsService.MAX_TOKENS_PER_USER,
+      select: { id: true },
+    });
+    if (surplus.length > 0) {
+      await this.prisma.pushToken.deleteMany({
+        where: { id: { in: surplus.map((t) => t.id) } },
+      });
+    }
+
+    return registered;
   }
 
   async unregisterToken(userId: string, token: string) {
