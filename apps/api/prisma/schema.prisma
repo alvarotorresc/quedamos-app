@@ -72,6 +72,7 @@ model GroupMember {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([groupId, userId])
+  @@index([userId])
   @@map("group_members")
 }
 
@@ -91,6 +92,7 @@ model Availability {
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId, date])
+  @@index([groupId, date])
   @@map("availability")
 }
 
@@ -119,6 +121,7 @@ model Event {
   attendees    EventAttendee[]
   fromProposal PlanProposal?
 
+  @@index([groupId, date])
   @@map("events")
 }
 
@@ -133,6 +136,7 @@ model EventAttendee {
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId])
+  @@index([userId])
   @@map("event_attendees")
 }
 
@@ -160,6 +164,7 @@ model WidgetToken {
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("widget_tokens")
 }
 
@@ -228,6 +233,7 @@ model PlanProposal {
   votes          PlanVote[]
   convertedEvent Event?     @relation(fields: [convertedEventId], references: [id])
 
+  @@index([groupId, status])
   @@map("plan_proposals")
 }
 
