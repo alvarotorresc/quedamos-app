@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 
 export interface WeatherData {
   city: string;
@@ -7,6 +7,13 @@ export interface WeatherData {
   tempMin: number;
   weatherCode: number;
   description: string;
+}
+
+interface DailyForecast {
+  time: string[];
+  temperature_2m_max: number[];
+  temperature_2m_min: number[];
+  weathercode: number[];
 }
 
 interface CacheEntry {
@@ -96,8 +103,8 @@ export class WeatherService {
       throw new Error(`Open-Meteo API error: ${response.status}`);
     }
 
-    const json = await response.json();
-    const daily = json.daily;
+    const json: unknown = await response.json();
+    const daily = this.parseDaily(json);
 
     const data: Omit<WeatherData, 'city'>[] = daily.time.map((date: string, i: number) => ({
       date,
@@ -115,6 +122,32 @@ export class WeatherService {
     }
 
     return data.map((d) => ({ ...d, city: cityName }));
+  }
+
+  /**
+   * Open-Meteo can answer 200 with a body that is not a forecast (maintenance, a schema
+   * change, a captive portal serving HTML). Without this the `.map` threw a TypeError
+   * that surfaced as a 500 plus a Sentry event for what should be the weather quietly
+   * missing from the card.
+   */
+  private parseDaily(json: unknown): DailyForecast {
+    const daily = (json as { daily?: unknown } | null)?.daily as
+      | Record<string, unknown>
+      | undefined;
+    const time = daily?.time;
+    if (!Array.isArray(time)) {
+      throw new ServiceUnavailableException('weather_unavailable');
+    }
+
+    const series = ['temperature_2m_max', 'temperature_2m_min', 'weathercode'] as const;
+    for (const key of series) {
+      const values = daily?.[key];
+      if (!Array.isArray(values) || values.length !== time.length) {
+        throw new ServiceUnavailableException('weather_unavailable');
+      }
+    }
+
+    return daily as unknown as DailyForecast;
   }
 
   async getForDate(

@@ -1,3 +1,4 @@
+import { ServiceUnavailableException } from '@nestjs/common';
 import { WeatherService } from './weather.service';
 
 const mockOpenMeteoResponse = {
@@ -147,5 +148,55 @@ describe('WeatherService', () => {
     await expect(service.getForecast('Madrid', 40.42, -3.7)).rejects.toThrow(
       'Open-Meteo request timed out',
     );
+  });
+
+  describe('malformed Open-Meteo responses', () => {
+    function respondWith(body: unknown) {
+      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(body) });
+    }
+
+    it('throws a typed 503 when the body has no daily.time', async () => {
+      respondWith({});
+
+      await expect(service.getForecast('Madrid', 40.42, -3.7)).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+    });
+
+    it('throws a typed 503 when daily.time is not an array', async () => {
+      respondWith({ daily: { time: '2026-03-01' } });
+
+      await expect(service.getForecast('Madrid', 40.42, -3.7)).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+    });
+
+    it('throws a typed 503 when the series do not line up with daily.time', async () => {
+      respondWith({
+        daily: {
+          time: ['2026-03-01', '2026-03-02'],
+          temperature_2m_max: [18.5],
+          temperature_2m_min: [8.2, 10.5],
+          weathercode: [0, 2],
+        },
+      });
+
+      await expect(service.getForecast('Madrid', 40.42, -3.7)).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+    });
+
+    it('does not cache a malformed response', async () => {
+      respondWith({});
+      await expect(service.getForecast('Madrid', 40.42, -3.7)).rejects.toBeInstanceOf(
+        ServiceUnavailableException,
+      );
+
+      mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve(mockOpenMeteoResponse) });
+      const result = await service.getForecast('Madrid', 40.42, -3.7);
+
+      expect(result).toHaveLength(3);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
   });
 });
