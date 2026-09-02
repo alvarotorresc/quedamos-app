@@ -12,6 +12,7 @@ jobs:
       contents: write
     env:
       HAS_GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
+      HAS_RELEASE_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
@@ -62,16 +63,38 @@ jobs:
         working-directory: apps/mobile
         run: pnpm exec cap sync android
 
-      - name: Build debug APK
+      # The keystore only ever exists as a file inside the runner, under
+      # RUNNER_TEMP so the path handed to Gradle is absolute.
+      - name: Decode release keystore
+        if: ${{ env.HAS_RELEASE_KEYSTORE == 'true' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+
+      - name: Warn about the signing key
+        if: ${{ env.HAS_RELEASE_KEYSTORE != 'true' }}
+        run: |
+          echo "::warning::ANDROID_KEYSTORE_BASE64 is not set. The APK is signed with the runner's throwaway debug key, so it cannot be upgraded in place and cannot go to Google Play."
+
+      - name: Build release APK
         working-directory: apps/mobile/android
-        run: chmod +x ./gradlew && ./gradlew assembleDebug
+        env:
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+          ls -la app/build/outputs/apk/release
 
       - name: Get version
         id: version
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Rename APK
-        run: mv apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk quedamos-${{ steps.version.outputs.tag }}.apk
+        run: mv apps/mobile/android/app/build/outputs/apk/release/app-release.apk quedamos-${{ steps.version.outputs.tag }}.apk
 
       - name: Create Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
