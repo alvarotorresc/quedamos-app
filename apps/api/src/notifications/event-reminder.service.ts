@@ -26,8 +26,9 @@ export class EventReminderService {
     private notificationsService: NotificationsService,
   ) {}
 
-  // NOTE: Cron jobs assume single-instance deployment. The reminderSentAt column
-  // provides idempotency, but there is a small race window between findMany and update.
+  // Idempotency lives in the reminderSentAt column: every event is claimed with a
+  // conditional updateMany BEFORE any push goes out, so a redeploy or an OOM mid-batch
+  // cannot replay the reminders, and a second instance would lose the claim race.
   @Cron(CronExpression.EVERY_HOUR)
   async sendReminders() {
     const now = new Date();
@@ -65,6 +66,14 @@ export class EventReminderService {
       const attendeeUserIds = event.attendees.map((a) => a.userId);
       if (attendeeUserIds.length === 0) continue;
 
+      // Claim before sending: losing the race (count === 0) means somebody else
+      // already sent this reminder.
+      const { count } = await this.prisma.event.updateMany({
+        where: { id: event.id, reminderSentAt: null },
+        data: { reminderSentAt: new Date() },
+      });
+      if (count !== 1) continue;
+
       // Process in batches to avoid exhausting the database connection pool
       const BATCH_SIZE = 10;
       for (let i = 0; i < attendeeUserIds.length; i += BATCH_SIZE) {
@@ -87,12 +96,6 @@ export class EventReminderService {
           }
         }
       }
-
-      // Mark as sent to prevent duplicates
-      await this.prisma.event.update({
-        where: { id: event.id },
-        data: { reminderSentAt: new Date() },
-      });
 
       this.logger.debug(
         `Sent reminders for "${event.title}" to ${attendeeUserIds.length} attendee(s)`,

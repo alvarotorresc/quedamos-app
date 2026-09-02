@@ -33,7 +33,7 @@ describe('EventReminderService', () => {
       prisma as unknown as PrismaService,
       notifications as unknown as NotificationsService,
     );
-    prisma.event.update.mockResolvedValue({});
+    prisma.event.updateMany.mockResolvedValue({ count: 1 });
   });
 
   describe('combineDateTime', () => {
@@ -147,7 +147,7 @@ describe('EventReminderService', () => {
       );
     });
 
-    it('should await all notifications before marking reminderSentAt', async () => {
+    it('should claim the event before sending, not after', async () => {
       const { date, time } = eventIn12Hours();
 
       const callOrder: string[] = [];
@@ -155,9 +155,9 @@ describe('EventReminderService', () => {
         callOrder.push('sendToUser');
         return { sent: 1 };
       });
-      prisma.event.update.mockImplementation(async () => {
-        callOrder.push('event.update');
-        return {};
+      prisma.event.updateMany.mockImplementation(async () => {
+        callOrder.push('event.updateMany');
+        return { count: 1 };
       });
 
       const event = {
@@ -169,10 +169,10 @@ describe('EventReminderService', () => {
 
       await service.sendReminders();
 
-      expect(callOrder).toEqual(['sendToUser', 'event.update']);
+      expect(callOrder).toEqual(['event.updateMany', 'sendToUser']);
     });
 
-    it('should mark reminderSentAt after sending', async () => {
+    it('should claim reminderSentAt with an updateMany conditioned on it still being null', async () => {
       const { date, time } = eventIn12Hours();
 
       const event = {
@@ -184,13 +184,30 @@ describe('EventReminderService', () => {
 
       await service.sendReminders();
 
-      expect(prisma.event.update).toHaveBeenCalledWith({
-        where: { id: 'event-1' },
+      expect(prisma.event.updateMany).toHaveBeenCalledWith({
+        where: { id: 'event-1', reminderSentAt: null },
         data: { reminderSentAt: expect.any(Date) },
       });
     });
 
-    it('should still mark reminderSentAt even if some notifications fail', async () => {
+    it('should not send when another run already claimed the event', async () => {
+      const { date, time } = eventIn12Hours();
+
+      prisma.event.updateMany.mockResolvedValue({ count: 0 });
+
+      const event = {
+        ...createTestEvent({ date, time, reminderSentAt: null }),
+        attendees: [{ userId: 'user-1', status: 'pending' }],
+        group: { name: 'Test Group' },
+      };
+      prisma.event.findMany.mockResolvedValue([event]);
+
+      await service.sendReminders();
+
+      expect(notifications.sendToUser).not.toHaveBeenCalled();
+    });
+
+    it('should keep the claim even if some notifications fail', async () => {
       const { date, time } = eventIn12Hours();
 
       notifications.sendToUser
@@ -209,14 +226,13 @@ describe('EventReminderService', () => {
 
       await service.sendReminders();
 
-      // Should still mark as sent (Promise.allSettled handles failures)
-      expect(prisma.event.update).toHaveBeenCalledWith({
-        where: { id: 'event-1' },
-        data: { reminderSentAt: expect.any(Date) },
-      });
+      // Promise.allSettled swallows the failure; the claim is never rolled back,
+      // so a redeploy cannot replay the pushes that did go out.
+      expect(prisma.event.updateMany).toHaveBeenCalledTimes(1);
+      expect(prisma.event.update).not.toHaveBeenCalled();
     });
 
-    it('should skip events with no attendees', async () => {
+    it('should skip events with no attendees without claiming them', async () => {
       const { date, time } = eventIn12Hours();
 
       const event = {
@@ -229,6 +245,7 @@ describe('EventReminderService', () => {
       await service.sendReminders();
 
       expect(notifications.sendToUser).not.toHaveBeenCalled();
+      expect(prisma.event.updateMany).not.toHaveBeenCalled();
     });
 
     it('should skip events already past', async () => {
