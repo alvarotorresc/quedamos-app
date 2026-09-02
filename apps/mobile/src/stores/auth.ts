@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Capacitor } from '@capacitor/core';
 import { supabase } from '../lib/supabase';
 import { api } from '../lib/api';
 import { unregisterFromBackend } from '../lib/push-notifications';
@@ -8,6 +9,7 @@ import {
   validateTimeSlots,
   type TimeSlotPreferences,
 } from '../lib/time-slot-utils';
+import { PUBLIC_WEB_URL } from '../lib/constants';
 import i18n from '../i18n';
 
 let authSubscription: { unsubscribe: () => void } | null = null;
@@ -123,8 +125,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   resetPassword: async (email, captchaToken) => {
+    const base = Capacitor.isNativePlatform() ? PUBLIC_WEB_URL : window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${base}/reset-password`,
       captchaToken,
     });
     if (error) throw error;
