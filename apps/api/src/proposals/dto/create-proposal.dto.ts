@@ -2,6 +2,7 @@ import {
   IsString,
   IsNotEmpty,
   IsOptional,
+  IsISO8601,
   IsBoolean,
   IsUrl,
   MaxLength,
@@ -30,6 +31,10 @@ export class CreateProposalDto {
   @IsOptional()
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'proposedDate must be in YYYY-MM-DD format' })
+  @IsISO8601(
+    { strict: true, strictSeparator: true },
+    { message: 'proposedDate must be a real calendar date' },
+  )
   proposedDate?: string;
 
   @IsOptional()

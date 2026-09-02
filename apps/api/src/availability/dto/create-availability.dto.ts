@@ -1,6 +1,7 @@
 import {
   IsString,
   IsOptional,
+  IsISO8601,
   IsIn,
   IsArray,
   Matches,
@@ -11,6 +12,10 @@ import {
 export class CreateAvailabilityDto {
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601(
+    { strict: true, strictSeparator: true },
+    { message: 'date must be a real calendar date' },
+  )
   date: string;
 
   @IsIn(['day', 'slots', 'range'])

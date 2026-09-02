@@ -1,6 +1,7 @@
 import {
   IsString,
   IsOptional,
+  IsISO8601,
   IsBoolean,
   IsUrl,
   MaxLength,
@@ -45,6 +46,10 @@ export class UpdateEventDto {
   @IsOptional()
   @IsString()
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsISO8601(
+    { strict: true, strictSeparator: true },
+    { message: 'date must be a real calendar date' },
+  )
   date?: string;
 
   // `null` clears the field: @IsOptional() skips validation for it and the service
