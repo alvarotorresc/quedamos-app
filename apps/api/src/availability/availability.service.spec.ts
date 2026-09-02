@@ -106,6 +106,37 @@ describe('AvailabilityService', () => {
         service.create('group-1', 'user-1', { date: '2026-06-01', type: 'slots', slots: [] }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('should clear startTime and endTime when the type is not range', async () => {
+      prisma.availability.upsert.mockResolvedValue({});
+
+      await service.create('group-1', 'user-1', { date: '2026-03-01', type: 'day' });
+
+      // undefined would mean "leave as is" on the update branch, keeping the old range.
+      expect(prisma.availability.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ startTime: null, endTime: null }),
+          create: expect.objectContaining({ startTime: null, endTime: null }),
+        }),
+      );
+    });
+
+    it('should keep the times when the type is range', async () => {
+      prisma.availability.upsert.mockResolvedValue({});
+
+      await service.create('group-1', 'user-1', {
+        date: '2026-03-01',
+        type: 'range',
+        startTime: '18:00',
+        endTime: '22:00',
+      });
+
+      expect(prisma.availability.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ startTime: '18:00', endTime: '22:00' }),
+        }),
+      );
+    });
   });
 
   describe('date format validation', () => {
@@ -189,6 +220,27 @@ describe('AvailabilityService', () => {
       await expect(
         service.update('group-1', '2026-06-01', 'user-1', { date: '2026-06-01', type: 'slots' }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should clear the stored range when switching to day', async () => {
+      prisma.availability.findUnique.mockResolvedValue({
+        id: '1',
+        type: 'range',
+        startTime: '18:00',
+        endTime: '22:00',
+      });
+      prisma.availability.update.mockResolvedValue({});
+
+      await service.update('group-1', '2026-03-01', 'user-1', {
+        date: '2026-03-01',
+        type: 'day',
+      });
+
+      expect(prisma.availability.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ type: 'day', startTime: null, endTime: null }),
+        }),
+      );
     });
   });
 

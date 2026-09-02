@@ -56,6 +56,11 @@ export class AvailabilityService {
     await this.groupsService.findById(groupId, userId);
     this.validateTypeConsistency(dto);
 
+    // Explicit nulls outside 'range': undefined means "leave as is" for Prisma, which
+    // kept the previous range on the row after switching to 'day' or 'slots'.
+    const startTime = dto.type === 'range' ? dto.startTime : null;
+    const endTime = dto.type === 'range' ? dto.endTime : null;
+
     return this.prisma.availability.upsert({
       where: {
         userId_groupId_date: {
@@ -67,8 +72,8 @@ export class AvailabilityService {
       update: {
         type: dto.type,
         slots: dto.slots ?? [],
-        startTime: dto.startTime,
-        endTime: dto.endTime,
+        startTime,
+        endTime,
       },
       create: {
         userId,
@@ -76,8 +81,8 @@ export class AvailabilityService {
         date: new Date(dto.date),
         type: dto.type,
         slots: dto.slots ?? [],
-        startTime: dto.startTime,
-        endTime: dto.endTime,
+        startTime,
+        endTime,
       },
     });
   }
@@ -106,8 +111,8 @@ export class AvailabilityService {
       data: {
         type: dto.type,
         slots: dto.slots ?? [],
-        startTime: dto.startTime,
-        endTime: dto.endTime,
+        startTime: dto.type === 'range' ? dto.startTime : null,
+        endTime: dto.type === 'range' ? dto.endTime : null,
       },
     });
   }
