@@ -165,15 +165,23 @@ export default function PlansPage() {
     }
 
     // Wait for DOM to update then scroll
-    setTimeout(() => {
+    let fadeHighlight: ReturnType<typeof setTimeout> | undefined;
+    const scrollToEvent = setTimeout(() => {
       const el = document.getElementById(`event-${targetEventId}`);
       if (el) {
         scrolledRef.current = true;
         setHighlightEventId(targetEventId);
         el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => setHighlightEventId(null), 2500);
+        fadeHighlight = setTimeout(() => setHighlightEventId(null), 2500);
       }
     }, 300);
+
+    // Both timers touch state, so leaving the tab (or expanding the past section,
+    // which re-runs this effect) must not leave one of them pending.
+    return () => {
+      clearTimeout(scrollToEvent);
+      if (fadeHighlight) clearTimeout(fadeHighlight);
+    };
   }, [targetEventId, eventsLoading, past, showPast]);
 
   // Loading state
