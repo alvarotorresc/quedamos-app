@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useHistory, useLocation, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
 import { translateAuthError } from '../lib/auth-errors';
 import { safeRedirect } from '../lib/safe-redirect';
+import { savePendingRedirect } from '../lib/pending-redirect';
 import { useScreenView } from '../hooks/useAnalytics';
 import { getPasswordChecks, getStrength } from '../lib/password-utils';
 
@@ -22,7 +23,13 @@ export default function RegisterPage() {
   // Signing up cannot land the user anywhere yet — the account still needs the
   // confirmation email — so the invite destination is handed over to the login
   // link on the success screen instead of being dropped here.
-  const redirectTo = safeRedirect(new URLSearchParams(location.search).get('redirect'));
+  const rawRedirect = new URLSearchParams(location.search).get('redirect');
+  const redirectTo = safeRedirect(rawRedirect);
+  // The confirmation email is a round trip out of the app: the login link above
+  // only helps if they come back through it, so park the destination too.
+  useEffect(() => {
+    savePendingRedirect(rawRedirect);
+  }, [rawRedirect]);
   const loginTo =
     redirectTo === '/tabs' ? '/login' : `/login?redirect=${encodeURIComponent(redirectTo)}`;
   const [name, setName] = useState('');

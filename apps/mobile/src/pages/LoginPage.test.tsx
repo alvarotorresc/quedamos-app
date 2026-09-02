@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import LoginPage from './LoginPage';
+import { takePendingRedirect } from '../lib/pending-redirect';
 
 // Los web components de Ionic no se presentan bajo jsdom: se pintan los hijos.
 vi.mock('@ionic/react', () => ({
@@ -95,5 +96,25 @@ describe('LoginPage', () => {
 
     submitLogin();
     await waitFor(() => expect(replaceMock).toHaveBeenCalledWith('/join/48213956'));
+  });
+
+  it('aparca el destino: el email de confirmación abre la app sin el parámetro', () => {
+    search = '?redirect=%2Fjoin%2F48213956';
+    render(<LoginPage />);
+
+    expect(takePendingRedirect()).toBe('/join/48213956');
+  });
+
+  it('sin destino no aparca nada', () => {
+    render(<LoginPage />);
+
+    expect(takePendingRedirect()).toBeNull();
+  });
+
+  it('un destino fuera de la app tampoco se aparca', () => {
+    search = '?redirect=%2F%2Fevil.com';
+    render(<LoginPage />);
+
+    expect(takePendingRedirect()).toBeNull();
   });
 });

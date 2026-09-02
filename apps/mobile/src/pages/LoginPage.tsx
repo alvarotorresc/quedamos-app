@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
 import { useHistory, useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
 import { translateAuthError } from '../lib/auth-errors';
 import { safeRedirect } from '../lib/safe-redirect';
+import { savePendingRedirect } from '../lib/pending-redirect';
 import { useScreenView } from '../hooks/useAnalytics';
 
 const HCAPTCHA_SITEKEY = 'c7aee17a-5df0-43a6-ba90-397e25d83410';
@@ -18,7 +19,14 @@ export default function LoginPage() {
   const history = useHistory();
   const location = useLocation();
   const signIn = useAuthStore((s) => s.signIn);
-  const redirectTo = safeRedirect(new URLSearchParams(location.search).get('redirect'));
+  const rawRedirect = new URLSearchParams(location.search).get('redirect');
+  const redirectTo = safeRedirect(rawRedirect);
+  // Confirming the email reopens the app from scratch, without the parameter, so
+  // the destination is parked as well (no-op when there is none, or when it points
+  // outside the app). PendingRedirectGate resumes it once a session exists.
+  useEffect(() => {
+    savePendingRedirect(rawRedirect);
+  }, [rawRedirect]);
   // Someone opening an invite link without an account has to register first: carry
   // the destination across so they land on the invite instead of the plain tabs.
   const registerTo =

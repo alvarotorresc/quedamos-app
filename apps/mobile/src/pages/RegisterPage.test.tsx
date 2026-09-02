@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RegisterPage from './RegisterPage';
+import { takePendingRedirect } from '../lib/pending-redirect';
 
 vi.mock('@ionic/react', () => ({
   IonPage: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -87,5 +88,18 @@ describe('RegisterPage', () => {
       'href',
       '/login',
     );
+  });
+
+  it('aparca el destino: el enlace del email de confirmación llega sin parámetro', async () => {
+    search = '?redirect=%2Fjoin%2F48213956';
+    await registerAndWaitForSuccess();
+
+    expect(takePendingRedirect()).toBe('/join/48213956');
+  });
+
+  it('sin destino no aparca nada', async () => {
+    await registerAndWaitForSuccess();
+
+    expect(takePendingRedirect()).toBeNull();
   });
 });
