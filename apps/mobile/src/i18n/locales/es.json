@@ -20,7 +20,9 @@
     "title": "Iniciar sesión",
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "submit": "Entrar",
-    "submitting": "Entrando..."
+    "submitting": "Entrando...",
+    "noAccount": "\u00bfA\u00fan no tienes cuenta?",
+    "register": "Crear una"
   },
   "register": {
     "title": "Crear cuenta",
@@ -46,7 +48,8 @@
     "success": {
       "title": "Revisa tu email",
       "message": "Te hemos enviado un email de confirmación a <1>{{email}}</1>. Haz click en el enlace para activar tu cuenta.",
-      "spam": "Si no lo ves, revisa la carpeta de spam."
+      "spam": "Si no lo ves, revisa la carpeta de spam.",
+      "login": "Ya lo he confirmado, entrar"
     }
   },
   "forgotPassword": {

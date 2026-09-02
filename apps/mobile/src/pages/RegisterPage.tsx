@@ -1,12 +1,13 @@
 import { useState, useMemo, useRef } from 'react';
 import { IonPage, IonContent } from '@ionic/react';
-import { useHistory } from 'react-router-dom';
+import { useHistory, useLocation, Link } from 'react-router-dom';
 import { useTranslation, Trans } from 'react-i18next';
 import { HiOutlineEye, HiOutlineEyeSlash } from 'react-icons/hi2';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
 import { translateAuthError } from '../lib/auth-errors';
+import { safeRedirect } from '../lib/safe-redirect';
 import { useScreenView } from '../hooks/useAnalytics';
 import { getPasswordChecks, getStrength } from '../lib/password-utils';
 
@@ -16,7 +17,14 @@ export default function RegisterPage() {
   useScreenView('Register');
   const { t } = useTranslation();
   const history = useHistory();
+  const location = useLocation();
   const signUp = useAuthStore((s) => s.signUp);
+  // Signing up cannot land the user anywhere yet — the account still needs the
+  // confirmation email — so the invite destination is handed over to the login
+  // link on the success screen instead of being dropped here.
+  const redirectTo = safeRedirect(new URLSearchParams(location.search).get('redirect'));
+  const loginTo =
+    redirectTo === '/tabs' ? '/login' : `/login?redirect=${encodeURIComponent(redirectTo)}`;
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -82,6 +90,9 @@ export default function RegisterPage() {
               </Trans>
             </p>
             <p className="text-text-dark text-xs mt-3">{t('register.success.spam')}</p>
+            <Link to={loginTo} className="text-primary text-sm mt-5">
+              {t('register.success.login')}
+            </Link>
           </div>
         </IonContent>
       </IonPage>
