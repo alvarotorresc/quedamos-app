@@ -42,7 +42,9 @@ export function Sheet({
           <div className="flex items-start justify-between gap-2 mb-3.5 shrink-0">
             <div className="min-w-0 flex-1">
               {title !== undefined && <h3 className="text-[17px] font-bold text-text">{title}</h3>}
-              {subtitle !== undefined && <p className="text-xs text-text-dark mt-0.5">{subtitle}</p>}
+              {subtitle !== undefined && (
+                <div className="text-xs text-text-dark mt-0.5">{subtitle}</div>
+              )}
             </div>
             {headerEnd}
           </div>
