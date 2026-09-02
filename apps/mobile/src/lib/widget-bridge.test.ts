@@ -9,6 +9,7 @@ const pluginMock = {
   setGroups: vi.fn(),
   refreshWidgets: vi.fn(),
 };
+const registerPlugin = vi.fn(() => pluginMock);
 let platform = 'android';
 
 vi.mock('@capacitor/core', async () => {
@@ -16,7 +17,7 @@ vi.mock('@capacitor/core', async () => {
   return {
     ...actual,
     Capacitor: { getPlatform: () => platform },
-    registerPlugin: () => pluginMock,
+    registerPlugin: (...args: unknown[]) => registerPlugin(...args),
   };
 });
 
@@ -92,5 +93,14 @@ describe('widget-bridge', () => {
   it('notifyWidgetDataChanged pokes the native refresh', async () => {
     await notifyWidgetDataChanged();
     expect(pluginMock.refreshWidgets).toHaveBeenCalledOnce();
+  });
+
+  it('registers the native plugin under the expected name on first use', async () => {
+    // El módulo cachea el plugin tras el primer registro (lazy singleton):
+    // hace falta una instancia fresca para observar la llamada a registerPlugin.
+    vi.resetModules();
+    const fresh = await import('./widget-bridge');
+    await fresh.syncWidgetSession();
+    expect(registerPlugin).toHaveBeenCalledWith('WidgetBridge');
   });
 });
