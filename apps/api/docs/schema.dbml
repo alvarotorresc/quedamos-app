@@ -21,6 +21,7 @@ Table users {
   proposalVotes plan_votes [not null]
   createdPolls availability_polls [not null]
   pollResponses poll_responses [not null]
+  widgetTokens widget_tokens [not null]
 }
 
 Table groups {
@@ -119,6 +120,15 @@ Table push_tokens {
   indexes {
     (userId, token) [unique]
   }
+}
+
+Table widget_tokens {
+  id String [pk]
+  userId String [not null]
+  tokenHash String [unique, not null]
+  createdAt DateTime [default: `now()`, not null]
+  lastUsedAt DateTime
+  user users [not null]
 }
 
 Table notification_preferences {
@@ -234,6 +244,8 @@ Ref: event_attendees.eventId > events.id [delete: Cascade]
 Ref: event_attendees.userId > users.id [delete: Cascade]
 
 Ref: push_tokens.userId > users.id [delete: Cascade]
+
+Ref: widget_tokens.userId > users.id [delete: Cascade]
 
 Ref: notification_preferences.userId > users.id [delete: Cascade]
 
