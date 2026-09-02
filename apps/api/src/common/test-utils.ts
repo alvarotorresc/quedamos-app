@@ -97,6 +97,7 @@ interface MockPrismaModels {
     findMany: jest.Mock;
     create: jest.Mock;
     delete: jest.Mock;
+    count: jest.Mock;
   }>;
   notificationLog: MockModel<{
     findMany: jest.Mock;
@@ -235,6 +236,7 @@ export function createMockPrisma(): MockPrisma {
       findMany: jest.fn(),
       create: jest.fn(),
       delete: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     },
     notificationLog: {
       findMany: jest.fn(),

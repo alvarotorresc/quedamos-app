@@ -183,4 +183,40 @@ describe('WeatherController', () => {
       expect(mockWeatherService.getForDate).toHaveBeenCalledWith('', -90, -180, '2026-03-15');
     });
   });
+
+  describe('getGroupWeather — fan-out', () => {
+    const cities = [
+      { id: 'city-1', groupId: 'group-1', name: 'Madrid', lat: 40.42, lon: -3.7 },
+      { id: 'city-2', groupId: 'group-1', name: 'Barcelona', lat: 41.39, lon: 2.17 },
+    ];
+
+    it('queries every city in parallel instead of one after another', async () => {
+      prisma.groupCity.findMany.mockResolvedValue(cities);
+
+      let started = 0;
+      let maxInFlight = 0;
+      mockWeatherService.getForecast.mockImplementation(async () => {
+        started += 1;
+        maxInFlight = Math.max(maxInFlight, started);
+        await Promise.resolve();
+        started -= 1;
+        return [createWeatherData()];
+      });
+
+      await controller.getGroupWeather('group-1', { id: 'user-1' });
+
+      expect(maxInFlight).toBe(2);
+    });
+
+    it('drops the cities whose forecast failed instead of failing the request', async () => {
+      prisma.groupCity.findMany.mockResolvedValue(cities);
+      mockWeatherService.getForecast
+        .mockRejectedValueOnce(new Error('Open-Meteo request timed out'))
+        .mockResolvedValueOnce([createWeatherData({ city: 'Barcelona' })]);
+
+      const result = await controller.getGroupWeather('group-1', { id: 'user-1' });
+
+      expect(result).toEqual([createWeatherData({ city: 'Barcelona' })]);
+    });
+  });
 });

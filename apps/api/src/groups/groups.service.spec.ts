@@ -850,4 +850,32 @@ describe('GroupsService', () => {
       );
     });
   });
+
+  describe('addCity — per-group cap', () => {
+    beforeEach(() => {
+      prisma.groupMember.findUnique.mockResolvedValue({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+    });
+
+    it('rejects going over the maximum number of cities per group', async () => {
+      prisma.groupCity.count.mockResolvedValue(5);
+
+      await expect(
+        service.addCity('group-1', 'user-1', { name: 'Madrid', lat: 40.42, lon: -3.7 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.groupCity.create).not.toHaveBeenCalled();
+    });
+
+    it('still accepts a city when the group is under the cap', async () => {
+      prisma.groupCity.count.mockResolvedValue(4);
+      prisma.groupCity.create.mockResolvedValue({ id: 'city-5' });
+
+      await expect(
+        service.addCity('group-1', 'user-1', { name: 'Madrid', lat: 40.42, lon: -3.7 }),
+      ).resolves.toEqual({ id: 'city-5' });
+    });
+  });
 });

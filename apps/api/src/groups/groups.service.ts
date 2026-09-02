@@ -37,6 +37,8 @@ const GROUP_WITH_MEMBERS_SELECT = {
 
 @Injectable()
 export class GroupsService {
+  private static readonly MAX_CITIES_PER_GROUP = 5;
+
   private readonly logger = new Logger(GroupsService.name);
 
   constructor(
@@ -436,6 +438,16 @@ export class GroupsService {
     const admin = await this.isAdmin(groupId, userId);
     if (!admin) {
       throw new ForbiddenException('Only admins can add cities');
+    }
+
+    // GET /groups/:id/weather hits Open-Meteo once per city, so an unbounded list
+    // turns one cold load into a fan-out that can hold a Prisma connection for a
+    // long time.
+    const cityCount = await this.prisma.groupCity.count({ where: { groupId } });
+    if (cityCount >= GroupsService.MAX_CITIES_PER_GROUP) {
+      throw new BadRequestException(
+        `A group can have at most ${GroupsService.MAX_CITIES_PER_GROUP} cities`,
+      );
     }
 
     return this.prisma.groupCity.create({
