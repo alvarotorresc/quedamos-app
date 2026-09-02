@@ -180,6 +180,15 @@ describe('AvailabilityService', () => {
       );
     });
 
+    it('should reject an impossible calendar date in update and delete', async () => {
+      await expect(
+        service.update('group-1', '2026-02-30', 'user-1', { date: '2026-02-30', type: 'day' }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(service.delete('group-1', '2026-13-01', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
     it('should accept valid YYYY-MM-DD date in update', async () => {
       prisma.availability.findUnique.mockResolvedValue({ id: '1' });
       prisma.availability.update.mockResolvedValue({ id: '1', type: 'day' });

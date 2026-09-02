@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 import { AvailabilityController } from './availability.controller';
 import { AvailabilityService } from './availability.service';
 import { AuthGuard } from '../auth/auth.guard';
+import { ParseCalendarDatePipe } from '../common/pipes/parse-calendar-date.pipe';
 
 const mockAvailabilityService = {
   findAllForGroup: jest.fn(),
@@ -12,6 +14,17 @@ const mockAvailabilityService = {
 };
 
 const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
+
+/** Pipes attached to a `@Param(name, ...pipes)` live in Nest's ROUTE_ARGS_METADATA. */
+function paramPipesAtIndex(method: string, index: number): unknown[] {
+  const meta = Reflect.getMetadata(ROUTE_ARGS_METADATA, AvailabilityController, method) as
+    | Record<string, { index: number; pipes: unknown[] }>
+    | undefined;
+  const entry = Object.values(meta ?? {}).find(
+    (candidate) => candidate.index === index && Array.isArray(candidate.pipes),
+  );
+  return entry?.pipes ?? [];
+}
 
 describe('AvailabilityController', () => {
   let controller: AvailabilityController;
@@ -32,6 +45,13 @@ describe('AvailabilityController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('route parameter validation', () => {
+    it('should validate the date parameter of update and delete', () => {
+      expect(paramPipesAtIndex('update', 1)).toContain(ParseCalendarDatePipe);
+      expect(paramPipesAtIndex('delete', 1)).toContain(ParseCalendarDatePipe);
+    });
   });
 
   describe('findAll', () => {

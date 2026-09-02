@@ -3,6 +3,7 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
+import { isCalendarDate } from '../common/date-utils';
 
 @Injectable()
 export class AvailabilityService {
@@ -31,7 +32,7 @@ export class AvailabilityService {
   }
 
   private validateDateFormat(date: string): void {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!isCalendarDate(date)) {
       throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
     }
   }
