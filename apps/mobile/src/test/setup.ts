@@ -54,7 +54,18 @@ vi.mock('@capacitor/share', () => ({
 vi.mock('framer-motion', async () => {
   const React = await import('react');
   const strip = (props: Record<string, unknown>) => {
-    const { whileTap, whileHover, animate, initial, exit, transition, layoutId: _layoutId, ...rest } = props;
+    const {
+      whileTap,
+      whileHover,
+      whileInView,
+      animate,
+      initial,
+      exit,
+      transition,
+      viewport,
+      layoutId: _layoutId,
+      ...rest
+    } = props;
     return rest;
   };
   const motionProxy = new Proxy(

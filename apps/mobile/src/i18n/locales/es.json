@@ -355,112 +355,136 @@
     "defaultName": "Usuario"
   },
   "landing": {
-    "brand": "¿Quedamos?",
-    "header": {
-      "login": "Iniciar sesión",
-      "register": "Empezar"
+    "brand": "¿Quedamos?"
+  },
+  "landing2": {
+    "cta": "Abrir Quedamos",
+    "githubCta": "Ver el código en GitHub",
+    "nav": {
+      "brand": "¿Quedamos?",
+      "codeOpen": "Código abierto"
     },
     "hero": {
-      "title": "¿Quedamos?",
-      "tagline": "Coordina quedadas con tu grupo de amigos. Marca cuándo puedes, encuentra el mejor día y crea planes.",
-      "cta": "Empieza gratis",
-      "login": "Ya tengo cuenta"
-    },
-    "features": {
-      "title": "Todo lo que necesitas",
-      "subtitle": "Organizar planes con amigos nunca fue tan fácil.",
-      "calendar": {
-        "title": "Calendario compartido",
-        "description": "Cada miembro marca cuándo puede. Ve la disponibilidad de todos de un vistazo."
-      },
-      "groups": {
-        "title": "Grupos de amigos",
-        "description": "Crea un grupo e invita a tus amigos con un código o un enlace."
-      },
-      "plans": {
-        "title": "Crea quedadas",
-        "description": "Cuando coincidáis, crea una quedada. Todos reciben una notificación."
-      },
-      "notifications": {
-        "title": "Notificaciones",
-        "description": "Recibe avisos de nuevas quedadas, confirmaciones y recordatorios."
+      "title": "Tu grupo quiere verse.",
+      "subtitle": "Nadie sabe cuándo. Quedamos hace la pregunta y os avisa cuando podéis todos.",
+      "mockup": {
+        "today": "Hoy",
+        "month": "sep 2026",
+        "asks": "Iris pregunta",
+        "question": "¿Podéis el sábado 14?",
+        "canGo": "Puedo",
+        "cannotGo": "No puedo",
+        "fri": "vie",
+        "sat": "sáb",
+        "allCan": "Podéis los seis",
+        "askCta": "¿Quedamos?"
       }
     },
-    "mockup": {
-      "title": "Encuentra el mejor día",
-      "description": "Ve de un vistazo cuándo puede quedar cada persona. El calendario resalta los días con más disponibilidad.",
-      "weekLabel": "Semana",
-      "monthLabel": "Febrero 2026",
-      "bestDay": "Mejor día",
-      "bestDayDate": "Viernes 14 — 4 disponibles"
+    "banda": {
+      "title": "Toda la app cabe en un círculo.",
+      "subtitle": "Cada arco es una persona con su color. El hueco es quien no ha respondido. Cuando el aro se cierra, podéis todos.",
+      "weekday": "sábado",
+      "dayNumber": "14",
+      "pending": "En el aire: falta uno por responder y uno no puede.",
+      "sealed": "Sellada: plan, hora y sitio confirmados."
     },
-    "cta": {
-      "title": "¿A qué esperas?",
-      "subtitle": "Crea tu grupo y empieza a coordinar quedadas con tus amigos.",
-      "button": "Crear cuenta gratis",
-      "hasAccount": "¿Ya tienes cuenta?",
-      "login": "Inicia sesión"
-    },
-    "screenshots": {
-      "title": "Conoce la app por dentro",
-      "subtitle": "Así se ve",
-      "calendar": {
-        "label": "Calendario",
-        "header": "Semana"
+    "pantallas": {
+      "title": "Tres pantallas. Ninguna de más.",
+      "subtitle": "Preguntas, ves quién puede y selláis la quedada. No hay más que aprender.",
+      "week": {
+        "title": "Semana",
+        "thu": "jue",
+        "fri": "vie",
+        "sat": "sáb",
+        "sun": "dom",
+        "allCan": "Podéis los seis",
+        "askCta": "¿Quedamos?"
       },
       "events": {
-        "label": "Quedadas",
-        "title": "Próximas quedadas",
+        "title": "Quedadas",
         "upcoming": "Próximas",
         "past": "Pasadas",
-        "event1": "Ruta por Monachil",
-        "location1": "Monachil",
-        "event2": "Brunch dominguero",
-        "location2": "Centro",
+        "dinnerTitle": "Cena en casa de Iris",
+        "dinnerTime": "sáb 14 · 21:00",
         "confirmed": "Confirmada",
-        "pending": "Pendiente"
+        "padelTitle": "Pádel y cañas",
+        "padelTime": "dom 22 · 12:00",
+        "pending": "En el aire",
+        "propose": "Proponer quedada"
       },
       "group": {
-        "label": "Grupo",
-        "name": "Amigos Granada",
-        "memberCount": "{{count}} miembros",
-        "inviteCode": "Código de invitación"
+        "title": "Cuadrilla",
+        "of6": "{{count}} de 6",
+        "invite": "Invitar al grupo"
       }
     },
-    "roadmap": {
-      "title": "Hecho para crecer",
-      "subtitle": "Roadmap",
-      "available": {
-        "title": "Disponible ahora",
-        "subtitle": "Funcionalidades que ya puedes usar",
-        "features": {
-          "sharedCalendar": "Calendario compartido",
-          "groups": "Grupos de amigos",
-          "events": "Crear y gestionar quedadas",
-          "pushNotifications": "Notificaciones push",
-          "realtimeSync": "Sincronización en tiempo real",
-          "darkLightTheme": "Tema claro y oscuro",
-          "multiLanguage": "Español e inglés",
-          "androidWeb": "Android y Web"
-        }
-      },
-      "upcoming": {
-        "title": "Próximamente",
-        "subtitle": "Lo que viene en las próximas versiones",
-        "badge": "Pronto",
-        "features": {
-          "ios": "App para iOS",
-          "aiSuggestions": "Sugerencias con IA",
-          "weather": "Integración con el clima",
-          "voting": "Votaciones en grupo",
-          "editEvents": "Editar quedadas",
-          "multiAdmin": "Múltiples administradores"
+    "cuadrilla": {
+      "title": "Seis colores. El tuyo es el tuyo.",
+      "names": {
+        "vera": "Vera",
+        "hugo": "Hugo",
+        "noa": "Noa",
+        "leo": "Leo",
+        "iris": "Iris",
+        "teo": "Teo"
+      }
+    },
+    "proceso": {
+      "title": "De la pregunta al plan",
+      "steps": {
+        "sondear": {
+          "index": "01",
+          "title": "Sondear",
+          "description": "Pregunta un día al grupo desde el calendario. Cada uno contesta cuando puede."
+        },
+        "cierra": {
+          "index": "02",
+          "title": "El aro se cierra",
+          "description": "Cuando todos pueden, te llega el aviso. Cero toques, cero calendario que leer."
+        },
+        "quedamos": {
+          "index": "03",
+          "title": "Quedamos",
+          "description": "Alguien propone plan, hora y sitio. Quien confirma cierra su arco."
         }
       }
     },
-    "footer": {
-      "madeWith": "Hecho con",
-      "by": "por"
+    "renuncias": {
+      "title": "Lo que Quedamos no va a hacer nunca",
+      "subtitle": "Tachado a propósito. No es un roadmap.",
+      "items": {
+        "interrogate": {
+          "label": "Interrogarte",
+          "description": "Una pregunta al día, como mucho. Si no hay nada, no suena."
+        },
+        "confetti": {
+          "label": "El confeti",
+          "description": "La celebración es el aro cerrándose."
+        },
+        "streaks": {
+          "label": "Rachas y puntos",
+          "description": "Ni niveles, ni culpa por no salir."
+        },
+        "punish": {
+          "label": "Castigar la ausencia",
+          "description": "Quien no responde es un hueco, no una falta."
+        },
+        "shoutEmoji": {
+          "label": "Los emojis a gritos",
+          "description": "La voz es seca y tutea. Afirma solo cuando es verdad."
+        },
+        "aiPlan": {
+          "label": "Una IA en vuestro plan",
+          "description": "Vuestro plan es vuestro."
+        }
+      }
+    },
+    "cierre": {
+      "quote": "«Nada pendiente. La semana está respondida.»",
+      "subtitle": "El vacío es recompensa.",
+      "footer": {
+        "languages": "Español / English"
+      }
     }
   },
   "online": {
