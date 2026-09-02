@@ -9,9 +9,9 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { GroupsService } from '../groups/groups.service';
+import { getFrontendUrl } from '../common/frontend-url';
 
 const INVITE_CODE_REGEX = /^\d{8}$/;
-const DEFAULT_FRONTEND_URL = 'https://quedamos-app-mobile.vercel.app';
 
 @ApiTags('Invite')
 @Controller('join')
@@ -29,7 +29,6 @@ export class InviteController {
       throw new NotFoundException('Invite code not found');
     }
 
-    const frontendUrl = process.env.FRONTEND_URL || DEFAULT_FRONTEND_URL;
-    res.redirect(302, `${frontendUrl}/join/${code}`);
+    res.redirect(302, `${getFrontendUrl()}/join/${code}`);
   }
 }

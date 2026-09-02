@@ -10,6 +10,7 @@ import {
 import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
+import { getFrontendUrl } from '../common/frontend-url';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { AddCityDto } from './dto/add-city.dto';
@@ -271,7 +272,7 @@ export class GroupsService {
 
     return {
       inviteCode: group.inviteCode,
-      inviteUrl: `${process.env.FRONTEND_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${group.inviteCode}`,
+      inviteUrl: `${getFrontendUrl()}/join/${group.inviteCode}`,
     };
   }
 
@@ -492,7 +493,7 @@ export class GroupsService {
 
     return {
       inviteCode: newCode,
-      inviteUrl: `${process.env.FRONTEND_URL || 'https://quedamos-app-mobile.vercel.app'}/join/${newCode}`,
+      inviteUrl: `${getFrontendUrl()}/join/${newCode}`,
     };
   }
 }

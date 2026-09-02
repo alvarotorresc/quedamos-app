@@ -6,6 +6,7 @@ import helmet from 'helmet';
 import { json } from 'express';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { corsOrigins } from './common/frontend-url';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,24 +25,8 @@ async function bootstrap() {
     }),
   );
 
-  const origins: string[] = [
-    'https://quedamos-app-mobile.vercel.app',
-    'https://localhost', // Capacitor Android (androidScheme: 'https')
-  ];
-  if (process.env.NODE_ENV !== 'production') {
-    origins.push(
-      'http://localhost:5173',
-      'http://localhost:8100',
-      'https://localhost',
-      'http://localhost',
-    );
-  }
-  if (process.env.CORS_ORIGIN) {
-    origins.push(process.env.CORS_ORIGIN);
-  }
-
   app.enableCors({
-    origin: origins,
+    origin: corsOrigins(),
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   });
