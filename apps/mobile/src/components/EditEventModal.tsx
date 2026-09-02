@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import { useUpdateEvent } from '../hooks/useEvents';
 import { Button } from '../ui/Button';
+import { Sheet } from '../ui/Sheet';
 import type { Event } from '../services/events';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
@@ -75,19 +75,16 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
   };
 
   return (
-    <IonModal
+    <Sheet
       isOpen={isOpen}
-      onDidDismiss={handleDismiss}
-      breakpoints={[0, 1]}
-      initialBreakpoint={1}
-      className="edit-event-modal"
+      onClose={handleDismiss}
+      title={t('plans.edit.title')}
+      footer={
+        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
+          {isSaving ? t('plans.edit.saving') : t('plans.edit.submit')}
+        </Button>
+      }
     >
-      <div className="px-5 pt-5 pb-9 bg-bg-light">
-        {/* Handle bar */}
-        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
-
-        <h3 className="text-[17px] font-bold text-text mb-3.5">{t('plans.edit.title')}</h3>
-
         {/* Title */}
         <div className="mb-2">
           <label className="block text-[10px] text-text-dark mb-1">{t('plans.create.name')}</label>
@@ -203,11 +200,6 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
           />
         </div>
 
-        {/* Submit */}
-        <Button onClick={handleSubmit} disabled={!canSubmit} className="w-full">
-          {isSaving ? t('plans.edit.saving') : t('plans.edit.submit')}
-        </Button>
-      </div>
-    </IonModal>
+    </Sheet>
   );
 }

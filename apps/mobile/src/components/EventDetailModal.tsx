@@ -1,4 +1,3 @@
-import { IonModal } from '@ionic/react';
 import { useTranslation } from 'react-i18next';
 import {
   HiOutlineMapPin,
@@ -7,6 +6,7 @@ import {
   HiOutlineArrowDownTray,
 } from 'react-icons/hi2';
 import { Badge } from '../ui/Badge';
+import { Sheet } from '../ui/Sheet';
 import { AvatarStack } from '../ui/AvatarStack';
 import { openInMaps } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
@@ -58,20 +58,17 @@ export function EventDetailModal({
   const getColor = (userId: string) => memberColorMap?.get(userId) ?? MEMBER_COLORS[0];
 
   return (
-    <IonModal
+    <Sheet
       isOpen={isOpen}
-      onDidDismiss={onClose}
-      breakpoints={[0, 0.6, 1]}
-      initialBreakpoint={0.6}
-    >
-      <div className="px-5 pt-5 pb-9 bg-bg-light">
-        <div className="w-8 h-[3px] rounded-sm bg-toggle-off mx-auto mb-3.5" />
-
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <h3 className="text-[17px] font-bold text-text flex items-center gap-1.5">
-            {event.title}
-            {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
-          </h3>
+      onClose={onClose}
+      title={
+        <span className="flex items-center gap-1.5">
+          {event.title}
+          {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
+        </span>
+      }
+      headerEnd={
+        <>
           <button
             onClick={() => downloadICS(event)}
             className="p-2 -m-1 rounded-lg border-none bg-transparent active:bg-white/5 transition-colors"
@@ -83,8 +80,9 @@ export function EventDetailModal({
           <Badge variant={STATUS_BADGE_VARIANT[event.status]}>
             {t(`plans.status.${event.status}`)}
           </Badge>
-        </div>
-
+        </>
+      }
+    >
         <div className="flex items-center gap-3 text-xs text-text-muted mb-2">
           <span className="capitalize">{formattedDate}</span>
           {formattedTime && (
@@ -178,7 +176,6 @@ export function EventDetailModal({
         <p className="text-[10px] text-text-dark mt-4">
           {t('calendar.eventDetail.createdBy', { name: event.createdBy.name })}
         </p>
-      </div>
-    </IonModal>
+    </Sheet>
   );
 }
