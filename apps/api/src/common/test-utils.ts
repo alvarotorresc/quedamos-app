@@ -48,7 +48,6 @@ interface MockPrismaModels {
     update: jest.Mock;
     updateMany: jest.Mock;
     delete: jest.Mock;
-    updateMany: jest.Mock;
   }>;
   eventAttendee: MockModel<{
     findUnique: jest.Mock;
@@ -190,7 +189,6 @@ export function createMockPrisma(): MockPrisma {
       // Conditional writes read `count`, so the default has to be a real result.
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       delete: jest.fn(),
-      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
     eventAttendee: {
       findUnique: jest.fn(),
