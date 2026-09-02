@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from './auth';
 import { supabase } from '../lib/supabase';
 import { syncWidgetSession, clearWidgetSession } from '../lib/widget-bridge';
@@ -6,6 +7,13 @@ import { syncWidgetSession, clearWidgetSession } from '../lib/widget-bridge';
 type GetSessionResult = Awaited<ReturnType<typeof supabase.auth.getSession>>;
 type SignInResult = Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
 type UpdateUserResult = Awaited<ReturnType<typeof supabase.auth.updateUser>>;
+type ResetPasswordResult = Awaited<ReturnType<typeof supabase.auth.resetPasswordForEmail>>;
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    isNativePlatform: vi.fn().mockReturnValue(false),
+  },
+}));
 
 vi.mock('../lib/push-notifications', () => ({
   unregisterFromBackend: vi.fn().mockResolvedValue(undefined),
@@ -145,6 +153,38 @@ describe('useAuthStore', () => {
 
       expect(clearWidgetSession).toHaveBeenCalled();
       expect(callOrder).toEqual(['clearWidgetSession', 'supabase.auth.signOut']);
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('uses the public web url as the redirect base on native platforms', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as ResetPasswordResult);
+
+      await useAuthStore.getState().resetPassword('test@test.com', 'captcha');
+
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('test@test.com', {
+        redirectTo: 'https://quedamos-app-mobile.vercel.app/reset-password',
+        captchaToken: 'captcha',
+      });
+    });
+
+    it('uses window.location.origin as the redirect base on web', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as ResetPasswordResult);
+
+      await useAuthStore.getState().resetPassword('test@test.com', 'captcha');
+
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('test@test.com', {
+        redirectTo: `${window.location.origin}/reset-password`,
+        captchaToken: 'captcha',
+      });
     });
   });
 
