@@ -393,6 +393,13 @@ export class EventsService {
             select: { status: true, title: true },
           });
 
+          // The guard above ran on a read taken OUTSIDE this transaction. cancel() is a
+          // plain update that can commit in between (the creator cancels while the last
+          // attendee confirms), so the cancelled check has to be repeated here.
+          if (preEvent?.status === 'cancelled') {
+            throw new BadRequestException('Cannot respond to a cancelled event');
+          }
+
           await tx.eventAttendee.update({
             where: { eventId_userId: { eventId, userId } },
             data: {
@@ -408,11 +415,15 @@ export class EventsService {
           const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
           const anyDeclined = allAttendees.some((a) => a.status === 'declined');
 
+          // Conditional write: belt and braces over the guard above, so a cancel that
+          // slips in cannot be turned into a confirmation — and `count` gates the push.
+          let justConfirmed = false;
           if (allConfirmed) {
-            await tx.event.update({
-              where: { id: eventId },
+            const { count } = await tx.event.updateMany({
+              where: { id: eventId, status: { not: 'cancelled' } },
               data: { status: 'confirmed' },
             });
+            justConfirmed = count === 1;
           } else if (anyDeclined) {
             await tx.event.update({
               where: { id: eventId },
@@ -421,7 +432,7 @@ export class EventsService {
           }
 
           return {
-            justReachedAllConfirmed: allConfirmed && preEvent?.status !== 'confirmed',
+            justReachedAllConfirmed: justConfirmed && preEvent?.status !== 'confirmed',
             eventTitle: preEvent?.title ?? event.title,
           };
         },

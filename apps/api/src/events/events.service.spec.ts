@@ -457,6 +457,51 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should not confirm an event cancelled between the read and the transaction', async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-2' });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      // The creator cancelled after findById read the event as pending: only the
+      // read inside the transaction sees it.
+      prisma.event.findUnique.mockResolvedValue(createTestEvent({ status: 'cancelled' }));
+
+      await expect(
+        service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.event.update).not.toHaveBeenCalled();
+      expect(prisma.event.updateMany).not.toHaveBeenCalled();
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
+    it('should not notify when the conditional confirm write matches no row', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-2' });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.event.updateMany.mockResolvedValue({ count: 0 });
+      prisma.event.findUnique.mockResolvedValue(createTestEvent());
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
+
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
     it('should update attendee status to confirmed', async () => {
       prisma.eventAttendee.findUnique.mockResolvedValue({
         eventId: 'event-1',
@@ -584,11 +629,11 @@ describe('EventsService', () => {
 
       await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
 
-      expect(prisma.event.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: { status: 'confirmed' },
-        }),
-      );
+      // Conditional write: a cancel committed in between must not be overwritten.
+      expect(prisma.event.updateMany).toHaveBeenCalledWith({
+        where: { id: 'event-1', status: { not: 'cancelled' } },
+        data: { status: 'confirmed' },
+      });
     });
 
     it('should send notification when all confirmed', async () => {
