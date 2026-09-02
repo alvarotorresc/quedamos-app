@@ -15,6 +15,7 @@ import { useEvents } from '../hooks/useEvents';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { usePollDeepLink } from '../hooks/usePollDeepLink';
 import { useAutoSelectGroup } from '../hooks/useAutoSelectGroup';
+import { useWidgetGroupsSync } from '../hooks/useWidgetGroupsSync';
 import { formatDateKey, apiDateToKey, getWeekDays, weekOffsetOf } from '../lib/date-utils';
 import type { Event } from '../services/events';
 import { calculateTopDays, suggestBestTime } from '../lib/calendar-utils';
@@ -61,6 +62,7 @@ export default function CalendarPage() {
   // Auto-select group on load — deep-link groupId takes priority (fix round 1), then
   // whatever's already selected, then the persisted id, then the first group.
   useAutoSelectGroup(groups, deepLinkGroupId);
+  useWidgetGroupsSync(groups);
 
   const groupId = currentGroup?.id ?? '';
   useGroupSync(groupId || undefined);

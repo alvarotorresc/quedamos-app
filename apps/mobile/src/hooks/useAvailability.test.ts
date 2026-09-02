@@ -7,6 +7,7 @@ import {
   useDeleteAvailability,
 } from './useAvailability';
 import { availabilityService, type Availability } from '../services/availability';
+import { notifyWidgetDataChanged } from '../lib/widget-bridge';
 import { createWrapper } from '../test/test-utils';
 
 vi.mock('../services/availability', () => ({
@@ -20,6 +21,10 @@ vi.mock('../services/availability', () => ({
 
 vi.mock('../lib/group-sync', () => ({
   broadcastSync: vi.fn(),
+}));
+
+vi.mock('../lib/widget-bridge', () => ({
+  notifyWidgetDataChanged: vi.fn(),
 }));
 
 describe('useAvailability', () => {
@@ -69,6 +74,17 @@ describe('useCreateAvailability', () => {
       type: 'day',
     });
   });
+
+  it('should notify the widget of data changes on success', async () => {
+    vi.mocked(availabilityService.create).mockResolvedValue({} as unknown as Availability);
+
+    const { result } = renderHook(() => useCreateAvailability('g1'), { wrapper: createWrapper() });
+
+    result.current.mutate({ date: '2026-03-01', type: 'day' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(notifyWidgetDataChanged).toHaveBeenCalled();
+  });
 });
 
 describe('useDeleteAvailability', () => {
@@ -81,5 +97,16 @@ describe('useDeleteAvailability', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(availabilityService.delete).toHaveBeenCalledWith('g1', '2026-03-01');
+  });
+
+  it('should notify the widget of data changes on success', async () => {
+    vi.mocked(availabilityService.delete).mockResolvedValue({ success: true });
+
+    const { result } = renderHook(() => useDeleteAvailability('g1'), { wrapper: createWrapper() });
+
+    result.current.mutate('2026-03-01');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(notifyWidgetDataChanged).toHaveBeenCalled();
   });
 });
