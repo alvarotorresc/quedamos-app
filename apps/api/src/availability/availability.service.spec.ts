@@ -107,6 +107,22 @@ describe('AvailabilityService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should reject a range whose endTime is not after startTime', async () => {
+      for (const [startTime, endTime] of [
+        ['22:00', '08:00'],
+        ['18:00', '18:00'],
+      ]) {
+        await expect(
+          service.create('group-1', 'user-1', {
+            date: '2026-06-01',
+            type: 'range',
+            startTime,
+            endTime,
+          }),
+        ).rejects.toThrow(BadRequestException);
+      }
+    });
+
     it('should clear startTime and endTime when the type is not range', async () => {
       prisma.availability.upsert.mockResolvedValue({});
 

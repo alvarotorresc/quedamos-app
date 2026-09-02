@@ -41,6 +41,11 @@ export class AvailabilityService {
       if (!dto.startTime || !dto.endTime) {
         throw new BadRequestException('startTime and endTime are required for type "range"');
       }
+      // HH:MM strings compare lexicographically — the same check events already do.
+      // An inverted range feeds bogus slots into the best-day calculation.
+      if (dto.endTime <= dto.startTime) {
+        throw new BadRequestException('endTime must be after startTime');
+      }
     }
 
     if (dto.type === 'slots') {
