@@ -1,4 +1,9 @@
-import { corsOrigins, DEFAULT_FRONTEND_URL, getFrontendUrl } from './frontend-url';
+import {
+  corsOrigins,
+  DEFAULT_FRONTEND_URL,
+  getFrontendUrl,
+  LEGACY_FRONTEND_URL,
+} from './frontend-url';
 
 describe('getFrontendUrl', () => {
   afterEach(() => {
@@ -8,7 +13,7 @@ describe('getFrontendUrl', () => {
   it('falls back to the default frontend url when FRONTEND_URL is unset', () => {
     delete process.env.FRONTEND_URL;
 
-    expect(getFrontendUrl()).toBe('https://quedamos-app-mobile.vercel.app');
+    expect(getFrontendUrl()).toBe('https://quedamos.alvarotc.com');
   });
 
   it('uses FRONTEND_URL when set', () => {
@@ -25,6 +30,14 @@ describe('corsOrigins', () => {
     expect(origins).toContain(DEFAULT_FRONTEND_URL);
     expect(origins).toContain('https://localhost');
     expect(origins).not.toContain('http://localhost:5173');
+  });
+
+  it('keeps allowing the legacy vercel host while old links are still around', () => {
+    const origins = corsOrigins({ NODE_ENV: 'production' });
+
+    expect(DEFAULT_FRONTEND_URL).toBe('https://quedamos.alvarotc.com');
+    expect(LEGACY_FRONTEND_URL).toBe('https://quedamos-app-mobile.vercel.app');
+    expect(origins).toContain(LEGACY_FRONTEND_URL);
   });
 
   it('adds the local dev servers outside production', () => {
