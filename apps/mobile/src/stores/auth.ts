@@ -10,6 +10,7 @@ import {
   type TimeSlotPreferences,
 } from '../lib/time-slot-utils';
 import { PUBLIC_WEB_URL } from '../lib/constants';
+import { clearPendingRedirect } from '../lib/pending-redirect';
 import i18n from '../i18n';
 
 let authSubscription: { unsubscribe: () => void } | null = null;
@@ -95,6 +96,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   signOut: async () => {
     await unregisterFromBackend().catch(() => {});
     await clearWidgetSession();
+    // An invite parked before signing in belongs to whoever was going there: it
+    // must not fire for the next person to log in on this device.
+    clearPendingRedirect();
     await supabase.auth.signOut();
     set({ user: null });
   },

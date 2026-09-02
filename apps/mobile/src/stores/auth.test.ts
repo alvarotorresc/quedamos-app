@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from './auth';
 import { supabase } from '../lib/supabase';
 import { syncWidgetSession, clearWidgetSession } from '../lib/widget-bridge';
+import { savePendingRedirect, takePendingRedirect } from '../lib/pending-redirect';
 
 type GetSessionResult = Awaited<ReturnType<typeof supabase.auth.getSession>>;
 type SignInResult = Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
@@ -153,6 +154,15 @@ describe('useAuthStore', () => {
 
       expect(clearWidgetSession).toHaveBeenCalled();
       expect(callOrder).toEqual(['clearWidgetSession', 'supabase.auth.signOut']);
+    });
+
+    it('drops a parked invite destination so the next user is not sent to it', async () => {
+      vi.mocked(supabase.auth.signOut).mockResolvedValue({ error: null });
+      savePendingRedirect('/join/12345678');
+
+      await useAuthStore.getState().signOut();
+
+      expect(takePendingRedirect()).toBeNull();
     });
   });
 
