@@ -46,6 +46,7 @@ interface MockPrismaModels {
     findMany: jest.Mock;
     create: jest.Mock;
     update: jest.Mock;
+    updateMany: jest.Mock;
     delete: jest.Mock;
   }>;
   eventAttendee: MockModel<{
@@ -81,7 +82,7 @@ interface MockPrismaModels {
     create: jest.Mock;
     update: jest.Mock;
     delete: jest.Mock;
-  }>;
+  }> & { updateMany: jest.Mock };
   planVote: MockModel<{
     findUnique: jest.Mock;
     findFirst: jest.Mock;
@@ -89,6 +90,7 @@ interface MockPrismaModels {
     create: jest.Mock;
     upsert: jest.Mock;
     delete: jest.Mock;
+    deleteMany: jest.Mock;
   }>;
   groupCity: MockModel<{
     findUnique: jest.Mock;
@@ -96,6 +98,7 @@ interface MockPrismaModels {
     findMany: jest.Mock;
     create: jest.Mock;
     delete: jest.Mock;
+    count: jest.Mock;
   }>;
   notificationLog: MockModel<{
     findMany: jest.Mock;
@@ -121,6 +124,7 @@ interface MockPrismaModels {
     updateMany: jest.Mock;
     upsert: jest.Mock;
     delete: jest.Mock;
+    deleteMany: jest.Mock;
     count: jest.Mock;
   }>;
   widgetToken: MockModel<{
@@ -182,6 +186,8 @@ export function createMockPrisma(): MockPrisma {
       findMany: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      // Conditional writes read `count`, so the default has to be a real result.
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       delete: jest.fn(),
     },
     eventAttendee: {
@@ -217,6 +223,7 @@ export function createMockPrisma(): MockPrisma {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      updateMany: jest.fn(),
     },
     planVote: {
       findUnique: jest.fn(),
@@ -225,6 +232,7 @@ export function createMockPrisma(): MockPrisma {
       create: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     groupCity: {
       findUnique: jest.fn(),
@@ -232,6 +240,7 @@ export function createMockPrisma(): MockPrisma {
       findMany: jest.fn(),
       create: jest.fn(),
       delete: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     },
     notificationLog: {
       findMany: jest.fn(),
@@ -257,6 +266,7 @@ export function createMockPrisma(): MockPrisma {
       updateMany: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
       count: jest.fn(),
     },
     widgetToken: {

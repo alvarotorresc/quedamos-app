@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock firebase/app
 const mockInitializeApp = vi.fn().mockReturnValue({ name: 'test-app' });
+let nativePlatform = true;
+vi.mock('@capacitor/core', () => ({
+  Capacitor: { isNativePlatform: () => nativePlatform },
+}));
+
 vi.mock('firebase/app', () => ({
   initializeApp: mockInitializeApp,
 }));
@@ -126,5 +131,40 @@ describe('firebase analytics', () => {
     const { logEvent } = await import('./firebase');
 
     await expect(logEvent('test_event')).resolves.toBeUndefined();
+  });
+
+  describe('on the web', () => {
+    beforeEach(() => {
+      nativePlatform = false;
+    });
+    afterEach(() => {
+      nativePlatform = true;
+      delete (window as unknown as { umami?: unknown }).umami;
+    });
+
+    it('logEvent sends the event to Umami and never touches Firebase Analytics', async () => {
+      const track = vi.fn();
+      (window as unknown as { umami?: { track: typeof track } }).umami = { track };
+      const { logEvent } = await import('./firebase');
+
+      await logEvent('share_tarjeta', { momento: 'sellada' });
+
+      expect(track).toHaveBeenCalledWith('share_tarjeta', { momento: 'sellada' });
+      expect(mockGetAnalytics).not.toHaveBeenCalled();
+      expect(mockLogEventFn).not.toHaveBeenCalled();
+    });
+
+    it('getFirebaseAnalytics resolves null on the web so gtag is never loaded', async () => {
+      const { getFirebaseAnalytics } = await import('./firebase');
+
+      await expect(getFirebaseAnalytics()).resolves.toBeNull();
+      expect(mockGetAnalytics).not.toHaveBeenCalled();
+    });
+
+    it('logEvent is a no-op without Umami on the page', async () => {
+      const { logEvent } = await import('./firebase');
+
+      await expect(logEvent('screen_view', { screen_name: 'Calendar' })).resolves.toBeUndefined();
+    });
   });
 });

@@ -34,7 +34,7 @@ vi.mock('../stores/auth', () => ({
   useAuthStore: vi.fn(
     (
       selector: (s: {
-        user: { id: string; name: string; email: string; avatarEmoji: string } | null;
+        user: { id: string; name: string; email: string; avatarEmoji: string; timeSlots?: Record<string, string> } | null;
         signOut: () => Promise<void>;
         updateName: () => Promise<void>;
         updateEmail: () => Promise<void>;
@@ -43,7 +43,20 @@ vi.mock('../stores/auth', () => ({
       }) => unknown,
     ) =>
       selector({
-        user: { id: 'user-1', name: 'Álvaro Torres', email: 'alvaro@ejemplo.com', avatarEmoji: '😊' },
+        user: {
+          id: 'user-1',
+          name: 'Álvaro Torres',
+          email: 'alvaro@ejemplo.com',
+          avatarEmoji: '😊',
+          timeSlots: {
+            morningStart: '07:30',
+            morningEnd: '13:00',
+            afternoonStart: '13:00',
+            afternoonEnd: '20:00',
+            nightStart: '20:00',
+            nightEnd: '02:00',
+          },
+        },
         signOut: signOutMock,
         updateName: vi.fn(),
         updateEmail: vi.fn(),
@@ -115,7 +128,7 @@ describe('ProfilePage', () => {
 
   it('el idioma se cambia con las pastillas', () => {
     render(<ProfilePage />);
-    fireEvent.click(screen.getByRole('button', { name: 'EN' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'EN' }));
     expect(changeLanguageMock).toHaveBeenCalledWith('en');
   });
 
@@ -139,4 +152,21 @@ describe('ProfilePage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'profile.logout' }));
     expect(signOutMock).toHaveBeenCalledTimes(1);
   });
+
+describe('ProfilePage — franjas', () => {
+  it('la ficha muestra las franjas guardadas, y una edición sin guardar no las pisa al cerrar el editor', () => {
+    render(<ProfilePage />);
+    expect(screen.getByText('07:30–13:00')).toBeInTheDocument();
+
+    const tile = screen.getByRole('button', { expanded: false, name: /07:30/ });
+    fireEvent.click(tile);
+    const inputs = screen.getAllByDisplayValue('07:30');
+    fireEvent.change(inputs[0], { target: { value: '06:00' } });
+    // The preview keeps the saved value while the buffer holds 06:00, so it is still named by 07:30.
+    fireEvent.click(screen.getByRole('button', { expanded: true, name: /07:30/ }));
+
+    expect(screen.getByText('07:30–13:00')).toBeInTheDocument();
+    expect(screen.queryByText('06:00–13:00')).toBeNull();
+  });
+});
 });

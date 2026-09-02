@@ -20,7 +20,9 @@
     "title": "Sign in",
     "forgotPassword": "Forgot your password?",
     "submit": "Sign in",
-    "submitting": "Signing in..."
+    "submitting": "Signing in...",
+    "noAccount": "No account yet?",
+    "register": "Create one"
   },
   "register": {
     "title": "Create account",
@@ -46,7 +48,8 @@
     "success": {
       "title": "Check your email",
       "message": "We sent a confirmation email to <1>{{email}}</1>. Click the link to activate your account.",
-      "spam": "If you don't see it, check your spam folder."
+      "spam": "If you don't see it, check your spam folder.",
+      "login": "Already confirmed it, sign in"
     }
   },
   "forgotPassword": {
@@ -179,7 +182,8 @@
     "pendingCount_other": "{{count}} up in the air",
     "nextEvent": "Next plan",
     "addToCalendar": "Add to calendar",
-    "sealedWith_one": "Sealed · just you",
+    "sealedWithYou": "Sealed · just you",
+    "sealedWith_one": "Sealed · {{name}} is going",
     "sealedWith_other": "Sealed · {{count}} going",
     "past": "Past",
     "confirmed": "confirmed",
@@ -240,6 +244,11 @@
     "noGroup": "You don't belong to any group",
     "noGroupSubtitle": "Create a group or join one to get started",
     "createGroup": "Create group",
+    "welcome": {
+      "title": "Welcome to Quedamos!",
+      "description": "Create a group with your friends or ask for an invite code.",
+      "haveCode": "I have a code"
+    },
     "joinWithCode": "Join with code",
     "groupName": "Group name",
     "groupNamePlaceholder": "E.g.: School friends",
@@ -589,6 +598,7 @@
     "edit": "Edit proposal",
     "editSaving": "Saving...",
     "empty": "No proposals",
+    "emptyDescription": "When someone proposes a plan without a fixed date, it will show up here for voting.",
     "closed": "Closed",
     "votes": "{{yes}} in favor, {{no}} against"
   },
@@ -625,6 +635,7 @@
     "notPendingAnymore": "That question isn't pending anymore."
   },
   "share": {
+    "marca": "¿Quedamos?",
     "tarjetaCerrada": "The circle's closed. You're all free on {{fecha}}.",
     "tarjetaSellada": "It's on. {{titulo}}, {{fechaHora}}.",
     "cardCerrada": "The circle's closed.",
@@ -652,6 +663,8 @@
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",
     "respondEventFailed": "Couldn't save your response",
-    "shareTarjetaFailed": "Couldn't create the card"
+    "shareTarjetaFailed": "Couldn't create the card",
+    "downloadICSFailed": "Couldn't download the plan",
+    "updateNotificationPreferenceFailed": "Couldn't save that notification"
   }
 }

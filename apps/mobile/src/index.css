@@ -85,6 +85,16 @@ ion-back-button {
   --color: var(--app-text);
 }
 
+/* Anillo de foco del design system: solo para navegación por teclado, con el
+   primario del tema (contraste suficiente en ambas luces). */
+:focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
 /* Skeleton shimmer */
 @keyframes shimmer {
   0% {

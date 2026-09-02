@@ -106,6 +106,53 @@ describe('AvailabilityService', () => {
         service.create('group-1', 'user-1', { date: '2026-06-01', type: 'slots', slots: [] }),
       ).rejects.toThrow(BadRequestException);
     });
+
+    it('should reject a range whose endTime is not after startTime', async () => {
+      for (const [startTime, endTime] of [
+        ['22:00', '08:00'],
+        ['18:00', '18:00'],
+      ]) {
+        await expect(
+          service.create('group-1', 'user-1', {
+            date: '2026-06-01',
+            type: 'range',
+            startTime,
+            endTime,
+          }),
+        ).rejects.toThrow(BadRequestException);
+      }
+    });
+
+    it('should clear startTime and endTime when the type is not range', async () => {
+      prisma.availability.upsert.mockResolvedValue({});
+
+      await service.create('group-1', 'user-1', { date: '2026-03-01', type: 'day' });
+
+      // undefined would mean "leave as is" on the update branch, keeping the old range.
+      expect(prisma.availability.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ startTime: null, endTime: null }),
+          create: expect.objectContaining({ startTime: null, endTime: null }),
+        }),
+      );
+    });
+
+    it('should keep the times when the type is range', async () => {
+      prisma.availability.upsert.mockResolvedValue({});
+
+      await service.create('group-1', 'user-1', {
+        date: '2026-03-01',
+        type: 'range',
+        startTime: '18:00',
+        endTime: '22:00',
+      });
+
+      expect(prisma.availability.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: expect.objectContaining({ startTime: '18:00', endTime: '22:00' }),
+        }),
+      );
+    });
   });
 
   describe('date format validation', () => {
@@ -129,6 +176,15 @@ describe('AvailabilityService', () => {
 
     it('should reject date with extra characters in delete', async () => {
       await expect(service.delete('group-1', '2026-03-01T00:00', 'user-1')).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should reject an impossible calendar date in update and delete', async () => {
+      await expect(
+        service.update('group-1', '2026-02-30', 'user-1', { date: '2026-02-30', type: 'day' }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(service.delete('group-1', '2026-13-01', 'user-1')).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -189,6 +245,27 @@ describe('AvailabilityService', () => {
       await expect(
         service.update('group-1', '2026-06-01', 'user-1', { date: '2026-06-01', type: 'slots' }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should clear the stored range when switching to day', async () => {
+      prisma.availability.findUnique.mockResolvedValue({
+        id: '1',
+        type: 'range',
+        startTime: '18:00',
+        endTime: '22:00',
+      });
+      prisma.availability.update.mockResolvedValue({});
+
+      await service.update('group-1', '2026-03-01', 'user-1', {
+        date: '2026-03-01',
+        type: 'day',
+      });
+
+      expect(prisma.availability.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ type: 'day', startTime: null, endTime: null }),
+        }),
+      );
     });
   });
 
@@ -260,9 +337,31 @@ describe('AvailabilityService', () => {
 
       await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
 
+      // Los nulls son deliberados: la rama iguala a la de 'range' para no dejar
+      // horas fantasma en filas anteriores al arreglo de create()/update().
       expect(prisma.availability.update).toHaveBeenCalledWith({
         where: { id: 'a1' },
-        data: { type: 'day', slots: [] },
+        data: { type: 'day', slots: [], startTime: null, endTime: null },
+      });
+    });
+
+    it('fila existente type=slots con hora antigua y sondeo sin franja: limpia el rango fantasma', async () => {
+      // Filas anteriores al arreglo de create/update pueden ser type=slots conservando
+      // start_time; al ampliarlas a day hay que borrarlo o el modal lo repinta.
+      prisma.availability.findUnique.mockResolvedValue({
+        id: 'a1',
+        type: 'slots',
+        slots: ['Tarde'],
+        startTime: '18:00',
+        endTime: '22:00',
+      });
+      prisma.availability.update.mockResolvedValue({});
+
+      await service.mergeFromPoll('group-1', 'user-1', '2026-03-01', null);
+
+      expect(prisma.availability.update).toHaveBeenCalledWith({
+        where: { id: 'a1' },
+        data: { type: 'day', slots: [], startTime: null, endTime: null },
       });
     });
 

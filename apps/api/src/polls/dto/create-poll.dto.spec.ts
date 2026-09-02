@@ -26,6 +26,14 @@ describe('CreatePollDto', () => {
     expect(dateError!.constraints).toHaveProperty('matches');
   });
 
+  it('should reject impossible calendar dates', async () => {
+    for (const date of ['2026-02-30', '2026-13-01', '2026-00-10', '2026-06-31', '2026-04-31']) {
+      const errors = await validate(createDto({ date }));
+      const dateError = errors.find((e) => e.property === 'date');
+      expect(dateError).toBeDefined();
+    }
+  });
+
   it('should reject an unknown slot', async () => {
     const errors = await validate(createDto({ date: '2026-02-13', slot: 'Madrugada' }));
     const slotError = errors.find((e) => e.property === 'slot');

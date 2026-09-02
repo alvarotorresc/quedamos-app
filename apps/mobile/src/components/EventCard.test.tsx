@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EventCard } from './EventCard';
 import type { Event } from '../services/events';
+import { downloadICS } from '../lib/ics-utils';
 
 // Mock hooks
 const mockMutate = vi.fn();
@@ -460,7 +461,7 @@ describe('EventCard', () => {
       await waitFor(() =>
         expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
           titulo: 'Cena en el centro',
-          fechaHora: 'miércoles 15',
+          fechaHora: 'miércoles, 15 de abril',
         }),
       );
     });
@@ -479,13 +480,13 @@ describe('EventCard', () => {
       await waitFor(() =>
         expect(mockT).toHaveBeenCalledWith('share.tarjetaSellada', {
           titulo: 'Cena en el centro',
-          fechaHora: 'miércoles 15 · 21:00',
+          fechaHora: 'miércoles, 15 de abril · 21:00',
         }),
       );
 
       await waitFor(() => expect(mockRenderTarjetaSellada).toHaveBeenCalledOnce());
       const opts = mockRenderTarjetaSellada.mock.calls[0][0];
-      expect(opts.fechaHora).toBe('miércoles 15 · 21:00');
+      expect(opts.fechaHora).toBe('miércoles, 15 de abril · 21:00');
     });
 
     it('fallo del renderer muestra el toast errors.shareTarjetaFailed, sin lanzar', async () => {
@@ -586,7 +587,25 @@ describe('EventCard · agenda y destacada', () => {
     expect(screen.getByText('plans.nextEvent')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'plans.addToCalendar' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'group.share' })).toBeInTheDocument();
-    expect(mockT).toHaveBeenCalledWith('plans.sealedWith', { count: 2 });
+    expect(mockT).toHaveBeenCalledWith('plans.sealedWith', expect.objectContaining({ count: 2 }));
+  });
+
+  it('con una sola confirmación que no es la mía, "sellada" nombra a quien va', () => {
+    const event = createEvent({
+      status: 'confirmed',
+      attendees: [createAttendee(OTHER_USER_ID, 'confirmed', 'Misa'), createAttendee(CURRENT_USER_ID, 'pending', 'Alvaro')],
+    });
+    render(<EventCard event={event} {...defaultProps} featured />);
+    expect(mockT).toHaveBeenCalledWith('plans.sealedWith', { count: 1, name: 'Misa' });
+  });
+
+  it('si la única confirmación es la mía, dice que voy yo', () => {
+    const event = createEvent({
+      status: 'confirmed',
+      attendees: [createAttendee(CURRENT_USER_ID, 'confirmed', 'Alvaro'), createAttendee(OTHER_USER_ID, 'pending', 'Misa')],
+    });
+    render(<EventCard event={event} {...defaultProps} featured />);
+    expect(mockT).toHaveBeenCalledWith('plans.sealedWithYou');
   });
 
   it('sin destacar sigue siendo un bloque de lista con las acciones en iconos', () => {
@@ -594,5 +613,34 @@ describe('EventCard · agenda y destacada', () => {
     expect(screen.queryByText('plans.nextEvent')).toBeNull();
     expect(screen.queryByRole('button', { name: 'plans.addToCalendar' })).toBeNull();
     expect(screen.getByTestId('icon-download')).toBeInTheDocument();
+  });
+
+  describe('descarga del .ics', () => {
+    it('avisa con un toast si la descarga falla desde la ficha destacada', async () => {
+      vi.mocked(downloadICS).mockRejectedValueOnce(new Error('boom'));
+      render(<EventCard event={createEvent({ status: 'confirmed' })} {...defaultProps} featured />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'plans.addToCalendar' }));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.downloadICSFailed'));
+    });
+
+    it('avisa con un toast si la descarga falla desde el bloque de lista', async () => {
+      vi.mocked(downloadICS).mockRejectedValueOnce(new Error('boom'));
+      render(<EventCard event={createEvent({ status: 'confirmed' })} {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'calendar.eventDetail.download' }));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.downloadICSFailed'));
+    });
+
+    it('no molesta con un toast cuando la descarga va bien', async () => {
+      render(<EventCard event={createEvent({ status: 'confirmed' })} {...defaultProps} featured />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'plans.addToCalendar' }));
+
+      await waitFor(() => expect(downloadICS).toHaveBeenCalled());
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
   });
 });

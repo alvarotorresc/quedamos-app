@@ -7,6 +7,7 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
 import { translateAuthError } from '../lib/auth-errors';
+import { safeRedirect } from '../lib/safe-redirect';
 import { useScreenView } from '../hooks/useAnalytics';
 
 const HCAPTCHA_SITEKEY = 'c7aee17a-5df0-43a6-ba90-397e25d83410';
@@ -17,9 +18,11 @@ export default function LoginPage() {
   const history = useHistory();
   const location = useLocation();
   const signIn = useAuthStore((s) => s.signIn);
-  const rawRedirect = new URLSearchParams(location.search).get('redirect') || '/tabs';
-  const redirectTo =
-    rawRedirect.startsWith('/') && !rawRedirect.startsWith('//') ? rawRedirect : '/tabs';
+  const redirectTo = safeRedirect(new URLSearchParams(location.search).get('redirect'));
+  // Someone opening an invite link without an account has to register first: carry
+  // the destination across so they land on the invite instead of the plain tabs.
+  const registerTo =
+    redirectTo === '/tabs' ? '/register' : `/register?redirect=${encodeURIComponent(redirectTo)}`;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -80,7 +83,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 text-text outline-none focus:border-primary"
+                className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 text-text focus:border-primary"
                 placeholder={t('common.emailPlaceholder')}
                 required
               />
@@ -93,7 +96,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                  className="w-full bg-bg-input border border-strong rounded-md px-4 py-3 pr-11 text-text focus:border-primary"
                   placeholder={t('common.passwordPlaceholder')}
                   required
                 />
@@ -119,6 +122,13 @@ export default function LoginPage() {
             <Button type="submit" disabled={loading} className="mt-2">
               {loading ? t('login.submitting') : t('login.submit')}
             </Button>
+
+            <p className="text-center text-xs text-text-muted">
+              {t('login.noAccount')}{' '}
+              <Link to={registerTo} className="text-primary">
+                {t('login.register')}
+              </Link>
+            </p>
           </form>
         </div>
       </IonContent>

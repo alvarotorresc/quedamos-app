@@ -14,6 +14,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useParams, useHistory } from 'react-router-dom';
 import { Share } from '@capacitor/share';
+import { isShareCancel } from '../lib/share-tarjeta';
 import {
   useGroup,
   useGroupInvite,
@@ -155,8 +156,10 @@ export default function GroupDetailPage() {
         dialogTitle: t('group.shareMessage'),
       });
       track('share_group');
-    } catch {
-      // Capacitor Share failed or user cancelled — try Web Share API
+    } catch (error) {
+      // Dismissing the sheet is a decision, not a failure: fall through to nothing.
+      if (isShareCancel(error)) return;
+      // Capacitor Share failed — try Web Share API
       if (navigator.share) {
         try {
           await navigator.share({
@@ -166,8 +169,10 @@ export default function GroupDetailPage() {
           });
           track('share_group');
           return;
-        } catch {
-          /* user cancelled */
+        } catch (webError) {
+          // Same here: a cancelled web share must not end up copying the code
+          // (and possibly raising errors.copyFailed) behind the user's back.
+          if (isShareCancel(webError)) return;
         }
       }
       // Final fallback: copy to clipboard
@@ -562,7 +567,7 @@ export default function GroupDetailPage() {
                 value={citySearch}
                 onChange={(e) => setCitySearch(e.target.value)}
                 placeholder={t('weather.searchCity')}
-                className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark mb-2 bg-bg-hover border border-strong"
+                className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark mb-2 bg-bg-hover border border-strong"
               />
               {cityResults.length > 0 && (
                 <div className="rounded-[10px] overflow-hidden bg-bg-card border border-subtle mb-2">

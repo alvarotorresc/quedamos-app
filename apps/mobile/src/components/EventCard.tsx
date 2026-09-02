@@ -138,6 +138,14 @@ export function EventCard({
     );
   };
 
+  // Writing the file or handing it to the share sheet can fail (no storage, no
+  // app to receive it) — surface that instead of dropping an unhandled rejection.
+  const handleDownloadICS = async () => {
+    await runWithErrorToast(() => downloadICS(event), showError, {
+      errorKey: 'errors.downloadICSFailed',
+    });
+  };
+
   const handleShare = async () => {
     if (sharing) return;
     if (!invite?.inviteUrl) return;
@@ -154,7 +162,7 @@ export function EventCard({
             fechaHora,
             memberColors: selladaMemberColors,
             theme,
-            marca: t('landing.brand'),
+            marca: t('share.marca'),
             pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
           });
           const texto = t('share.tarjetaSellada', { titulo: event.title, fechaHora });
@@ -258,7 +266,12 @@ export function EventCard({
           )}
           {featured && event.status === 'confirmed' && (
             <p className="text-[11px] text-success mt-1">
-              {t('plans.sealedWith', { count: confirmedAttendees.length })}
+              {confirmedAttendees.length === 1 && confirmedAttendees[0].userId === user?.id
+                ? t('plans.sealedWithYou')
+                : t('plans.sealedWith', {
+                    count: confirmedAttendees.length,
+                    name: confirmedAttendees[0]?.user.name,
+                  })}
             </p>
           )}
         </div>
@@ -327,7 +340,7 @@ export function EventCard({
           <Button
             variant="secondary"
             size="sm"
-            onClick={() => downloadICS(event)}
+            onClick={handleDownloadICS}
             aria-label={t('plans.addToCalendar')}
             className="flex-1"
           >
@@ -362,7 +375,7 @@ export function EventCard({
           </Badge>
           <div className="flex items-center gap-1 shrink-0">
             <button
-              onClick={() => downloadICS(event)}
+              onClick={handleDownloadICS}
               className={iconButtonClass}
               title={t('calendar.eventDetail.download')}
               aria-label={t('calendar.eventDetail.download')}

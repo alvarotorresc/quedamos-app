@@ -20,7 +20,9 @@
     "title": "Iniciar sesión",
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "submit": "Entrar",
-    "submitting": "Entrando..."
+    "submitting": "Entrando...",
+    "noAccount": "¿Aún no tienes cuenta?",
+    "register": "Crear una"
   },
   "register": {
     "title": "Crear cuenta",
@@ -46,7 +48,8 @@
     "success": {
       "title": "Revisa tu email",
       "message": "Te hemos enviado un email de confirmación a <1>{{email}}</1>. Haz click en el enlace para activar tu cuenta.",
-      "spam": "Si no lo ves, revisa la carpeta de spam."
+      "spam": "Si no lo ves, revisa la carpeta de spam.",
+      "login": "Ya lo he confirmado, entrar"
     }
   },
   "forgotPassword": {
@@ -179,7 +182,8 @@
     "pendingCount_other": "{{count}} en el aire",
     "nextEvent": "Próxima quedada",
     "addToCalendar": "Añadir al calendario",
-    "sealedWith_one": "Sellada · vas tú",
+    "sealedWithYou": "Sellada · vas tú",
+    "sealedWith_one": "Sellada · va {{name}}",
     "sealedWith_other": "Sellada · vais {{count}}",
     "past": "Pasadas",
     "confirmed": "confirmados",
@@ -240,6 +244,11 @@
     "noGroup": "No perteneces a ningún grupo",
     "noGroupSubtitle": "Crea un grupo o únete a uno para empezar",
     "createGroup": "Crear grupo",
+    "welcome": {
+      "title": "¡Bienvenido a Quedamos!",
+      "description": "Crea un grupo con tus amigos o pide un código de invitación.",
+      "haveCode": "Tengo un código"
+    },
     "joinWithCode": "Unirme con código",
     "groupName": "Nombre del grupo",
     "groupNamePlaceholder": "Ej: Amigos del cole",
@@ -589,6 +598,7 @@
     "edit": "Editar propuesta",
     "editSaving": "Guardando...",
     "empty": "No hay propuestas",
+    "emptyDescription": "Cuando alguien proponga un plan sin fecha cerrada, aparecerá aquí para votarlo.",
     "closed": "Cerradas",
     "votes": "{{yes}} a favor, {{no}} en contra"
   },
@@ -625,6 +635,7 @@
     "notPendingAnymore": "Esa pregunta ya no está pendiente."
   },
   "share": {
+    "marca": "¿Quedamos?",
     "tarjetaCerrada": "El aro se ha cerrado. Podéis todos el {{fecha}}.",
     "tarjetaSellada": "Quedamos. {{titulo}}, {{fechaHora}}.",
     "cardCerrada": "El aro se ha cerrado.",
@@ -652,6 +663,8 @@
     "copyFailed": "No se pudo copiar el código",
     "answerPollFailed": "No se pudo guardar tu respuesta",
     "respondEventFailed": "No se pudo guardar tu asistencia",
-    "shareTarjetaFailed": "No se pudo crear la tarjeta"
+    "shareTarjetaFailed": "No se pudo crear la tarjeta",
+    "downloadICSFailed": "No se pudo descargar la quedada",
+    "updateNotificationPreferenceFailed": "No se pudo guardar el aviso"
   }
 }

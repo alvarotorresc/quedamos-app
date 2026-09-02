@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "push_tokens" ADD COLUMN     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP;

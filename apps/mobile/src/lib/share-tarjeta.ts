@@ -27,7 +27,13 @@ export interface ShareTarjetaOpts {
   showInfo?: (messageKey: string) => void;
 }
 
-function isShareCancel(error: unknown): boolean {
+/**
+ * A dismissed share sheet is a user decision, not a failure: Capacitor's Share
+ * plugin and the Web Share API both surface it as a rejection (an AbortError or
+ * a plain Error whose message mentions "cancel"). Exported so every share entry
+ * point — the aro card, the ICS export, the invite link — treats it the same.
+ */
+export function isShareCancel(error: unknown): boolean {
   if (error instanceof DOMException && error.name === 'AbortError') return true;
   if (error instanceof Error && /cancel/i.test(error.message)) return true;
   return false;
@@ -51,7 +57,9 @@ function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  URL.revokeObjectURL(objectUrl);
+  // Revoking in the same tick makes Firefox cancel the download; give the
+  // browser a moment to open the blob first.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
 
 async function shareNative(opts: ShareTarjetaOpts): Promise<{ shared: boolean }> {

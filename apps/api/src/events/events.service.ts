@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import {
   BadRequestException,
   ForbiddenException,
@@ -203,8 +204,10 @@ export class EventsService {
       }
     }
 
-    const finalTime = dto.time ?? event.time;
-    const finalEndTime = dto.endTime ?? event.endTime;
+    // `??` would treat an explicit null (clear the field) as "not sent" and validate
+    // the stored value instead, rejecting perfectly valid edits.
+    const finalTime = dto.time !== undefined ? dto.time : event.time;
+    const finalEndTime = dto.endTime !== undefined ? dto.endTime : event.endTime;
     if (finalTime && finalEndTime && finalEndTime <= finalTime) {
       throw new BadRequestException('End time must be after start time');
     }
@@ -278,8 +281,10 @@ export class EventsService {
       throw new ForbiddenException('Only the creator can delete this event');
     }
 
-    // Send notification before delete (attendees are cascade-deleted with the event)
-    this.notificationsService
+    // Send notification before delete and await it to avoid a race with the CASCADE:
+    // the push reads event_attendees, which the delete takes away. Same shape as
+    // deleteGroup — the catch keeps a failing push from blocking the deletion.
+    await this.notificationsService
       .sendToEventAttendees(
         eventId,
         'Quedada eliminada',
@@ -381,44 +386,63 @@ export class EventsService {
     // the pre-update status with the post-update result, so concurrent responds
     // or re-confirmations on an already confirmed event never re-send the
     // event_confirmed notification.
-    const { justReachedAllConfirmed, eventTitle } = await this.prisma.$transaction(async (tx) => {
-      const preEvent = await tx.event.findUnique({
-        where: { id: eventId },
-        select: { status: true, title: true },
-      });
+    // Serializable so two last-minute confirmations cannot each miss the other's
+    // row and leave the event pending with nobody notified; Postgres aborts one
+    // of them with P2034 and we simply run it again.
+    const { justReachedAllConfirmed, eventTitle } = await this.withSerializationRetry(async () =>
+      this.prisma.$transaction(
+        async (tx) => {
+          const preEvent = await tx.event.findUnique({
+            where: { id: eventId },
+            select: { status: true, title: true },
+          });
 
-      await tx.eventAttendee.update({
-        where: { eventId_userId: { eventId, userId } },
-        data: {
-          status: dto.status,
-          respondedAt: new Date(),
+          // The guard above ran on a read taken OUTSIDE this transaction. cancel() is a
+          // plain update that can commit in between (the creator cancels while the last
+          // attendee confirms), so the cancelled check has to be repeated here.
+          if (preEvent?.status === 'cancelled') {
+            throw new BadRequestException('Cannot respond to a cancelled event');
+          }
+
+          await tx.eventAttendee.update({
+            where: { eventId_userId: { eventId, userId } },
+            data: {
+              status: dto.status,
+              respondedAt: new Date(),
+            },
+          });
+
+          const allAttendees = await tx.eventAttendee.findMany({
+            where: { eventId },
+          });
+
+          const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
+          const anyDeclined = allAttendees.some((a) => a.status === 'declined');
+
+          // Conditional write: belt and braces over the guard above, so a cancel that
+          // slips in cannot be turned into a confirmation — and `count` gates the push.
+          let justConfirmed = false;
+          if (allConfirmed) {
+            const { count } = await tx.event.updateMany({
+              where: { id: eventId, status: { not: 'cancelled' } },
+              data: { status: 'confirmed' },
+            });
+            justConfirmed = count === 1;
+          } else if (anyDeclined) {
+            await tx.event.update({
+              where: { id: eventId },
+              data: { status: 'pending' },
+            });
+          }
+
+          return {
+            justReachedAllConfirmed: justConfirmed && preEvent?.status !== 'confirmed',
+            eventTitle: preEvent?.title ?? event.title,
+          };
         },
-      });
-
-      const allAttendees = await tx.eventAttendee.findMany({
-        where: { eventId },
-      });
-
-      const allConfirmed = allAttendees.every((a) => a.status === 'confirmed');
-      const anyDeclined = allAttendees.some((a) => a.status === 'declined');
-
-      if (allConfirmed) {
-        await tx.event.update({
-          where: { id: eventId },
-          data: { status: 'confirmed' },
-        });
-      } else if (anyDeclined) {
-        await tx.event.update({
-          where: { id: eventId },
-          data: { status: 'pending' },
-        });
-      }
-
-      return {
-        justReachedAllConfirmed: allConfirmed && preEvent?.status !== 'confirmed',
-        eventTitle: preEvent?.title ?? event.title,
-      };
-    });
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      ),
+    );
 
     // Notifications outside transaction (fire-and-forget)
     if (dto.status === 'confirmed' && justReachedAllConfirmed) {
@@ -453,5 +477,19 @@ export class EventsService {
     }
 
     return this.findById(groupId, eventId, userId);
+  }
+
+  /** Runs `work` up to three times while Postgres reports a serialization failure (P2034). */
+  private async withSerializationRetry<T>(work: () => Promise<T>): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        return await work();
+      } catch (error) {
+        lastError = error;
+        if ((error as { code?: string } | null)?.code !== 'P2034') throw error;
+      }
+    }
+    throw lastError;
   }
 }

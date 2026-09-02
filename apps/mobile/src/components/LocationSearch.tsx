@@ -85,7 +85,7 @@ export function LocationSearch({
           setTimeout(() => setShowDropdown(false), 200);
         }}
         placeholder={placeholder}
-        className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+        className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
         style={style}
         autoComplete="off"
       />

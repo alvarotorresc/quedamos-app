@@ -457,6 +457,51 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should not confirm an event cancelled between the read and the transaction', async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-2' });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      // The creator cancelled after findById read the event as pending: only the
+      // read inside the transaction sees it.
+      prisma.event.findUnique.mockResolvedValue(createTestEvent({ status: 'cancelled' }));
+
+      await expect(
+        service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(prisma.event.update).not.toHaveBeenCalled();
+      expect(prisma.event.updateMany).not.toHaveBeenCalled();
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
+    it('should not notify when the conditional confirm write matches no row', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({ eventId: 'event-1', userId: 'user-2' });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.event.updateMany.mockResolvedValue({ count: 0 });
+      prisma.event.findUnique.mockResolvedValue(createTestEvent());
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+
+      await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
+
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
     it('should update attendee status to confirmed', async () => {
       prisma.eventAttendee.findUnique.mockResolvedValue({
         eventId: 'event-1',
@@ -506,6 +551,59 @@ describe('EventsService', () => {
       expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     });
 
+    it('runs the respond transaction at serializable isolation and retries once on a serialization failure', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-1',
+        status: 'pending',
+      });
+      prisma.eventAttendee.update.mockResolvedValue({});
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'pending' },
+      ]);
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      // Primer intento: Postgres aborta por serialización (P2034); el segundo entra.
+      prisma.$transaction.mockRejectedValueOnce(
+        Object.assign(new Error('serialization failure'), { code: 'P2034' }),
+      );
+
+      await service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' });
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(2);
+      expect(prisma.$transaction).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({ isolationLevel: 'Serializable' }),
+      );
+    });
+
+    it('gives up after three serialization failures', async () => {
+      prisma.eventAttendee.findUnique.mockResolvedValue({
+        eventId: 'event-1',
+        userId: 'user-1',
+        status: 'pending',
+      });
+      prisma.event.findFirst.mockResolvedValue({
+        ...createTestEvent(),
+        attendees: [],
+        createdBy: createTestUser(),
+      });
+      const failure = Object.assign(new Error('serialization failure'), { code: 'P2034' });
+      prisma.$transaction
+        .mockRejectedValueOnce(failure)
+        .mockRejectedValueOnce(failure)
+        .mockRejectedValueOnce(failure);
+
+      await expect(
+        service.respond('group-1', 'event-1', 'user-1', { status: 'confirmed' }),
+      ).rejects.toThrow('serialization failure');
+      expect(prisma.$transaction).toHaveBeenCalledTimes(3);
+    });
+
     it('should throw when not invited', async () => {
       prisma.eventAttendee.findUnique.mockResolvedValue(null);
 
@@ -531,11 +629,11 @@ describe('EventsService', () => {
 
       await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
 
-      expect(prisma.event.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: { status: 'confirmed' },
-        }),
-      );
+      // Conditional write: a cancel committed in between must not be overwritten.
+      expect(prisma.event.updateMany).toHaveBeenCalledWith({
+        where: { id: 'event-1', status: { not: 'cancelled' } },
+        data: { status: 'confirmed' },
+      });
     });
 
     it('should send notification when all confirmed', async () => {
@@ -763,6 +861,25 @@ describe('EventsService', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should allow moving the start time and clearing the end time at once', async () => {
+      const event = {
+        ...createTestEvent({ time: '18:00', endTime: '19:00' }),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, time: '20:00', endTime: null });
+
+      await service.update('group-1', 'event-1', 'user-1', { time: '20:00', endTime: null });
+
+      // The stale 19:00 must not be validated against the new 20:00.
+      expect(prisma.event.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ time: '20:00', endTime: null }),
+        }),
+      );
+    });
+
     it('should allow valid endTime update', async () => {
       const event = {
         ...createTestEvent({ time: '16:00', endTime: '20:00' }),
@@ -886,6 +1003,47 @@ describe('EventsService', () => {
       expect(prisma.event.delete).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: 'event-1' } }),
       );
+    });
+
+    it('should send the deletion notification before removing the event', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      const order: string[] = [];
+      // The push reads event_attendees, which the delete cascades away: it has to
+      // finish first, not merely have been started.
+      notifications.sendToEventAttendees.mockImplementation(async () => {
+        await Promise.resolve();
+        order.push('notified');
+        return { sent: 1 };
+      });
+      prisma.event.delete.mockImplementation(async () => {
+        order.push('deleted');
+        return event;
+      });
+
+      await service.delete('group-1', 'event-1', 'user-1');
+
+      expect(order).toEqual(['notified', 'deleted']);
+    });
+
+    it('should still delete the event when the notification fails', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [],
+      };
+      prisma.event.findFirst.mockResolvedValue(event);
+      prisma.event.delete.mockResolvedValue(event);
+      notifications.sendToEventAttendees.mockRejectedValue(new Error('FCM down'));
+
+      await expect(service.delete('group-1', 'event-1', 'user-1')).resolves.toEqual({
+        success: true,
+      });
+      expect(prisma.event.delete).toHaveBeenCalled();
     });
 
     it('should reject delete from non-creator', async () => {

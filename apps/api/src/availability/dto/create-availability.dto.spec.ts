@@ -60,6 +60,15 @@ describe('CreateAvailabilityDto', () => {
       expect(errors.length).toBeGreaterThan(0);
     });
 
+    it('should reject impossible calendar dates', async () => {
+      for (const date of ['2026-02-30', '2026-13-01', '2026-00-10', '2026-06-31', '2026-04-31']) {
+        const dto = createDto({ date, type: 'day' });
+        const errors = await validate(dto);
+        const dateError = errors.find((e) => e.property === 'date');
+        expect(dateError).toBeDefined();
+      }
+    });
+
     it('should reject non-string date', async () => {
       const dto = createDto({ date: 20260315, type: 'day' });
       const errors = await validate(dto);

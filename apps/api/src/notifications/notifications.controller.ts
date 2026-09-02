@@ -1,4 +1,13 @@
-import { Controller, Post, Delete, Get, Put, Body, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Delete,
+  Get,
+  Put,
+  Body,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { NotificationsService } from './notifications.service';
@@ -43,8 +52,18 @@ export class NotificationsController {
     return this.notificationsService.sendTestNotification(user.id, dto);
   }
 
+  /**
+   * Diagnostic dump of the caller's push tokens. Hidden in production unless
+   * ENABLE_NOTIFICATIONS_DEBUG=true, so the route never becomes a data probe.
+   */
   @Get('debug')
-  getDebugInfo(@CurrentUser() user: { id: string }) {
+  async getDebugInfo(@CurrentUser() user: { id: string }) {
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.ENABLE_NOTIFICATIONS_DEBUG !== 'true'
+    ) {
+      throw new NotFoundException();
+    }
     return this.notificationsService.getDebugInfo(user.id);
   }
 }

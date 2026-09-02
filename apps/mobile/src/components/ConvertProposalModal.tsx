@@ -99,7 +99,7 @@ export function ConvertProposalModal({
             value={date}
             onChange={(e) => setDate(e.target.value)}
             min={today}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text"
             style={inputStyle}
           />
         </div>
@@ -111,7 +111,7 @@ export function ConvertProposalModal({
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text"
             style={inputStyle}
           />
         </div>
@@ -126,7 +126,7 @@ export function ConvertProposalModal({
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             min={time || undefined}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text"
             style={inputStyle}
           />
           {endTimeError && (

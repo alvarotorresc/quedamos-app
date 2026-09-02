@@ -695,6 +695,65 @@ describe('push-notifications', () => {
       );
     });
 
+    function stubServiceWorker(showNotification: ReturnType<typeof vi.fn>): void {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: { ready: Promise.resolve({ showNotification }) },
+        configurable: true,
+      });
+    }
+
+    function clearServiceWorker(): void {
+      Reflect.deleteProperty(navigator, 'serviceWorker');
+    }
+
+    it('shows the notification through the service worker when there is one', async () => {
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+      const showNotification = vi.fn().mockResolvedValue(undefined);
+      stubServiceWorker(showNotification);
+
+      try {
+        capturedOnMessageCallback({
+          data: { type: 'new_event', title: 'From data', body: 'Data body', eventId: 'e-1' },
+        });
+
+        await vi.waitFor(() => {
+          expect(showNotification).toHaveBeenCalledWith(
+            'From data',
+            expect.objectContaining({ body: 'Data body', icon: '/logo.png' }),
+          );
+        });
+        // Chrome on Android throws from the page-level constructor, so it must not run
+        // when the registration handled it. Clicks land on the service worker's
+        // notificationclick handler, which routes the same `data` fields.
+        expect(notificationCtor).not.toHaveBeenCalled();
+      } finally {
+        clearServiceWorker();
+      }
+    });
+
+    it('falls back to the constructor when the service worker refuses', async () => {
+      if (!capturedOnMessageCallback) throw new Error('onMessage callback not captured');
+      stubNotificationApi();
+      const showNotification = vi.fn().mockRejectedValue(new Error('nope'));
+      stubServiceWorker(showNotification);
+
+      try {
+        capturedOnMessageCallback({
+          data: { type: 'new_event', title: 'From data', body: 'Data body' },
+        });
+
+        await vi.waitFor(() => {
+          expect(notificationCtor).toHaveBeenCalledWith(
+            'From data',
+            expect.objectContaining({ body: 'Data body' }),
+          );
+        });
+      } finally {
+        clearServiceWorker();
+      }
+    });
+
     it('should be idempotent - calling twice only sets up once', () => {
       vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
 

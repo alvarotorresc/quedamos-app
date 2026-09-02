@@ -59,4 +59,15 @@ describe('CreateProposalDto', () => {
       expect(urlError!.constraints).toHaveProperty('maxLength');
     });
   });
+
+  describe('proposedDate validation', () => {
+    it('should reject impossible calendar dates', async () => {
+      for (const proposedDate of ['2026-02-30', '2026-13-01', '2026-06-31']) {
+        const dto = createDto({ ...validPayload, proposedDate });
+        const errors = await validate(dto);
+        const dateError = errors.find((e) => e.property === 'proposedDate');
+        expect(dateError).toBeDefined();
+      }
+    });
+  });
 });

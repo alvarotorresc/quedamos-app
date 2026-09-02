@@ -27,6 +27,10 @@ vi.mock('../hooks/useNotificationPreferences', () => ({
   useUpdateNotificationPreference: () => ({ mutate: mutateMock }),
 }));
 vi.mock('../hooks/useAnalytics', () => ({ useScreenView: () => {} }));
+const showErrorMock = vi.fn();
+vi.mock('../hooks/useToast', () => ({
+  useToast: () => ({ showError: showErrorMock, showSuccess: vi.fn(), showInfo: vi.fn() }),
+}));
 vi.mock('../hooks/useMyColor', () => ({ useMyColor: () => '#60A5FA' }));
 
 describe('NotificationsSettingsPage', () => {
@@ -53,6 +57,19 @@ describe('NotificationsSettingsPage', () => {
   it('pulsar un switch guarda el estado contrario', () => {
     render(<NotificationsSettingsPage />);
     fireEvent.click(screen.getByRole('switch', { name: 'profile.notifications.newEvent' }));
-    expect(mutateMock).toHaveBeenCalledWith({ type: 'new_event', enabled: false });
+    expect(mutateMock).toHaveBeenCalledWith(
+      { type: 'new_event', enabled: false },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
+  it('si guardar falla, además de revertir avisa con un toast', () => {
+    mutateMock.mockImplementation(
+      (_vars: unknown, opts?: { onError?: (e: Error) => void }) =>
+        opts?.onError?.(new Error('boom')),
+    );
+    render(<NotificationsSettingsPage />);
+    fireEvent.click(screen.getByRole('switch', { name: 'profile.notifications.newEvent' }));
+    expect(showErrorMock).toHaveBeenCalledWith('errors.updateNotificationPreferenceFailed');
   });
 });

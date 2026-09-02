@@ -23,6 +23,10 @@ describe('GroupsService', () => {
   beforeEach(() => {
     prisma = createMockPrisma();
     notifications = createMockNotificationsService();
+    // Leaving and kicking now re-read the group's events and polls to recompute
+    // their state; nothing to recompute unless a test says otherwise.
+    prisma.event.findMany.mockResolvedValue([]);
+    prisma.availabilityPoll.findMany.mockResolvedValue([]);
     service = new GroupsService(
       prisma as unknown as PrismaService,
       notifications as unknown as NotificationsService,
@@ -206,6 +210,32 @@ describe('GroupsService', () => {
       expect(prisma.eventAttendee.createMany).not.toHaveBeenCalled();
     });
 
+    it('should cut the backfill at UTC midnight whatever the server timezone', async () => {
+      const previousTz = process.env.TZ;
+      process.env.TZ = 'America/Los_Angeles';
+      try {
+        const group = createTestGroup();
+        prisma.group.findUnique.mockResolvedValue(group);
+        prisma.groupMember.findUnique.mockResolvedValue(null);
+        prisma.groupMember.create.mockResolvedValue({});
+        prisma.user.findUnique.mockResolvedValue(createTestUser());
+        prisma.event.findMany.mockResolvedValue([]);
+        prisma.group.findFirst.mockResolvedValue(group);
+
+        await service.joinByCode('user-1', '12345678');
+
+        const { where } = prisma.event.findMany.mock.calls[0][0] as {
+          where: { date: { gte: Date } };
+        };
+        // event.date is a @db.Date at UTC midnight: a local cutoff drops or keeps
+        // today's quedada depending on the hour the container happens to run in.
+        expect(where.date.gte.getUTCHours()).toBe(0);
+        expect(where.date.gte.getUTCMinutes()).toBe(0);
+      } finally {
+        process.env.TZ = previousTz;
+      }
+    });
+
     it('should send notification to group when joining', async () => {
       const group = createTestGroup();
       const user = createTestUser();
@@ -307,6 +337,165 @@ describe('GroupsService', () => {
             date: { gte: expect.any(Date) },
           },
         },
+      });
+    });
+  });
+
+  describe('leave and kick - recomputing what the missing member was blocking', () => {
+    function mockLeavingMember() {
+      prisma.groupMember.findUnique.mockResolvedValue({ groupId: 'group-1', userId: 'user-2' });
+      prisma.user.findUnique.mockResolvedValue(createTestUser({ id: 'user-2', name: 'Other' }));
+      prisma.group.findUnique.mockResolvedValue(createTestGroup());
+      prisma.groupMember.delete.mockResolvedValue({});
+    }
+
+    function mockKickingAdmin() {
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-2',
+        role: 'member',
+      });
+      prisma.groupMember.delete.mockResolvedValue({});
+      prisma.eventAttendee.deleteMany.mockResolvedValue({ count: 0 });
+    }
+
+    it('should confirm a future event when the leaving member was the last pending attendee', async () => {
+      mockLeavingMember();
+      prisma.event.findMany.mockResolvedValue([
+        {
+          id: 'event-1',
+          title: 'Cena',
+          attendees: [{ status: 'confirmed' }, { status: 'confirmed' }],
+        },
+      ]);
+      prisma.event.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.event.updateMany).toHaveBeenCalledWith({
+        where: { id: 'event-1', status: 'pending' },
+        data: { status: 'confirmed' },
+      });
+      expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
+        'event-1',
+        'Quedada confirmada',
+        expect.stringContaining('Cena'),
+        undefined,
+        expect.objectContaining({ type: 'event_confirmed', eventId: 'event-1' }),
+        'event_confirmed',
+        'confirmed',
+      );
+    });
+
+    it('should leave an event pending when someone else has still not answered', async () => {
+      mockLeavingMember();
+      prisma.event.findMany.mockResolvedValue([
+        {
+          id: 'event-1',
+          title: 'Cena',
+          attendees: [{ status: 'confirmed' }, { status: 'pending' }],
+        },
+      ]);
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.event.updateMany).not.toHaveBeenCalled();
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+    });
+
+    it('should not confirm an event left with no attendees at all', async () => {
+      mockLeavingMember();
+      prisma.event.findMany.mockResolvedValue([{ id: 'event-1', title: 'Cena', attendees: [] }]);
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.event.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should close an open poll when the leaving member was the last one to answer', async () => {
+      mockLeavingMember();
+      prisma.availabilityPoll.findMany.mockResolvedValue([
+        {
+          id: 'poll-1',
+          date: new Date('2026-03-06T00:00:00Z'),
+          responses: [
+            { userId: 'user-1', answer: 'yes' },
+            { userId: 'user-3', answer: 'yes' },
+          ],
+        },
+      ]);
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-3' }]);
+      prisma.availabilityPoll.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.availabilityPoll.updateMany).toHaveBeenCalledWith({
+        where: { id: 'poll-1', status: 'open' },
+        data: { status: 'completed', completedAt: expect.any(Date) },
+      });
+      expect(notifications.sendToGroup).toHaveBeenCalledWith(
+        'group-1',
+        'El aro se cierra',
+        expect.any(String),
+        undefined,
+        expect.objectContaining({ type: 'poll_completed', pollId: 'poll-1' }),
+        'poll_completed',
+      );
+    });
+
+    it('should keep a poll open when a remaining member has not answered yes', async () => {
+      mockLeavingMember();
+      prisma.availabilityPoll.findMany.mockResolvedValue([
+        {
+          id: 'poll-1',
+          date: new Date('2026-03-06T00:00:00Z'),
+          responses: [{ userId: 'user-1', answer: 'yes' }],
+        },
+      ]);
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-3' }]);
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.availabilityPoll.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should drop the poll responses and plan votes of the member removed', async () => {
+      mockLeavingMember();
+
+      await service.leave('group-1', 'user-2');
+
+      expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', poll: { groupId: 'group-1' } },
+      });
+      expect(prisma.planVote.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', proposal: { groupId: 'group-1' } },
+      });
+    });
+
+    it('should recompute the same way when the member is kicked', async () => {
+      mockKickingAdmin();
+      prisma.event.findMany.mockResolvedValue([
+        {
+          id: 'event-1',
+          title: 'Cena',
+          attendees: [{ status: 'confirmed' }, { status: 'confirmed' }],
+        },
+      ]);
+      prisma.event.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.kickMember('group-1', 'user-2', 'user-1');
+
+      expect(prisma.event.updateMany).toHaveBeenCalledWith({
+        where: { id: 'event-1', status: 'pending' },
+        data: { status: 'confirmed' },
+      });
+      expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', poll: { groupId: 'group-1' } },
       });
     });
   });
@@ -451,6 +640,51 @@ describe('GroupsService', () => {
       await expect(service.kickMember('group-1', 'user-2', 'user-1')).rejects.toThrow(
         BadRequestException,
       );
+    });
+
+    it('should clean up the availability of the kicked member', async () => {
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-2',
+        role: 'member',
+      });
+      prisma.groupMember.delete.mockResolvedValue({});
+      prisma.eventAttendee.deleteMany.mockResolvedValue({ count: 0 });
+
+      await service.kickMember('group-1', 'user-2', 'user-1');
+
+      expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
+        where: { groupId: 'group-1', userId: 'user-2' },
+      });
+    });
+
+    it('should cut the kicked attendance at UTC midnight, keeping today', async () => {
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+      prisma.groupMember.findUnique.mockResolvedValueOnce({
+        groupId: 'group-1',
+        userId: 'user-2',
+        role: 'member',
+      });
+      prisma.groupMember.delete.mockResolvedValue({});
+      prisma.eventAttendee.deleteMany.mockResolvedValue({ count: 0 });
+
+      await service.kickMember('group-1', 'user-2', 'user-1');
+
+      const { where } = prisma.eventAttendee.deleteMany.mock.calls[0][0] as {
+        where: { event: { date: { gte: Date } } };
+      };
+      // `new Date()` with the current hour always excluded today's quedada.
+      expect(where.event.date.gte.getUTCHours()).toBe(0);
+      expect(where.event.date.gte.getUTCMinutes()).toBe(0);
     });
 
     it('should clean event attendees on kick', async () => {
@@ -848,6 +1082,34 @@ describe('GroupsService', () => {
       await expect(service.removeCity('group-1', 'city-99', 'user-1')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('addCity — per-group cap', () => {
+    beforeEach(() => {
+      prisma.groupMember.findUnique.mockResolvedValue({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role: 'admin',
+      });
+    });
+
+    it('rejects going over the maximum number of cities per group', async () => {
+      prisma.groupCity.count.mockResolvedValue(5);
+
+      await expect(
+        service.addCity('group-1', 'user-1', { name: 'Madrid', lat: 40.42, lon: -3.7 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.groupCity.create).not.toHaveBeenCalled();
+    });
+
+    it('still accepts a city when the group is under the cap', async () => {
+      prisma.groupCity.count.mockResolvedValue(4);
+      prisma.groupCity.create.mockResolvedValue({ id: 'city-5' });
+
+      await expect(
+        service.addCity('group-1', 'user-1', { name: 'Madrid', lat: 40.42, lon: -3.7 }),
+      ).resolves.toEqual({ id: 'city-5' });
     });
   });
 });

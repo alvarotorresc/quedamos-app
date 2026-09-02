@@ -217,6 +217,51 @@ function navigateFromPush(data: Record<string, string>): void {
 }
 
 /**
+ * Show a foreground notification, preferring the service worker's registration.
+ *
+ * Chrome on Android throws from the `new Notification(...)` constructor
+ * ("Illegal constructor" — persistent notifications only), so a registration is
+ * asked first when there is one; clicks then reach the service worker's
+ * `notificationclick` handler, which routes off the same `data` fields as
+ * `navigateFromPush`. The constructor stays as the fallback for the browsers
+ * that have no service worker (or whose registration refused), and only there
+ * does the page-level onclick apply.
+ */
+function showForegroundNotification(
+  title: string,
+  options: NotificationOptions,
+  data: Record<string, string> | undefined,
+): void {
+  const openViaConstructor = () => {
+    try {
+      const notification = new Notification(title, options);
+      notification.onclick = () => {
+        window.focus();
+        if (data?.type) {
+          navigateFromPush(data);
+        }
+        notification.close();
+      };
+    } catch (err) {
+      if (import.meta.env.DEV) {
+        console.error('[Push] Could not show a foreground notification:', err);
+      }
+    }
+  };
+
+  // Read synchronously: browsers without service workers must not wait a tick.
+  const ready = navigator.serviceWorker?.ready;
+  if (!ready) {
+    openViaConstructor();
+    return;
+  }
+
+  void ready.then((registration) => registration.showNotification(title, options)).catch(
+    openViaConstructor,
+  );
+}
+
+/**
  * Set up web foreground message handler.
  * When the browser tab is in the foreground, the service worker's
  * onBackgroundMessage does NOT fire - we need onMessage instead.
@@ -237,18 +282,7 @@ export function setupWebForegroundHandler(): void {
       const title = data?.title ?? payload.notification?.title;
       const body = data?.body ?? payload.notification?.body;
       if (title && 'Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification(title, {
-          body: body ?? '',
-          icon: '/logo.png',
-          data,
-        });
-        notification.onclick = () => {
-          window.focus();
-          if (data?.type) {
-            navigateFromPush(data);
-          }
-          notification.close();
-        };
+        showForegroundNotification(title, { body: body ?? '', icon: '/logo.png', data }, data);
       }
     });
   });

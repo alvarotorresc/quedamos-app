@@ -1,6 +1,7 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import GroupDetailPage from './GroupDetailPage';
+import { Share } from '@capacitor/share';
 
 // Los web components de Ionic no se presentan bajo jsdom: se pintan los hijos
 // (mismo patrón que GroupPage.test.tsx). Las alertas muestran su cabecera al abrirse.
@@ -36,8 +37,9 @@ vi.mock('../hooks/useAnalytics', () => ({
   useScreenView: () => {},
   useAnalytics: () => ({ track: vi.fn() }),
 }));
+const mockShowError = vi.fn();
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }),
+  useToast: () => ({ showError: mockShowError, showSuccess: vi.fn(), showInfo: vi.fn() }),
 }));
 vi.mock('../hooks/useGroupSync', () => ({ useGroupSync: () => {} }));
 vi.mock('../hooks/useMyColor', () => ({ useMyColor: () => '#60A5FA' }));
@@ -194,5 +196,31 @@ describe('GroupDetailPage', () => {
     render(<GroupDetailPage />);
     fireEvent.click(screen.getByRole('button', { name: 'group.leaveGroup' }));
     expect(screen.getByRole('alertdialog')).toHaveTextContent('group.leaveTitle');
+  });
+
+  describe('compartir la invitación', () => {
+    it('si se cierra la hoja de compartir no se cae al portapapeles ni avisa de un error', async () => {
+      const writeText = vi.fn().mockRejectedValue(new Error('no clipboard'));
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      vi.mocked(Share.share).mockRejectedValueOnce(new DOMException('canceled', 'AbortError'));
+
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(Share.share).toHaveBeenCalled());
+      expect(writeText).not.toHaveBeenCalled();
+      expect(mockShowError).not.toHaveBeenCalled();
+    });
+
+    it('si compartir falla de verdad se cae al portapapeles', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      vi.mocked(Share.share).mockRejectedValueOnce(new Error('no share target'));
+
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.share' }));
+
+      await waitFor(() => expect(writeText).toHaveBeenCalledWith('48213956'));
+    });
   });
 });

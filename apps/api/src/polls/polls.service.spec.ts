@@ -67,6 +67,30 @@ describe('PollsService', () => {
       expect(result.notified).toBe(true);
     });
 
+    it('devuelve 409 si la creacion choca con el indice unico parcial', async () => {
+      // Doble toque en «preguntar» con red lenta: el findFirst de los dos no ve
+      // nada y el segundo INSERT es el que rebota contra el indice.
+      prisma.availabilityPoll.findFirst.mockResolvedValue(null);
+      prisma.availabilityPoll.create.mockRejectedValue(
+        Object.assign(new Error('Unique constraint failed'), { code: 'P2002' }),
+      );
+
+      await expect(service.create('g1', 'u1', { date: '2026-02-13' })).rejects.toBeInstanceOf(
+        ConflictException,
+      );
+    });
+
+    it('no traga otros errores de prisma como si fueran un duplicado', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue(null);
+      prisma.availabilityPoll.create.mockRejectedValue(
+        Object.assign(new Error('connection lost'), { code: 'P1001' }),
+      );
+
+      await expect(service.create('g1', 'u1', { date: '2026-02-13' })).rejects.toThrow(
+        'connection lost',
+      );
+    });
+
     it('con franja, la pregunta la nombra y la disponibilidad va por slots', async () => {
       prisma.availabilityPoll.findFirst.mockResolvedValue(null);
       prisma.availabilityPoll.create.mockResolvedValue({
@@ -218,6 +242,37 @@ describe('PollsService', () => {
 
       expect(prisma.availabilityPoll.updateMany).not.toHaveBeenCalled();
       expect(notifications.sendToGroup).not.toHaveBeenCalled();
+    });
+
+    // Regla: el aro refleja el estado actual. Un sondeo `completed` vuelve a `open` en
+    // cuanto deja de haber unanimidad; solo `closed` (lo cierra su creador) es final.
+    it('reabre el aro si alguien cambia su sí por un no', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue({ ...openPoll, status: 'completed' });
+      prisma.pollResponse.findMany.mockResolvedValue([
+        { userId: 'u1', answer: 'yes' },
+        { userId: 'u2', answer: 'yes' },
+        { userId: 'u3', answer: 'no' },
+      ]);
+      prisma.availabilityPoll.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.respond('g1', 'p1', 'u3', { answer: 'no' });
+
+      expect(prisma.availabilityPoll.updateMany).toHaveBeenCalledWith({
+        where: { id: 'p1', status: 'completed' },
+        data: { status: 'open', completedAt: null },
+      });
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+    });
+
+    it('no reabre un sondeo completado que sigue siendo unánime', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue({ ...openPoll, status: 'completed' });
+      prisma.pollResponse.findMany.mockResolvedValue(
+        MEMBERS.map((m) => ({ userId: m.userId, answer: 'yes' })),
+      );
+
+      await service.respond('g1', 'p1', 'u3', { answer: 'yes' });
+
+      expect(prisma.availabilityPoll.updateMany).not.toHaveBeenCalled();
     });
 
     it('rechaza responder un sondeo no abierto', async () => {

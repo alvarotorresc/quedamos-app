@@ -94,7 +94,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={t('plans.create.namePlaceholder')}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
             style={inputStyle}
           />
         </div>
@@ -132,7 +132,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
               value={meetingUrl}
               onChange={(e) => setMeetingUrl(e.target.value)}
               placeholder={t('online.meetingUrlPlaceholder')}
-              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
               style={inputStyle}
             />
           </div>
@@ -146,7 +146,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder={t('plans.create.locationPlaceholder')}
-              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark"
+              className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark"
               style={inputStyle}
             />
           </div>
@@ -159,7 +159,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text"
             style={inputStyle}
           />
         </div>
@@ -174,7 +174,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
             min={time || undefined}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text"
             style={inputStyle}
           />
           {endTimeError && (
@@ -191,7 +191,7 @@ export function EditEventModal({ isOpen, onClose, groupId, event }: EditEventMod
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text outline-none placeholder:text-text-dark resize-none"
+            className="w-full rounded-[10px] px-3 py-2.5 text-sm text-text placeholder:text-text-dark resize-none"
             style={inputStyle}
           />
         </div>

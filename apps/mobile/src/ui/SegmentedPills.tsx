@@ -17,11 +17,16 @@ export function SegmentedPills<T extends string>({
   className = '',
 }: SegmentedPillsProps<T>) {
   return (
-    <div className={`inline-flex border border-subtle rounded-pill p-0.5 gap-0.5 ${className}`}>
+    <div
+      role="tablist"
+      className={`inline-flex border border-subtle rounded-pill p-0.5 gap-0.5 ${className}`}
+    >
       {options.map((o) => (
         <button
           key={o.value}
           type="button"
+          role="tab"
+          aria-selected={o.value === value}
           onClick={() => onChange(o.value)}
           className={`px-3.5 py-1.5 rounded-pill text-xs transition-colors ${
             o.value === value

@@ -162,4 +162,38 @@ describe('WidgetSummaryService', () => {
       expect(s.bestDay).toEqual({ date: '2026-09-12', count: 2, closesAro: false });
     });
   });
+
+  describe('best-day horizon', () => {
+    it('ignores availability past the horizon when choosing bestDay', async () => {
+      prisma.availability.findMany.mockResolvedValue([
+        avail('u-a', '2026-09-04'),
+        avail('u-b', '2026-09-04'),
+        // Las fiestas del pueblo dentro de tres meses: votadas por todos, pero
+        // no son "el mejor dia" del widget 2x2.
+        avail('u-a', '2026-12-01'),
+        avail('u-b', '2026-12-01'),
+        avail('u-c', '2026-12-01'),
+      ]);
+
+      const s = await service.getSummary('u-a', 'group-1', '2026-08-31', '2026-09-02');
+
+      expect(s.bestDay?.date).toBe('2026-09-04');
+    });
+
+    it('bounds both queries with an upper limit 28 days out', async () => {
+      await service.getSummary('u-a', 'group-1', '2026-08-31', '2026-09-02');
+
+      // La ventana arranca en el menor de weekStart/today: 2026-08-31 + 28 = 2026-09-28.
+      const range = {
+        gte: new Date('2026-08-31T00:00:00.000Z'),
+        lt: new Date('2026-09-28T00:00:00.000Z'),
+      };
+      expect(prisma.availability.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ date: range }) }),
+      );
+      expect(prisma.event.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ date: range }) }),
+      );
+    });
+  });
 });

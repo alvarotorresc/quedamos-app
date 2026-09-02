@@ -15,6 +15,7 @@ import { AvailabilityService } from './availability.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
+import { ParseCalendarDatePipe } from '../common/pipes/parse-calendar-date.pipe';
 
 @ApiTags('Availability')
 @ApiBearerAuth()
@@ -46,7 +47,7 @@ export class AvailabilityController {
   @Put(':date')
   update(
     @Param('groupId', ParseUUIDPipe) groupId: string,
-    @Param('date') date: string,
+    @Param('date', ParseCalendarDatePipe) date: string,
     @CurrentUser() user: { id: string },
     @Body() dto: CreateAvailabilityDto,
   ) {
@@ -56,7 +57,7 @@ export class AvailabilityController {
   @Delete(':date')
   delete(
     @Param('groupId', ParseUUIDPipe) groupId: string,
-    @Param('date') date: string,
+    @Param('date', ParseCalendarDatePipe) date: string,
     @CurrentUser() user: { id: string },
   ) {
     return this.availabilityService.delete(groupId, date, user.id);

@@ -11,6 +11,12 @@ export interface WidgetSummary {
 }
 
 const WEEK_DAYS = 7;
+/**
+ * Upper bound of the window, counted from the start of the rendered week. Without
+ * it the query grew with the age of the group and "el mejor dia" could land on a
+ * date months away that nobody is looking at from a 2x2 widget.
+ */
+const HORIZON_DAYS = 28;
 const MIN_ATTENDEES = 2; // mirror of apps/mobile/src/lib/calendar-utils.ts:45
 const MEMBER_COLOR_COUNT = 6;
 
@@ -53,16 +59,21 @@ export class WidgetSummaryService {
 
     // One window covers both the rendered week and the best-day horizon.
     const from = weekStart < today ? weekStart : today;
+    const until = addDays(from, HORIZON_DAYS);
+    const window = {
+      gte: new Date(`${from}T00:00:00.000Z`),
+      lt: new Date(`${until}T00:00:00.000Z`),
+    };
     const [availability, events] = await Promise.all([
       this.prisma.availability.findMany({
-        where: { groupId, date: { gte: new Date(`${from}T00:00:00.000Z`) } },
+        where: { groupId, date: window },
         select: { userId: true, date: true },
       }),
       this.prisma.event.findMany({
         where: {
           groupId,
           status: { not: 'cancelled' },
-          date: { gte: new Date(`${from}T00:00:00.000Z`) },
+          date: window,
         },
         select: { date: true },
       }),
@@ -92,7 +103,8 @@ export class WidgetSummaryService {
     const bestDay =
       [...availByDate.entries()]
         .filter(
-          ([date, ids]) => date >= today && ids.length >= MIN_ATTENDEES && !eventDays.has(date),
+          ([date, ids]) =>
+            date >= today && date < until && ids.length >= MIN_ATTENDEES && !eventDays.has(date),
         )
         .map(([date, ids]) => ({
           date,

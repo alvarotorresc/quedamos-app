@@ -59,6 +59,9 @@ export function useGroupInvite(groupId: string) {
     queryKey: ['groups', groupId, 'invite'],
     queryFn: () => groupsService.getInvite(groupId),
     enabled: !!groupId,
+    // The code only changes when someone regenerates it (which invalidates this
+    // query), so calendar and plans need not refetch it on every mount.
+    staleTime: 5 * 60 * 1000,
   });
 }
 

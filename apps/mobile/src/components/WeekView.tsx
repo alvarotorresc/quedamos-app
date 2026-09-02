@@ -89,7 +89,7 @@ export function WeekView({
             subtitulo: t('share.cardSubCerrada', { count: totalMembers }),
             memberColors: [...memberColorMap.values()],
             theme,
-            marca: t('landing.brand'),
+            marca: t('share.marca'),
             pie: invite.inviteUrl.replace(/^https?:\/\//, ''),
           });
           const texto = t('share.tarjetaCerrada', {

@@ -31,4 +31,12 @@ describe('GetWidgetSummaryQueryDto', () => {
     expect((await errorsFor({ ...VALID, weekStart: bad })).length).toBeGreaterThan(0);
     expect((await errorsFor({ ...VALID, today: bad })).length).toBeGreaterThan(0);
   });
+
+  it.each(['2026-13-01', '2026-02-30', '2026-00-10'])(
+    'rejects impossible calendar date %s',
+    async (bad) => {
+      expect((await errorsFor({ ...VALID, weekStart: bad })).length).toBeGreaterThan(0);
+      expect((await errorsFor({ ...VALID, today: bad })).length).toBeGreaterThan(0);
+    },
+  );
 });

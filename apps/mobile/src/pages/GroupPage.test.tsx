@@ -50,8 +50,7 @@ function openJoinFormAndSubmit(code: string) {
   render(<GroupPage />);
 
   // No groups yet -> EmptyState's secondary action opens the join form.
-  // This matches a hardcoded string in GroupPage's EmptyState; if i18n is added here, update this query.
-  fireEvent.click(screen.getByText('Tengo un código'));
+  fireEvent.click(screen.getByText('group.welcome.haveCode'));
 
   const input = screen.getByPlaceholderText('group.inviteCodePlaceholder');
   fireEvent.change(input, { target: { value: code } });
@@ -61,6 +60,15 @@ function openJoinFormAndSubmit(code: string) {
   const joinButtons = screen.getAllByText('group.joinWithCode');
   fireEvent.click(joinButtons[joinButtons.length - 1]);
 }
+
+describe('GroupPage — sin grupos', () => {
+  it('la bienvenida sale de i18n', () => {
+    render(<GroupPage />);
+    expect(screen.getByText('group.welcome.title')).toBeInTheDocument();
+    expect(screen.getByText('group.welcome.description')).toBeInTheDocument();
+    expect(screen.getByText('group.createGroup')).toBeInTheDocument();
+  });
+});
 
 describe('GroupPage — unirse con código', () => {
   it('un 409 muestra group.alreadyMember aunque el mensaje no lo mencione (se detecta por status)', async () => {

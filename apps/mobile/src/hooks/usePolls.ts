@@ -52,12 +52,13 @@ export function usePendingQuestions(groupId: string): { polls: Poll[]; pendingEv
   const { data: polls } = usePolls(groupId);
   const { data: events } = useEvents(groupId);
 
+  // Read on every render so a screen left open across midnight does not keep yesterday's questions.
+  const today = formatDateKey(new Date());
+
   return useMemo(() => {
     if (!userId) {
       return { polls: [], pendingEvents: [] };
     }
-
-    const today = formatDateKey(new Date());
 
     const pendingPolls = (polls ?? []).filter(
       (p) =>
@@ -73,5 +74,5 @@ export function usePendingQuestions(groupId: string): { polls: Poll[]; pendingEv
     });
 
     return { polls: pendingPolls, pendingEvents };
-  }, [polls, events, userId]);
+  }, [polls, events, userId, today]);
 }

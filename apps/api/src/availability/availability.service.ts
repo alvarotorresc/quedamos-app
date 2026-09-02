@@ -3,6 +3,7 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
+import { isCalendarDate } from '../common/date-utils';
 
 @Injectable()
 export class AvailabilityService {
@@ -31,7 +32,7 @@ export class AvailabilityService {
   }
 
   private validateDateFormat(date: string): void {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!isCalendarDate(date)) {
       throw new BadRequestException('Invalid date format. Expected YYYY-MM-DD');
     }
   }
@@ -40,6 +41,11 @@ export class AvailabilityService {
     if (dto.type === 'range') {
       if (!dto.startTime || !dto.endTime) {
         throw new BadRequestException('startTime and endTime are required for type "range"');
+      }
+      // HH:MM strings compare lexicographically — the same check events already do.
+      // An inverted range feeds bogus slots into the best-day calculation.
+      if (dto.endTime <= dto.startTime) {
+        throw new BadRequestException('endTime must be after startTime');
       }
     }
 
@@ -56,6 +62,11 @@ export class AvailabilityService {
     await this.groupsService.findById(groupId, userId);
     this.validateTypeConsistency(dto);
 
+    // Explicit nulls outside 'range': undefined means "leave as is" for Prisma, which
+    // kept the previous range on the row after switching to 'day' or 'slots'.
+    const startTime = dto.type === 'range' ? dto.startTime : null;
+    const endTime = dto.type === 'range' ? dto.endTime : null;
+
     return this.prisma.availability.upsert({
       where: {
         userId_groupId_date: {
@@ -67,8 +78,8 @@ export class AvailabilityService {
       update: {
         type: dto.type,
         slots: dto.slots ?? [],
-        startTime: dto.startTime,
-        endTime: dto.endTime,
+        startTime,
+        endTime,
       },
       create: {
         userId,
@@ -76,8 +87,8 @@ export class AvailabilityService {
         date: new Date(dto.date),
         type: dto.type,
         slots: dto.slots ?? [],
-        startTime: dto.startTime,
-        endTime: dto.endTime,
+        startTime,
+        endTime,
       },
     });
   }
@@ -106,8 +117,8 @@ export class AvailabilityService {
       data: {
         type: dto.type,
         slots: dto.slots ?? [],
-        startTime: dto.startTime,
-        endTime: dto.endTime,
+        startTime: dto.type === 'range' ? dto.startTime : null,
+        endTime: dto.type === 'range' ? dto.endTime : null,
       },
     });
   }
@@ -165,7 +176,9 @@ export class AvailabilityService {
     if (!slot) {
       return this.prisma.availability.update({
         where: { id: existing.id },
-        data: { type: 'day', slots: [] },
+        // Nulls like the range branch above: a row written before create()/update()
+        // learnt to clear them can be 'slots' and still carry a stale range.
+        data: { type: 'day', slots: [], startTime: null, endTime: null },
       });
     }
 

@@ -85,16 +85,27 @@ export class PollsService {
     });
     if (existing) throw new ConflictException('An open poll already exists for this day');
 
-    const poll = await this.prisma.availabilityPoll.create({
-      data: {
-        groupId,
-        createdById: userId,
-        date: new Date(dto.date),
-        slot: dto.slot ?? null,
-        responses: { create: { userId, answer: 'yes' } },
-      },
-      include: { createdBy: { select: PUBLIC_USER_SELECT } },
-    });
+    // The check above and the insert are two queries: a double tap on «preguntar» with
+    // a slow network, or two people asking the same thing at once, both get past it.
+    // The partial unique index on (group_id, date, coalesce(slot,'')) where status='open'
+    // is what actually stops the duplicate; this turns its P2002 into the same 409.
+    const poll = await this.prisma.availabilityPoll
+      .create({
+        data: {
+          groupId,
+          createdById: userId,
+          date: new Date(dto.date),
+          slot: dto.slot ?? null,
+          responses: { create: { userId, answer: 'yes' } },
+        },
+        include: { createdBy: { select: PUBLIC_USER_SELECT } },
+      })
+      .catch((error: unknown) => {
+        if ((error as { code?: string } | null)?.code === 'P2002') {
+          throw new ConflictException('An open poll already exists for this day');
+        }
+        throw error;
+      });
 
     // Asking already answers for you: the ring lights up without a second tap. Merge, not
     // replace — never degrade availability the asker already marked (I1).
@@ -184,6 +195,14 @@ export class PollsService {
           )
           .catch((err) => this.logger.error('poll_completed push failed', err));
       }
+    } else if (!allYes && poll.status === 'completed') {
+      // The ring shows the current state: a completed poll reopens the moment
+      // unanimity breaks (someone swaps their yes for a no). Only `closed`, which its
+      // creator sets by hand, is final. Reopening is silent — no push.
+      await this.prisma.availabilityPoll.updateMany({
+        where: { id: pollId, status: 'completed' },
+        data: { status: 'open', completedAt: null },
+      });
     }
 
     return this.findOne(groupId, pollId, userId);

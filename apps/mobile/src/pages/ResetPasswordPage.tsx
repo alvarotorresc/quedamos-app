@@ -12,6 +12,7 @@ export default function ResetPasswordPage() {
   const { t } = useTranslation();
   const history = useHistory();
   const updatePassword = useAuthStore((s) => s.updatePassword);
+  const signOut = useAuthStore((s) => s.signOut);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,6 +33,10 @@ export default function ResetPasswordPage() {
     const markReady = () => {
       settled = true;
       setReady(true);
+      // The event can land after the verification window already gave up — the
+      // link turned out to be valid, so drop the expired screen instead of
+      // leaving it on top of a working recovery session.
+      setExpired(false);
     };
 
     // Check if recovery session already exists (event fired before mount)
@@ -56,6 +61,14 @@ export default function ResetPasswordPage() {
       clearTimeout(timeout);
     };
   }, []);
+
+  // A dead recovery link can still have left a half-open recovery session behind.
+  // Clear it before sending the user back for a fresh link, so the next one starts
+  // from a clean slate. A failing sign-out must not strand them on this screen.
+  const handleResend = async () => {
+    await signOut().catch(() => {});
+    history.replace('/forgot-password');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +116,7 @@ export default function ResetPasswordPage() {
                 {t('resetPassword.expired.title')}
               </h2>
               <p className="text-text-muted text-sm">{t('resetPassword.expired.message')}</p>
-              <Button onClick={() => history.replace('/forgot-password')} className="mt-2">
+              <Button onClick={handleResend} className="mt-2">
                 {t('resetPassword.expired.resend')}
               </Button>
             </div>
@@ -132,7 +145,7 @@ export default function ResetPasswordPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text focus:border-primary"
                     placeholder={t('common.passwordPlaceholder')}
                     required
                   />
@@ -186,7 +199,7 @@ export default function ResetPasswordPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text outline-none focus:border-primary"
+                    className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 pr-11 text-text focus:border-primary"
                     placeholder={t('common.passwordPlaceholder')}
                     minLength={6}
                     required

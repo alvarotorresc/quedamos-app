@@ -7,6 +7,22 @@ describe('UpdateEventDto', () => {
     return plainToInstance(UpdateEventDto, partial);
   }
 
+  describe('clearing optional times', () => {
+    it('should accept a null endTime so the end of an event can be removed', async () => {
+      const dto = createDto({ time: '20:00', endTime: null });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+      expect(dto.endTime).toBeNull();
+    });
+
+    it('should accept a null time so the hour of an event can be removed', async () => {
+      const dto = createDto({ time: null });
+      const errors = await validate(dto);
+      expect(errors.length).toBe(0);
+      expect(dto.time).toBeNull();
+    });
+  });
+
   describe('coordinate range validation', () => {
     it('should accept valid coordinates', async () => {
       const dto = createDto({ locationLat: 40.4153, locationLon: -3.6845 });

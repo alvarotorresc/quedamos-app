@@ -68,6 +68,15 @@ describe('CreateEventDto', () => {
       expect(dateError).toBeDefined();
     });
 
+    it('should reject impossible calendar dates', async () => {
+      for (const date of ['2026-02-30', '2026-13-01', '2026-00-10', '2026-06-31', '2026-04-31']) {
+        const dto = createDto({ title: 'Dinner', date });
+        const errors = await validate(dto);
+        const dateError = errors.find((e) => e.property === 'date');
+        expect(dateError).toBeDefined();
+      }
+    });
+
     it('should reject invalid date format', async () => {
       const dto = createDto({ title: 'Dinner', date: '20/03/2026' });
       const errors = await validate(dto);

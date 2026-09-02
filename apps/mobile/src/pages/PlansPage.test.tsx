@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import PlansPage from './PlansPage';
 
 vi.mock('@ionic/react', () => ({
@@ -12,9 +12,10 @@ vi.mock('@ionic/react', () => ({
   IonLoading: () => null,
   IonAlert: () => null,
 }));
+let search = '';
 vi.mock('react-router-dom', () => ({
   useHistory: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useLocation: () => ({ search: '' }),
+  useLocation: () => ({ search }),
 }));
 const mockT = vi.fn((key: string) => key);
 vi.mock('react-i18next', () => ({
@@ -38,14 +39,15 @@ vi.mock('../stores/auth', () => ({
   }),
 }));
 const GROUP = { id: 'g1', name: 'La cuadrilla', emoji: '🏔️', createdById: 'u1', createdAt: '', members: [] };
+let groupsList: (typeof GROUP)[] = [GROUP];
 vi.mock('../stores/group', () => ({
-  useGroupStore: vi.fn((selector?: (s: { currentGroup: typeof GROUP; setCurrentGroup: () => void }) => unknown) => {
-    const state = { currentGroup: GROUP, setCurrentGroup: vi.fn() };
+  useGroupStore: vi.fn((selector?: (s: { currentGroup: typeof GROUP | null; setCurrentGroup: () => void }) => unknown) => {
+    const state = { currentGroup: groupsList[0] ?? null, setCurrentGroup: vi.fn() };
     return selector ? selector(state) : state;
   }),
 }));
 vi.mock('../hooks/useGroups', () => ({
-  useGroups: () => ({ data: [GROUP], isLoading: false }),
+  useGroups: () => ({ data: groupsList, isLoading: false }),
   useGroup: () => ({ data: GROUP, isLoading: false }),
   useGroupInvite: () => ({ data: undefined }),
 }));
@@ -90,6 +92,8 @@ const ev = (id: string, title: string, date: string, status: string, myStatus = 
 describe('PlansPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    search = '';
+    groupsList = [GROUP];
     events = [
       ev('e2', 'Pádel y cañas', '2099-02-01', 'pending', 'pending'),
       ev('e1', 'Cena en casa de Iris', '2099-01-05', 'confirmed'),
@@ -121,5 +125,87 @@ describe('PlansPage', () => {
     render(<PlansPage />);
     expect(screen.getByTestId('icon-calendar')).toBeInTheDocument();
     expect(screen.getByText('plans.upcoming')).toBeInTheDocument();
+  });
+
+  it('sin grupos, el botón de ir a grupos usa el primario del sistema', () => {
+    groupsList = [];
+    render(<PlansPage />);
+    const btn = screen.getByRole('button', { name: 'plans.goToGroups' });
+    expect(btn.className).toContain('bg-primary-solid');
+    expect(btn.className).not.toContain('bg-primary-dark');
+  });
+
+  it('el vacío de propuestas describe con una clave real de i18n', () => {
+    events = [];
+    render(<PlansPage />);
+    fireEvent.click(screen.getByText('plans.tabs.proposals'));
+    expect(mockT).toHaveBeenCalledWith('proposals.emptyDescription');
+  });
+
+  describe('llegar desde una notificación', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      search = '?eventId=e1';
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('lleva el foco a la quedada y la resalta un rato', () => {
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+
+      render(<PlansPage />);
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+      expect(document.getElementById('event-e1')?.className).toContain('ring-primary');
+
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
+      expect(document.getElementById('event-e1')?.className).not.toContain('ring-primary');
+    });
+
+    it('despliega las pasadas y llega igualmente a una quedada vieja', () => {
+      // Abrir la sección de pasadas vuelve a lanzar el efecto: la limpieza no puede
+      // dejar el scroll por el camino.
+      search = '?eventId=e0';
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+
+      render(<PlansPage />);
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    });
+
+    it('al desmontar no deja temporizadores de scroll colgando', () => {
+      const { unmount } = render(<PlansPage />);
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('desmontar tras el scroll tampoco deja vivo el temporizador del resalte', () => {
+      Element.prototype.scrollIntoView = vi.fn();
+
+      const { unmount } = render(<PlansPage />);
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+      expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 });

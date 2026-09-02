@@ -126,12 +126,12 @@ export default function GroupPage() {
           ) : !hasGroups && formMode === null ? (
             <EmptyState
               emoji="👋"
-              title="¡Bienvenido a Quedamos!"
-              description="Crea un grupo con tus amigos o pide un código de invitación."
-              action="Crear grupo"
+              title={t('group.welcome.title')}
+              description={t('group.welcome.description')}
+              action={t('group.createGroup')}
               actionVariant="accent"
               onAction={() => toggleForm('create')}
-              secondaryAction="Tengo un código"
+              secondaryAction={t('group.welcome.haveCode')}
               onSecondaryAction={() => toggleForm('join')}
             />
           ) : (
@@ -210,7 +210,7 @@ export default function GroupPage() {
                       value={groupName}
                       onChange={(e) => setGroupName(e.target.value)}
                       placeholder={t('group.groupNamePlaceholder')}
-                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark focus:border-primary"
                       autoFocus
                     />
                   </div>
@@ -268,7 +268,7 @@ export default function GroupPage() {
                       value={inviteCode}
                       onChange={(e) => setInviteCode(e.target.value.replace(/\D/g, '').slice(0, 8))}
                       placeholder={t('group.inviteCodePlaceholder')}
-                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark outline-none focus:border-primary text-center font-mono tracking-widest"
+                      className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark focus:border-primary text-center font-mono tracking-widest"
                       maxLength={8}
                       autoFocus
                     />

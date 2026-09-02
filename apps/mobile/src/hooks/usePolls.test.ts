@@ -162,6 +162,25 @@ describe('usePendingQuestions', () => {
     vi.clearAllMocks();
   });
 
+  it('recalcula "hoy" en cada render: pasada la medianoche, la pregunta de ayer deja de estar pendiente', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-09-02T23:59:00'));
+    const poll = createTestPoll({ id: 'poll-today', date: '2026-09-02T00:00:00.000Z', responses: [] });
+    vi.mocked(pollsService.list).mockResolvedValue([poll]);
+    vi.mocked(eventsService.getAll).mockResolvedValue([]);
+
+    const { result, rerender } = renderHook(() => usePendingQuestions('group-1'), {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => expect(result.current.polls).toHaveLength(1));
+
+    vi.setSystemTime(new Date('2026-09-03T00:01:00'));
+    rerender();
+
+    expect(result.current.polls).toHaveLength(0);
+    vi.useRealTimers();
+  });
+
   it('excludes polls I already answered and keeps ones I have not', async () => {
     const futureDate = daysFromTodayISO(1);
     const answeredByMe = createTestPoll({

@@ -5,25 +5,20 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createMockConfigService } from '../common/test-utils';
 import { NOTIFICATION_TYPES } from './dto/update-preference.dto';
 
-// Mock firebase-admin
-jest.mock('firebase-admin', () => {
-  const mockSendEachForMulticast = jest.fn();
-  return {
-    initializeApp: jest.fn(),
-    credential: {
-      cert: jest.fn().mockReturnValue({}),
-    },
-    messaging: jest.fn().mockReturnValue({
-      sendEachForMulticast: mockSendEachForMulticast,
-    }),
-    __mockSendEachForMulticast: mockSendEachForMulticast,
-  };
-});
+// Mock firebase-admin (v14 modular entry points)
+const mockSendEachForMulticast = jest.fn();
+jest.mock('firebase-admin/app', () => ({
+  initializeApp: jest.fn(),
+  cert: jest.fn().mockReturnValue({}),
+}));
+jest.mock('firebase-admin/messaging', () => ({
+  getMessaging: jest.fn().mockReturnValue({
+    sendEachForMulticast: (...args: unknown[]) => mockSendEachForMulticast(...args),
+  }),
+}));
 
-import * as admin from 'firebase-admin';
-
-const mockSendEachForMulticast = (admin as unknown as { __mockSendEachForMulticast: jest.Mock })
-  .__mockSendEachForMulticast;
+import * as adminApp from 'firebase-admin/app';
+const admin = { initializeApp: adminApp.initializeApp, credential: { cert: adminApp.cert } };
 
 describe('NotificationsService', () => {
   let service: NotificationsService;
@@ -110,14 +105,17 @@ describe('NotificationsService', () => {
   });
 
   describe('registerToken', () => {
-    it('should upsert push token', async () => {
-      prisma.pushToken.count.mockResolvedValue(0);
+    beforeEach(() => {
+      prisma.pushToken.findMany.mockResolvedValue([]);
+      prisma.pushToken.deleteMany.mockResolvedValue({ count: 0 });
       prisma.pushToken.upsert.mockResolvedValue({
         userId: 'user-1',
         token: 'tok',
         platform: 'web',
       });
+    });
 
+    it('should upsert push token', async () => {
       const result = await service.registerToken('user-1', { token: 'tok', platform: 'web' });
 
       expect(result).toBeDefined();
@@ -128,67 +126,62 @@ describe('NotificationsService', () => {
       );
     });
 
-    it('should evict oldest token when at max capacity', async () => {
-      prisma.pushToken.count.mockResolvedValue(10);
-      prisma.pushToken.findFirst.mockResolvedValue({ id: 'old-token-id', token: 'old' });
-      prisma.pushToken.delete.mockResolvedValue({});
-      prisma.pushToken.upsert.mockResolvedValue({
-        userId: 'user-1',
-        token: 'new-tok',
-        platform: 'web',
-      });
+    it('should touch updatedAt on re-registration so the device counts as recently used', async () => {
+      await service.registerToken('user-1', { token: 'tok', platform: 'android' });
+
+      expect(prisma.pushToken.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          update: { platform: 'android', updatedAt: expect.any(Date) },
+        }),
+      );
+    });
+
+    it('should evict the least recently used token, not the oldest one', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([{ id: 'least-recently-used' }]);
+      prisma.pushToken.deleteMany.mockResolvedValue({ count: 1 });
 
       await service.registerToken('user-1', { token: 'new-tok', platform: 'web' });
 
-      expect(prisma.pushToken.findFirst).toHaveBeenCalledWith({
+      // LRU by updatedAt, never FIFO by createdAt: the phone used every day keeps
+      // its slot even when it was the first one registered.
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith({
         where: { userId: 'user-1' },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { updatedAt: 'desc' },
+        skip: 10,
+        select: { id: true },
       });
-      expect(prisma.pushToken.delete).toHaveBeenCalledWith({
-        where: { id: 'old-token-id' },
+      expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
+        where: { id: { in: ['least-recently-used'] } },
       });
-      expect(prisma.pushToken.upsert).toHaveBeenCalled();
     });
 
-    it('should not evict when under max capacity', async () => {
-      prisma.pushToken.count.mockResolvedValue(5);
-      prisma.pushToken.upsert.mockResolvedValue({
-        userId: 'user-1',
-        token: 'tok',
-        platform: 'web',
+    it('should not evict anything when under max capacity', async () => {
+      await service.registerToken('user-1', { token: 'tok', platform: 'web' });
+
+      expect(prisma.pushToken.deleteMany).not.toHaveBeenCalled();
+    });
+
+    it('should prune after the upsert so the token just registered is never the victim', async () => {
+      const callOrder: string[] = [];
+      prisma.pushToken.upsert.mockImplementation(async () => {
+        callOrder.push('upsert');
+        return { userId: 'user-1', token: 'tok', platform: 'web' };
+      });
+      prisma.pushToken.findMany.mockImplementation(async () => {
+        callOrder.push('findMany');
+        return [];
       });
 
       await service.registerToken('user-1', { token: 'tok', platform: 'web' });
 
-      expect(prisma.pushToken.findFirst).not.toHaveBeenCalled();
-      expect(prisma.pushToken.delete).not.toHaveBeenCalled();
+      expect(callOrder).toEqual(['upsert', 'findMany']);
     });
 
-    it('should not evict when at max capacity but the token already exists (mobile re-sends on every resume)', async () => {
-      prisma.pushToken.count.mockResolvedValue(10);
-      prisma.pushToken.findUnique.mockResolvedValue({
-        userId: 'user-1',
-        token: 'existing-tok',
-        platform: 'web',
-      });
-      // Configured exactly like the sibling "evict oldest token" test so this test would
-      // catch a real deletion (not just an un-configured mock resolving to undefined) if
-      // the fix regressed and the eviction path ran anyway.
-      prisma.pushToken.findFirst.mockResolvedValue({ id: 'old-token-id', token: 'old' });
-      prisma.pushToken.upsert.mockResolvedValue({
-        userId: 'user-1',
-        token: 'existing-tok',
-        platform: 'android',
-      });
+    it('should not read the token back before upserting (no count/findUnique race)', async () => {
+      await service.registerToken('user-1', { token: 'tok', platform: 'web' });
 
-      await service.registerToken('user-1', { token: 'existing-tok', platform: 'android' });
-
-      expect(prisma.pushToken.delete).not.toHaveBeenCalled();
-      expect(prisma.pushToken.findUnique).toHaveBeenCalledWith({
-        where: { userId_token: { userId: 'user-1', token: 'existing-tok' } },
-      });
-      expect(prisma.pushToken.findFirst).not.toHaveBeenCalled();
-      expect(prisma.pushToken.upsert).toHaveBeenCalled();
+      expect(prisma.pushToken.count).not.toHaveBeenCalled();
+      expect(prisma.pushToken.findUnique).not.toHaveBeenCalled();
     });
   });
 
@@ -887,6 +880,72 @@ describe('NotificationsService', () => {
       expect(prisma.notificationPreference.findMany).not.toHaveBeenCalled();
     });
 
+    it('should log one notification_logs row per recipient', async () => {
+      service.onModuleInit();
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.notificationPreference.findMany.mockResolvedValue([]);
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android' },
+        { userId: 'user-2', token: 'tok-2', platform: 'android' },
+      ]);
+      prisma.notificationLog.create.mockResolvedValue({});
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 2,
+        failureCount: 0,
+        responses: [{ success: true }, { success: true }],
+      });
+
+      await service.sendToGroup(
+        'group-1',
+        'Nueva quedada',
+        'Body',
+        undefined,
+        { type: 'new_event' },
+        'new_event',
+      );
+
+      expect(prisma.notificationLog.create).toHaveBeenCalledTimes(2);
+      for (const userId of ['user-1', 'user-2']) {
+        expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({
+            userId,
+            type: 'new_event',
+            title: 'Nueva quedada',
+            tokenCount: 1,
+            sentCount: 1,
+            failedCount: 0,
+          }),
+        });
+      }
+    });
+
+    it('should attribute an FCM failure to the recipient that owns the token', async () => {
+      service.onModuleInit();
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android' },
+        { userId: 'user-2', token: 'tok-2', platform: 'android' },
+      ]);
+      prisma.notificationLog.create.mockResolvedValue({});
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 1,
+        responses: [
+          { success: true },
+          { success: false, error: { code: 'messaging/internal-error', message: 'boom' } },
+        ],
+      });
+
+      await service.sendToGroup('group-1', 'Title', 'Body');
+
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ userId: 'user-1', sentCount: 1, failedCount: 0 }),
+      });
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ userId: 'user-2', sentCount: 0, failedCount: 1 }),
+      });
+    });
+
     it('should apply both exclude and notificationType filter', async () => {
       prisma.groupMember.findMany.mockResolvedValue([
         { userId: 'user-1' },
@@ -963,6 +1022,44 @@ describe('NotificationsService', () => {
       const result = await service.sendToEventAttendees('event-1', 'Title', 'Body');
 
       expect(result).toEqual({ sent: 0 });
+    });
+
+    it('should log one notification_logs row per attendee', async () => {
+      service.onModuleInit();
+      prisma.eventAttendee.findMany.mockResolvedValue([
+        { userId: 'user-1', status: 'confirmed' },
+        { userId: 'user-2', status: 'confirmed' },
+      ]);
+      prisma.notificationPreference.findMany.mockResolvedValue([]);
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android' },
+        { userId: 'user-2', token: 'tok-2', platform: 'web' },
+      ]);
+      prisma.notificationLog.create.mockResolvedValue({});
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+
+      await service.sendToEventAttendees(
+        'event-1',
+        'Quedada cancelada',
+        'Body',
+        undefined,
+        undefined,
+        'event_cancelled',
+      );
+
+      expect(prisma.notificationLog.create).toHaveBeenCalledTimes(2);
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: 'user-1',
+          type: 'event_cancelled',
+          tokenCount: 1,
+          sentCount: 1,
+        }),
+      });
     });
 
     it('should respect notification preferences', async () => {

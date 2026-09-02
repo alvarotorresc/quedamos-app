@@ -4,11 +4,14 @@ pre-commit:
     - name: lint-api
       glob: 'apps/api/**/*.{js,ts}'
       root: 'apps/api/'
-      run: pnpm exec eslint --fix {staged_files} && git add {staged_files}
+      run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
     - name: lint-mobile
       glob: 'apps/mobile/**/*.{js,jsx,ts,tsx}'
       root: 'apps/mobile/'
-      run: pnpm exec eslint --fix {staged_files} && git add {staged_files}
+      run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
     - name: format
       glob: '*.{js,jsx,ts,tsx,json,md,yaml,yml,css}'
-      run: pnpm -w exec prettier --write {staged_files} && git add {staged_files}
+      run: pnpm -w exec prettier --write {staged_files}
+      stage_fixed: true
