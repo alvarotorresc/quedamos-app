@@ -53,3 +53,72 @@ jobs:
 
       - name: Build Mobile
         run: pnpm --filter @quedamos/mobile build
+
+  migrations:
+    name: Migrations & E2E
+    runs-on: ubuntu-latest
+
+    # A throwaway Postgres for the migrations and the HTTP end-to-end flow, and a second
+    # one for `migrate diff`: Prisma resets its shadow database, so it must never be the
+    # one the e2e suite runs on.
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: quedamos
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      shadow:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shadow
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/quedamos
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/quedamos
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5433/shadow
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm --filter @quedamos/api exec prisma generate
+
+      - name: Apply migrations on an empty database
+        run: pnpm --filter @quedamos/api exec prisma migrate deploy
+
+      # Exit code 2 when schema.prisma and the migrations disagree: a model changed
+      # without a migration, or a hand-written migration that drifts from the schema.
+      - name: Check schema against migrations
+        run: >-
+          pnpm --filter @quedamos/api exec prisma migrate diff
+          --from-migrations prisma/migrations
+          --to-schema-datamodel prisma/schema.prisma
+          --shadow-database-url "$SHADOW_DATABASE_URL"
+          --exit-code
