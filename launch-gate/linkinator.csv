@@ -1,0 +1,9 @@
+url,status,state,parent,failureDetails
+https://quedamos.alvarotc.com/,200,OK,,[]
+https://quedamos.alvarotc.com/favicon.svg,200,OK,https://quedamos.alvarotc.com/,[]
+https://quedamos.alvarotc.com/icon-256.png,200,OK,https://quedamos.alvarotc.com/,[]
+https://analytics.alvarotc.com/script.js,200,OK,https://quedamos.alvarotc.com/,[]
+https://quedamos.alvarotc.com/theme-init.js,200,OK,https://quedamos.alvarotc.com/,[]
+https://quedamos.alvarotc.com/assets/index-Bf_fI5DM.js,200,OK,https://quedamos.alvarotc.com/,[]
+"https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist+Mono:wght@400;500&display=swap",200,OK,https://quedamos.alvarotc.com/,[]
+https://quedamos.alvarotc.com/assets/index-COYQQUl_.css,200,OK,https://quedamos.alvarotc.com/,[]

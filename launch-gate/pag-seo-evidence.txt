@@ -1,0 +1,46 @@
+# PAG/SEO evidence — 2026-09-03T17:42:23+02:00
+## PAG-01
+$ curl -sI $PROD/esta-ruta-no-existe-4242 | head -1
+HTTP/2 200 
+$ curl -s $PROD/esta-ruta-no-existe | grep -ciE 'inicio|home|volver'
+0
+## PAG-02/04 API
+$ curl -s -w ' %{http_code}' $API/ruta-inexistente
+{"message":"Cannot GET /ruta-inexistente","error":"Not Found","statusCode":404} 404
+$ curl -s -w ' %{http_code}' $API/groups
+{"message":"Missing authorization header","error":"Unauthorized","statusCode":401} 401
+$ curl -s -w ' %{http_code}' $API/auth/me
+{"message":"Missing authorization header","error":"Unauthorized","statusCode":401} 401
+$ curl -s -H 'Authorization: Bearer invalid' $API/auth/me
+{"message":"Invalid token","error":"Unauthorized","statusCode":401} 401
+## PAG-05/06
+200 text/html; charset=utf-8 1307 /robots.txt
+200 text/html; charset=utf-8 1307 /sitemap.xml
+200 text/html; charset=utf-8 1307 /favicon.ico
+200 image/svg+xml 1378 /favicon.svg
+200 text/html; charset=utf-8 1307 /apple-touch-icon.png
+200 image/png 10994 /icon-256.png
+200 image/png 23391 /icon-512.png
+200 text/html; charset=utf-8 1307 /manifest.json
+200 text/html; charset=utf-8 1307 /manifest.webmanifest
+200 text/html; charset=utf-8 1307 /site.webmanifest
+$ curl -s $PROD | grep -oE '<link[^>]*(icon|manifest)[^>]*>|<meta name="theme-color"[^>]*>'
+<meta name="theme-color" content="#14120E" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/icon-256.png" />
+## PAG-09
+/login/ -> HTTP/2 200 
+/login -> HTTP/2 200 
+/Login -> HTTP/2 200 
+## PAG-12/13
+$ curl -s -w ' %{http_code}' $API/health
+{"status":"ok","firebaseInitialized":true} 200
+$ curl -sI $API/api/docs | head -1
+HTTP/2 404 
+## SEO-01..04
+$ curl -s $PROD | grep -oE '<title>[^<]*|<meta name="description"[^>]*|<html[^>]*lang="[^"]*"|<meta (property|name)="(og:|twitter:)[^>]*>|<link rel="canonical"[^>]*>|hreflang|ld\+json'
+<html lang="es"
+<title>¿Quedamos?
+(end)
+## Caddyfile (VPS) quedamos block
+quedamos.api.alvarotc.com { reverse_proxy quedamos-api:3001 }  # sin handle_errors, sin modo mantenimiento

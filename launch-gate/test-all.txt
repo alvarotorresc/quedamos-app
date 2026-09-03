@@ -1,0 +1,70 @@
+
+> quedamos-app@ test /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate
+> turbo test
+
+• turbo 2.8.20
+
+   • Packages in scope: @quedamos/api, @quedamos/mobile, @quedamos/shared
+   • Running test in 3 packages
+   • Remote caching disabled, using shared worktree cache
+
+@quedamos/mobile:build: cache miss, executing 66e3a8662f911dce
+@quedamos/api:build: cache miss, executing 5495ecd094824749
+@quedamos/shared:build: cache hit, replaying logs d4d71e69437699a8
+@quedamos/shared:build: 
+@quedamos/shared:build: > @quedamos/shared@0.0.1 build /home/alvarotc/Documents/apps/quedamos-app/packages/shared
+@quedamos/shared:build: > tsc
+@quedamos/shared:build: 
+@quedamos/mobile:build: 
+@quedamos/mobile:build: > @quedamos/mobile@0.0.1 build /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile
+@quedamos/mobile:build: > tsc && vite build
+@quedamos/mobile:build: 
+@quedamos/api:build: 
+@quedamos/api:build: > @quedamos/api@0.0.1 build /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api
+@quedamos/api:build: > prisma generate && prisma migrate deploy && nest build
+@quedamos/api:build: 
+@quedamos/api:build: Prisma schema loaded from prisma/schema.prisma
+@quedamos/api:build: ┌─────────────────────────────────────────────────────────┐
+@quedamos/api:build: │  Update available 6.19.2 -> 8.0.0-rc.12                 │
+@quedamos/api:build: │                                                         │
+@quedamos/api:build: │  This is a major update - please follow the guide at    │
+@quedamos/api:build: │  https://pris.ly/d/major-version-upgrade                │
+@quedamos/api:build: │                                                         │
+@quedamos/api:build: │  Run the following to update                            │
+@quedamos/api:build: │    npm i --save-dev prisma@latest                       │
+@quedamos/api:build: │    npm i @prisma/client@latest                          │
+@quedamos/api:build: └─────────────────────────────────────────────────────────┘
+@quedamos/api:build: 
+@quedamos/api:build: ✔ Generated Prisma Client (v6.19.2) to ./../../node_modules/.pnpm/@prisma+client@6.19.2_prisma@6.19.2_typescript@5.9.3__typescript@5.9.3/node_modules/@prisma/client in 89ms
+@quedamos/api:build: 
+@quedamos/api:build: ✔ Generated DBML Schema to ./docs in 25ms
+@quedamos/api:build: 
+@quedamos/api:build: Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+@quedamos/api:build: 
+@quedamos/api:build: Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+@quedamos/api:build: 
+@quedamos/api:build: Prisma schema loaded from prisma/schema.prisma
+@quedamos/api:build: Error: Prisma schema validation - (get-config wasm)
+@quedamos/api:build: Error code: P1012
+@quedamos/api:build: error: Environment variable not found: DIRECT_URL.
+@quedamos/api:build:   -->  prisma/schema.prisma:14
+@quedamos/api:build:    | 
+@quedamos/api:build: 13 |   url       = env("DATABASE_URL")
+@quedamos/api:build: 14 |   directUrl = env("DIRECT_URL")
+@quedamos/api:build:    | 
+@quedamos/api:build: 
+@quedamos/api:build: Validation Error Count: 1
+@quedamos/api:build: [Context: getConfig]
+@quedamos/api:build: 
+@quedamos/api:build: Prisma CLI Version : 6.19.2
+@quedamos/api:build:  ELIFECYCLE  Command failed with exit code 1.
+ ERROR  @quedamos/api#build: command (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api) /home/alvarotc/.local/share/pnpm/.tools/pnpm/9.15.0/bin/pnpm run build exited (1)
+
+ Tasks:    1 successful, 3 total
+Cached:    1 cached, 3 total
+  Time:    2.645s 
+Failed:    @quedamos/api#build
+
+ ERROR  run failed: command  exited (1)
+ ELIFECYCLE  Test failed. See above for more details.
+EXIT=1

@@ -1,0 +1,31 @@
+
+> quedamos-app@ typecheck /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate
+> turbo typecheck
+
+• turbo 2.8.20
+
+   • Packages in scope: @quedamos/api, @quedamos/mobile, @quedamos/shared
+   • Running typecheck in 3 packages
+   • Remote caching disabled, using shared worktree cache
+
+@quedamos/shared:typecheck: cache hit, replaying logs 436e8ba8a7ba723c
+@quedamos/shared:typecheck: 
+@quedamos/api:typecheck: cache miss, executing d22894e311953eb2
+@quedamos/shared:typecheck: > @quedamos/shared@0.0.1 typecheck /home/alvarotc/Documents/apps/quedamos-app/packages/shared
+@quedamos/shared:typecheck: > tsc --noEmit
+@quedamos/shared:typecheck: 
+@quedamos/mobile:typecheck: cache miss, executing 52b46103737d0998
+@quedamos/api:typecheck: 
+@quedamos/api:typecheck: > @quedamos/api@0.0.1 typecheck /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api
+@quedamos/api:typecheck: > tsc --noEmit
+@quedamos/api:typecheck: 
+@quedamos/mobile:typecheck: 
+@quedamos/mobile:typecheck: > @quedamos/mobile@0.0.1 typecheck /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile
+@quedamos/mobile:typecheck: > tsc --noEmit
+@quedamos/mobile:typecheck: 
+
+ Tasks:    3 successful, 3 total
+Cached:    1 cached, 3 total
+  Time:    4.598s 
+
+EXIT=0

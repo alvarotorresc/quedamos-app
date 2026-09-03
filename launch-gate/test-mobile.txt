@@ -1,0 +1,202 @@
+
+> @quedamos/mobile@0.0.1 test /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile
+> vitest run
+
+
+ RUN  v2.1.9 /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile
+
+ ✓ src/lib/share-tarjeta.test.ts (9 tests) 130ms
+ ✓ src/lib/tarjeta.test.ts (20 tests) 138ms
+ ✓ src/lib/push-notifications.test.ts (33 tests) 277ms
+ ✓ src/lib/group-sync.test.ts (21 tests) 95ms
+stdout | src/stores/auth.test.ts
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+ ✓ src/stores/auth.test.ts (24 tests) 24ms
+stderr | src/hooks/usePushNotifications.test.ts > usePushNotifications > native resume (appStateChange) > retries registration exactly once when the app resumes after a failed initial attempt
+[Push] Error: Error: network error
+    at /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/hooks/usePushNotifications.test.ts:94:32
+    at file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at runSuite (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+stderr | src/hooks/usePushNotifications.test.ts > usePushNotifications > web resume (visibilitychange) > retries sending the same token again after a previous send failed
+[Push] Error: Error: network error
+    at /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/hooks/usePushNotifications.test.ts:263:59
+    at file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:146:14
+    at file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:533:11
+    at runWithTimeout (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:39:7)
+    at runTest (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1056:17)
+    at runSuite (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runSuite (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1205:15)
+    at runFiles (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1262:5)
+    at startTests (file:///home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/@vitest+runner@2.1.9/node_modules/@vitest/runner/dist/index.js:1271:3)
+
+ ✓ src/hooks/usePushNotifications.test.ts (16 tests) 707ms
+ ✓ src/components/MazoGate.test.tsx (16 tests) 549ms
+ ✓ src/components/Mazo.test.tsx (16 tests) 694ms
+   ✓ Mazo > muestra la pregunta del sondeo con el aro y responde con un toque 374ms
+ ✓ src/hooks/usePolls.test.ts (14 tests) 957ms
+ ✓ src/lib/ics-utils.test.ts (20 tests) 35ms
+ ✓ src/components/WeekView.test.tsx (21 tests) 2270ms
+   ✓ WeekView rediseñada > compartir la tarjeta del mejor día > muestra el botón Compartir dentro del panel de mejor día 434ms
+ ✓ src/components/EventCard.test.tsx (38 tests) 3164ms
+   ✓ EventCard > compartir la tarjeta sellada > muestra el botón Compartir solo cuando el evento está confirmado 525ms
+   ✓ EventCard > compartir la tarjeta sellada > la cancelación de shareTarjeta no muestra ningún toast de error ni trackea 386ms
+   ✓ EventCard > compartir la tarjeta sellada > trackea share_tarjeta con momento sellada cuando shareTarjeta resuelve shared: true 377ms
+   ✓ EventCard > compartir la tarjeta sellada > el doble click rápido en Compartir solo llama a shareTarjeta una vez (guard en vuelo) 367ms
+ ✓ src/lib/time-slot-utils.test.ts (28 tests) 10ms
+ ✓ src/pages/PlansPage.test.tsx (10 tests) 786ms
+   ✓ PlansPage > la cabecera cuenta las próximas y las que están en el aire 404ms
+ ✓ src/hooks/useGroups.test.ts (13 tests) 925ms
+stdout | src/pages/ProfilePage.test.tsx
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+ ✓ src/lib/aro-geometry.test.ts (13 tests) 29ms
+ ✓ src/lib/calendar-utils.test.ts (17 tests) 183ms
+ ✓ src/lib/date-utils.test.ts (31 tests) 267ms
+ ✓ src/pages/GroupDetailPage.test.tsx (9 tests) 2647ms
+   ✓ GroupDetailPage > presenta el grupo con su aro, su nombre y tu color 644ms
+   ✓ GroupDetailPage > salir del grupo pide confirmación 822ms
+   ✓ GroupDetailPage > compartir la invitación > si se cierra la hoja de compartir no se cae al portapapeles ni avisa de un error 379ms
+   ✓ GroupDetailPage > compartir la invitación > si compartir falla de verdad se cae al portapapeles 456ms
+ ✓ src/hooks/useProposals.test.ts (10 tests) 920ms
+ ✓ src/ui/Avatar.test.tsx (24 tests) 1460ms
+   ✓ Avatar > pinta color pleno con inicial en tinta de día 409ms
+ ✓ src/lib/firebase.test.ts (13 tests) 31ms
+stdout | src/components/AvailabilityModal.test.tsx
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+ ✓ src/components/LocationSearch.test.tsx (10 tests) 940ms
+   ✓ LocationSearch > calls onChange when user types 639ms
+stdout | src/components/CreateEventModal.test.tsx
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+ ✓ src/hooks/usePushNotifications.integration.test.ts (1 test) 359ms
+   ✓ usePushNotifications (integration against the real lib/push-notifications) > posts the token exactly once per native resume, even though two registration listeners are briefly attached at once 342ms
+ ✓ src/pages/ProfilePage.test.tsx (8 tests) 4501ms
+   ✓ ProfilePage > presenta la identidad con el color y el número de grupos 2229ms
+   ✓ ProfilePage > la ficha de avisos cuenta los activos y lleva a notificaciones 597ms
+   ✓ ProfilePage > la fila de nombre despliega su editor 589ms
+   ✓ ProfilePage > ProfilePage — franjas > la ficha muestra las franjas guardadas, y una edición sin guardar no las pisa al cerrar el editor 511ms
+ ✓ src/components/AvailabilityModal.test.tsx (5 tests) 950ms
+   ✓ AvailabilityModal errors > un fallo al guardar muestra el toast errors.saveAvailabilityFailed y no cierra el modal 486ms
+ ✓ src/pages/JoinGroupPage.test.tsx (6 tests) 96ms
+ ✓ src/components/CreateEventModal.test.tsx (4 tests) 1558ms
+   ✓ CreateEventModal prellenado > con prefill: título por defecto, hora sugerida y submit habilitado (2 toques) 789ms
+   ✓ CreateEventModal prellenado > muestra el resumen de chips solo cuando la selección diverge del prellenado 374ms
+ ✓ src/pages/CalendarPage.test.tsx (2 tests) 524ms
+   ✓ CalendarPage > sin grupos, el botón de ir a grupos usa el primario del sistema 467ms
+ ✓ src/ui/EmptyState.test.tsx (16 tests) 1652ms
+   ✓ EmptyState > renders action button when action and onAction are provided 658ms
+ ✓ src/components/landing2/BandaAro.test.tsx (5 tests) 790ms
+   ✓ BandaAro > pinta el titular, el subtítulo y los dos estados del aro 459ms
+ ✓ src/components/AskGroupSheet.test.tsx (8 tests) 837ms
+ ✓ src/components/landing2/Cierre.test.tsx (7 tests) 870ms
+   ✓ Cierre > pinta la cita, el subtítulo y el CTA con href a /login 489ms
+ ✓ src/ui/Button.test.tsx (17 tests) 814ms
+ ✓ src/hooks/useCitySearch.test.ts (5 tests) 74ms
+ ✓ src/hooks/useMyColor.test.ts (4 tests) 42ms
+stdout | src/pages/LoginPage.test.tsx
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+ ✓ src/hooks/useWeather.test.ts (11 tests) 384ms
+ ✓ src/components/ConvertProposalModal.test.tsx (3 tests) 574ms
+   ✓ ConvertProposalModal errors > un fallo al convertir muestra el toast errors.convertProposalFailed y no cierra el modal 421ms
+ ✓ src/pages/LoginPage.test.tsx (8 tests) 185ms
+ ✓ src/components/landing2/Pantallas.test.tsx (7 tests) 353ms
+ ✓ src/ui/Badge.test.tsx (13 tests) 347ms
+ ✓ src/components/EditEventModal.test.tsx (4 tests) 674ms
+   ✓ EditEventModal errors > un fallo al editar muestra el toast errors.updateEventFailed y no cierra el modal 377ms
+stdout | src/App.test.tsx
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+ ✓ src/hooks/useGroupSync.test.ts (7 tests) 48ms
+ ✓ src/App.test.tsx (9 tests) 83ms
+ ✓ src/lib/auth-errors.test.ts (19 tests) 25ms
+ ✓ src/hooks/useAvailability.test.ts (7 tests) 395ms
+ ✓ src/components/WeatherWidget.test.ts (23 tests) 15ms
+ ✓ src/components/landing2/Proceso.test.tsx (5 tests) 210ms
+ ✓ src/lib/widget-bridge.test.ts (9 tests) 14ms
+ ✓ src/hooks/usePollDeepLink.test.ts (8 tests) 58ms
+ ✓ src/lib/api.test.ts (8 tests) 19ms
+stdout | src/pages/RegisterPage.test.tsx
+🌐 i18next is made possible by our own product, Locize — consider powering your project with managed localization (AI, CDN, integrations): https://locize.com 💙
+
+ ✓ src/components/EditProposalModal.test.tsx (2 tests) 528ms
+   ✓ EditProposalModal errors > un fallo al guardar muestra el toast errors.updateProposalFailed y no cierra el modal 389ms
+ ✓ src/pages/RegisterPage.test.tsx (5 tests) 285ms
+ ✓ src/hooks/useAutoSelectGroup.test.ts (8 tests) 36ms
+ ✓ src/pages/GroupPage.test.tsx (3 tests) 161ms
+ ✓ src/hooks/useAnalytics.test.ts (9 tests) 54ms
+ ✓ src/ui/Logo.test.tsx (7 tests) 72ms
+ ✓ src/ui/AvatarStack.test.tsx (9 tests) 478ms
+ ✓ src/components/landing2/Cuadrilla.test.tsx (4 tests) 136ms
+ ✓ src/components/landing2/Renuncias.test.tsx (4 tests) 91ms
+ ✓ src/components/landing2/HeroPregunta.test.tsx (4 tests) 465ms
+   ✓ HeroPregunta > pinta el titular, el subtítulo y el CTA con href a /login 414ms
+ ✓ src/lib/deep-link.test.ts (18 tests) 15ms
+ ✓ src/pages/NotificationsSettingsPage.test.tsx (4 tests) 1332ms
+   ✓ NotificationsSettingsPage > cada tipo es un switch accesible con su estado 684ms
+   ✓ NotificationsSettingsPage > pulsar un switch guarda el estado contrario 336ms
+ ✓ src/pages/ResetPasswordPage.test.tsx (3 tests) 122ms
+ ✓ src/lib/maps-utils.test.ts (14 tests) 10ms
+ ✓ src/hooks/useEvents.test.ts (5 tests) 267ms
+ ✓ src/lib/pending-redirect.test.ts (9 tests) 9ms
+ ✓ src/lib/theme-tokens.test.ts (4 tests) 6ms
+ ✓ src/components/AvailabilityDetailModal.test.tsx (3 tests) 432ms
+   ✓ AvailabilityDetailModal > lista a quien puede ese día 317ms
+ ✓ src/ui/Card.test.tsx (9 tests) 84ms
+ ✓ src/services/notification-preferences.test.ts (6 tests) 12ms
+ ✓ src/components/CreateProposalModal.test.tsx (2 tests) 525ms
+   ✓ CreateProposalModal errors > un fallo al crear muestra el toast errors.createProposalFailed y no cierra el modal 399ms
+ ✓ src/lib/event-edit-payload.test.ts (7 tests) 8ms
+ ✓ src/hooks/useNotificationPreferences.test.ts (3 tests) 212ms
+ ✓ src/services/groups.test.ts (7 tests) 8ms
+ ✓ src/ui/Sheet.test.tsx (5 tests) 438ms
+   ✓ Sheet > pinta título, subtítulo, cuerpo y pie cuando está abierta 400ms
+ ✓ src/ui/SkeletonCard.test.tsx (7 tests) 66ms
+ ✓ src/theme-overlays.test.ts (4 tests) 5ms
+ ✓ src/lib/mutation-utils.test.ts (5 tests) 9ms
+ ✓ src/pages/LandingPage.test.tsx (4 tests) 720ms
+ ✓ src/components/EventDetailModal.test.tsx (2 tests) 435ms
+   ✓ EventDetailModal > muestra título, estado, lugar y asistentes por estado 401ms
+ ✓ src/services/availability.test.ts (5 tests) 9ms
+ ✓ src/ui/Toggle.test.tsx (5 tests) 487ms
+ ✓ src/services/events.test.ts (5 tests) 8ms
+ ✓ src/stores/theme.test.ts (5 tests) 14ms
+ ✓ src/stores/group.test.ts (5 tests) 7ms
+ ✓ src/lib/safe-redirect.test.ts (5 tests) 5ms
+ ✓ src/hooks/useToast.test.ts (3 tests) 52ms
+ ✓ src/lib/member-colors.test.ts (4 tests) 27ms
+ ✓ src/lib/url-utils.test.ts (11 tests) 9ms
+ ✓ src/hooks/useWidgetGroupsSync.test.ts (4 tests) 39ms
+stderr | src/lib/motion.test.ts > useMotionSafe > returns false when the device prefers reduced motion
+You have Reduced Motion enabled on your device. Animations may not appear as expected.. For more information and steps for solving, visit https://motion.dev/troubleshooting/reduced-motion-disabled
+
+ ✓ src/lib/motion.test.ts (2 tests) 28ms
+ ✓ src/components/landing2/NavIsla.test.tsx (3 tests) 496ms
+   ✓ NavIsla > pinta el wordmark, el label de código abierto y el CTA con href a /login 404ms
+ ✓ src/lib/constants.test.ts (4 tests) 5ms
+ ✓ src/ui/Tile.test.tsx (4 tests) 301ms
+ ✓ src/ui/Aro.test.tsx (3 tests) 46ms
+ ✓ src/services/widget.test.ts (2 tests) 6ms
+ ✓ src/lib/availability-label.test.ts (3 tests) 4ms
+ ✓ src/ui/SegmentedPills.test.tsx (2 tests) 248ms
+ ✓ capacitor.config.test.ts (1 test) 3ms
+ ✓ src/components/MonthView.test.tsx (1 test) 255ms
+ ✓ src/components/GroupRing.test.tsx (2 tests) 63ms
+
+ Test Files  102 passed (102)
+      Tests  910 passed (910)
+   Start at  17:46:35
+   Duration  29.74s (transform 9.87s, setup 13.73s, collect 45.46s, tests 42.82s, environment 120.44s, prepare 25.77s)
+
+EXIT=0

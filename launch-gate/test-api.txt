@@ -1,0 +1,298 @@
+
+> @quedamos/api@0.0.1 test /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api
+> jest "--coverage" "--coverageReporters=text-summary" "--coverageReporters=text"
+
+PASS src/events/dto/create-event.dto.spec.ts (8.152 s)
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFirebase credentials not configured — push notifications disabled[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFIREBASE_PRIVATE_KEY is not base64 — falling back to raw PEM value[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[33m[Nest] 147991  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[AuthService] [39m[33mSkipping email sync — malformed email in JWT for user user-1[39m
+[31m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [31m  ERROR[39m [38;5;3m[NotificationsService] [39m[31mFCM multicast error[39m
+[31m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [31m  ERROR[39m [38;5;3m[NotificationsService] [39m[31mError: FCM down[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFCM error for token invalid-...: messaging/registration-token-not-registered — Token not registered[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mCleaned 1 invalid token(s)[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 1 ok, 1 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 0 ok, 1 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Hello" — 2 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[33m[Nest] 147991  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[AuthService] [39m[33mvalidateToken: user user-1 vanished after P2002 retry[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFCM error for token invalid...: messaging/registration-token-not-registered — Invalid[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mCleaned 1 invalid token(s)[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 1 ok, 1 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 2 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 2 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 2 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFCM error for token web-toke...: messaging/internal-error — transient[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 2 ok, 1 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFCM error for token android-...: messaging/registration-token-not-registered — gone[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFCM error for token web-inva...: messaging/invalid-registration-token — gone[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mCleaned 1 invalid token(s)[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mCleaned 1 invalid token(s)[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 2 ok, 2 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Test notification" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Custom Title" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Test notification" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Test notification" — 1 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Test notification" — 1 ok, 0 failed[39m
+PASS src/notifications/notifications.service.spec.ts (8.79 s)
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95msendToGroup: group=group-1, members=2, exclude=user-1, remaining=1[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95msendToGroup: group=group-1, members=0, exclude=undefined, remaining=0[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95msendToGroup: group=group-1, members=3, exclude=undefined, remaining=2[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95msendToGroup: group=group-1, members=2, exclude=undefined, remaining=2[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95msendToGroup: group=group-1, members=2, exclude=undefined, remaining=2[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Nueva quedada" — 2 ok, 0 failed[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95msendToGroup: group=group-1, members=2, exclude=undefined, remaining=2[39m
+[33m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [33m   WARN[39m [38;5;3m[NotificationsService] [39m[33mFCM error for token tok-2...: messaging/internal-error — boom[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Title" — 1 ok, 1 failed[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95msendToGroup: group=group-1, members=3, exclude=user-1, remaining=1[39m
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [32m    LOG[39m [38;5;3m[NotificationsService] [39m[32mFirebase Admin SDK initialized[39m
+[95m[Nest] 147957  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[NotificationsService] [39m[95mSent "Quedada cancelada" — 2 ok, 0 failed[39m
+[95m[Nest] 147991  - [39m09/03/2026, 5:46:38 PM [95m  DEBUG[39m [38;5;3m[AuthService] [39m[95mToken validation failed: Error: invalid signature[39m
+PASS src/auth/auth.service.spec.ts (8.808 s)
+PASS src/widget/widget-summary.service.spec.ts
+[31m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [31m  ERROR[39m [38;5;3m[WeeklyReminderService] [39m[31mFailed to send weekly reminder[39m
+[31m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [31m  ERROR[39m [38;5;3m[WeeklyReminderService] [39m[31mError: FCM down[39m
+PASS src/notifications/weekly-reminder.service.spec.ts (10.354 s)
+PASS src/polls/polls.service.spec.ts (10.325 s)
+[95m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[WeeklyReminderService] [39m[95mAll users have availability for next week[39m
+[95m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[WeeklyReminderService] [39m[95mSending weekly reminders to 2 user(s) without availability[39m
+[95m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[WeeklyReminderService] [39m[95mSending weekly reminders to 2 user(s) without availability[39m
+[95m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[WeeklyReminderService] [39m[95mSending weekly reminders to 1 user(s) without availability[39m
+[95m[Nest] 147993  - [39m03/01/2026, 9:00:00 PM [95m  DEBUG[39m [38;5;3m[WeeklyReminderService] [39m[95mSending weekly reminders to 1 user(s) without availability[39m
+[95m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[WeeklyReminderService] [39m[95mSending weekly reminders to 25 user(s) without availability[39m
+[95m[Nest] 147993  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[WeeklyReminderService] [39m[95mSending weekly reminders to 2 user(s) without availability[39m
+[31m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [31m  ERROR[39m [38;5;3m[EventReminderService] [39m[31mFailed to send reminder for event event-1[39m
+[31m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [31m  ERROR[39m [38;5;3m[EventReminderService] [39m[31mError: FCM down[39m
+[95m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[EventReminderService] [39m[95mSent reminders for "Test Event" to 2 attendee(s)[39m
+[95m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[EventReminderService] [39m[95mSent reminders for "Test Event" to 1 attendee(s)[39m
+[95m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[EventReminderService] [39m[95mSent reminders for "Test Event" to 1 attendee(s)[39m
+[95m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[EventReminderService] [39m[95mSent reminders for "Test Event" to 2 attendee(s)[39m
+PASS src/polls/polls.controller.spec.ts
+PASS src/weather/weather.service.spec.ts
+[95m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[EventReminderService] [39m[95mSent reminders for "Test Event" to 25 attendee(s)[39m
+[95m[Nest] 147972  - [39m09/03/2026, 5:46:40 PM [95m  DEBUG[39m [38;5;3m[EventReminderService] [39m[95mSent reminders for "Test Event" to 1 attendee(s)[39m
+PASS src/notifications/event-reminder.service.spec.ts (10.7 s)
+PASS src/groups/groups.service.spec.ts (10.789 s)
+PASS src/proposals/proposals.service.spec.ts (10.908 s)
+[31m[Nest] 147956  - [39m09/03/2026, 5:46:41 PM [31m  ERROR[39m [38;5;3m[EventsService] [39m[31mFailed to send event_deleted notification[39m
+[31m[Nest] 147956  - [39m09/03/2026, 5:46:41 PM [31m  ERROR[39m [38;5;3m[EventsService] [39m[31mError: FCM down[39m
+PASS src/availability/availability.service.spec.ts (11.338 s)
+PASS src/events/events.service.spec.ts (11.516 s)
+PASS src/groups/groups.controller.spec.ts (11.598 s)
+PASS src/widget/widget-token.service.spec.ts
+[32m[Nest] 147957  - [39m09/03/2026, 5:46:41 PM [32m    LOG[39m [38;5;3m[WidgetTokenService] [39m[32mPurged 3 expired widget token(s)[39m
+PASS src/auth/dto/update-profile.dto.spec.ts
+PASS src/instrument.spec.ts
+PASS src/notifications/dto/update-preference.dto.spec.ts
+PASS src/availability/dto/create-availability.dto.spec.ts
+PASS src/availability/availability.controller.spec.ts
+PASS src/events/dto/update-event.dto.spec.ts
+PASS src/proposals/proposals.controller.spec.ts
+PASS src/weather/weather.controller.spec.ts
+PASS src/common/prisma/open-poll-unique.spec.ts
+PASS src/proposals/dto/create-proposal.dto.spec.ts
+[31m[Nest] 147960  - [39m09/03/2026, 5:46:42 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mUnhandled exception[39m
+Error: Something broke
+    at Object.<anonymous> (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api/src/common/filters/all-exceptions.filter.spec.ts:83:25)
+    at Promise.then.completed (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusTest (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at _runTest (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:252:3)
+    at _runTestsForDescribeBlock (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:126:9)
+    at _runTestsForDescribeBlock (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:121:9)
+    at _runTestsForDescribeBlock (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-runner@29.7.0/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-runner@29.7.0/node_modules/jest-runner/build/runTest.js:444:34)
+    at Object.worker (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-runner@29.7.0/node_modules/jest-runner/build/testWorker.js:106:12)
+[31m[Nest] 147960  - [39m09/03/2026, 5:46:42 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mUnhandled exception[39m
+unexpected string error
+[31m[Nest] 147960  - [39m09/03/2026, 5:46:42 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mUnhandled exception[39m
+null
+[31m[Nest] 147960  - [39m09/03/2026, 5:46:42 PM [31m  ERROR[39m [38;5;3m[AllExceptionsFilter] [39m[31mUnhandled exception[39m
+Error: Something unexpected
+    at Object.<anonymous> (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api/src/common/filters/all-exceptions.filter.spec.ts:161:25)
+    at Promise.then.completed (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/utils.js:298:28)
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/utils.js:231:10)
+    at _callCircusTest (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:316:40)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at _runTest (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:252:3)
+    at _runTestsForDescribeBlock (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:126:9)
+    at _runTestsForDescribeBlock (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:121:9)
+    at _runTestsForDescribeBlock (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:121:9)
+    at run (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/run.js:71:3)
+    at runAndTransformResultsToJestFormat (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+    at jestAdapter (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-circus@29.7.0/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+    at runTestInternal (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-runner@29.7.0/node_modules/jest-runner/build/runTest.js:367:16)
+    at runTest (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-runner@29.7.0/node_modules/jest-runner/build/runTest.js:444:34)
+    at Object.worker (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/node_modules/.pnpm/jest-runner@29.7.0/node_modules/jest-runner/build/testWorker.js:106:12)
+PASS src/common/filters/all-exceptions.filter.spec.ts
+PASS src/auth/auth.guard.spec.ts
+PASS src/common/frontend-url.spec.ts
+PASS src/groups/dto/join-group.dto.spec.ts
+PASS src/notifications/dto/register-token.dto.spec.ts
+PASS src/users/users.service.spec.ts
+PASS src/auth/auth.controller.spec.ts
+PASS src/groups/dto/create-group.dto.spec.ts
+PASS src/common/prisma/hot-path-indexes.spec.ts
+PASS src/polls/dto/create-poll.dto.spec.ts
+PASS src/widget/widget-token.guard.spec.ts
+PASS src/events/events.controller.spec.ts
+PASS src/proposals/dto/convert-proposal.dto.spec.ts
+PASS src/widget/widget.controller.spec.ts
+PASS src/common/prisma/rls-migration.spec.ts
+PASS src/polls/dto/respond-poll.dto.spec.ts
+PASS src/common/pipes/parse-calendar-date.pipe.spec.ts
+PASS src/widget/dto/get-widget-summary-query.dto.spec.ts
+PASS src/notifications/dto/unregister-token.dto.spec.ts
+PASS src/health.controller.spec.ts
+PASS src/common/prisma/prisma.service.spec.ts
+PASS src/events/dto/respond-event.dto.spec.ts
+PASS src/proposals/dto/update-proposal.dto.spec.ts
+PASS src/invite/invite.controller.spec.ts
+PASS src/notifications/notifications.controller.spec.ts
+
+=============================== Coverage summary ===============================
+Statements   : 88.16% ( 1505/1707 )
+Branches     : 91.28% ( 398/436 )
+Functions    : 88.73% ( 260/293 )
+Lines        : 89.12% ( 1369/1536 )
+================================================================================
+----------------------------------|---------|----------|---------|---------|--------------------------------------------
+File                              | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                          
+----------------------------------|---------|----------|---------|---------|--------------------------------------------
+All files                         |   88.16 |    91.28 |   88.73 |   89.12 |                                            
+ src                              |   40.25 |    82.35 |      80 |   39.72 |                                            
+  app.module.ts                   |       0 |      100 |     100 |       0 | 1-55                                       
+  health.controller.ts            |     100 |      100 |     100 |     100 |                                            
+  instrument.ts                   |     100 |      100 |     100 |     100 |                                            
+  main.ts                         |       0 |        0 |       0 |       0 | 1-61                                       
+ src/auth                         |   85.22 |    92.59 |   78.57 |   86.07 |                                            
+  auth.controller.ts              |     100 |      100 |     100 |     100 |                                            
+  auth.guard.ts                   |     100 |      100 |     100 |     100 |                                            
+  auth.module.ts                  |       0 |      100 |     100 |       0 | 1-11                                       
+  auth.service.ts                 |      88 |       92 |   66.66 |   87.23 | 35-40,51                                   
+ src/auth/dto                     |     100 |      100 |     100 |     100 |                                            
+  update-profile.dto.ts           |     100 |      100 |     100 |     100 |                                            
+ src/availability                 |    90.9 |    94.11 |     100 |    92.4 |                                            
+  availability.controller.ts      |     100 |      100 |     100 |     100 |                                            
+  availability.module.ts          |       0 |      100 |     100 |       0 | 1-13                                       
+  availability.service.ts         |     100 |    94.11 |     100 |     100 | 120-121                                    
+ src/availability/dto             |     100 |      100 |     100 |     100 |                                            
+  create-availability.dto.ts      |     100 |      100 |     100 |     100 |                                            
+ src/common                       |   97.56 |    86.66 |     100 |     100 |                                            
+  date-utils.ts                   |     100 |      100 |     100 |     100 |                                            
+  frontend-url.ts                 |     100 |       80 |     100 |     100 | 11                                         
+  test-utils.ts                   |   94.73 |       80 |     100 |     100 | 318                                        
+ src/common/decorators            |      50 |      100 |       0 |      50 |                                            
+  current-user.decorator.ts       |      50 |      100 |       0 |      50 | 4-5                                        
+ src/common/filters               |     100 |      100 |     100 |     100 |                                            
+  all-exceptions.filter.ts        |     100 |      100 |     100 |     100 |                                            
+ src/common/pipes                 |     100 |      100 |     100 |     100 |                                            
+  parse-calendar-date.pipe.ts     |     100 |      100 |     100 |     100 |                                            
+ src/common/prisma                |   52.63 |    33.33 |      25 |   53.33 |                                            
+  prisma.module.ts                |       0 |      100 |     100 |       0 | 1-9                                        
+  prisma.service.ts               |   69.23 |    33.33 |      25 |   63.63 | 15-27                                      
+  user-select.ts                  |     100 |      100 |     100 |     100 |                                            
+ src/events                       |   90.33 |    95.34 |      75 |   90.42 |                                            
+  events.controller.ts            |   96.55 |      100 |   88.88 |   96.29 | 86                                         
+  events.module.ts                |       0 |      100 |     100 |       0 | 1-14                                       
+  events.service.ts               |   94.08 |    95.34 |   70.37 |    93.5 | 91,156,171,182,251,272,328,362,459,475     
+ src/events/dto                   |     100 |      100 |     100 |     100 |                                            
+  create-event.dto.ts             |     100 |      100 |     100 |     100 |                                            
+  respond-event.dto.ts            |     100 |      100 |     100 |     100 |                                            
+  update-event.dto.ts             |     100 |      100 |     100 |     100 |                                            
+ src/groups                       |   90.55 |    93.33 |      84 |   92.09 |                                            
+  groups.controller.ts            |     100 |      100 |     100 |     100 |                                            
+  groups.module.ts                |       0 |      100 |     100 |       0 | 1-13                                       
+  groups.service.ts               |   92.34 |    93.33 |   77.14 |   93.49 | 66,182,243,277,310,349,363-367,445,511,542 
+ src/groups/dto                   |     100 |      100 |     100 |     100 |                                            
+  add-city.dto.ts                 |     100 |      100 |     100 |     100 |                                            
+  create-group.dto.ts             |     100 |      100 |     100 |     100 |                                            
+  join-group.dto.ts               |     100 |      100 |     100 |     100 |                                            
+  update-member-role.dto.ts       |     100 |      100 |     100 |     100 |                                            
+ src/invite                       |   73.91 |      100 |     100 |   78.94 |                                            
+  invite.controller.ts            |     100 |      100 |     100 |     100 |                                            
+  invite.module.ts                |       0 |      100 |     100 |       0 | 1-9                                        
+ src/notifications                |   95.46 |       96 |   98.48 |   95.43 |                                            
+  event-reminder.service.ts       |     100 |    84.61 |     100 |     100 | 119-135                                    
+  notifications.controller.ts     |     100 |      100 |     100 |     100 |                                            
+  notifications.module.ts         |       0 |      100 |     100 |       0 | 1-14                                       
+  notifications.service.ts        |   97.07 |    98.14 |   97.72 |   96.57 | 53,349-356,513                             
+  weekly-reminder.service.ts      |     100 |      100 |     100 |     100 |                                            
+ src/notifications/dto            |     100 |      100 |     100 |     100 |                                            
+  register-token.dto.ts           |     100 |      100 |     100 |     100 |                                            
+  send-test-notification.dto.ts   |     100 |      100 |     100 |     100 |                                            
+  unregister-token.dto.ts         |     100 |      100 |     100 |     100 |                                            
+  update-preference.dto.ts        |     100 |      100 |     100 |     100 |                                            
+ src/polls                        |   86.79 |       92 |      90 |   89.24 |                                            
+  polls.controller.ts             |     100 |      100 |     100 |     100 |                                            
+  polls.module.ts                 |       0 |      100 |     100 |       0 | 1-15                                       
+  polls.service.ts                |   94.73 |       92 |   86.66 |   97.01 | 133,196                                    
+ src/polls/dto                    |     100 |      100 |     100 |     100 |                                            
+  create-poll.dto.ts              |     100 |      100 |     100 |     100 |                                            
+  respond-poll.dto.ts             |     100 |      100 |     100 |     100 |                                            
+ src/proposals                    |   86.15 |    81.63 |   82.35 |   88.42 |                                            
+  proposals.controller.ts         |     100 |      100 |     100 |     100 |                                            
+  proposals.module.ts             |       0 |      100 |     100 |       0 | 1-14                                       
+  proposals.service.ts            |   91.48 |    81.63 |      70 |   93.25 | 61,87,117,122,180,278                      
+ src/proposals/dto                |     100 |      100 |     100 |     100 |                                            
+  convert-proposal.dto.ts         |     100 |      100 |     100 |     100 |                                            
+  create-proposal.dto.ts          |     100 |      100 |     100 |     100 |                                            
+  update-proposal.dto.ts          |     100 |      100 |     100 |     100 |                                            
+  vote-proposal.dto.ts            |     100 |      100 |     100 |     100 |                                            
+ src/users                        |   61.53 |      100 |     100 |   66.66 |                                            
+  users.module.ts                 |       0 |      100 |     100 |       0 | 1-8                                        
+  users.service.ts                |     100 |      100 |     100 |     100 |                                            
+ src/weather                      |   88.11 |     87.5 |     100 |      90 |                                            
+  weather.controller.ts           |     100 |      100 |     100 |     100 |                                            
+  weather.module.ts               |       0 |      100 |     100 |       0 | 1-13                                       
+  weather.service.ts              |   93.54 |       85 |     100 |   94.54 | 100,120-121                                
+ src/weather/dto                  |      75 |      100 |       0 |      75 |                                            
+  get-forecast-query.dto.ts       |      75 |      100 |       0 |      75 | 9,15                                       
+ src/widget                       |   92.06 |    95.83 |     100 |   92.79 |                                            
+  widget-summary.service.ts       |     100 |    94.11 |     100 |     100 | 61                                         
+  widget-token.guard.ts           |     100 |      100 |     100 |     100 |                                            
+  widget-token.service.ts         |     100 |      100 |     100 |     100 |                                            
+  widget.controller.ts            |     100 |      100 |     100 |     100 |                                            
+  widget.module.ts                |       0 |      100 |     100 |       0 | 1-14                                       
+ src/widget/dto                   |     100 |      100 |     100 |     100 |                                            
+  get-widget-summary-query.dto.ts |     100 |      100 |     100 |     100 |                                            
+----------------------------------|---------|----------|---------|---------|--------------------------------------------
+
+Test Suites: 50 passed, 50 total
+Tests:       699 passed, 699 total
+Snapshots:   0 total
+Time:        27.187 s
+Ran all test suites.
+EXIT=0

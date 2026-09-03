@@ -1,0 +1,213 @@
+
+> quedamos-app@ typecheck /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate
+> turbo typecheck
+
+• turbo 2.8.20
+
+   • Packages in scope: @quedamos/api, @quedamos/mobile, @quedamos/shared
+   • Running typecheck in 3 packages
+   • Remote caching disabled, using shared worktree cache
+
+@quedamos/api:typecheck: cache miss, executing d22894e311953eb2
+@quedamos/mobile:typecheck: cache miss, executing 52b46103737d0998
+@quedamos/shared:typecheck: cache hit, replaying logs 436e8ba8a7ba723c
+@quedamos/shared:typecheck: 
+@quedamos/shared:typecheck: > @quedamos/shared@0.0.1 typecheck /home/alvarotc/Documents/apps/quedamos-app/packages/shared
+@quedamos/shared:typecheck: > tsc --noEmit
+@quedamos/shared:typecheck: 
+@quedamos/mobile:typecheck: 
+@quedamos/mobile:typecheck: > @quedamos/mobile@0.0.1 typecheck /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile
+@quedamos/mobile:typecheck: > tsc --noEmit
+@quedamos/mobile:typecheck: 
+@quedamos/api:typecheck: 
+@quedamos/api:typecheck: > @quedamos/api@0.0.1 typecheck /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api
+@quedamos/api:typecheck: > tsc --noEmit
+@quedamos/api:typecheck: 
+@quedamos/api:typecheck: src/auth/auth.service.ts(68,36): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/auth/auth.service.ts(78,36): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/auth/auth.service.ts(89,38): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/auth/auth.service.ts(100,36): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/auth/auth.service.ts(120,24): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/auth/auth.service.ts(134,24): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(18,24): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(28,24): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(70,24): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(101,40): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(115,24): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(151,40): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(158,26): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(169,26): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(177,26): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(187,24): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(197,40): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/availability/availability.service.ts(211,23): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/common/prisma/prisma.service.ts(2,10): error TS2305: Module '"@prisma/client"' has no exported member 'PrismaClient'.
+@quedamos/api:typecheck: src/common/prisma/prisma.service.ts(23,16): error TS2339: Property '$connect' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/common/prisma/prisma.service.ts(27,16): error TS2339: Property '$disconnect' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(1,10): error TS2305: Module '"@prisma/client"' has no exported member 'Prisma'.
+@quedamos/api:typecheck: src/events/events.service.ts(30,24): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(45,37): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(83,44): error TS7006: Parameter 'm' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/events/events.service.ts(99,38): error TS7006: Parameter 'm' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/events/events.service.ts(102,37): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(139,27): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(254,39): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(298,23): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(310,39): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(344,39): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(374,40): error TS2339: Property 'eventAttendee' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(393,19): error TS2339: Property '$transaction' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/events/events.service.ts(394,16): error TS7006: Parameter 'tx' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/events/events.service.ts(419,52): error TS7006: Parameter 'a' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/events/events.service.ts(420,50): error TS7006: Parameter 'a' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/events/events.service.ts(463,38): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(61,42): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(72,37): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(92,24): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(103,37): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(121,37): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(129,46): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(143,23): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(152,44): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(161,25): error TS2339: Property 'eventAttendee' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(171,36): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(189,42): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(200,19): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(201,19): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(209,23): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(214,23): error TS2339: Property 'eventAttendee' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(224,23): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(255,23): error TS2339: Property 'pollResponse' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(258,23): error TS2339: Property 'planVote' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(282,38): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(290,35): error TS7006: Parameter 'attendee' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/groups/groups.service.ts(294,43): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(315,37): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(321,39): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(330,32): error TS7006: Parameter 'response' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/groups/groups.service.ts(330,77): error TS7006: Parameter 'r' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/groups/groups.service.ts(332,27): error TS7006: Parameter 'member' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/groups/groups.service.ts(334,43): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(356,24): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(363,37): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(375,37): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(387,38): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(407,44): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(416,39): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(421,44): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(429,39): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(460,44): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(472,37): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(477,23): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(483,23): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(487,23): error TS2339: Property 'eventAttendee' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(517,37): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(544,23): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(560,41): error TS2339: Property 'groupCity' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(567,24): error TS2339: Property 'groupCity' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(579,24): error TS2339: Property 'groupCity' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(590,36): error TS2339: Property 'groupCity' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(598,23): error TS2339: Property 'groupCity' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/groups/groups.service.ts(615,23): error TS2339: Property 'group' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/event-reminder.service.ts(42,38): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/event-reminder.service.ts(66,52): error TS7006: Parameter 'a' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/event-reminder.service.ts(71,43): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/event-reminder.service.ts(82,22): error TS7006: Parameter 'userId' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(82,42): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(105,39): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(112,25): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(113,41): error TS7006: Parameter 't' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(121,23): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(129,37): error TS2339: Property 'notificationPreference' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(132,41): error TS7006: Parameter 'p' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(141,24): error TS2339: Property 'notificationPreference' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(151,36): error TS2339: Property 'notificationPreference' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(171,38): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(178,19): error TS7006: Parameter 't' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(197,38): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(204,19): error TS7006: Parameter 't' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(220,19): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(224,19): error TS2339: Property 'notificationLog' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(242,39): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(246,37): error TS7006: Parameter 'm' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(247,38): error TS7006: Parameter 'id' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(250,47): error TS2339: Property 'notificationPreference' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(253,54): error TS7006: Parameter 'p' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(254,33): error TS7006: Parameter 'id' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(263,38): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(272,19): error TS7006: Parameter 't' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(296,41): error TS2339: Property 'eventAttendee' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(298,34): error TS7006: Parameter 'a' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(298,58): error TS7006: Parameter 'id' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(301,47): error TS2339: Property 'notificationPreference' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(304,54): error TS7006: Parameter 'p' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(305,33): error TS7006: Parameter 'id' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(310,38): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(317,19): error TS7006: Parameter 't' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(443,27): error TS2339: Property 'pushToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/notifications.service.ts(500,25): error TS2339: Property 'notificationLog' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/weekly-reminder.service.ts(22,39): error TS2339: Property 'groupMember' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/weekly-reminder.service.ts(25,49): error TS7006: Parameter 'm' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/weekly-reminder.service.ts(30,53): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/notifications/weekly-reminder.service.ts(37,67): error TS7006: Parameter 'a' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/notifications/weekly-reminder.service.ts(58,13): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(78,40): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(92,36): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(118,44): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(142,24): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(156,36): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(162,23): error TS2339: Property 'pollResponse' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(175,19): error TS2339: Property 'pollResponse' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(177,43): error TS7006: Parameter 'r' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/polls/polls.service.ts(177,74): error TS7006: Parameter 'r' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/polls/polls.service.ts(178,35): error TS7006: Parameter 'm' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/polls/polls.service.ts(182,43): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(202,25): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(214,36): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(222,24): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/polls/polls.service.ts(231,36): error TS2339: Property 'availabilityPoll' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(32,40): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(69,24): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(82,40): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(125,24): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(138,40): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(150,23): error TS2339: Property 'planVote' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(156,39): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(164,37): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(188,40): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(220,39): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(252,25): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(260,39): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(286,40): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/proposals/proposals.service.ts(302,24): error TS2339: Property 'planProposal' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/users/users.service.ts(9,24): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/users/users.service.ts(15,24): error TS2339: Property 'user' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/weather/weather.controller.ts(32,38): error TS2339: Property 'groupCity' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/weather/weather.controller.ts(41,19): error TS7006: Parameter 'city' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/weather/weather.controller.ts(45,22): error TS7006: Parameter 'outcome' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/weather/weather.controller.ts(45,31): error TS7006: Parameter 'i' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/weather/weather.controller.ts(68,36): error TS2339: Property 'groupCity' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-summary.service.ts(68,19): error TS2339: Property 'availability' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-summary.service.ts(72,19): error TS2339: Property 'event' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-summary.service.ts(92,43): error TS7006: Parameter 'e' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(4,10): error TS2305: Module '"@prisma/client"' has no exported member 'User'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(38,23): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(44,39): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(51,25): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(52,41): error TS7006: Parameter 't' implicitly has an 'any' type.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(60,23): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(66,38): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(74,25): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(79,23): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck: src/widget/widget-token.service.ts(88,41): error TS2339: Property 'widgetToken' does not exist on type 'PrismaService'.
+@quedamos/api:typecheck:  ELIFECYCLE  Command failed with exit code 2.
+ ERROR  @quedamos/api#typecheck: command (/home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api) /home/alvarotc/.local/share/pnpm/.tools/pnpm/9.15.0/bin/pnpm run typecheck exited (2)
+
+ Tasks:    1 successful, 3 total
+Cached:    1 cached, 3 total
+  Time:    2.557s 
+Failed:    @quedamos/api#typecheck
+
+ ERROR  run failed: command  exited (2)
+ ELIFECYCLE  Command failed with exit code 2.
+EXIT=2

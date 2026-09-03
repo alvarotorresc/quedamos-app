@@ -1,0 +1,77 @@
+
+> quedamos-app@ lint /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate
+> turbo lint
+
+• turbo 2.8.20
+
+   • Packages in scope: @quedamos/api, @quedamos/mobile, @quedamos/shared
+   • Running lint in 3 packages
+   • Remote caching disabled, using shared worktree cache
+
+@quedamos/mobile:lint: cache miss, executing a9042a38f8777190
+@quedamos/api:lint: cache miss, executing 9e95a253e3ff63fc
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: > @quedamos/mobile@0.0.1 lint /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile
+@quedamos/mobile:lint: > eslint .
+@quedamos/mobile:lint: 
+@quedamos/api:lint: 
+@quedamos/api:lint: > @quedamos/api@0.0.1 lint /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api
+@quedamos/api:lint: > eslint .
+@quedamos/api:lint: 
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/public/firebase-messaging-sw.js
+@quedamos/mobile:lint:   1:1  warning  Unused eslint-disable directive (no problems were reported from 'no-undef')
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/components/CreateEventModal.tsx
+@quedamos/mobile:lint:   51:9  warning  The 'members' logical expression could make the dependencies of useMemo Hook (at line 176) change on every render. To fix this, wrap the initialization of 'members' in its own useMemo() Hook  react-hooks/exhaustive-deps
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/components/LocationSearch.test.tsx
+@quedamos/mobile:lint:    1:37  warning  'waitFor' is defined but never used                                            @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   20:32  warning  'ms' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/components/WeatherWidget.tsx
+@quedamos/mobile:lint:    8:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+@quedamos/mobile:lint:   20:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/pages/CalendarPage.tsx
+@quedamos/mobile:lint:   72:9  warning  The 'members' logical expression could make the dependencies of useMemo Hook (at line 98) change on every render. To fix this, wrap the initialization of 'members' in its own useMemo() Hook  react-hooks/exhaustive-deps
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/pages/PlansPage.tsx
+@quedamos/mobile:lint:   74:9  warning  The 'members' logical expression could make the dependencies of useMemo Hook (at line 125) change on every render. Move it inside the useMemo callback. Alternatively, wrap the initialization of 'members' in its own useMemo() Hook  react-hooks/exhaustive-deps
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/mobile/src/test/setup.ts
+@quedamos/mobile:lint:   58:7   warning  'whileTap' is assigned a value but never used     @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   59:7   warning  'whileHover' is assigned a value but never used   @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   60:7   warning  'whileInView' is assigned a value but never used  @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   61:7   warning  'animate' is assigned a value but never used      @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   62:7   warning  'initial' is assigned a value but never used      @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   63:7   warning  'exit' is assigned a value but never used         @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   64:7   warning  'transition' is assigned a value but never used   @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   65:7   warning  'viewport' is assigned a value but never used     @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint:   66:17  warning  '_layoutId' is assigned a value but never used    @typescript-eslint/no-unused-vars
+@quedamos/mobile:lint: 
+@quedamos/mobile:lint: ✖ 17 problems (0 errors, 17 warnings)
+@quedamos/mobile:lint:   0 errors and 1 warning potentially fixable with the `--fix` option.
+@quedamos/mobile:lint: 
+@quedamos/api:lint: 
+@quedamos/api:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api/src/events/events.controller.spec.ts
+@quedamos/api:lint:   4:10  warning  'CreateEventDto' is defined but never used  @typescript-eslint/no-unused-vars
+@quedamos/api:lint: 
+@quedamos/api:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api/src/events/events.service.spec.ts
+@quedamos/api:lint:    776:13  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+@quedamos/api:lint:    892:13  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+@quedamos/api:lint:   1094:13  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+@quedamos/api:lint:   1163:13  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+@quedamos/api:lint: 
+@quedamos/api:lint: /home/alvarotc/Documents/apps/quedamos-worktrees/launch-gate/apps/api/src/proposals/proposals.service.spec.ts
+@quedamos/api:lint:   289:13  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+@quedamos/api:lint:   479:13  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+@quedamos/api:lint: 
+@quedamos/api:lint: ✖ 7 problems (0 errors, 7 warnings)
+@quedamos/api:lint: 
+
+ Tasks:    2 successful, 2 total
+Cached:    0 cached, 2 total
+  Time:    4.317s 
+
+EXIT=0

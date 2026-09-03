@@ -1,0 +1,530 @@
+Volver
+Email
+Contraseña
+tu@email.com
+••••••••
+No se pudo verificar el captcha. Inténtalo de nuevo.
+Ha ocurrido un error inesperado
+Cancelar
+opcional
+¿Quedamos?
+El momento perfecto para quedar con tu grupo.
+Iniciar sesión
+Crear cuenta
+Iniciar sesión
+¿Olvidaste tu contraseña?
+Entrar
+Entrando...
+¿Aún no tienes cuenta?
+Crear una
+Crear cuenta
+Nombre
+Tu nombre
+Repetir contraseña
+Crear cuenta
+Creando...
+La contraseña no cumple todos los requisitos
+Las contraseñas no coinciden
+Al menos 8 caracteres
+Una letra mayúscula
+Un número
+Un carácter especial (!@#$...)
+Débil
+Regular
+Buena
+Fuerte
+Revisa tu email
+Te hemos enviado un email de confirmación a <1>{{email}}</1>. Haz click en el enlace para activar tu cuenta.
+Si no lo ves, revisa la carpeta de spam.
+Ya lo he confirmado, entrar
+Recuperar contraseña
+Introduce tu email y te enviaremos un enlace para restablecer tu contraseña.
+Enviar enlace
+Enviando...
+Email enviado
+Te hemos enviado un email con instrucciones para restablecer tu contraseña. Revisa tu bandeja de entrada.
+Enviar de nuevo
+Nueva contraseña
+Introduce tu nueva contraseña.
+Nueva contraseña
+Confirmar contraseña
+Cambiar contraseña
+Guardando...
+Verificando enlace...
+Las contraseñas no coinciden
+La contraseña debe tener al menos 6 caracteres
+Error al cambiar la contraseña
+Contraseña actualizada
+Redirigiendo...
+Enlace caducado
+El enlace de recuperación no es válido o ha caducado. Solicita uno nuevo.
+Solicitar nuevo enlace
+azul
+naranja
+rosa
+verde
+morado
+rojo
+Calendario
+Quedadas
+Grupo
+Perfil
+Calendario
+Selecciona un grupo para ver el calendario compartido
+No perteneces a ningún grupo
+Crea o únete a un grupo para ver el calendario compartido
+Ir a grupos
+Semana
+Mes
+Lista
+Días con disponibilidad
+Recomendado
+Otro día
+Nadie disponible
+Tú
+Todo el día
+Estoy disponible
+Preguntar
+Preguntar al grupo
+Preguntar
+Cada uno responde con un toque, sin abrir el calendario.
+Ya has preguntado eso. Prueba otra franja.
+Queda en el mazo; hoy ya se avisó al grupo.
+Editar disponibilidad
+Disponible
+Crear quedada
+Pueden {{count}}
+Puede 1
+Podéis los {{count}}
+¿Quedamos el {{weekday}}?
+Quedamos
+{{name}} no
+¿Cuándo puedes?
+Toca un día para marcar cuándo estás disponible. Tu grupo verá cuándo coincidís.
+Estoy disponible
+L
+M
+X
+J
+V
+S
+D
+Días activos
+Mejor match
+Miembros
+Días futuros de este mes en los que al menos una persona ha marcado disponibilidad.
+Porcentaje del grupo disponible en el mejor día del mes.
+Número de miembros del grupo que han marcado disponibilidad este mes.
+Disponibilidad
+Día completo
+Franja
+De hora a hora
+Mañana
+Tarde
+Noche
+Desde
+Hasta
+Guardar
+Guardando...
+Eliminar
+Eliminando...
+Selecciona al menos una franja
+Disponibilidad del día
+Creada por {{name}}
+Descargar para calendario
+Quedadas
+No hay quedadas programadas
+Ve al calendario y crea una quedada desde un día con gente disponible
+No perteneces a ningún grupo
+Crea o únete a un grupo para organizar quedadas
+Ir a grupos
+Ir al calendario
+Próximas
+{{count}} próxima
+{{count}} próximas
+{{count}} en el aire
+{{count}} en el aire
+Próxima quedada
+Añadir al calendario
+Sellada · vas tú
+Sellada · va {{name}}
+Sellada · vais {{count}}
+Pasadas
+confirmados
+Confirmar
+Rechazar
+Vas. Que conste.
+Has rechazado esta quedada
+van {{confirmed}}, faltan {{missing}}
+Editar
+Eliminar quedada
+Esta accion no se puede deshacer
+Marcar como cancelada
+Cancelar esta quedada?
+Confirmar quedada
+Marcar esta quedada como confirmada?
+Abrir en mapas
+Editar quedada
+Guardar cambios
+Guardando...
+Quedadas
+Propuestas
+Toca para cambiar
+En el aire
+Confirmada
+Cancelada
+Nueva quedada
+Título
+Ruta, cena, cine...
+Quedada del {{weekday}}
+Hora
+Lugar
+Monachil, centro...
+Opcional — se puede decidir luego
+Crear quedada
+Creando...
+disponibles
+Van los que pueden
+Invitar miembros específicos
+Todos los miembros del grupo serán invitados por defecto
+Sugerido
+Fecha
+Hora fin
+La hora de fin debe ser posterior
+Descripción
+Detalles del plan...
+O escribe un lugar personalizado
+Grupo
+No perteneces a ningún grupo
+Crea un grupo o únete a uno para empezar
+Crear grupo
+¡Bienvenido a Quedamos!
+Crea un grupo con tus amigos o pide un código de invitación.
+Tengo un código
+Unirme con código
+Nombre del grupo
+Ej: Amigos del cole
+Emoji
+👥
+Creando...
+Código de invitación
+12345678
+Uniéndose...
+Miembros
+(tú)
+Invitar amigos
+Copiar código
+Código copiado
+Compartir
+Regenerar código
+¿Regenerar el código de invitación? El código actual dejará de funcionar.
+Regenerando...
+Zona de peligro
+Salir del grupo
+Seis colores. El tuyo es el {{color}}.
+desde {{month}}
+código {{code}}
+Próxima quedada
+Nada en el aire. ¿Quedamos?
+En el aire
+Ninguna pregunta abierta
+Falta {{names}}
+Faltan {{names}}
+Han respondido todos
+Invitar
+El tiempo
+Sin ciudad todavía
+Grupo
+Nombre
+Ciudades
+Miembros
+¿Seguro que quieres salir de este grupo?
+Saliendo...
+Únete a mi grupo en ¿Quedamos?
+{{count}} miembro
+{{count}} miembros
+Error al crear el grupo
+Error al unirse al grupo
+Código de invitación inválido
+Ya eres miembro de este grupo
+Salir del grupo
+¿Seguro que quieres salir de este grupo? No podrás volver a entrar sin una nueva invitación.
+Regenerar código
+El código de invitación actual dejará de funcionar. ¿Quieres generar uno nuevo?
+Cancelar
+Código regenerado
+Admin
+Miembro
+Hacer admin
+Quitar admin
+Expulsar
+¿Expulsar a {{name}} del grupo?
+El miembro será eliminado del grupo y sus asistencias a quedadas futuras serán borradas.
+Eliminar grupo
+Se eliminarán todas las quedadas y datos del grupo. Esta acción no se puede deshacer.
+¿Eliminar el grupo?
+Debe haber al menos un admin
+Rol actualizado
+Fundador
+Uniéndose al grupo...
+¡Te has unido al grupo!
+Redirigiendo...
+No se pudo unir al grupo
+El código de invitación no es válido
+Ir a mis grupos
+Perfil
+Editar nombre
+Cambiar email
+Cambiar contraseña
+Nuevo nombre
+Nuevo email
+Nueva contraseña
+Confirmar contraseña
+Guardar
+Guardando...
+Enviar confirmación
+Enviando...
+Revisa tu nuevo email para confirmar el cambio
+El nuevo email debe ser diferente al actual
+Confirmar nuevo email
+Los emails no coinciden
+Nombre actualizado
+Contraseña actualizada
+Las contraseñas no coinciden
+La contraseña debe tener al menos 6 caracteres
+Tema oscuro
+Notificaciones
+{{enabled}} de {{total}} activos
+Quedadas
+Preguntas
+Propuestas
+Miembros
+Recordatorios
+Nueva quedada creada
+Quedada actualizada
+Quedada eliminada
+Quedada cancelada
+Quedada confirmada por todos
+Alguien rechazó una quedada
+Recordatorio 24h antes de una quedada
+Nuevas preguntas al grupo
+El aro se cierra
+Nueva propuesta creada
+Alguien votó en una propuesta
+Propuesta convertida en quedada
+Nuevo miembro en grupo
+Miembro salió del grupo
+Tu rol fue cambiado
+Fuiste eliminado de un grupo
+Grupo eliminado
+Recordatorio semanal de disponibilidad
+Franjas horarias
+Mañana
+Tarde
+Noche
+Franjas horarias actualizadas
+Formato de hora no válido
+La hora de inicio de mañana debe ser anterior a la de fin
+La hora de inicio de tarde debe ser anterior a la de fin
+La hora de inicio de noche debe ser anterior a la de fin
+La mañana no puede terminar después de que empiece la tarde
+La tarde no puede terminar después de que empiece la noche
+Restaurar
+Reportar error
+Cuenta y preferencias
+Tu color
+{{count}} grupo
+{{count}} grupos
+Nombre
+Email
+Contraseña
+Avisos
+activos de {{total}}
+Tema
+Oscuro
+Claro
+Franjas
+Ayuda
+Cuenta
+Cerrar sesión
+Idioma
+Usuario
+¿Quedamos?
+Abrir Quedamos
+Ver el código en GitHub
+Reportar un error
+¿Quedamos?
+Código abierto
+Tu grupo quiere verse.
+Nadie sabe cuándo. Quedamos hace la pregunta y os avisa cuando podéis todos.
+Hoy
+sep 2026
+Iris pregunta
+¿Podéis el sábado 14?
+Puedo
+No puedo
+vie
+sáb
+Podéis los seis
+¿Quedamos?
+Toda la app cabe en un círculo.
+Cada arco es una persona con su color. El hueco es quien no ha respondido. Cuando el aro se cierra, podéis todos.
+sábado
+14
+En el aire: falta uno por responder y uno no puede.
+Sellada: plan, hora y sitio confirmados.
+Tres pantallas. Ninguna de más.
+Preguntas, ves quién puede y selláis la quedada. No hay más que aprender.
+Semana
+jue
+vie
+sáb
+dom
+Podéis los seis
+¿Quedamos?
+Quedadas
+Próximas
+Pasadas
+Cena en casa de Iris
+sáb 14 · 21:00
+Confirmada
+Pádel y cañas
+dom 22 · 12:00
+En el aire
+Proponer quedada
+Cuadrilla
+{{count}} de 6
+Invitar al grupo
+Seis colores. El tuyo es el tuyo.
+Vera
+Hugo
+Noa
+Leo
+Iris
+Teo
+De la pregunta al plan
+01
+Sondear
+Pregunta un día al grupo desde el calendario. Cada uno contesta cuando puede.
+02
+El aro se cierra
+Cuando todos pueden, te llega el aviso. Cero toques, cero calendario que leer.
+03
+Quedamos
+Alguien propone plan, hora y sitio. Quien confirma cierra su arco.
+Lo que Quedamos no va a hacer nunca
+Tachado a propósito. No es un roadmap.
+Interrogarte
+Una pregunta al día, como mucho. Si no hay nada, no suena.
+El confeti
+La celebración es el aro cerrándose.
+Rachas y puntos
+Ni niveles, ni culpa por no salir.
+Castigar la ausencia
+Quien no responde es un hueco, no una falta.
+Los emojis a gritos
+La voz es seca y tutea. Afirma solo cuando es verdad.
+Una IA en vuestro plan
+Vuestro plan es vuestro.
+«Nada pendiente. La semana está respondida.»
+El vacío es recompensa.
+Quedada online
+Enlace de reunión
+https://meet.google.com/...
+Online
+Unirse a la reunión
+Enlace de reunión
+Clima
+Añadir ciudad
+Buscar ciudad...
+Sin datos de clima
+Ver detalle del clima
+Previsión
+Cielo despejado
+Parcialmente nublado
+Niebla
+Llovizna
+Lluvia
+Nieve
+Chubascos
+Chubascos de nieve
+Tormenta
+Propuestas
+Nueva propuesta
+Cena, excursion, cine...
+Descripcion
+Detalles de la propuesta...
+Fecha propuesta
+Creando...
+A favor
+En contra
+Convertir en quedada
+Fecha
+Convirtiendo...
+Cerrar propuesta
+Abierta
+Cerrada
+Convertida
+Editar propuesta
+Guardando...
+No hay propuestas
+Cuando alguien proponga un plan sin fecha cerrada, aparecerá aquí para votarlo.
+Cerradas
+{{yes}} a favor, {{no}} en contra
+Email o contraseña incorrectos
+Debes confirmar tu email antes de iniciar sesión
+Este email ya está registrado
+La contraseña debe tener al menos 6 caracteres
+El formato del email no es válido
+Debes introducir una contraseña
+Debes introducir un email
+No se encontró ninguna cuenta con ese email
+Por seguridad, solo puedes hacer esto una vez cada 60 segundos
+Demasiados intentos. Espera unos minutos
+¿Puedes el {{weekday}}?
+¿Puedes el {{weekday}} {{slot}}?
+por la mañana
+por la tarde
+por la noche
+{{title}}. ¿Vas?
+Puedo
+No puedo
+Voy
+No voy
+Aún no sé
+Al mapa
+{{count}} pregunta pendiente
+{{count}} preguntas pendientes
+Ya está.
+Pregunta {{name}}
+Respondido.
+Esa pregunta ya no está pendiente.
+¿Quedamos?
+El aro se ha cerrado. Podéis todos el {{fecha}}.
+Quedamos. {{titulo}}, {{fechaHora}}.
+El aro se ha cerrado.
+Podéis los {{count}}.
+Quedamos.
+Enlace copiado. Tarjeta descargada.
+Tarjeta descargada.
+Algo salió mal. Inténtalo de nuevo.
+No se pudo guardar tu disponibilidad
+No se pudo eliminar tu disponibilidad
+No se pudo crear la quedada
+No se pudieron guardar los cambios
+No se pudo crear la propuesta
+No se pudo convertir la propuesta
+No se pudo actualizar la propuesta
+No se pudo añadir la ciudad
+No se pudo quitar la ciudad
+No se pudo regenerar el código
+No se pudo salir del grupo
+No se pudo actualizar el rol
+No se pudo expulsar al miembro
+No se pudo eliminar el grupo
+No se pudo copiar el código
+No se pudo guardar tu respuesta
+No se pudo guardar tu asistencia
+No se pudo crear la tarjeta
+No se pudo descargar la quedada
+No se pudo guardar el aviso

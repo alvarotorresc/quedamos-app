@@ -1,0 +1,48 @@
+# PAG-07 · Inventario de enlaces — quedamos-app (2026-09-03)
+# Fuente: grep en apps/mobile/src (href=, href={...}, literales https) + README.md + rastreo linkinator.
+# Formato: <código HTTP> <URL efectiva>  # origen
+
+## Internos (react-router <Link to>/history.push — SPA, el servidor devuelve 200 para todo)
+200 https://quedamos.alvarotc.com/                 # App.tsx:161 GuestRoute /
+200 https://quedamos.alvarotc.com/login            # App.tsx:162, landing2/* CTA
+200 https://quedamos.alvarotc.com/register         # App.tsx:163
+200 https://quedamos.alvarotc.com/forgot-password  # App.tsx:164
+200 https://quedamos.alvarotc.com/reset-password   # App.tsx:165
+200 https://quedamos.alvarotc.com/tabs/calendar    # App.tsx:52 (href="/tabs/calendar")
+200 https://quedamos.alvarotc.com/tabs/plans       # App.tsx:53
+200 https://quedamos.alvarotc.com/tabs/group       # App.tsx:55
+200 https://quedamos.alvarotc.com/tabs/profile     # App.tsx:57
+200 https://quedamos.alvarotc.com/tabs/profile/notifications  # App.tsx:56
+200 https://quedamos.alvarotc.com/join/:code       # App.tsx:167 (dinámico)
+200 https://quedamos.alvarotc.com/.well-known/assetlinks.json  # vercel.json rewrite (application/json)
+
+## Externos en el código (apps/mobile/src)
+200 https://github.com/alvarotorresc/quedamos-app  # landing2/NavIsla.tsx:6 GITHUB_URL (NavIsla:66, Cierre:47)
+200 https://tally.so/r/ODMzOa                      # lib/constants.ts:8 FEEDBACK_FORM_URL (Cierre:50, ProfilePage:404)
+200 https://analytics.alvarotc.com/script.js       # index.html (Umami)
+200 https://fonts.googleapis.com/css2?family=Bricolage+Grotesque...  # index.html
+dyn https://www.google.com/maps/search/?api=1&query=...  # lib/maps-utils.ts (window.open, dinámico)
+dyn event.meetingUrl / proposal.meetingUrl          # EventCard/EventDetailModal/ProposalCard (sanitizeUrl, contenido de usuario)
+
+## README.md
+200 https://quedamos.alvarotc.com/
+200 https://github.com/alvarotorresc/quedamos-app
+200 https://github.com/alvarotorresc/quedamos-app/actions/workflows/ci.yml
+200 https://github.com/alvarotorresc/quedamos-app/actions/workflows/ci.yml/badge.svg
+200 https://github.com/alvarotorresc/quedamos-app/releases/latest  -> https://github.com/alvarotorresc/quedamos-app/releases/tag/v0.3.3  # README:14 y :24 «descarga el APK de la última release»: responde 200 pero resuelve a v0.3.3 (2026-04-09, quedamos-v0.3.3.apk 5,7 MB) mientras README:19 anuncia «Versión 1.0.0». No existe tag/release v1.0.0.
+200 https://img.shields.io/badge/Abrir%20Quedamos-quedamos.alvarotc.com-F2EFE7?style=for-the-badge&labelColor=14120E
+200 https://img.shields.io/badge/Espa%C3%B1ol-English-60A5FA?style=flat-square&labelColor=14120E
+200 https://img.shields.io/badge/Web-Android%206.0%2B-7FA98B?style=flat-square&labelColor=14120E
+200 https://img.shields.io/github/license/alvarotorresc/quedamos-app?labelColor=14120E&color=F2EFE7
+200 https://img.shields.io/github/v/release/alvarotorresc/quedamos-app?labelColor=14120E&color=F2EFE7  # el badge mostrará v0.3.3
+200 https://tally.so/r/ODMzOa
+ok  ./LICENSE, .github/readme/{calendario,grupo,preguntar,quedadas,calendario-claro,perfil}.png  # relativos, existen en el repo
+
+## Otros
+308 https://quedamos-app-mobile.vercel.app/tabs/calendar -> https://quedamos.alvarotc.com/tabs/calendar  # host legacy
+200 https://status.alvarotc.com/   # Upptime (NO enlazado desde la web ni el README)
+404 https://quedamos.api.alvarotc.com/join/00000000  # ruta pública API (código inexistente → 404, correcto)
+
+## linkinator (npx linkinator $PROD --recurse --concurrency 2 --skip "mailto:|tel:" --format csv)
+# 8 URLs rastreadas, 0 fallos. Solo ve el shell estático de la SPA (index.html): favicon.svg, icon-256.png,
+# theme-init.js, assets/index-*.js, assets/index-*.css, analytics script, Google Fonts. Ver linkinator.csv.
