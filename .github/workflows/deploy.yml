@@ -79,15 +79,7 @@ jobs:
               *) echo "latest on the VPS ($pushed) is not the image pushed by this run ($EXPECTED_DIGEST)"; exit 1;;
             esac
 
-      - name: Verify /health
-        run: |
-          for i in $(seq 1 20); do
-            body=$(curl -fsS -m 10 https://quedamos.api.alvarotc.com/health || true)
-            echo "attempt $i: ${body:-no response}"
-            if echo "$body" | grep -q '"status":"ok"' && echo "$body" | grep -q '"firebaseInitialized":true'; then
-              exit 0
-            fi
-            sleep 6
-          done
-          echo "the API did not report a healthy, Firebase-initialised state within 2 minutes"
-          exit 1
+      # Waits for /health with Firebase initialised (20 x 6 s), then checks the web home,
+      # an unknown invite code (404) and a protected route without a token (401).
+      - name: Smoke test
+        run: bash scripts/smoke.sh
