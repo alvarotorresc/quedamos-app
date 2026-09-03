@@ -122,3 +122,6 @@ jobs:
           --to-schema-datamodel prisma/schema.prisma
           --shadow-database-url "$SHADOW_DATABASE_URL"
           --exit-code
+
+      - name: End-to-end tests
+        run: pnpm --filter @quedamos/api test:e2e
