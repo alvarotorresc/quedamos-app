@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from './auth';
+import { api } from '../lib/api';
 import { supabase } from '../lib/supabase';
+import { unregisterFromBackend } from '../lib/push-notifications';
 import { syncWidgetSession, clearWidgetSession } from '../lib/widget-bridge';
 import { savePendingRedirect, takePendingRedirect } from '../lib/pending-redirect';
 
@@ -23,6 +25,7 @@ vi.mock('../lib/push-notifications', () => ({
 vi.mock('../lib/api', () => ({
   api: {
     patch: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
 
@@ -163,6 +166,60 @@ describe('useAuthStore', () => {
       await useAuthStore.getState().signOut();
 
       expect(takePendingRedirect()).toBeNull();
+    });
+  });
+
+  describe('deleteAccount', () => {
+    const signedIn = { id: '1', email: 'a@b.com', name: 'Test', avatarEmoji: '😊' };
+
+    beforeEach(() => {
+      vi.mocked(api.delete).mockReset().mockResolvedValue({ success: true });
+      vi.mocked(supabase.auth.signOut).mockReset().mockResolvedValue({ error: null });
+      vi.mocked(syncWidgetSession).mockClear();
+    });
+
+    it('forgets push and widget tokens before calling the API, then drops only the local session', async () => {
+      useAuthStore.setState({ user: signedIn });
+      savePendingRedirect('/join/12345678');
+      const callOrder: string[] = [];
+      vi.mocked(unregisterFromBackend).mockImplementationOnce(async () => {
+        callOrder.push('unregisterFromBackend');
+      });
+      vi.mocked(clearWidgetSession).mockImplementationOnce(async () => {
+        callOrder.push('clearWidgetSession');
+      });
+      vi.mocked(api.delete).mockImplementationOnce(async () => {
+        callOrder.push('api.delete');
+        return { success: true };
+      });
+      vi.mocked(supabase.auth.signOut).mockImplementationOnce(async () => {
+        callOrder.push('supabase.auth.signOut');
+        return { error: null };
+      });
+
+      await useAuthStore.getState().deleteAccount();
+
+      expect(callOrder).toEqual([
+        'unregisterFromBackend',
+        'clearWidgetSession',
+        'api.delete',
+        'supabase.auth.signOut',
+      ]);
+      expect(api.delete).toHaveBeenCalledWith('/auth/me');
+      expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+      expect(useAuthStore.getState().user).toBeNull();
+      expect(takePendingRedirect()).toBeNull();
+    });
+
+    it('keeps the session and puts the widget back when the API refuses', async () => {
+      useAuthStore.setState({ user: signedIn });
+      vi.mocked(api.delete).mockRejectedValueOnce(new Error('503'));
+
+      await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow('503');
+
+      expect(supabase.auth.signOut).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().user).toEqual(signedIn);
+      expect(syncWidgetSession).toHaveBeenCalled();
     });
   });
 

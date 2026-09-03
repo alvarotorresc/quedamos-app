@@ -35,10 +35,18 @@ import {
   HiOutlineArrowTopRightOnSquare,
 } from 'react-icons/hi2';
 import { useNotificationPreferences } from '../hooks/useNotificationPreferences';
+import { useToast } from '../hooks/useToast';
 import { NOTIF_SECTIONS } from '../services/notification-preferences';
+import { accountService } from '../services/account';
+import { saveExport } from '../lib/export-data';
+import { reloadToRoot } from '../lib/reload';
 import { FEEDBACK_FORM_URL } from '../lib/constants';
+import { DeleteAccountSheet } from '../components/DeleteAccountSheet';
 
 type ExpandedSection = 'name' | 'email' | 'password' | 'timeSlots' | null;
+
+/** Long enough to read the "account deleted" toast before the app restarts on the landing. */
+const DELETED_REDIRECT_DELAY_MS = 1500;
 
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const h = String(Math.floor(i / 2)).padStart(2, '0');
@@ -65,6 +73,8 @@ export default function ProfilePage() {
   const updateEmail = useAuthStore((s) => s.updateEmail);
   const updatePassword = useAuthStore((s) => s.updatePassword);
   const updateTimeSlots = useAuthStore((s) => s.updateTimeSlots);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+  const { showSuccess, showError } = useToast();
   const myColor = useMyColor();
   const darkMode = useThemeStore((s) => s.darkMode);
   const toggleTheme = useThemeStore((s) => s.toggle);
@@ -89,6 +99,8 @@ export default function ProfilePage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [slotPrefs, setSlotPrefs] = useState<TimeSlotPreferences>({ ...DEFAULT_TIME_SLOTS });
+  const [exporting, setExporting] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const { data: groups } = useGroups();
   const { data: notifPrefs } = useNotificationPreferences();
@@ -216,7 +228,29 @@ export default function ProfilePage() {
 
   const handleSignOut = async () => {
     await signOut();
-    window.location.replace('/');
+    reloadToRoot();
+  };
+
+  const handleExportData = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const data = await accountService.exportData();
+      const { saved } = await saveExport(data);
+      if (saved) showSuccess('profile.exportData.done');
+    } catch {
+      showError('profile.exportData.error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Errors surface inside the sheet; on success the session is already gone, so
+  // confirm and restart on the landing like a sign-out does.
+  const handleDeleteAccount = async () => {
+    await deleteAccount();
+    showSuccess('profile.deleteAccount.done');
+    window.setTimeout(reloadToRoot, DELETED_REDIRECT_DELAY_MS);
   };
 
   const inputClass =
@@ -557,6 +591,24 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                 )}
+
+                {/* Mis datos */}
+                <button
+                  type="button"
+                  onClick={handleExportData}
+                  disabled={exporting}
+                  className={accountRowClass}
+                >
+                  <span className="text-text">{t('profile.exportData.action')}</span>
+                  <span className="text-text-muted">
+                    {exporting ? t('profile.exportData.loading') : t('profile.exportData.hint')}
+                  </span>
+                </button>
+
+                {/* Eliminar cuenta */}
+                <button type="button" onClick={() => setDeleteOpen(true)} className={accountRowClass}>
+                  <span className="text-danger">{t('profile.deleteAccount.action')}</span>
+                </button>
               </div>
             </Tile>
           </div>
@@ -570,6 +622,12 @@ export default function ProfilePage() {
             {t('profile.logout')}
           </button>
         </div>
+
+        <DeleteAccountSheet
+          isOpen={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          onConfirm={handleDeleteAccount}
+        />
       </IonContent>
     </IonPage>
   );

@@ -408,7 +408,30 @@
       "help": "Ayuda",
       "account": "Cuenta"
     },
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "exportData": {
+      "action": "Descargar mis datos",
+      "hint": "JSON",
+      "loading": "Preparando...",
+      "done": "Datos descargados",
+      "error": "No se han podido descargar tus datos. Inténtalo de nuevo."
+    },
+    "deleteAccount": {
+      "action": "Eliminar cuenta",
+      "title": "Eliminar cuenta",
+      "subtitle": "Esta acción no se puede deshacer",
+      "intro": "Al eliminar tu cuenta:",
+      "bulletProfile": "Se borran tu perfil, tu disponibilidad, tus respuestas, tus votos y los dispositivos registrados para avisos y widgets.",
+      "bulletSoloGroups": "Los grupos en los que estás solo desaparecen con todo lo que contienen.",
+      "bulletFoundedGroups": "Los grupos que fundaste con más gente pasan al admin más antiguo o, si no hay otro admin, al miembro más antiguo.",
+      "bulletCreatedContent": "Las quedadas, propuestas y preguntas que creaste se conservan y pasan a quien lleva el grupo.",
+      "typeToConfirm": "Escribe {{word}} para confirmar",
+      "confirmWord": "ELIMINAR",
+      "confirm": "Eliminar mi cuenta",
+      "done": "Cuenta eliminada",
+      "error": "No se ha podido eliminar la cuenta. Inténtalo de nuevo.",
+      "unavailable": "El borrado de cuenta no está disponible ahora mismo. Inténtalo más tarde."
+    }
   },
   "settings": {
     "language": "Idioma"

@@ -57,6 +57,7 @@ interface AuthState {
   signIn: (email: string, password: string, captchaToken: string) => Promise<void>;
   signUp: (email: string, password: string, name: string, captchaToken: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   initialize: () => Promise<void>;
   resetPassword: (email: string, captchaToken: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
@@ -100,6 +101,26 @@ export const useAuthStore = create<AuthState>((set) => ({
     // must not fire for the next person to log in on this device.
     clearPendingRedirect();
     await supabase.auth.signOut();
+    set({ user: null });
+  },
+
+  deleteAccount: async () => {
+    // Once the account is gone no request may reach the API with this session (the
+    // guard would recreate the user from the still-valid JWT), so the device forgets
+    // its push and widget tokens first. Their server rows fall with the user anyway.
+    await unregisterFromBackend().catch(() => {});
+    await clearWidgetSession();
+    clearPendingRedirect();
+    try {
+      await api.delete('/auth/me');
+    } catch (error) {
+      // Still signed in: put the widget back now, push registers again on next launch.
+      void syncWidgetSession();
+      throw error;
+    }
+    // The auth user no longer exists, so a global sign-out would call Supabase with
+    // a dead token: only the local session is dropped.
+    await supabase.auth.signOut({ scope: 'local' });
     set({ user: null });
   },
 

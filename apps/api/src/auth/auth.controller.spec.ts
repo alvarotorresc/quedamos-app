@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AccountService } from './account.service';
 import { AuthGuard } from './auth.guard';
 import { createTestUser } from '../common/test-utils';
 
@@ -8,6 +9,11 @@ const mockAuthService = {
   getProfile: jest.fn(),
   updateProfile: jest.fn(),
   validateToken: jest.fn(),
+};
+
+const mockAccountService = {
+  deleteAccount: jest.fn(),
+  exportData: jest.fn(),
 };
 
 const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -20,7 +26,10 @@ describe('AuthController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: mockAuthService }],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService },
+        { provide: AccountService, useValue: mockAccountService },
+      ],
     })
       .overrideGuard(AuthGuard)
       .useValue(mockAuthGuard)
@@ -91,6 +100,45 @@ describe('AuthController', () => {
         name: 'New Name',
         avatarEmoji: '🎉',
       });
+    });
+  });
+
+  describe('deleteAccount', () => {
+    it('should delete the current user account', async () => {
+      const result = { success: true, groupsDeleted: 1, groupsTransferred: 2 };
+      mockAccountService.deleteAccount.mockResolvedValue(result);
+
+      await expect(controller.deleteAccount({ id: 'user-1' })).resolves.toEqual(result);
+      expect(mockAccountService.deleteAccount).toHaveBeenCalledWith('user-1');
+      expect(mockAccountService.deleteAccount).toHaveBeenCalledTimes(1);
+    });
+
+    it('should propagate service errors', async () => {
+      mockAccountService.deleteAccount.mockRejectedValue(new Error('boom'));
+
+      await expect(controller.deleteAccount({ id: 'user-1' })).rejects.toThrow('boom');
+    });
+  });
+
+  describe('exportData', () => {
+    it('should return the export for the current user', async () => {
+      const dump = { profile: { id: 'user-1' }, groups: [] };
+      mockAccountService.exportData.mockResolvedValue(dump);
+
+      await expect(controller.exportData({ id: 'user-1' })).resolves.toEqual(dump);
+      expect(mockAccountService.exportData).toHaveBeenCalledWith('user-1');
+    });
+
+    it('should be served as a JSON attachment', () => {
+      const headers: { name: string; value: string }[] =
+        Reflect.getMetadata('__headers__', controller.exportData) ?? [];
+
+      expect(headers).toEqual(
+        expect.arrayContaining([
+          { name: 'Content-Disposition', value: 'attachment; filename="quedamos-export.json"' },
+          { name: 'Cache-Control', value: 'no-store' },
+        ]),
+      );
     });
   });
 });
