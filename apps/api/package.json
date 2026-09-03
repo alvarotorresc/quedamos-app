@@ -95,6 +95,14 @@
         "branches": 80,
         "functions": 80,
         "lines": 80
+      },
+      "./src/auth/": {
+        "branches": 90,
+        "lines": 84
+      },
+      "./src/widget/": {
+        "branches": 90,
+        "lines": 90
       }
     },
     "testEnvironment": "node"

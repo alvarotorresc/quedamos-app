@@ -43,10 +43,10 @@ jobs:
         run: pnpm typecheck
 
       - name: Backend tests
-        run: pnpm --filter @quedamos/api test
+        run: pnpm --filter @quedamos/api test -- --coverage
 
       - name: Frontend tests
-        run: pnpm --filter @quedamos/mobile test
+        run: pnpm --filter @quedamos/mobile test -- --coverage
 
       - name: Build API
         run: pnpm --filter @quedamos/api exec nest build
