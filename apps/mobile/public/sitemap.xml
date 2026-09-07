@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Solo la portada. Quedamos es una SPA: /login, /register y /tabs/* son pantallas de la
+  app, no páginas que un buscador deba indexar. Si algún día hay landing con más páginas
+  públicas, se añaden aquí.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://quedamos.alvarotc.com/</loc></url>
+</urlset>

@@ -1,0 +1,13 @@
+# Quedamos se sirve en su propio dominio (quedamos.alvarotc.com), así que este fichero es
+# efectivo desde la raíz. Solo la portada tiene sentido para un buscador: el resto son
+# pantallas de la app (login, registro, pestañas) que requieren sesión o no aportan nada
+# indexadas.
+User-agent: *
+Allow: /$
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /tabs/
+
+Sitemap: https://quedamos.alvarotc.com/sitemap.xml
