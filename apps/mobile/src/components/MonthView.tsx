@@ -27,6 +27,8 @@ interface MonthViewProps {
   weatherByDate?: Map<string, WeatherData[]>;
   eventsByDate?: Map<string, Event[]>;
   onEventClick?: (event: Event) => void;
+  /** Abre la hoja de «¿Quedamos?» para ese dia. Igual que en WeekView. */
+  onAskGroup?: (day: Date) => void;
 }
 
 export function MonthView({
@@ -44,6 +46,7 @@ export function MonthView({
   weatherByDate,
   eventsByDate,
   onEventClick,
+  onAskGroup,
 }: MonthViewProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
@@ -65,6 +68,9 @@ export function MonthView({
     color: memberColorMap.get(a.userId) ?? '#60A5FA',
   }));
   const selMyAvail = selKey ? myAvailabilityByDate.get(selKey) : undefined;
+  // Misma regla que WeekView: preguntar por un dia pasado crearia una pregunta
+  // que nadie llega a ver y que aun asi ocuparia ese dia+franja.
+  const selIsPast = selKey !== null && selKey < formatDateKey(new Date());
 
   return (
     <div>
@@ -219,6 +225,16 @@ export function MonthView({
             <Button size="sm" className="flex-1 py-[7px]" onClick={onMarkAvailability}>
               {selMyAvail ? t('calendar.editAvailability') : t('calendar.available')}
             </Button>
+            {onAskGroup && !selIsPast && selectedDay && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="py-[7px]"
+                onClick={() => onAskGroup(selectedDay)}
+              >
+                {t('calendar.ask')}
+              </Button>
+            )}
             {selMembers.length >= 2 && selectedDay && (
               <button
                 onClick={() => onCreateEvent(selectedDay)}

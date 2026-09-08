@@ -426,6 +426,7 @@ export default function CalendarPage() {
                   weatherByDate={weatherByDate}
                   eventsByDate={eventsByDate}
                   onEventClick={(ev) => setSelectedEvent(ev)}
+                  onAskGroup={handleAskGroup}
                 />
               )}
               {calView === 'list' && (
