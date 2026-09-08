@@ -642,6 +642,17 @@
     "linkCopied": "Enlace copiado. Tarjeta descargada.",
     "cardDownloaded": "Tarjeta descargada."
   },
+  "emailConfirmed": {
+    "waiting": "Confirmando tu email...",
+    "title": "Email confirmado",
+    "message": "Tu cuenta ya está activa. Entramos.",
+    "continue": "Continuar",
+    "failed": {
+      "title": "No hemos podido confirmarlo",
+      "message": "El enlace puede haber caducado o ya haberse usado. Entra con tu email y contraseña.",
+      "login": "Ir a iniciar sesión"
+    }
+  },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
     "sessionExpired": "Tu sesión ha caducado, vuelve a entrar.",

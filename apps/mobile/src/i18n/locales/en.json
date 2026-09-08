@@ -642,6 +642,17 @@
     "linkCopied": "Link copied. Card downloaded.",
     "cardDownloaded": "Card downloaded."
   },
+  "emailConfirmed": {
+    "waiting": "Confirming your email...",
+    "title": "Email confirmed",
+    "message": "Your account is active. Let's go.",
+    "continue": "Continue",
+    "failed": {
+      "title": "We couldn't confirm it",
+      "message": "The link may have expired or been used already. Sign in with your email and password.",
+      "login": "Go to sign in"
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "sessionExpired": "Your session has expired, sign in again.",
