@@ -95,6 +95,7 @@ vi.mock('../components/EventCard', () => ({
   ),
 }));
 vi.mock('../components/ProposalCard', () => ({ ProposalCard: () => null }));
+vi.mock('../components/InboxBell', () => ({ InboxBell: () => null }));
 vi.mock('../components/CreateProposalModal', () => ({ CreateProposalModal: () => null }));
 vi.mock('../components/EditProposalModal', () => ({ EditProposalModal: () => null }));
 vi.mock('../components/ConvertProposalModal', () => ({ ConvertProposalModal: () => null }));

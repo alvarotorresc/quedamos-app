@@ -719,6 +719,19 @@
     "channelName": "Avisos de Quedamos",
     "channelDescription": "Quedadas, preguntas y movimientos del grupo"
   },
+  "inbox": {
+    "title": "Avisos",
+    "open": "Ver avisos",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "now": "ahora",
+    "unread": "Sin leer",
+    "loadMore": "Ver más",
+    "empty": {
+      "title": "Nada por aquí",
+      "description": "Aquí van a caer los avisos de tus grupos: quedadas, preguntas y quién entra o sale."
+    }
+  },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
     "sessionExpired": "Tu sesión ha caducado, vuelve a entrar.",

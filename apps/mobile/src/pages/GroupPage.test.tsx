@@ -19,6 +19,7 @@ vi.mock('@ionic/react', () => ({
 // real custom-element registration never runs under jsdom.
 vi.mock('@emoji-mart/react', () => ({ default: () => null }));
 vi.mock('@emoji-mart/data', () => ({ default: {} }));
+vi.mock('../components/InboxBell', () => ({ InboxBell: () => null }));
 
 vi.mock('react-router-dom', () => ({
   useHistory: () => ({ push: vi.fn(), replace: vi.fn() }),
