@@ -44,17 +44,22 @@ jobs:
       # Every image carries the commit it was built from: an immutable sha-<commit> tag
       # next to the moving :latest, and the OCI revision/created/version labels, so
       # `docker inspect` on the VPS says what is running and a rollback can pin a tag.
-      # The git context reads the checked-out commit: in a workflow_run, github.sha is
-      # the branch head at event time, not necessarily the commit CI validated.
+      # In a workflow_run, github.sha is the branch head at event time, not necessarily
+      # the commit CI validated, so the tag and revision label are built explicitly from
+      # head_sha (the commit pinned by the checkout above) instead of a context-derived
+      # sha. The git context would read the checked-out commit correctly, but it also
+      # needs a resolvable ref, which fails because the checkout above leaves a detached
+      # HEAD.
       - name: Image metadata
         id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/quedamos-api
-          context: git
           tags: |
-            type=sha,prefix=sha-,format=long,priority=1000
+            type=raw,value=sha-${{ github.event.workflow_run.head_sha }},priority=1000
             type=raw,value=latest
+          labels: |
+            org.opencontainers.image.revision=${{ github.event.workflow_run.head_sha }}
 
       - name: Build and push Docker image
         id: build
