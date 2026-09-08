@@ -46,8 +46,30 @@ describe('EventDetailModal', () => {
     expect(screen.getByRole('heading', { name: 'Cena en Monachil' })).toBeInTheDocument();
     expect(screen.getByText('plans.status.confirmed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'El Chiquito' })).toBeInTheDocument();
-    expect(screen.getByText('plans.confirm (1)')).toBeInTheDocument();
+    expect(screen.getByText('calendar.eventDetail.confirmed (1)')).toBeInTheDocument();
     expect(screen.getByText('plans.status.pending (1)')).toBeInTheDocument();
     expect(screen.getByText('calendar.eventDetail.createdBy:Álvaro')).toBeInTheDocument();
+  });
+
+  // A15: las listas de asistentes son un recuento («Confirmados» / «Rechazados»),
+  // no la acción que se ofrece en la ficha («Confirmar» / «Rechazar»).
+  it('encabeza las listas de asistentes con el participio, no con el verbo de la acción', () => {
+    render(
+      <EventDetailModal
+        isOpen
+        onClose={() => {}}
+        event={{
+          ...EVENT,
+          attendees: [
+            ...EVENT.attendees,
+            { userId: 'u3', status: 'declined', user: { id: 'u3', name: 'Noa', avatarEmoji: '😊' } },
+          ],
+        }}
+      />,
+    );
+    expect(screen.getByText('calendar.eventDetail.confirmed (1)')).toBeInTheDocument();
+    expect(screen.getByText('calendar.eventDetail.declined (1)')).toBeInTheDocument();
+    expect(screen.queryByText(/^plans\.confirm \(/)).toBeNull();
+    expect(screen.queryByText(/^plans\.decline \(/)).toBeNull();
   });
 });

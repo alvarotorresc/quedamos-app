@@ -163,6 +163,8 @@
       "title": "Disponibilidad del día"
     },
     "eventDetail": {
+      "confirmed": "Confirmados",
+      "declined": "Rechazados",
       "createdBy": "Creada por {{name}}",
       "download": "Descargar para calendario"
     }

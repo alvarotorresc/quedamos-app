@@ -163,6 +163,8 @@
       "title": "Day availability"
     },
     "eventDetail": {
+      "confirmed": "Confirmed",
+      "declined": "Declined",
       "createdBy": "Created by {{name}}",
       "download": "Download for calendar"
     }

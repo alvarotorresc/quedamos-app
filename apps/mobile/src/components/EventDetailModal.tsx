@@ -121,7 +121,7 @@ export function EventDetailModal({
           {confirmedAttendees.length > 0 && (
             <div>
               <p className="text-[10px] font-semibold text-success mb-1">
-                {t('plans.confirm')} ({confirmedAttendees.length})
+                {t('calendar.eventDetail.confirmed')} ({confirmedAttendees.length})
               </p>
               <AvatarStack
                 size={24}
@@ -157,7 +157,7 @@ export function EventDetailModal({
           {declinedAttendees.length > 0 && (
             <div>
               <p className="text-[10px] font-semibold text-danger mb-1">
-                {t('plans.decline')} ({declinedAttendees.length})
+                {t('calendar.eventDetail.declined')} ({declinedAttendees.length})
               </p>
               <AvatarStack
                 size={24}
