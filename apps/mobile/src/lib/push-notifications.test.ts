@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock Capacitor core
 vi.mock('@capacitor/core', () => ({
@@ -892,6 +892,65 @@ describe('push-notifications', () => {
       setupPushListeners();
 
       expect(PushNotifications.addListener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('registerWeb service worker registration', () => {
+    let register: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.stubEnv('VITE_FIREBASE_VAPID_KEY', 'vapid-key');
+      vi.stubEnv('VITE_FIREBASE_API_KEY', 'key');
+      vi.stubEnv('VITE_FIREBASE_AUTH_DOMAIN', 'app.firebaseapp.com');
+      vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'app-1');
+      vi.stubEnv('VITE_FIREBASE_MESSAGING_SENDER_ID', '123');
+      vi.stubEnv('VITE_FIREBASE_APP_ID', '1:123:web:abc');
+
+      vi.stubGlobal('Notification', {
+        permission: 'granted',
+        requestPermission: vi.fn().mockResolvedValue('granted'),
+      });
+      vi.mocked(getFirebaseMessaging).mockResolvedValue({ fake: 'messaging' } as never);
+      register = vi.fn().mockResolvedValue({});
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: { register, ready: Promise.resolve({ scope: '/' }) },
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      Reflect.deleteProperty(navigator, 'serviceWorker');
+    });
+
+    it('forwards the Firebase config in the query string so the worker has no copy of its own', async () => {
+      const { getToken } = await import('firebase/messaging');
+      vi.mocked(getToken).mockResolvedValue('web-token');
+
+      await registerForPush();
+
+      expect(register).toHaveBeenCalledTimes(1);
+      const [url] = register.mock.calls[0] as [string];
+      expect(url.startsWith('/firebase-messaging-sw.js?')).toBe(true);
+      const params = new URLSearchParams(url.slice(url.indexOf('?')));
+      expect(params.get('apiKey')).toBe('key');
+      expect(params.get('projectId')).toBe('app-1');
+      expect(params.get('messagingSenderId')).toBe('123');
+      expect(params.get('appId')).toBe('1:123:web:abc');
+      expect(params.get('authDomain')).toBe('app.firebaseapp.com');
+    });
+
+    it('warns instead of giving up in silence when the VAPID key is missing', async () => {
+      vi.stubEnv('VITE_FIREBASE_VAPID_KEY', '');
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const { token } = await registerForPush();
+
+      expect(token).toBeNull();
+      expect(register).not.toHaveBeenCalled();
+      expect(String(warn.mock.calls[0]?.[0])).toContain('VITE_FIREBASE_VAPID_KEY');
+      warn.mockRestore();
     });
   });
 

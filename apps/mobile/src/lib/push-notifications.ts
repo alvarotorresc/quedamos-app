@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from './firebase';
-import { readEnv } from './env';
+import { readEnv, firebaseSwConfigParams } from './env';
 import { resolvePushRoute } from './push-routes';
 import { api } from './api';
 
@@ -135,7 +135,14 @@ async function registerWeb(): Promise<string | null> {
     return null;
   }
 
-  await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  // The config travels in the query string so public/firebase-messaging-sw.js has no
+  // hardcoded copy of its own; the worker reads it back from self.location.search. The
+  // query does not change the registration scope (still '/'), and a different config
+  // registers a different script URL, which is exactly the invalidation we want.
+  const swQuery = firebaseSwConfigParams();
+  await navigator.serviceWorker.register(
+    swQuery ? `/firebase-messaging-sw.js?${swQuery}` : '/firebase-messaging-sw.js',
+  );
   const registration = await navigator.serviceWorker.ready;
 
   const token = await getToken(messaging, {

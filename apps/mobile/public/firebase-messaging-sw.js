@@ -2,50 +2,66 @@
 importScripts('https://www.gstatic.com/firebasejs/12.9.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging-compat.js');
 
-firebase.initializeApp({
-  apiKey: 'AIzaSyBVoGd5UmkFS1FXupBvPw7qGIEc1mFX7RA',
-  authDomain: 'quedamos-app-98250.firebaseapp.com',
-  projectId: 'quedamos-app-98250',
-  messagingSenderId: '743807884210',
-  appId: '1:743807884210:web:ca44530aba3f453f19e2ab',
-});
+// The Firebase web config arrives in the query string this worker was registered with
+// (src/lib/push-notifications.ts -> registerWeb), read from the env through src/lib/env.ts.
+// It used to be hardcoded here, a second copy free to drift from the env the app itself
+// uses. None of it is secret — it is the public web config, shipped in every bundle — but
+// there must be exactly one source for it.
+const swConfig = new URLSearchParams(self.location.search);
+const firebaseConfig = {
+  apiKey: swConfig.get('apiKey'),
+  authDomain: swConfig.get('authDomain'),
+  projectId: swConfig.get('projectId'),
+  messagingSenderId: swConfig.get('messagingSenderId'),
+  appId: swConfig.get('appId'),
+};
 
-const messaging = firebase.messaging();
+// Without a config there is nothing to receive: skip initialising rather than throw on
+// every worker start. The notificationclick handler below is registered either way, so
+// notifications already on screen still route correctly.
+if (
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId &&
+  firebaseConfig.messagingSenderId &&
+  firebaseConfig.appId
+) {
+  firebase.initializeApp(firebaseConfig);
 
-messaging.onBackgroundMessage((payload) => {
-  // Web tokens now receive a data-only payload (no top-level `notification`) — the backend
-  // splits sends by platform so @firebase/messaging never shows its own duplicate
-  // notification on top of the one we show below. Read title/body from `data` first, with
-  // a fallback to `notification` for resilience during rollout (old backend + new SW).
-  const data = payload.data || {};
-  const notification = payload.notification || {};
-  const title = data.title || notification.title;
-  const body = data.body || notification.body;
-  const isPoll = data.type === 'new_poll';
-  if (title) {
-    self.registration.showNotification(title, {
-      body: body || '',
-      icon: '/logo.png',
-      data,
-      // Action buttons let the user answer straight from the notification, without
-      // opening the app first — only for an open question, never for other types
-      // (poll_completed included: it has nothing to answer). Android native ignores
-      // `actions` (unsupported by @capacitor/push-notifications@7) and falls back to
-      // the deep link on tap, same as before this change.
-      //
-      // The labels come localized from the API (data.yesLabel / data.noLabel); the
-      // Spanish literals are the fallback for a payload sent before that shipped. A
-      // worker cannot read the app's i18n, so the alternative was hardcoding Spanish
-      // for everyone.
-      ...(isPoll && {
-        actions: [
-          { action: 'yes', title: data.yesLabel || 'Puedo' },
-          { action: 'no', title: data.noLabel || 'No puedo' },
-        ],
-      }),
-    });
-  }
-});
+  firebase.messaging().onBackgroundMessage((payload) => {
+    // Web tokens now receive a data-only payload (no top-level `notification`) — the backend
+    // splits sends by platform so @firebase/messaging never shows its own duplicate
+    // notification on top of the one we show below. Read title/body from `data` first, with
+    // a fallback to `notification` for resilience during rollout (old backend + new SW).
+    const data = payload.data || {};
+    const notification = payload.notification || {};
+    const title = data.title || notification.title;
+    const body = data.body || notification.body;
+    const isPoll = data.type === 'new_poll';
+    if (title) {
+      self.registration.showNotification(title, {
+        body: body || '',
+        icon: '/logo.png',
+        data,
+        // Action buttons let the user answer straight from the notification, without
+        // opening the app first — only for an open question, never for other types
+        // (poll_completed included: it has nothing to answer). Android native ignores
+        // `actions` (unsupported by @capacitor/push-notifications@7) and falls back to
+        // the deep link on tap, same as before this change.
+        //
+        // The labels come localized from the API (data.yesLabel / data.noLabel); the
+        // Spanish literals are the fallback for a payload sent before that shipped. A
+        // worker cannot read the app's i18n, so the alternative was hardcoding Spanish
+        // for everyone.
+        ...(isPoll && {
+          actions: [
+            { action: 'yes', title: data.yesLabel || 'Puedo' },
+            { action: 'no', title: data.noLabel || 'No puedo' },
+          ],
+        }),
+      });
+    }
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Push routing — mirror of src/lib/push-routes.ts.

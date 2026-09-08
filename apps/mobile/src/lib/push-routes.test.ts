@@ -345,6 +345,35 @@ describe('push routing', () => {
     });
   });
 
+  describe('the service worker Firebase config', () => {
+    it('initialises from the query string it was registered with, not a hardcoded copy', () => {
+      const sw = loadServiceWorker({ search: CONFIG_SEARCH });
+
+      expect(sw.initializeApp).toHaveBeenCalledWith({
+        apiKey: 'test-key',
+        authDomain: 'test.firebaseapp.com',
+        projectId: 'test-project',
+        messagingSenderId: '123',
+        appId: '1:123:web:abc',
+      });
+    });
+
+    it('does not initialise — and does not throw — when the config is missing', () => {
+      const sw = loadServiceWorker({ search: '' });
+
+      expect(sw.initializeApp).not.toHaveBeenCalled();
+      expect(sw.hasBackgroundHandler()).toBe(false);
+    });
+
+    it('still routes a notification already on screen when the config is missing', async () => {
+      const sw = loadServiceWorker({ search: '' });
+
+      await sw.notificationClick({ type: 'member_joined', groupId: GROUP });
+
+      expect(sw.opened).toEqual([`/tabs/group/${GROUP}`]);
+    });
+  });
+
   describe('the service worker background notification', () => {
     function actionsOf(shown: ShownNotification): Array<{ action: string; title: string }> {
       return (shown.options.actions ?? []) as Array<{ action: string; title: string }>;
