@@ -47,11 +47,14 @@ export default function PlansPage() {
   const user = useAuthStore((s) => s.user);
   const myColor = useMyColor();
   const [highlightEventId, setHighlightEventId] = useState<string | null>(null);
+  const [highlightProposalId, setHighlightProposalId] = useState<string | null>(null);
   const scrolledRef = useRef(false);
+  const proposalScrolledRef = useRef(false);
 
   // Deep link params from a push notification (see lib/push-routes.ts).
   const searchParams = new URLSearchParams(location.search);
   const targetEventId = searchParams.get('eventId');
+  const targetProposalId = searchParams.get('proposalId');
   const deepLinkGroupId = searchParams.get('groupId');
 
   // Group selection
@@ -100,7 +103,7 @@ export default function PlansPage() {
   const confirmEvent = useConfirmEvent(groupId);
 
   // Proposals state
-  const { data: proposals } = useProposals(groupId);
+  const { data: proposals, isLoading: proposalsLoading } = useProposals(groupId);
   const voteProposal = useVoteProposal(groupId);
   const closeProposal = useCloseProposal(groupId);
   const [votingProposalId, setVotingProposalId] = useState<string | null>(null);
@@ -180,6 +183,37 @@ export default function PlansPage() {
       if (fadeHighlight) clearTimeout(fadeHighlight);
     };
   }, [targetEventId, eventsLoading, past, showPast]);
+
+  // Same, for a proposal: new_proposal / proposal_voted land here with ?proposalId=.
+  // Opening the right tab is part of the job — Planes shows Quedadas by default, so
+  // without this the notification opened a screen where the proposal is not even
+  // rendered.
+  useEffect(() => {
+    if (!targetProposalId || proposalScrolledRef.current || proposalsLoading) return;
+    const proposal = (proposals ?? []).find((p) => p.id === targetProposalId);
+    if (!proposal) return;
+
+    setActiveTab('proposals');
+    if (proposal.status !== 'open' && !showClosedProposals) {
+      setShowClosedProposals(true);
+    }
+
+    let fadeHighlight: ReturnType<typeof setTimeout> | undefined;
+    const scrollToProposal = setTimeout(() => {
+      const el = document.getElementById(`proposal-${targetProposalId}`);
+      if (el) {
+        proposalScrolledRef.current = true;
+        setHighlightProposalId(targetProposalId);
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        fadeHighlight = setTimeout(() => setHighlightProposalId(null), 2500);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(scrollToProposal);
+      if (fadeHighlight) clearTimeout(fadeHighlight);
+    };
+  }, [targetProposalId, proposalsLoading, proposals, showClosedProposals]);
 
   // Loading state
   if (groupsLoading) {
@@ -475,10 +509,11 @@ export default function PlansPage() {
                         {openProposals.map((p, i) => (
                           <motion.div
                             key={p.id}
+                            id={`proposal-${p.id}`}
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                            className={i === openProposals.length - 1 ? 'border-b border-subtle' : ''}
+                            className={`transition-all duration-500 ${i === openProposals.length - 1 ? 'border-b border-subtle' : ''} ${highlightProposalId === p.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg rounded-lg' : ''}`}
                           >
                             <ProposalCard
                               proposal={p}
@@ -521,6 +556,7 @@ export default function PlansPage() {
                           {closedOrConvertedProposals.map((p, i) => (
                             <motion.div
                               key={p.id}
+                              id={`proposal-${p.id}`}
                               initial={{ opacity: 0, y: 16 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{
@@ -528,11 +564,7 @@ export default function PlansPage() {
                                 duration: 0.4,
                                 ease: [0.16, 1, 0.3, 1],
                               }}
-                              className={
-                                i === closedOrConvertedProposals.length - 1
-                                  ? 'border-b border-subtle'
-                                  : ''
-                              }
+                              className={`transition-all duration-500 ${i === closedOrConvertedProposals.length - 1 ? 'border-b border-subtle' : ''} ${highlightProposalId === p.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg rounded-lg' : ''}`}
                             >
                               <ProposalCard
                                 proposal={p}
