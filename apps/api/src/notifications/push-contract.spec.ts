@@ -258,6 +258,7 @@ describe('push contract', () => {
     let prisma: ReturnType<typeof createMockPrisma>;
 
     function send(type: PushCopyType, row: ContractRow, language: PushLanguage) {
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language }]);
       prisma.pushToken.findMany.mockResolvedValue([
         { userId: 'user-1', token: 'tok-1', platform: 'android', user: { language } },
       ]);
@@ -277,6 +278,7 @@ describe('push contract', () => {
       prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }]);
       prisma.notificationPreference.findMany.mockResolvedValue([]);
       prisma.notificationLog.create.mockResolvedValue({});
+      prisma.notification.createMany.mockResolvedValue({ count: 1 });
       mockSendEachForMulticast.mockResolvedValue({
         successCount: 1,
         failureCount: 0,
@@ -306,6 +308,46 @@ describe('push contract', () => {
 
       const [[message]] = mockSendEachForMulticast.mock.calls;
       expect(message.notification).toEqual(row.en);
+    });
+
+    /**
+     * The bandeja is written from the same fan-out as the push, so the contract covers
+     * it too: same text, same routing keys, in the reader's language. `test` is the one
+     * exception — a debug send is not a notice anybody should find in their inbox.
+     */
+    it.each(rows.filter(([type]) => type !== 'test'))(
+      '%s lands in the inbox with the same copy and routing',
+      async (type, row) => {
+        await send(type, row, 'en');
+
+        const [[{ data: inboxRows }]] = prisma.notification.createMany.mock.calls;
+        expect(inboxRows).toHaveLength(1);
+        expect(inboxRows[0]).toEqual(
+          expect.objectContaining({
+            userId: 'user-1',
+            type,
+            title: row.en.title,
+            body: row.en.body,
+          }),
+        );
+        expect(inboxRows[0].data).toEqual(
+          expect.objectContaining({
+            type,
+            ...Object.fromEntries(row.dataKeys.map((key) => [key, SAMPLE_DATA[key]])),
+          }),
+        );
+      },
+    );
+
+    it('does not put the test notification in the inbox', async () => {
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: 'es' }]);
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android', user: { language: 'es' } },
+      ]);
+
+      await service.sendTestNotification('user-1', {});
+
+      expect(prisma.notification.createMany).not.toHaveBeenCalled();
     });
 
     it.each(rows.filter(([, row]) => row.extraData))(

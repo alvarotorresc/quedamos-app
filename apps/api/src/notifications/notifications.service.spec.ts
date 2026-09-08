@@ -1094,6 +1094,173 @@ describe('NotificationsService', () => {
   });
   // One text for the whole group was the bug: a group with an English speaker got the
   // Spanish copy. The fan-out now sends one FCM batch per language present.
+  /**
+   * The inbox row is written at the same point as the push, so a notice reaches
+   * somebody who has no device registered — or who never granted permission — instead
+   * of evaporating. It carries the copy in the reader's own language and the same
+   * `data` the push routes on.
+   */
+  describe('inbox persistence', () => {
+    beforeEach(() => {
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: 'es' }]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+      prisma.notificationLog.create.mockResolvedValue({});
+    });
+
+    it('should persist a row for a recipient with no push tokens', async () => {
+      prisma.notificationPreference.findUnique.mockResolvedValue(null);
+
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT, { eventId: 'e1' });
+
+      expect(prisma.notification.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: 'user-1',
+            type: 'new_event',
+            title: NEW_EVENT_COPY.title,
+            body: NEW_EVENT_COPY.body,
+            data: { eventId: 'e1', type: 'new_event' },
+          },
+        ],
+      });
+    });
+
+    it('should not persist anything when the user turned the type off', async () => {
+      prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: false });
+
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT);
+
+      expect(prisma.notification.createMany).not.toHaveBeenCalled();
+    });
+
+    it('should write each row in its own reader language', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'user-1', language: 'es' },
+        { id: 'user-2', language: 'en' },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT, undefined, {
+        eventId: 'e1',
+        groupId: 'group-1',
+      });
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows).toEqual([
+        expect.objectContaining({ userId: 'user-1', title: 'Nueva quedada' }),
+        expect.objectContaining({ userId: 'user-2', title: 'New plan' }),
+      ]);
+    });
+
+    it('should fall back to Spanish for a user whose language is unknown', async () => {
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: null }]);
+
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT);
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows[0].title).toBe(NEW_EVENT_COPY.title);
+    });
+
+    it('should skip a recipient the users table does not know', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'ghost' }]);
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: 'es' }]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows.map((r: { userId: string }) => r.userId)).toEqual(['user-1']);
+    });
+
+    it('should exclude the actor, like the push does', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'user-1', language: 'es' },
+        { id: 'user-2', language: 'es' },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT, 'user-2');
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['user-1'] } },
+        select: { id: true, language: true },
+      });
+    });
+
+    it('should persist for event attendees too', async () => {
+      prisma.eventAttendee.findMany.mockResolvedValue([{ userId: 'user-1' }]);
+
+      await service.sendToEventAttendees('event-1', 'event_updated', { title: 'Cena' }, undefined, {
+        eventId: 'event-1',
+      });
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows[0]).toEqual(
+        expect.objectContaining({
+          userId: 'user-1',
+          type: 'event_updated',
+          data: { eventId: 'event-1', type: 'event_updated' },
+        }),
+      );
+    });
+
+    it('should not persist the test notification', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android', user: { language: 'es' } },
+      ]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+      service.onModuleInit();
+
+      await service.sendTestNotification('user-1', {});
+
+      expect(prisma.notification.createMany).not.toHaveBeenCalled();
+    });
+
+    it('should still send the push when the inbox write fails', async () => {
+      jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+      prisma.notification.createMany.mockRejectedValue(new Error('db down'));
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android', user: { language: 'es' } },
+      ]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+      service.onModuleInit();
+
+      const result = await service.sendToUser('user-1', 'new_event', NEW_EVENT);
+
+      expect(result).toEqual({ sent: 1 });
+    });
+
+    it('should carry the localized data extras of the copy', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }]);
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: 'en' }]);
+
+      await service.sendToGroup(
+        'group-1',
+        'new_poll',
+        {
+          actorName: 'Ana',
+          groupName: 'Cuadrilla',
+          date: new Date('2026-09-07T00:00:00Z'),
+          slot: null,
+        },
+        undefined,
+        { pollId: 'poll-1', groupId: 'group-1' },
+      );
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows[0].data).toEqual(
+        expect.objectContaining({ pollId: 'poll-1', groupId: 'group-1', type: 'new_poll' }),
+      );
+    });
+  });
+
   describe('per-language fan-out', () => {
     const MONDAY = new Date('2026-09-07T00:00:00Z');
 

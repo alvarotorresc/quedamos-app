@@ -167,6 +167,8 @@ export class NotificationsService implements OnModuleInit {
     const enabled = await this.isNotificationEnabled(userId, type);
     if (!enabled) return { sent: 0 };
 
+    await this.persistInbox([userId], type, params, data);
+
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId },
       include: { user: { select: { language: true } } },
@@ -258,6 +260,8 @@ export class NotificationsService implements OnModuleInit {
 
     if (userIds.length === 0) return { sent: 0 };
 
+    await this.persistInbox(userIds, type, params, data);
+
     const tokens = await this.prisma.pushToken.findMany({
       where: {
         userId: { in: userIds },
@@ -305,6 +309,8 @@ export class NotificationsService implements OnModuleInit {
 
     if (userIds.length === 0) return { sent: 0 };
 
+    await this.persistInbox(userIds, type, params, data);
+
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId: { in: userIds } },
       include: { user: { select: { language: true } } },
@@ -321,6 +327,62 @@ export class NotificationsService implements OnModuleInit {
     );
 
     return { sent: result.sent, failed: result.failed, tokenCount: result.tokenCount };
+  }
+
+  /**
+   * Writes the inbox row of every recipient, at the same point as the push and before
+   * the `tokens.length === 0` early returns below.
+   *
+   * That order is the whole point: somebody with no device registered, or who never
+   * granted the permission, still finds the notice in the bell. Preferences are already
+   * resolved by the caller, so an opted-out type never reaches here — the bandeja shows
+   * exactly what the push would have said.
+   *
+   * The language cannot be taken from the push tokens (a recipient without tokens has
+   * none), so it is read from `users` in one query; that read is also what keeps a
+   * recipient the table does not know out of the batch, since one bad FK would abort
+   * the whole `createMany`. A failure is logged and swallowed: the inbox must never
+   * cost a push.
+   */
+  private async persistInbox<T extends NotificationType>(
+    userIds: string[],
+    type: T,
+    params: PushCopyParams<T>,
+    data: Record<string, string> | undefined,
+  ): Promise<void> {
+    if (userIds.length === 0) return;
+
+    try {
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, language: true },
+      });
+      if (users.length === 0) return;
+
+      const copyByLanguage = new Map<PushLanguage, PushCopy>();
+      const copyFor = (language: PushLanguage): PushCopy => {
+        const cached = copyByLanguage.get(language);
+        if (cached) return cached;
+        const built = buildPushCopy(type, language, params);
+        copyByLanguage.set(language, built);
+        return built;
+      };
+
+      const rows = users.map((user) => {
+        const copy = copyFor(normalizePushLanguage(user.language));
+        return {
+          userId: user.id,
+          type,
+          title: copy.title,
+          body: copy.body,
+          data: { ...data, ...copy.data, type },
+        };
+      });
+
+      await this.prisma.notification.createMany({ data: rows });
+    } catch (error) {
+      this.logger.error('Failed to persist inbox notifications', error);
+    }
   }
 
   /**

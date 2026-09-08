@@ -104,6 +104,15 @@ interface MockPrismaModels {
     findMany: jest.Mock;
     create: jest.Mock;
   }>;
+  notification: MockModel<{
+    findMany: jest.Mock;
+    findFirst: jest.Mock;
+    create: jest.Mock;
+    createMany: jest.Mock;
+    updateMany: jest.Mock;
+    deleteMany: jest.Mock;
+    count: jest.Mock;
+  }>;
   availabilityPoll: MockModel<{
     findUnique: jest.Mock;
     findFirst: jest.Mock;
@@ -146,7 +155,7 @@ export function createMockPrisma(): MockPrisma {
     user: {
       findUnique: jest.fn(),
       findFirst: jest.fn(),
-      findMany: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
@@ -245,6 +254,17 @@ export function createMockPrisma(): MockPrisma {
     notificationLog: {
       findMany: jest.fn(),
       create: jest.fn(),
+    },
+    // The inbox is written on every fan-out, so its defaults have to be real results:
+    // an unmocked `undefined` here would take down every send in every other suite.
+    notification: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+      create: jest.fn(),
+      createMany: jest.fn().mockResolvedValue({ count: 0 }),
+      updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+      count: jest.fn().mockResolvedValue(0),
     },
     availabilityPoll: {
       findUnique: jest.fn(),
