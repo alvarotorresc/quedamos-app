@@ -34,6 +34,22 @@ vi.mock('@hcaptcha/react-hcaptcha', async () => {
 
 vi.mock('../hooks/useAnalytics', () => ({ useScreenView: () => {} }));
 
+// translateAuthError habla con la instancia real de i18next: se sustituye sólo esa
+// traducción para no atar el test al copy, dejando viva la detección de "sin confirmar".
+vi.mock('../lib/auth-errors', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/auth-errors')>();
+  return {
+    ...actual,
+    translateAuthError: (error: unknown) => `translated:${(error as Error).message}`,
+  };
+});
+
+// El botón de reenvío tiene sus propios tests; aquí sólo importa que aparezca con el
+// email tecleado (y lleva un toast de Ionic que este mock de @ionic/react no presenta).
+vi.mock('../components/ResendConfirmation', () => ({
+  ResendConfirmation: ({ email }: { email: string }) => <div data-testid="resend">{email}</div>,
+}));
+
 const signInMock = vi.fn(() => Promise.resolve());
 vi.mock('../stores/auth', () => ({
   useAuthStore: (selector: (s: { signIn: () => Promise<void> }) => unknown) =>
@@ -54,6 +70,31 @@ describe('LoginPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     search = '';
+  });
+
+  it('ofrece reenviar el email cuando la cuenta está sin confirmar', async () => {
+    signInMock.mockRejectedValueOnce(
+      Object.assign(new Error('Email not confirmed'), { code: 'email_not_confirmed' }),
+    );
+    render(<LoginPage />);
+
+    submitLogin();
+
+    await waitFor(() => expect(screen.getByText('login.notConfirmed.title')).toBeInTheDocument());
+    expect(screen.getByTestId('resend')).toHaveTextContent('a@b.com');
+    expect(screen.queryByText('translated:Email not confirmed')).not.toBeInTheDocument();
+  });
+
+  it('deja el error genérico para el resto de fallos', async () => {
+    signInMock.mockRejectedValueOnce(new Error('Invalid login credentials'));
+    render(<LoginPage />);
+
+    submitLogin();
+
+    await waitFor(() =>
+      expect(screen.getByText('translated:Invalid login credentials')).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId('resend')).not.toBeInTheDocument();
   });
 
   it('los campos no anulan el foco visible global de index.css', () => {

@@ -15,6 +15,21 @@ describe('NavIsla', () => {
     expect(cta).toHaveAttribute('href', '/login');
   });
 
+  // B6: la nav solo llevaba a /login, asi que quien aun no tiene cuenta tenia
+  // que adivinar que el registro esta detras del login.
+  it('ofrece «Crear cuenta» hacia /register, en secundario y sin robarle el CTA', () => {
+    render(
+      <MemoryRouter>
+        <NavIsla />
+      </MemoryRouter>,
+    );
+    const register = screen.getByRole('link', { name: 'landing2.registerCta' });
+    expect(register).toHaveAttribute('href', '/register');
+    expect(register.className).toContain('text-text-muted');
+    expect(register.className).not.toContain('bg-primary');
+    expect(screen.getByRole('link', { name: /landing2\.cta/ })).toHaveAttribute('href', '/login');
+  });
+
   it('«Código abierto» lleva al repo en una pestaña nueva', () => {
     render(
       <MemoryRouter>

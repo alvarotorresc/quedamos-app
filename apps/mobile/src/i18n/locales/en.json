@@ -18,6 +18,10 @@
   },
   "login": {
     "title": "Sign in",
+    "notConfirmed": {
+      "title": "Your email isn't confirmed yet",
+      "message": "Open the link we sent you to activate the account. Didn't get it?"
+    },
     "forgotPassword": "Forgot your password?",
     "submit": "Sign in",
     "submitting": "Signing in...",
@@ -163,6 +167,9 @@
       "title": "Day availability"
     },
     "eventDetail": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "declined": "Declined",
       "createdBy": "Created by {{name}}",
       "download": "Download for calendar"
     }
@@ -315,6 +322,17 @@
     "deleteConfirm": "Delete the group?",
     "lastAdminError": "There must be at least one admin",
     "roleChanged": "Role updated",
+    "unavailableTitle": "This group is no longer available",
+    "unavailableDescription": "It may have been deleted, or you may no longer be a member.",
+    "backToGroups": "Back to my groups",
+    "closePoll": "Close question",
+    "closePollConfirm": "Close the question?",
+    "closePollMessage": "It will stop showing up and no one else will be able to answer it.",
+    "pollClosed": "Question closed",
+    "editGroup": "Edit",
+    "groupUpdated": "Group updated",
+    "save": "Save",
+    "saving": "Saving...",
     "creator": "Creator"
   },
   "joinGroup": {
@@ -444,6 +462,7 @@
   },
   "landing2": {
     "cta": "Open Quedamos",
+    "registerCta": "Create account",
     "githubCta": "View the code on GitHub",
     "feedbackCta": "Report a bug",
     "nav": {
@@ -665,8 +684,40 @@
     "linkCopied": "Link copied. Card downloaded.",
     "cardDownloaded": "Card downloaded."
   },
+  "emailConfirmed": {
+    "waiting": "Confirming your email...",
+    "title": "Email confirmed",
+    "message": "Your account is active. Let's go.",
+    "continue": "Continue",
+    "failed": {
+      "title": "We couldn't confirm it",
+      "message": "The link may have expired or been used already. Sign in with your email and password.",
+      "login": "Go to sign in"
+    }
+  },
+  "resendConfirmation": {
+    "action": "Resend email",
+    "cooldown": "Resend in {{seconds}}s",
+    "sent": "Email sent again. Check your inbox.",
+    "error": "We couldn't resend the email. Try again in a minute."
+  },
+  "push": {
+    "priming": {
+      "title": "Shall we ping you?",
+      "what": "Only about the group: new plans, questions and confirmations.",
+      "when": "No spam, and you pick which alerts you want from your profile.",
+      "enable": "Turn alerts on",
+      "later": "Not now"
+    },
+    "blocked": {
+      "title": "Alerts are blocked by the system",
+      "android": "Settings → Apps → Quedamos → Notifications, and turn them on.",
+      "web": "Click the padlock next to the address bar and allow notifications."
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
+    "sessionExpired": "Your session has expired, sign in again.",
     "saveAvailabilityFailed": "Couldn't save your availability",
     "deleteAvailabilityFailed": "Couldn't delete your availability",
     "createEventFailed": "Couldn't create the plan",
@@ -681,8 +732,11 @@
     "updateRoleFailed": "Couldn't update the role",
     "kickMemberFailed": "Couldn't remove the member",
     "deleteGroupFailed": "Couldn't delete the group",
+    "updateGroupFailed": "Couldn't update the group",
+    "deleteGroupNotCreator": "Only the group's creator can delete it",
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",
+    "closePollFailed": "Couldn't close the question",
     "respondEventFailed": "Couldn't save your response",
     "shareTarjetaFailed": "Couldn't create the card",
     "downloadICSFailed": "Couldn't download the plan",

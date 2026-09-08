@@ -202,12 +202,65 @@ describe('ProposalsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        expect.any(String),
-        expect.any(String),
-        'user-1',
-        expect.objectContaining({ type: 'proposal_voted' }),
         'proposal_voted',
+        expect.objectContaining({ vote: 'yes' }),
+        'user-1',
+        expect.objectContaining({ proposalId: 'proposal-1' }),
       );
+    });
+
+    // Tapping the same button twice, or the app re-sending a vote, used to notify the
+    // whole group again with a vote nobody had changed.
+    it('should not notify when the vote is identical to the stored one', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
+      prisma.planVote.findUnique.mockResolvedValue({ vote: 'yes' });
+      prisma.planVote.upsert.mockResolvedValue({});
+      prisma.planProposal.findUnique.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'yes' }],
+      });
+
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' });
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+    });
+
+    it('should notify when the voter switches sides', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
+      prisma.planVote.findUnique.mockResolvedValue({ vote: 'yes' });
+      prisma.planVote.upsert.mockResolvedValue({});
+      prisma.planProposal.findUnique.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'no' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(createTestUser());
+
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'no' });
+
+      expect(notifications.sendToGroup).toHaveBeenCalledWith(
+        'group-1',
+        'proposal_voted',
+        expect.objectContaining({ vote: 'no' }),
+        'user-1',
+        expect.anything(),
+      );
+    });
+
+    it('should still record the vote when it does not change', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
+      prisma.planVote.findUnique.mockResolvedValue({ vote: 'yes' });
+      prisma.planVote.upsert.mockResolvedValue({});
+      prisma.planProposal.findUnique.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'yes' }],
+      });
+
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' });
+
+      expect(prisma.planVote.upsert).toHaveBeenCalled();
     });
   });
 
@@ -318,11 +371,34 @@ describe('ProposalsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        expect.any(String),
-        expect.any(String),
-        'user-1',
-        expect.objectContaining({ type: 'proposal_converted' }),
         'proposal_converted',
+        expect.objectContaining({ title: expect.any(String) }),
+        'user-1',
+        expect.objectContaining({ proposalId: 'proposal-1' }),
+      );
+    });
+
+    it('should let the event be born without its own event_confirmed push', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [
+          { userId: 'user-1', vote: 'yes' },
+          { userId: 'user-2', vote: 'yes' },
+        ],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(eventsService.create).toHaveBeenCalledWith(
+        'group-1',
+        'user-1',
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ skipConfirmedNotification: true }),
       );
     });
 
@@ -359,7 +435,7 @@ describe('ProposalsService', () => {
           'user-2': 'confirmed',
           'user-3': 'declined',
         },
-        { skipNewEventNotification: true },
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     });
 
@@ -462,7 +538,7 @@ describe('ProposalsService', () => {
         'user-1',
         expect.any(Object),
         expect.any(Object),
-        { skipNewEventNotification: true },
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     });
   });
@@ -697,7 +773,7 @@ describe('ProposalsService', () => {
           meetingUrl: 'https://meet.google.com/abc',
         }),
         { 'user-1': 'confirmed' },
-        { skipNewEventNotification: true },
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     });
   });

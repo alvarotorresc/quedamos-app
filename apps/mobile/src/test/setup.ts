@@ -16,6 +16,7 @@ vi.mock('../lib/supabase', () => ({
       signOut: vi.fn(),
       onAuthStateChange: vi.fn().mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } }),
       resetPasswordForEmail: vi.fn(),
+      resend: vi.fn(),
       updateUser: vi.fn(),
     },
     channel: vi.fn().mockReturnValue({
@@ -38,6 +39,7 @@ vi.mock('@capacitor/push-notifications', () => ({
   PushNotifications: {
     addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
     requestPermissions: vi.fn().mockResolvedValue({ receive: 'granted' }),
+    checkPermissions: vi.fn().mockResolvedValue({ receive: 'granted' }),
     register: vi.fn(),
   },
 }));

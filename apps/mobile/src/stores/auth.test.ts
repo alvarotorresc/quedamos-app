@@ -11,6 +11,8 @@ type GetSessionResult = Awaited<ReturnType<typeof supabase.auth.getSession>>;
 type SignInResult = Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
 type UpdateUserResult = Awaited<ReturnType<typeof supabase.auth.updateUser>>;
 type ResetPasswordResult = Awaited<ReturnType<typeof supabase.auth.resetPasswordForEmail>>;
+type SignUpResult = Awaited<ReturnType<typeof supabase.auth.signUp>>;
+type ResendResult = Awaited<ReturnType<typeof supabase.auth.resend>>;
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
@@ -122,6 +124,89 @@ describe('useAuthStore', () => {
 
       await expect(
         useAuthStore.getState().signIn('bad@test.com', 'wrong', 'captcha'),
+      ).rejects.toBeDefined();
+    });
+  });
+
+  describe('signUp', () => {
+    it('sends the confirmation email back to the app on web', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as SignUpResult);
+
+      await useAuthStore.getState().signUp('test@test.com', 'pass', 'Test', 'captcha');
+
+      expect(supabase.auth.signUp).toHaveBeenCalledWith({
+        email: 'test@test.com',
+        password: 'pass',
+        options: {
+          data: { name: 'Test' },
+          captchaToken: 'captcha',
+          emailRedirectTo: `${window.location.origin}/auth/confirmed`,
+        },
+      });
+    });
+
+    it('sends the confirmation email to the public url on native, where the app links back', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as SignUpResult);
+
+      await useAuthStore.getState().signUp('test@test.com', 'pass', 'Test', 'captcha');
+
+      expect(supabase.auth.signUp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            emailRedirectTo: 'https://quedamos.alvarotc.com/auth/confirmed',
+          }),
+        }),
+      );
+    });
+
+    it('throws when supabase rejects the sign-up', async () => {
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: {},
+        error: { message: 'User already registered' },
+      } as unknown as SignUpResult);
+
+      await expect(
+        useAuthStore.getState().signUp('taken@test.com', 'pass', 'Test', 'captcha'),
+      ).rejects.toBeDefined();
+    });
+  });
+
+  describe('resendConfirmation', () => {
+    it('asks supabase for another confirmation email, pointing at the same route', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.mocked(supabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as ResendResult);
+
+      await useAuthStore.getState().resendConfirmation('test@test.com', 'captcha');
+
+      expect(supabase.auth.resend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'test@test.com',
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirmed`,
+          captchaToken: 'captcha',
+        },
+      });
+    });
+
+    it('throws when supabase refuses to resend', async () => {
+      vi.mocked(supabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: { message: 'Email rate limit exceeded' },
+      } as unknown as ResendResult);
+
+      await expect(
+        useAuthStore.getState().resendConfirmation('test@test.com', 'captcha'),
       ).rejects.toBeDefined();
     });
   });

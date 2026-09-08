@@ -4,6 +4,14 @@
 // redirects must use this canonical URL instead.
 export const PUBLIC_WEB_URL = 'https://quedamos.alvarotc.com';
 
+/**
+ * Ruta a la que vuelve el email de confirmación de la cuenta.
+ *
+ * Vive aquí porque la escriben dos sitios que no se ven entre sí: el `emailRedirectTo`
+ * del alta y el reenvío, y la lista de rutas que un enlace externo puede abrir.
+ */
+export const EMAIL_CONFIRMED_PATH = '/auth/confirmed';
+
 /** Formulario público de Tally para reportar errores y sugerencias. */
 export const FEEDBACK_FORM_URL = 'https://tally.so/r/ODMzOa';
 

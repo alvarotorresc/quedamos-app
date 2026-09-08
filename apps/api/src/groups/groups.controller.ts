@@ -18,6 +18,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { JoinGroupDto } from './dto/join-group.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { AddCityDto } from './dto/add-city.dto';
+import { UpdateGroupDto } from './dto/update-group.dto';
 
 @ApiTags('Groups')
 @ApiBearerAuth()
@@ -98,6 +99,15 @@ export class GroupsController {
     @Body() dto: UpdateMemberRoleDto,
   ) {
     return this.groupsService.updateMemberRole(id, userId, user.id, dto.role);
+  }
+
+  @Patch(':id')
+  updateGroup(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: { id: string },
+    @Body() dto: UpdateGroupDto,
+  ) {
+    return this.groupsService.updateGroup(id, user.id, dto);
   }
 
   @Delete(':id/members/:userId')

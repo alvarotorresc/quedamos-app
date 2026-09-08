@@ -72,6 +72,20 @@ describe('Cierre', () => {
     expect(cta).toHaveAttribute('href', '/login');
   });
 
+  // B6: mismo hueco que en la nav — el cierre remata la pagina y solo ofrecia login.
+  it('ofrece «Crear cuenta» hacia /register junto al CTA, en secundario', () => {
+    render(
+      <MemoryRouter>
+        <Cierre />
+      </MemoryRouter>,
+    );
+    const register = screen.getByRole('link', { name: 'landing2.registerCta' });
+    expect(register).toHaveAttribute('href', '/register');
+    expect(register.className).toContain('text-text-muted');
+    expect(register.className).not.toContain('bg-primary');
+    expect(screen.getByRole('link', { name: /landing2\.cta/ })).toHaveAttribute('href', '/login');
+  });
+
   it('el footer enlaza «Ver el código en GitHub» al repo real', () => {
     render(
       <MemoryRouter>

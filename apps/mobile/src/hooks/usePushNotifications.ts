@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import { useAuthStore } from '../stores/auth';
+import { usePushPermissionStore, type PushPermissionValue } from '../stores/push-permission';
 import {
   registerForPush,
   sendTokenToBackend,
@@ -9,12 +10,23 @@ import {
   setupWebForegroundHandler,
 } from '../lib/push-notifications';
 
-export function usePushNotifications() {
+interface PushNotificationsState {
+  /** What the platform says right now; `unknown` until the first read lands. */
+  permission: PushPermissionValue;
+  /** Asks for the permission and, if granted, registers the device. */
+  requestPermission: () => Promise<void>;
+}
+
+export function usePushNotifications(): PushNotificationsState {
   // Keyed on the id, not the User object, so profile edits (name, time-slot
   // preferences, ...) that produce a new object reference for the same logged-in user
   // don't tear down and re-register push on every save.
   const userId = useAuthStore((s) => s.user?.id);
+  const permission = usePushPermissionStore((s) => s.permission);
   const cleanupRef = useRef<(() => void) | null>(null);
+  // Set by the effect below, so the priming sheet can trigger the very same
+  // registration path the resume handlers use.
+  const requestRef = useRef<(() => Promise<void>) | null>(null);
   // Web has no onTokenRefresh in the modular Firebase SDK, so re-obtaining the token on
   // resume is the only way to detect rotation there. Tracked across resumes (not reset
   // per attempt) so an unchanged token isn't resent on every tab focus.
@@ -38,10 +50,18 @@ export function usePushNotifications() {
     let inFlight = false;
     const isNative = Capacitor.isNativePlatform();
 
-    async function register(): Promise<void> {
+    // `force` is the user tapping "activar avisos": only then may the system dialog
+    // appear. Every other caller (mount, resume, tab focus) just re-reads the
+    // permission and registers when it is already granted, so nobody is ambushed by
+    // a dialog they were never told about.
+    async function register(force = false): Promise<void> {
       if (inFlight) return;
       inFlight = true;
       try {
+        const current = await usePushPermissionStore.getState().refresh();
+        if (!force && current !== 'granted') return;
+        if (current === 'unsupported' || current === 'denied') return;
+
         setupPushListeners();
         setupWebForegroundHandler();
         const { token, cleanup } = await registerForPush();
@@ -80,8 +100,13 @@ export function usePushNotifications() {
         // token on the next resume instead of being treated as "already sent".
       } finally {
         inFlight = false;
+        // The dialog may have just been answered: publish whatever it answered, so
+        // the priming sheet closes and the "blocked" banner can appear.
+        void usePushPermissionStore.getState().refresh();
       }
     }
+
+    requestRef.current = () => register(true);
 
     void register();
 
@@ -104,15 +129,11 @@ export function usePushNotifications() {
       };
     } else {
       const onVisibilityChange = () => {
-        // Only retry once permission is already 'granted'. Calling registerForPush()
-        // (and therefore Notification.requestPermission()) while permission is still
-        // 'default' would re-prompt the user every time the tab regains focus instead
-        // of just retrying a previously-granted registration.
-        if (
-          document.visibilityState === 'visible' &&
-          'Notification' in window &&
-          Notification.permission === 'granted'
-        ) {
+        // register() re-reads the permission and returns unless it is already
+        // granted, so coming back to the tab can refresh what the banner shows (the
+        // user may have just unblocked notifications in the browser) without ever
+        // re-opening the prompt.
+        if (document.visibilityState === 'visible') {
           void register();
         }
       };
@@ -124,7 +145,14 @@ export function usePushNotifications() {
       cancelled = true;
       cleanupRef.current?.();
       cleanupRef.current = null;
+      requestRef.current = null;
       removeResumeListener?.();
     };
   }, [userId]);
+
+  const requestPermission = useCallback(async () => {
+    await requestRef.current?.();
+  }, []);
+
+  return { permission, requestPermission };
 }

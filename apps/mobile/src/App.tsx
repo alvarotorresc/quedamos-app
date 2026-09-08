@@ -17,6 +17,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import EmailConfirmedPage from './pages/EmailConfirmedPage';
 import JoinGroupPage from './pages/JoinGroupPage';
 import LandingPage from './pages/LandingPage';
 
@@ -24,8 +25,11 @@ import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import DesktopFrame from './components/DesktopFrame';
 import { usePushNotifications } from './hooks/usePushNotifications';
+import PushPrimingSheet from './components/PushPrimingSheet';
+import { useSessionExpiry } from './hooks/useSessionExpiry';
 import { resolveDeepLinkPath, navigateToDeepLink } from './lib/deep-link';
 import { takePendingRedirect } from './lib/pending-redirect';
+import { EMAIL_CONFIRMED_PATH } from './lib/constants';
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(
@@ -44,40 +48,45 @@ function useIsDesktop() {
 
 function AppTabs() {
   const { t } = useTranslation();
-  usePushNotifications();
+  const { permission, requestPermission } = usePushNotifications();
 
   return (
-    <IonTabs>
-      <IonRouterOutlet>
-        <Route exact path="/tabs/calendar" component={CalendarPage} />
-        <Route exact path="/tabs/plans" component={PlansPage} />
-        <Route exact path="/tabs/group/:id" component={GroupDetailPage} />
-        <Route exact path="/tabs/group" component={GroupPage} />
-        <Route exact path="/tabs/profile/notifications" component={NotificationsSettingsPage} />
-        <Route exact path="/tabs/profile" component={ProfilePage} />
-        <Route exact path="/tabs">
-          <Redirect to="/tabs/calendar" />
-        </Route>
-      </IonRouterOutlet>
-      <IonTabBar slot="bottom" className="backdrop-blur-xl">
-        <IonTabButton tab="calendar" href="/tabs/calendar">
-          <IonIcon icon={calendarOutline} />
-          <IonLabel>{t('tabs.calendar')}</IonLabel>
-        </IonTabButton>
-        <IonTabButton tab="plans" href="/tabs/plans">
-          <IonIcon icon={listOutline} />
-          <IonLabel>{t('tabs.plans')}</IonLabel>
-        </IonTabButton>
-        <IonTabButton tab="group" href="/tabs/group">
-          <IonIcon icon={peopleOutline} />
-          <IonLabel>{t('tabs.group')}</IonLabel>
-        </IonTabButton>
-        <IonTabButton tab="profile" href="/tabs/profile">
-          <IonIcon icon={personOutline} />
-          <IonLabel>{t('tabs.profile')}</IonLabel>
-        </IonTabButton>
-      </IonTabBar>
-    </IonTabs>
+    // El sheet va fuera de IonTabs (que sólo admite el outlet y la barra) y se
+    // presenta él solo la primera vez que el permiso está sin decidir.
+    <>
+      <PushPrimingSheet permission={permission} onEnable={requestPermission} />
+      <IonTabs>
+        <IonRouterOutlet>
+          <Route exact path="/tabs/calendar" component={CalendarPage} />
+          <Route exact path="/tabs/plans" component={PlansPage} />
+          <Route exact path="/tabs/group/:id" component={GroupDetailPage} />
+          <Route exact path="/tabs/group" component={GroupPage} />
+          <Route exact path="/tabs/profile/notifications" component={NotificationsSettingsPage} />
+          <Route exact path="/tabs/profile" component={ProfilePage} />
+          <Route exact path="/tabs">
+            <Redirect to="/tabs/calendar" />
+          </Route>
+        </IonRouterOutlet>
+        <IonTabBar slot="bottom" className="backdrop-blur-xl">
+          <IonTabButton tab="calendar" href="/tabs/calendar">
+            <IonIcon icon={calendarOutline} />
+            <IonLabel>{t('tabs.calendar')}</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="plans" href="/tabs/plans">
+            <IonIcon icon={listOutline} />
+            <IonLabel>{t('tabs.plans')}</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="group" href="/tabs/group">
+            <IonIcon icon={peopleOutline} />
+            <IonLabel>{t('tabs.group')}</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="profile" href="/tabs/profile">
+            <IonIcon icon={personOutline} />
+            <IonLabel>{t('tabs.profile')}</IonLabel>
+          </IonTabButton>
+        </IonTabBar>
+      </IonTabs>
+    </>
   );
 }
 
@@ -100,9 +109,11 @@ function ProtectedRoute({ component: Component, ...rest }: { component: React.Co
  * the single place the parked destination is consumed, whatever route the session
  * shows up on.
  *
- * Two destinations it deliberately leaves alone:
+ * Three destinations it deliberately leaves alone:
  * - /reset-password, which a Supabase recovery link also opens *with* a session:
  *   jumping to the invite there would strand the user without a new password.
+ * - /auth/confirmed, which lands with a session too and consumes the parked invite
+ *   itself, after telling the user their email is confirmed.
  * - the destination it is already on, because the login form navigates there by
  *   itself; a second replace to the same path would remount the page and join twice.
  */
@@ -114,6 +125,7 @@ export function PendingRedirectGate({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!user) return;
     if (pathname === '/reset-password') return;
+    if (pathname === EMAIL_CONFIRMED_PATH) return;
     const pending = takePendingRedirect();
     if (pending && pending !== `${pathname}${search}`) history.replace(pending);
   }, [user, pathname, search, history]);
@@ -163,6 +175,9 @@ function AppContent() {
             <GuestRoute exact path="/register" component={RegisterPage} />
             <GuestRoute exact path="/forgot-password" component={ForgotPasswordPage} />
             <Route exact path="/reset-password" component={ResetPasswordPage} />
+            {/* Ni GuestRoute ni ProtectedRoute: la confirmación llega con sesión recién
+                creada, y volver a abrir el enlace ya logueado debe seguir funcionando. */}
+            <Route exact path={EMAIL_CONFIRMED_PATH} component={EmailConfirmedPage} />
             <ProtectedRoute path="/tabs" component={AppTabs} />
             <Route exact path="/join/:code" component={JoinGroupPage} />
           </IonRouterOutlet>
@@ -176,6 +191,9 @@ export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
   const isLoading = useAuthStore((s) => s.isLoading);
   const initializeTheme = useThemeStore((s) => s.initialize);
+  // Registered at the root so a 401 is explained even while the session is still
+  // being restored, before any route is mounted.
+  useSessionExpiry();
 
   useEffect(() => {
     initialize();
