@@ -444,6 +444,34 @@ describe('GroupsService', () => {
       );
     });
 
+    it('should not re-announce a poll that had already closed once', async () => {
+      mockLeavingMember();
+      prisma.availabilityPoll.findMany.mockResolvedValue([
+        {
+          id: 'poll-1',
+          date: new Date('2026-03-06T00:00:00Z'),
+          responses: [
+            { userId: 'user-1', answer: 'yes' },
+            { userId: 'user-3', answer: 'yes' },
+          ],
+        },
+      ]);
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-3' }]);
+      prisma.availabilityPoll.updateMany
+        .mockResolvedValueOnce({ count: 1 }) // back to completed
+        .mockResolvedValueOnce({ count: 0 }); // the notice was already given
+
+      await service.leave('group-1', 'user-2');
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalledWith(
+        'group-1',
+        'poll_completed',
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
     it('should keep a poll open when a remaining member has not answered yes', async () => {
       mockLeavingMember();
       prisma.availabilityPoll.findMany.mockResolvedValue([

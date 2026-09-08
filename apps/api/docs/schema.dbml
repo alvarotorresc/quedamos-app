@@ -208,6 +208,7 @@ Table availability_polls {
   slot String
   status String [not null, default: 'open']
   completedAt DateTime
+  completedNotifiedAt DateTime
   createdAt DateTime [default: `now()`, not null]
   group groups [not null]
   createdBy users [not null]

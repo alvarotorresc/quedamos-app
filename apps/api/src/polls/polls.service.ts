@@ -166,7 +166,7 @@ export class PollsService {
         where: { id: pollId, status: 'open' },
         data: { status: 'completed', completedAt: new Date() },
       });
-      if (count === 1) {
+      if (count === 1 && (await this.claimCompletedNotice(pollId))) {
         this.notifications
           .sendToGroup(groupId, 'poll_completed', { date: poll.date }, undefined, {
             pollId,
@@ -185,6 +185,22 @@ export class PollsService {
     }
 
     return this.findOne(groupId, pollId, userId);
+  }
+
+  /**
+   * «El aro se cierra» is announced once and only once. A completed poll reopens in
+   * silence when unanimity breaks (B11), so without this claim the next 'yes' that
+   * closed it again sent the same push a second, third and fourth time.
+   *
+   * Kept apart from the status flip: the poll must go back to `completed` every time,
+   * even when the notice was already given.
+   */
+  private async claimCompletedNotice(pollId: string): Promise<boolean> {
+    const { count } = await this.prisma.availabilityPoll.updateMany({
+      where: { id: pollId, completedNotifiedAt: null },
+      data: { completedNotifiedAt: new Date() },
+    });
+    return count === 1;
   }
 
   async close(groupId: string, pollId: string, userId: string) {

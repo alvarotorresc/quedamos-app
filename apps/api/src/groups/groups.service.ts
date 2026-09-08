@@ -334,6 +334,14 @@ export class GroupsService {
       });
       if (count !== 1) continue;
 
+      // Announced once per poll, ever: a poll that reopened in silence and closes again
+      // here must not re-send «el aro se cierra».
+      const claimed = await this.prisma.availabilityPoll.updateMany({
+        where: { id: poll.id, completedNotifiedAt: null },
+        data: { completedNotifiedAt: new Date() },
+      });
+      if (claimed.count !== 1) continue;
+
       this.notificationsService
         .sendToGroup(groupId, 'poll_completed', { date: poll.date }, undefined, {
           pollId: poll.id,
