@@ -208,6 +208,60 @@ describe('ProposalsService', () => {
         expect.objectContaining({ proposalId: 'proposal-1' }),
       );
     });
+
+    // Tapping the same button twice, or the app re-sending a vote, used to notify the
+    // whole group again with a vote nobody had changed.
+    it('should not notify when the vote is identical to the stored one', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
+      prisma.planVote.findUnique.mockResolvedValue({ vote: 'yes' });
+      prisma.planVote.upsert.mockResolvedValue({});
+      prisma.planProposal.findUnique.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'yes' }],
+      });
+
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' });
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+    });
+
+    it('should notify when the voter switches sides', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
+      prisma.planVote.findUnique.mockResolvedValue({ vote: 'yes' });
+      prisma.planVote.upsert.mockResolvedValue({});
+      prisma.planProposal.findUnique.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'no' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(createTestUser());
+
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'no' });
+
+      expect(notifications.sendToGroup).toHaveBeenCalledWith(
+        'group-1',
+        'proposal_voted',
+        expect.objectContaining({ vote: 'no' }),
+        'user-1',
+        expect.anything(),
+      );
+    });
+
+    it('should still record the vote when it does not change', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue(createTestProposal());
+      prisma.planVote.findUnique.mockResolvedValue({ vote: 'yes' });
+      prisma.planVote.upsert.mockResolvedValue({});
+      prisma.planProposal.findUnique.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [{ userId: 'user-1', vote: 'yes' }],
+      });
+
+      await service.vote('group-1', 'proposal-1', 'user-1', { vote: 'yes' });
+
+      expect(prisma.planVote.upsert).toHaveBeenCalled();
+    });
   });
 
   describe('convert', () => {

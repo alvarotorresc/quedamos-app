@@ -146,6 +146,14 @@ export class ProposalsService {
       throw new ForbiddenException('Cannot vote on a closed or converted proposal');
     }
 
+    // A repeated tap, or a client re-sending the same vote, must not tell the group
+    // again that somebody voted: nothing changed.
+    const previous = await this.prisma.planVote.findUnique({
+      where: { proposalId_userId: { proposalId, userId } },
+      select: { vote: true },
+    });
+    const changed = previous?.vote !== dto.vote;
+
     await this.prisma.planVote.upsert({
       where: { proposalId_userId: { proposalId, userId } },
       create: { proposalId, userId, vote: dto.vote },
@@ -160,21 +168,23 @@ export class ProposalsService {
       },
     });
 
-    const voter = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true },
-    });
-    const voterName = voter?.name ?? 'Someone';
+    if (changed) {
+      const voter = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
+      const voterName = voter?.name ?? 'Someone';
 
-    this.notificationsService
-      .sendToGroup(
-        groupId,
-        'proposal_voted',
-        { actorName: voterName, title: proposal.title, vote: dto.vote },
-        userId,
-        { proposalId, groupId },
-      )
-      .catch((err) => this.logger.error('Failed to send proposal_voted notification', err));
+      this.notificationsService
+        .sendToGroup(
+          groupId,
+          'proposal_voted',
+          { actorName: voterName, title: proposal.title, vote: dto.vote },
+          userId,
+          { proposalId, groupId },
+        )
+        .catch((err) => this.logger.error('Failed to send proposal_voted notification', err));
+    }
 
     return updated;
   }
