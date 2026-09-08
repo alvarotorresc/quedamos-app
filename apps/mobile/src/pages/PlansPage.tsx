@@ -20,6 +20,7 @@ import { HiOutlineCalendar } from 'react-icons/hi2';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
+import { useAutoSelectGroup } from '../hooks/useAutoSelectGroup';
 import { useEvents, useDeleteEvent, useCancelEvent, useConfirmEvent } from '../hooks/useEvents';
 import { useProposals, useVoteProposal, useCloseProposal } from '../hooks/useProposals';
 import { useMyColor } from '../hooks/useMyColor';
@@ -48,23 +49,19 @@ export default function PlansPage() {
   const [highlightEventId, setHighlightEventId] = useState<string | null>(null);
   const scrolledRef = useRef(false);
 
-  // Group selection
-  const { data: groups, isLoading: groupsLoading } = useGroups();
-  const { currentGroup, setCurrentGroup, getPersistedGroupId } = useGroupStore();
-
-  // Auto-select group on load
-  useEffect(() => {
-    if (!groups || groups.length === 0) return;
-    if (currentGroup && groups.find((g) => g.id === currentGroup.id)) return;
-
-    const persistedId = getPersistedGroupId();
-    const match = persistedId ? groups.find((g) => g.id === persistedId) : null;
-    setCurrentGroup(match ?? groups[0]);
-  }, [groups, currentGroup, setCurrentGroup, getPersistedGroupId]);
-
-  // Read eventId from push notification deep link
+  // Deep link params from a push notification (see lib/push-routes.ts).
   const searchParams = new URLSearchParams(location.search);
   const targetEventId = searchParams.get('eventId');
+  const deepLinkGroupId = searchParams.get('groupId');
+
+  // Group selection
+  const { data: groups, isLoading: groupsLoading } = useGroups();
+  const { currentGroup, setCurrentGroup } = useGroupStore();
+
+  // Was a copy of useAutoSelectGroup missing its `groups.length === 0` branch, so leaving
+  // your last group left Planes pointing at it: the group selector kept it selected and
+  // every query below still asked the API for a group you are not in.
+  useAutoSelectGroup(groups, deepLinkGroupId);
 
   const groupId = currentGroup?.id ?? '';
   useGroupSync(groupId || undefined);

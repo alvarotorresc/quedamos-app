@@ -13,9 +13,12 @@ vi.mock('@ionic/react', () => ({
   IonAlert: () => null,
 }));
 let search = '';
+// Stable across renders so tests can assert on it (a fresh object per call would lose
+// every recorded push/replace).
+const history = { push: vi.fn(), replace: vi.fn() };
 vi.mock('react-router-dom', () => ({
-  useHistory: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useLocation: () => ({ search }),
+  useHistory: () => history,
+  useLocation: () => ({ search, pathname: '/tabs/plans' }),
 }));
 const mockT = vi.fn((key: string) => key);
 vi.mock('react-i18next', () => ({
@@ -40,11 +43,19 @@ vi.mock('../stores/auth', () => ({
 }));
 const GROUP = { id: 'g1', name: 'La cuadrilla', emoji: '🏔️', createdById: 'u1', createdAt: '', members: [] };
 let groupsList: (typeof GROUP)[] = [GROUP];
+// One state object for the whole render, with stable function identities: useAutoSelectGroup
+// reads it through three separate selector calls and depends on them not changing.
+const setCurrentGroup = vi.fn();
+const getPersistedGroupId = vi.fn(() => null as string | null);
+const groupState = {
+  currentGroup: null as typeof GROUP | null,
+  setCurrentGroup,
+  getPersistedGroupId,
+};
 vi.mock('../stores/group', () => ({
-  useGroupStore: vi.fn((selector?: (s: { currentGroup: typeof GROUP | null; setCurrentGroup: () => void }) => unknown) => {
-    const state = { currentGroup: groupsList[0] ?? null, setCurrentGroup: vi.fn() };
-    return selector ? selector(state) : state;
-  }),
+  useGroupStore: vi.fn((selector?: (s: typeof groupState) => unknown) =>
+    selector ? selector(groupState) : groupState,
+  ),
 }));
 vi.mock('../hooks/useGroups', () => ({
   useGroups: () => ({ data: groupsList, isLoading: false }),
@@ -94,6 +105,8 @@ describe('PlansPage', () => {
     vi.clearAllMocks();
     search = '';
     groupsList = [GROUP];
+    groupState.currentGroup = GROUP;
+    getPersistedGroupId.mockReturnValue(null);
     events = [
       ev('e2', 'Pádel y cañas', '2099-02-01', 'pending', 'pending'),
       ev('e1', 'Cena en casa de Iris', '2099-01-05', 'confirmed'),
@@ -133,6 +146,30 @@ describe('PlansPage', () => {
     const btn = screen.getByRole('button', { name: 'plans.goToGroups' });
     expect(btn.className).toContain('bg-primary-solid');
     expect(btn.className).not.toContain('bg-primary-dark');
+  });
+
+  it('al quedarse sin grupos, suelta el que había seleccionado', () => {
+    // La copia que vivía aquí no tenía la rama `groups.length === 0` de
+    // useAutoSelectGroup: al salir del último grupo, Planes seguía apuntando a él.
+    groupsList = [];
+    groupState.currentGroup = GROUP;
+
+    render(<PlansPage />);
+
+    expect(setCurrentGroup).toHaveBeenCalledWith(null);
+  });
+
+  it('el groupId del enlace de la notificación manda sobre el grupo seleccionado', () => {
+    // El service worker no puede tocar el localStorage: el groupId de la URL es el único
+    // canal que le llega, y Planes lo ignoraba.
+    const otro = { ...GROUP, id: 'g2', name: 'La otra' };
+    groupsList = [GROUP, otro];
+    groupState.currentGroup = GROUP;
+    search = '?eventId=e1&groupId=g2';
+
+    render(<PlansPage />);
+
+    expect(setCurrentGroup).toHaveBeenCalledWith(otro);
   });
 
   it('el vacío de propuestas describe con una clave real de i18n', () => {
