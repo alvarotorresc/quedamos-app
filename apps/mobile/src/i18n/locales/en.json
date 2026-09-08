@@ -426,6 +426,7 @@
   },
   "landing2": {
     "cta": "Open Quedamos",
+    "registerCta": "Create account",
     "githubCta": "View the code on GitHub",
     "feedbackCta": "Report a bug",
     "nav": {
