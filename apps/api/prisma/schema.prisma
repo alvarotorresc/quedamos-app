@@ -19,6 +19,9 @@ model User {
   email       String   @unique
   name        String
   avatarEmoji String   @default("😊") @map("avatar_emoji")
+  // Language every push to this user is written in ('es' | 'en'). Synced from the
+  // Supabase JWT on every request; 'es' keeps the ADD COLUMN valid on existing rows.
+  language    String   @default("es")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
@@ -263,7 +266,10 @@ model AvailabilityPoll {
   slot        String? // 'Mañana' | 'Tarde' | 'Noche' | null = todo el día
   status      String    @default("open") // 'open' | 'completed' | 'closed'
   completedAt DateTime? @map("completed_at") @db.Timestamptz
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  // Set the first time the ring closes, and never cleared: reopening is silent, so
+  // without this the next unanimous 'yes' re-sent «el aro se cierra».
+  completedNotifiedAt DateTime? @map("completed_notified_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   // Relations
   group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)

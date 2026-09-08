@@ -29,6 +29,23 @@ export function useCreateGroup() {
   });
 }
 
+/**
+ * Cambia el nombre o el emoji del grupo (B3). Invalida toda la rama `groups`
+ * — la lista y el detalle enseñan ambos el nombre — y avisa al resto del grupo.
+ */
+export function useUpdateGroup(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { name?: string; emoji?: string }) =>
+      groupsService.update(groupId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+      broadcastSync(groupId, 'groups');
+    },
+  });
+}
+
 export function useJoinGroup() {
   const queryClient = useQueryClient();
 

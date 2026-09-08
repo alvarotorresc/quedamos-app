@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma/prisma.service';
 import * as jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
+import { isPushLanguage, normalizePushLanguage } from '../notifications/push-language';
 
 interface SupabaseJwtPayload {
   sub: string;
@@ -10,6 +11,7 @@ interface SupabaseJwtPayload {
   user_metadata?: {
     name?: string;
     avatarEmoji?: string;
+    language?: string;
   };
   exp: number;
 }
@@ -73,6 +75,7 @@ export class AuthService {
       const name = (payload.user_metadata?.name ?? 'Usuario').trim().slice(0, 100);
       const email = (payload.email ?? '').trim().slice(0, 255);
       const avatarEmoji = (payload.user_metadata?.avatarEmoji ?? '😊').slice(0, 10);
+      const language = normalizePushLanguage(payload.user_metadata?.language);
 
       try {
         dbUser = await this.prisma.user.create({
@@ -81,6 +84,7 @@ export class AuthService {
             email,
             name,
             avatarEmoji,
+            language,
           },
         });
       } catch (error: unknown) {
@@ -93,16 +97,33 @@ export class AuthService {
           throw error;
         }
       }
-    } else if (payload.email && dbUser.email !== payload.email) {
-      // Sync email when user confirms an email change in Supabase
-      const newEmail = payload.email.trim().slice(0, 255);
-      if (newEmail.length >= 3 && newEmail.includes('@')) {
+    } else {
+      // One write for everything the JWT is authoritative about, so a login that changes
+      // both the email and the language does not cost two round trips.
+      const data: { email?: string; language?: string } = {};
+
+      if (payload.email && dbUser.email !== payload.email) {
+        // Sync email when user confirms an email change in Supabase
+        const newEmail = payload.email.trim().slice(0, 255);
+        if (newEmail.length >= 3 && newEmail.includes('@')) {
+          data.email = newEmail;
+        } else {
+          this.logger.warn(`Skipping email sync — malformed email in JWT for user ${payload.sub}`);
+        }
+      }
+
+      // Sync the push language when the app switches it (supabase.auth.updateUser).
+      // An unsupported value is ignored: better a Spanish push than none.
+      const language = payload.user_metadata?.language;
+      if (isPushLanguage(language) && dbUser.language !== language) {
+        data.language = language;
+      }
+
+      if (Object.keys(data).length > 0) {
         dbUser = await this.prisma.user.update({
           where: { id: payload.sub },
-          data: { email: newEmail },
+          data,
         });
-      } else {
-        this.logger.warn(`Skipping email sync — malformed email in JWT for user ${payload.sub}`);
       }
     }
 

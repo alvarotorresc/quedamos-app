@@ -6,7 +6,6 @@ import {
   IonToolbar,
   IonButtons,
   IonBackButton,
-  IonSpinner,
   IonAlert,
   IonActionSheet,
   IonLoading,
@@ -23,12 +22,14 @@ import {
   useUpdateMemberRole,
   useKickMember,
   useDeleteGroup,
+  useUpdateGroup,
 } from '../hooks/useGroups';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
+import { ApiError } from '../lib/api';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { useGroupWeather } from '../hooks/useWeather';
@@ -49,11 +50,14 @@ import {
   HiOutlineUsers,
   HiOutlineUser,
   HiOutlineEllipsisHorizontal,
+  HiOutlinePencil,
 } from 'react-icons/hi2';
 import { Tile } from '../ui/Tile';
+import { EmptyState, SkeletonCard, Button, Sheet } from '../ui';
+import { EmojiPickerField } from '../components/EmojiPickerField';
 import { Aro, type AroMember } from '../ui/Aro';
 import { useEvents } from '../hooks/useEvents';
-import { usePolls } from '../hooks/usePolls';
+import { usePolls, useClosePoll } from '../hooks/usePolls';
 import { apiDateToKey, formatDateKey, capitalizeFirst } from '../lib/date-utils';
 import { SLOT_KEYS } from '../lib/availability-label';
 import { getWeatherIcon } from '../components/WeatherWidget';
@@ -78,7 +82,7 @@ export default function GroupDetailPage() {
   const history = useHistory();
   const currentUserId = useAuthStore((s) => s.user?.id);
 
-  const { data: group, isLoading } = useGroup(id);
+  const { data: group, isLoading, isError } = useGroup(id);
   useGroupSync(id);
   const { data: invite } = useGroupInvite(id);
   const refreshInvite = useRefreshInvite();
@@ -86,9 +90,11 @@ export default function GroupDetailPage() {
   const updateRole = useUpdateMemberRole(id);
   const kickMember = useKickMember(id);
   const deleteGroup = useDeleteGroup();
+  const closePoll = useClosePoll(id);
+  const updateGroup = useUpdateGroup(id);
 
   const { track } = useAnalytics();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
   const [copied, setCopied] = useState(false);
   const [showLeaveAlert, setShowLeaveAlert] = useState(false);
   const [showRegenerateAlert, setShowRegenerateAlert] = useState(false);
@@ -100,6 +106,8 @@ export default function GroupDetailPage() {
   } | null>(null);
   const [showDeleteGroupAlert, setShowDeleteGroupAlert] = useState(false);
   const [showKickAlert, setShowKickAlert] = useState(false);
+  const [showClosePollAlert, setShowClosePollAlert] = useState(false);
+  const [editing, setEditing] = useState<{ name: string; emoji: string } | null>(null);
 
   // Weather & Cities
   const { data: cities } = useGroupCities(id);
@@ -259,29 +267,97 @@ export default function GroupDetailPage() {
     return buttons;
   };
 
-  const handleDeleteGroup = async () => {
-    await runWithErrorToast(() => deleteGroup.mutateAsync(id), showError, {
-      onSuccess: () => history.replace('/tabs/group'),
-      errorKey: 'errors.deleteGroupFailed',
+  const handleSaveGroup = async () => {
+    if (!editing || !editing.name.trim()) return;
+    await runWithErrorToast(
+      () => updateGroup.mutateAsync({ name: editing.name.trim(), emoji: editing.emoji }),
+      showError,
+      {
+        onSuccess: () => {
+          setEditing(null);
+          showSuccess('group.groupUpdated');
+        },
+        errorKey: 'errors.updateGroupFailed',
+      },
+    );
+  };
+
+  const handleClosePoll = async () => {
+    if (!openPoll) return;
+    await runWithErrorToast(() => closePoll.mutateAsync(openPoll.id), showError, {
+      onSuccess: () => showSuccess('group.pollClosed'),
+      errorKey: 'errors.closePollFailed',
     });
   };
+
+  const handleDeleteGroup = async () => {
+    // runWithErrorToast solo sabe de una clave: aqui hay que mirar el status para
+    // separar «no eres el fundador» (403) de un fallo cualquiera.
+    try {
+      await deleteGroup.mutateAsync(id);
+      history.replace('/tabs/group');
+    } catch (err) {
+      showError(
+        err instanceof ApiError && err.status === 403
+          ? 'errors.deleteGroupNotCreator'
+          : 'errors.deleteGroupFailed',
+      );
+    }
+  };
+
+  // Cabecera comun a las tres caras de la pantalla: sin ella el estado de error
+  // se quedaba sin boton atras y solo se salia matando la app.
+  const header = (
+    <IonHeader className="ion-no-border">
+      <IonToolbar className="py-2">
+        <IonButtons slot="start">
+          <IonBackButton defaultHref="/tabs/group" text="" />
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+  );
 
   if (isLoading) {
     return (
       <IonPage>
-        <IonContent>
-          <div className="flex items-center justify-center h-full">
-            <IonSpinner name="crescent" className="text-primary w-8 h-8" />
+        {header}
+        <IonContent className="ion-padding">
+          <div className="max-w-md mx-auto px-4 pt-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         </IonContent>
       </IonPage>
     );
   }
 
-  const isAdmin =
-    group?.members.some((m) => m.userId === currentUserId && m.role === 'admin') ?? false;
+  // La API devuelve 404 tanto si el grupo no existe como si dejaste de ser
+  // miembro, asi que el mensaje cubre los dos casos sin adivinar cual es.
+  if (isError || !group) {
+    return (
+      <IonPage>
+        {header}
+        <IonContent className="ion-padding">
+          <EmptyState
+            emoji="🫥"
+            title={t('group.unavailableTitle')}
+            description={t('group.unavailableDescription')}
+            action={t('group.backToGroups')}
+            onAction={() => history.replace('/tabs/group')}
+          />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
-  if (!group) return null;
+  const isAdmin =
+    group.members.some((m) => m.userId === currentUserId && m.role === 'admin') ?? false;
+  // Borrar el grupo no es cosa de cualquier admin: la API exige createdById
+  // (groups.service.ts, deleteGroup), asi que el boton se ofrece solo al fundador.
+  const isCreator = group.createdById === currentUserId;
+  // Cerrar una pregunta es cosa de quien la hizo (polls.service.ts, close).
+  const isPollAsker = !!openPoll && openPoll.createdById === currentUserId;
 
   const dayOf = (dateStr: string) => new Date(apiDateToKey(dateStr) + 'T00:00:00');
   const weekdayShort = (d: Date) =>
@@ -310,13 +386,7 @@ export default function GroupDetailPage() {
 
   return (
     <IonPage>
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="py-2">
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/tabs/group" text="" />
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      {header}
       <IonContent className="ion-padding">
         <div className="max-w-md mx-auto px-4 pb-6">
           {/* Identidad: el aro de la cuadrilla */}
@@ -398,6 +468,20 @@ export default function GroupDetailPage() {
                         ? t('group.tiles.missing', { names: missing.join(', '), count: missing.length })
                         : t('group.tiles.everyoneAnswered')}
                     </p>
+                    {isPollAsker && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          // La ficha entera navega al calendario: cerrar no es navegar.
+                          e.stopPropagation();
+                          setShowClosePollAlert(true);
+                        }}
+                        disabled={closePoll.isPending}
+                        className="mt-1 text-[11px] font-bold text-text-muted bg-transparent border-none p-0"
+                      >
+                        {t('group.closePoll')}
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -490,6 +574,16 @@ export default function GroupDetailPage() {
                   <span className="text-text-muted">{cities?.length ?? 0}</span>
                 </div>
               </div>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setEditing({ name: group.name, emoji: group.emoji })}
+                  className="inline-flex items-center gap-1 self-start text-[11px] text-text-muted bg-transparent border-none p-0"
+                >
+                  <HiOutlinePencil className="w-3 h-3" />
+                  {t('group.editGroup')}
+                </button>
+              )}
             </Tile>
 
             {/* Miembros */}
@@ -617,7 +711,7 @@ export default function GroupDetailPage() {
             >
               {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
             </button>
-            {isAdmin && (
+            {isCreator && (
               <button
                 type="button"
                 onClick={() => setShowDeleteGroupAlert(true)}
@@ -684,6 +778,56 @@ export default function GroupDetailPage() {
                   if (actionMember) handleKick(actionMember.userId);
                 },
               },
+            ]}
+          />
+          <Sheet
+            isOpen={editing !== null}
+            onClose={() => setEditing(null)}
+            title={t('group.editGroup')}
+            footer={
+              <Button
+                variant="primary"
+                onClick={handleSaveGroup}
+                disabled={updateGroup.isPending || !editing?.name.trim()}
+                className="w-full"
+              >
+                {updateGroup.isPending ? t('group.saving') : t('group.save')}
+              </Button>
+            }
+          >
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-xs text-text-muted mb-1 block" htmlFor="group-name-field">
+                  {t('group.groupName')}
+                </label>
+                <input
+                  id="group-name-field"
+                  type="text"
+                  maxLength={100}
+                  value={editing?.name ?? ''}
+                  onChange={(e) =>
+                    setEditing((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                  }
+                  placeholder={t('group.groupNamePlaceholder')}
+                  className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark focus:border-primary"
+                />
+              </div>
+              <EmojiPickerField
+                value={editing?.emoji ?? ''}
+                onChange={(emoji) =>
+                  setEditing((prev) => (prev ? { ...prev, emoji } : prev))
+                }
+              />
+            </div>
+          </Sheet>
+          <IonAlert
+            isOpen={showClosePollAlert}
+            onDidDismiss={() => setShowClosePollAlert(false)}
+            header={t('group.closePollConfirm')}
+            message={t('group.closePollMessage')}
+            buttons={[
+              { text: t('group.cancel'), role: 'cancel' },
+              { text: t('group.closePoll'), role: 'destructive', handler: handleClosePoll },
             ]}
           />
           <IonLoading isOpen={kickMember.isPending} message={t('group.kickMember')} />

@@ -18,6 +18,10 @@
   },
   "login": {
     "title": "Iniciar sesión",
+    "notConfirmed": {
+      "title": "Tu email aún no está confirmado",
+      "message": "Abre el enlace que te enviamos para activar la cuenta. ¿No te ha llegado?"
+    },
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "submit": "Entrar",
     "submitting": "Entrando...",
@@ -163,6 +167,9 @@
       "title": "Disponibilidad del día"
     },
     "eventDetail": {
+      "confirmed": "Confirmados",
+      "pending": "Pendientes",
+      "declined": "Rechazados",
       "createdBy": "Creada por {{name}}",
       "download": "Descargar para calendario"
     }
@@ -316,6 +323,17 @@
     "deleteConfirm": "¿Eliminar el grupo?",
     "lastAdminError": "Debe haber al menos un admin",
     "roleChanged": "Rol actualizado",
+    "unavailableTitle": "Este grupo ya no est\u00e1 disponible",
+    "unavailableDescription": "Puede que lo hayan eliminado o que ya no seas miembro.",
+    "backToGroups": "Volver a mis grupos",
+    "closePoll": "Cerrar pregunta",
+    "closePollConfirm": "\u00bfCerrar la pregunta?",
+    "closePollMessage": "Dejar\u00e1 de aparecer y ya nadie podr\u00e1 responderla.",
+    "pollClosed": "Pregunta cerrada",
+    "editGroup": "Editar",
+    "groupUpdated": "Grupo actualizado",
+    "save": "Guardar",
+    "saving": "Guardando...",
     "creator": "Fundador"
   },
   "joinGroup": {
@@ -409,7 +427,30 @@
       "help": "Ayuda",
       "account": "Cuenta"
     },
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "exportData": {
+      "action": "Descargar mis datos",
+      "hint": "JSON",
+      "loading": "Preparando...",
+      "done": "Datos descargados",
+      "error": "No se han podido descargar tus datos. Inténtalo de nuevo."
+    },
+    "deleteAccount": {
+      "action": "Eliminar cuenta",
+      "title": "Eliminar cuenta",
+      "subtitle": "Esta acción no se puede deshacer",
+      "intro": "Al eliminar tu cuenta:",
+      "bulletProfile": "Se borran tu perfil, tu disponibilidad, tus respuestas, tus votos y los dispositivos registrados para avisos y widgets.",
+      "bulletSoloGroups": "Los grupos en los que estás solo desaparecen con todo lo que contienen.",
+      "bulletFoundedGroups": "Los grupos que fundaste con más gente pasan al admin más antiguo o, si no hay otro admin, al miembro más antiguo.",
+      "bulletCreatedContent": "Las quedadas, propuestas y preguntas que creaste se conservan y pasan a quien lleva el grupo.",
+      "typeToConfirm": "Escribe {{word}} para confirmar",
+      "confirmWord": "ELIMINAR",
+      "confirm": "Eliminar mi cuenta",
+      "done": "Cuenta eliminada",
+      "error": "No se ha podido eliminar la cuenta. Inténtalo de nuevo.",
+      "unavailable": "El borrado de cuenta no está disponible ahora mismo. Inténtalo más tarde."
+    }
   },
   "settings": {
     "language": "Idioma"
@@ -422,6 +463,7 @@
   },
   "landing2": {
     "cta": "Abrir Quedamos",
+    "registerCta": "Crear cuenta",
     "githubCta": "Ver el código en GitHub",
     "feedbackCta": "Reportar un error",
     "nav": {
@@ -644,8 +686,42 @@
     "linkCopied": "Enlace copiado. Tarjeta descargada.",
     "cardDownloaded": "Tarjeta descargada."
   },
+  "emailConfirmed": {
+    "waiting": "Confirmando tu email...",
+    "title": "Email confirmado",
+    "message": "Tu cuenta ya está activa. Entramos.",
+    "continue": "Continuar",
+    "failed": {
+      "title": "No hemos podido confirmarlo",
+      "message": "El enlace puede haber caducado o ya haberse usado. Entra con tu email y contraseña.",
+      "login": "Ir a iniciar sesión"
+    }
+  },
+  "resendConfirmation": {
+    "action": "Reenviar email",
+    "cooldown": "Reenviar en {{seconds}} s",
+    "sent": "Email reenviado. Revisa tu bandeja.",
+    "error": "No hemos podido reenviar el email. Inténtalo en un minuto."
+  },
+  "push": {
+    "priming": {
+      "title": "¿Te avisamos?",
+      "what": "Sólo de lo del grupo: quedadas nuevas, preguntas y confirmaciones.",
+      "when": "Sin spam, y eliges qué avisos quieres desde tu perfil.",
+      "enable": "Activar avisos",
+      "later": "Ahora no"
+    },
+    "blocked": {
+      "title": "Los avisos están bloqueados en el sistema",
+      "android": "Ajustes → Apps → Quedamos → Notificaciones, y actívalas.",
+      "web": "Pulsa el candado junto a la dirección y permite las notificaciones."
+    },
+    "channelName": "Avisos de Quedamos",
+    "channelDescription": "Quedadas, preguntas y movimientos del grupo"
+  },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
+    "sessionExpired": "Tu sesión ha caducado, vuelve a entrar.",
     "saveAvailabilityFailed": "No se pudo guardar tu disponibilidad",
     "deleteAvailabilityFailed": "No se pudo eliminar tu disponibilidad",
     "createEventFailed": "No se pudo crear la quedada",
@@ -660,15 +736,14 @@
     "updateRoleFailed": "No se pudo actualizar el rol",
     "kickMemberFailed": "No se pudo expulsar al miembro",
     "deleteGroupFailed": "No se pudo eliminar el grupo",
+    "updateGroupFailed": "No se pudo actualizar el grupo",
+    "deleteGroupNotCreator": "Solo quien cre\u00f3 el grupo puede eliminarlo",
     "copyFailed": "No se pudo copiar el código",
     "answerPollFailed": "No se pudo guardar tu respuesta",
+    "closePollFailed": "No se pudo cerrar la pregunta",
     "respondEventFailed": "No se pudo guardar tu asistencia",
     "shareTarjetaFailed": "No se pudo crear la tarjeta",
     "downloadICSFailed": "No se pudo descargar la quedada",
     "updateNotificationPreferenceFailed": "No se pudo guardar el aviso"
-  },
-  "push": {
-    "channelName": "Avisos de Quedamos",
-    "channelDescription": "Quedadas, preguntas y movimientos del grupo"
   }
 }

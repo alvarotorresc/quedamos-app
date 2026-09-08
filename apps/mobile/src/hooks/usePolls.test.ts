@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { usePolls, useCreatePoll, useRespondPoll, usePendingQuestions } from './usePolls';
+import {
+  usePolls,
+  useCreatePoll,
+  useRespondPoll,
+  useClosePoll,
+  usePendingQuestions,
+} from './usePolls';
 import { pollsService, type Poll } from '../services/polls';
 import { eventsService, type Event } from '../services/events';
 import { notifyWidgetDataChanged } from '../lib/widget-bridge';
@@ -13,6 +19,7 @@ vi.mock('../services/polls', () => ({
     list: vi.fn(),
     create: vi.fn(),
     respond: vi.fn(),
+    close: vi.fn(),
   },
 }));
 
@@ -154,6 +161,36 @@ describe('useRespondPoll', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(notifyWidgetDataChanged).toHaveBeenCalled();
+  });
+});
+
+// B4: quien pregunta puede cerrar la pregunta antes de que respondan todos.
+describe('useClosePoll', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should close a poll and invalidate polls + availability', async () => {
+    vi.mocked(pollsService.close).mockResolvedValue(createTestPoll({ status: 'closed' }));
+
+    const { result, queryClient } = renderHookWithClient(() => useClosePoll('group-1'));
+    const spy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    result.current.mutate('poll-1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(pollsService.close).toHaveBeenCalledWith('group-1', 'poll-1');
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['polls', 'group-1'] });
+    expect(spy).toHaveBeenCalledWith({ queryKey: ['availability', 'group-1'] });
+  });
+
+  it('should surface a rejection instead of swallowing it', async () => {
+    vi.mocked(pollsService.close).mockRejectedValue(new Error('forbidden'));
+
+    const { result } = renderHookWithClient(() => useClosePoll('group-1'));
+    result.current.mutate('poll-1');
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 

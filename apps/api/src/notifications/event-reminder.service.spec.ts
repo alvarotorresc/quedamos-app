@@ -133,17 +133,15 @@ describe('EventReminderService', () => {
       expect(notifications.sendToUser).toHaveBeenCalledTimes(2);
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-1',
-        'Recordatorio',
-        expect.stringContaining('Test Event'),
-        expect.objectContaining({ type: 'event_reminder' }),
         'event_reminder',
+        { title: 'Test Event' },
+        expect.objectContaining({ eventId: 'event-1' }),
       );
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-2',
-        'Recordatorio',
-        expect.stringContaining('Test Event'),
-        expect.objectContaining({ type: 'event_reminder' }),
         'event_reminder',
+        { title: 'Test Event' },
+        expect.objectContaining({ eventId: 'event-1' }),
       );
     });
 
@@ -310,7 +308,7 @@ describe('EventReminderService', () => {
       expect(notifications.sendToUser).toHaveBeenCalledTimes(25);
     });
 
-    it('should use event_reminder as notificationType', async () => {
+    it('should send the event_reminder type', async () => {
       const { date, time } = eventIn12Hours();
 
       const event = {
@@ -324,10 +322,9 @@ describe('EventReminderService', () => {
 
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-1',
-        expect.any(String),
-        expect.any(String),
-        expect.any(Object),
         'event_reminder',
+        expect.any(Object),
+        expect.any(Object),
       );
     });
   });

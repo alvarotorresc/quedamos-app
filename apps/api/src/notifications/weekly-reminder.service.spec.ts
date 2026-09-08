@@ -114,17 +114,13 @@ describe('WeeklyReminderService', () => {
       expect(notifications.sendToUser).toHaveBeenCalledTimes(2);
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-2',
-        'Marca tu disponibilidad',
-        expect.any(String),
-        expect.objectContaining({ type: 'weekly_availability_reminder' }),
         'weekly_availability_reminder',
+        {},
       );
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-3',
-        'Marca tu disponibilidad',
-        expect.any(String),
-        expect.objectContaining({ type: 'weekly_availability_reminder' }),
         'weekly_availability_reminder',
+        {},
       );
     });
 
@@ -141,7 +137,7 @@ describe('WeeklyReminderService', () => {
       expect(notifications.sendToUser).toHaveBeenCalledTimes(2);
     });
 
-    it('should pass weekly_availability_reminder as notificationType', async () => {
+    it('should send the weekly_availability_reminder type', async () => {
       prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }]);
       prisma.availability.findMany.mockResolvedValue([]);
 
@@ -149,10 +145,8 @@ describe('WeeklyReminderService', () => {
 
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-1',
-        expect.any(String),
-        expect.any(String),
-        expect.any(Object),
         'weekly_availability_reminder',
+        {},
       );
     });
 
@@ -186,6 +180,43 @@ describe('WeeklyReminderService', () => {
       expect(querySunday.getUTCDate()).toBe(8); // March 8
 
       jest.useRealTimers();
+    });
+
+    // The cron fires at 20:00 in Madrid, and the week it asks about has to be the
+    // Monday-to-Sunday the user sees on their calendar, not the one UTC is on.
+    it('should be scheduled in Europe/Madrid', () => {
+      const options = Reflect.getMetadata(
+        'SCHEDULE_CRON_OPTIONS',
+        WeeklyReminderService.prototype.sendWeeklyReminders,
+      );
+
+      expect(options).toEqual(expect.objectContaining({ timeZone: 'Europe/Madrid' }));
+    });
+
+    it('should take next week from the Madrid day, not the UTC one (winter)', () => {
+      // Sunday 23:30 UTC is already Monday 00:30 in Madrid: next week starts on the 9th.
+      const { nextMonday, nextSunday } = service.getNextWeekRange(
+        new Date('2026-03-01T23:30:00.000Z'),
+      );
+
+      expect(nextMonday.toISOString().slice(0, 10)).toBe('2026-03-09');
+      expect(nextSunday.toISOString().slice(0, 10)).toBe('2026-03-15');
+    });
+
+    it('should take next week from the Madrid day, not the UTC one (summer)', () => {
+      // Sunday 22:30 UTC is Monday 00:30 in Madrid once CEST is in force.
+      const { nextMonday, nextSunday } = service.getNextWeekRange(
+        new Date('2026-07-05T22:30:00.000Z'),
+      );
+
+      expect(nextMonday.toISOString().slice(0, 10)).toBe('2026-07-13');
+      expect(nextSunday.toISOString().slice(0, 10)).toBe('2026-07-19');
+    });
+
+    it('should start next week at UTC midnight, the way @db.Date rows are stored', () => {
+      const { nextMonday } = service.getNextWeekRange(new Date('2026-03-01T20:00:00.000Z'));
+
+      expect(nextMonday.toISOString()).toBe('2026-03-02T00:00:00.000Z');
     });
 
     it('should process users in batches to limit concurrent DB connections', async () => {

@@ -14,6 +14,12 @@ describe('resolveDeepLinkPath', () => {
     );
   });
 
+  it('accepts the email confirmation route', () => {
+    expect(
+      resolveDeepLinkPath('https://quedamos.alvarotc.com/auth/confirmed#access_token=abc'),
+    ).toBe('/auth/confirmed#access_token=abc');
+  });
+
   it('keeps the query string', () => {
     expect(resolveDeepLinkPath('https://quedamos.alvarotc.com/tabs/plans?eventId=abc')).toBe(
       '/tabs/plans?eventId=abc',

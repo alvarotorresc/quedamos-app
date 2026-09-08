@@ -47,6 +47,25 @@ export function useRespondPoll(groupId: string) {
   });
 }
 
+/**
+ * Cierra una pregunta abierta (B4). La API solo se lo permite a quien la hizo,
+ * asi que la pantalla oculta el boton al resto en vez de dejarles chocar con un 403.
+ * Invalida tambien la disponibilidad porque cerrar deja de contar sus respuestas.
+ */
+export function useClosePoll(groupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (pollId: string) => pollsService.close(groupId, pollId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['polls', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
+      broadcastSync(groupId, 'polls');
+      logEvent('close_poll').catch(() => {});
+    },
+  });
+}
+
 export function usePendingQuestions(groupId: string): { polls: Poll[]; pendingEvents: Event[] } {
   const userId = useAuthStore((s) => s.user?.id);
   const { data: polls } = usePolls(groupId);

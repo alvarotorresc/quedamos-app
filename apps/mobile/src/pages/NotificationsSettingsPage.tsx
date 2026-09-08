@@ -9,6 +9,7 @@ import { useScreenView } from '../hooks/useAnalytics';
 import { useMyColor } from '../hooks/useMyColor';
 import { useToast } from '../hooks/useToast';
 import { Toggle } from '../ui/Toggle';
+import PushPermissionBanner from '../components/PushPermissionBanner';
 
 export default function NotificationsSettingsPage() {
   useScreenView('NotificationSettings');
@@ -42,6 +43,8 @@ export default function NotificationsSettingsPage() {
               {t('profile.notifications.subtitle', { enabled: enabledCount, total: allTypes.length })}
             </p>
           </div>
+
+          <PushPermissionBanner />
 
           {NOTIF_SECTIONS.map((section) => (
             <section key={section.headerKey}>

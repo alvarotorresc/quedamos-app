@@ -6,10 +6,11 @@ import { HiOutlineEye, HiOutlineEyeSlash } from 'react-icons/hi2';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 import { Button } from '../ui/Button';
 import { useAuthStore } from '../stores/auth';
-import { translateAuthError } from '../lib/auth-errors';
+import { translateAuthError, isEmailNotConfirmed } from '../lib/auth-errors';
 import { safeRedirect } from '../lib/safe-redirect';
 import { savePendingRedirect } from '../lib/pending-redirect';
 import { useScreenView } from '../hooks/useAnalytics';
+import { ResendConfirmation } from '../components/ResendConfirmation';
 
 const HCAPTCHA_SITEKEY = 'c7aee17a-5df0-43a6-ba90-397e25d83410';
 
@@ -35,12 +36,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  // Signing in with an unconfirmed account is not a wrong password: it gets its own
+  // state, so the screen can offer the confirmation email again instead of a flat
+  // "credenciales incorrectas" the user cannot act on.
+  const [notConfirmed, setNotConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const captchaRef = useRef<HCaptcha>(null);
+
+  const requestResendCaptchaToken = async (): Promise<string | null> => {
+    const result = await captchaRef.current?.execute({ async: true });
+    captchaRef.current?.resetCaptcha();
+    return result?.response ?? null;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotConfirmed(false);
     setLoading(true);
 
     try {
@@ -55,7 +67,11 @@ export default function LoginPage() {
       await signIn(email, password, token);
       history.replace(redirectTo);
     } catch (err) {
-      setError(translateAuthError(err));
+      if (isEmailNotConfirmed(err)) {
+        setNotConfirmed(true);
+      } else {
+        setError(translateAuthError(err));
+      }
       captchaRef.current?.resetCaptcha();
     } finally {
       setLoading(false);
@@ -82,6 +98,14 @@ export default function LoginPage() {
             {error && (
               <div className="bg-error-tint border border-subtle rounded-btn p-3 text-danger text-sm">
                 {error}
+              </div>
+            )}
+
+            {notConfirmed && (
+              <div className="bg-bg-light border border-subtle rounded-btn p-3.5 flex flex-col items-start">
+                <p className="text-sm font-bold text-text">{t('login.notConfirmed.title')}</p>
+                <p className="text-xs text-text-muted mt-1">{t('login.notConfirmed.message')}</p>
+                <ResendConfirmation email={email} requestCaptchaToken={requestResendCaptchaToken} />
               </div>
             )}
 

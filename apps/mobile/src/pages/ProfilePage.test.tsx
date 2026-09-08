@@ -1,7 +1,10 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ProfilePage from './ProfilePage';
 import { NOTIF_SECTIONS } from '../services/notification-preferences';
+import { accountService } from '../services/account';
+import { saveExport } from '../lib/export-data';
+import { reloadToRoot } from '../lib/reload';
 
 // Los web components de Ionic no se presentan bajo jsdom (ver AskGroupSheet.test.tsx):
 // se pintan los hijos directamente, como en el resto de tests de páginas.
@@ -11,8 +14,22 @@ vi.mock('@ionic/react', () => ({
   IonToolbar: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   IonTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   IonContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  IonModal: ({ isOpen, children }: { isOpen: boolean; children: React.ReactNode }) =>
+    isOpen ? <div data-testid="ion-modal">{children}</div> : null,
   useIonViewWillEnter: () => {},
 }));
+
+const showSuccessMock = vi.fn();
+const showErrorMock = vi.fn();
+vi.mock('../hooks/useToast', () => ({
+  useToast: () => ({ showSuccess: showSuccessMock, showError: showErrorMock, showInfo: vi.fn() }),
+}));
+vi.mock('../services/account', () => ({
+  accountService: { exportData: vi.fn(), deleteAccount: vi.fn() },
+}));
+vi.mock('../lib/export-data', () => ({ saveExport: vi.fn() }));
+// La navegación real no se puede espiar en jsdom: se aísla en el helper y se mockea.
+vi.mock('../lib/reload', () => ({ reloadToRoot: vi.fn() }));
 
 const pushMock = vi.fn();
 vi.mock('react-router-dom', () => ({
@@ -30,12 +47,14 @@ vi.mock('react-i18next', () => ({
 }));
 
 const signOutMock = vi.fn();
+const deleteAccountMock = vi.fn();
 vi.mock('../stores/auth', () => ({
   useAuthStore: vi.fn(
     (
       selector: (s: {
         user: { id: string; name: string; email: string; avatarEmoji: string; timeSlots?: Record<string, string> } | null;
         signOut: () => Promise<void>;
+        deleteAccount: () => Promise<void>;
         updateName: () => Promise<void>;
         updateEmail: () => Promise<void>;
         updatePassword: () => Promise<void>;
@@ -58,6 +77,7 @@ vi.mock('../stores/auth', () => ({
           },
         },
         signOut: signOutMock,
+        deleteAccount: deleteAccountMock,
         updateName: vi.fn(),
         updateEmail: vi.fn(),
         updatePassword: vi.fn(),
@@ -147,10 +167,96 @@ describe('ProfilePage', () => {
     expect(screen.getByPlaceholderText('profile.newName')).toBeInTheDocument();
   });
 
-  it('cerrar sesión llama a signOut', () => {
+  it('cerrar sesión llama a signOut y recarga en la landing', async () => {
     render(<ProfilePage />);
     fireEvent.click(screen.getByRole('button', { name: 'profile.logout' }));
     expect(signOutMock).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(reloadToRoot).toHaveBeenCalledTimes(1));
+  });
+
+  describe('mis datos', () => {
+    it('pide el export a la API, lo guarda y confirma', async () => {
+      const dump = { profile: { id: 'user-1' } };
+      vi.mocked(accountService.exportData).mockResolvedValue(dump);
+      vi.mocked(saveExport).mockResolvedValue({ saved: true });
+      render(<ProfilePage />);
+
+      fireEvent.click(screen.getByRole('button', { name: /profile\.exportData\.action/ }));
+
+      await waitFor(() => expect(saveExport).toHaveBeenCalledWith(dump));
+      expect(showSuccessMock).toHaveBeenCalledWith('profile.exportData.done');
+      expect(showErrorMock).not.toHaveBeenCalled();
+    });
+
+    it('no confirma nada si el usuario cierra la hoja de compartir', async () => {
+      vi.mocked(accountService.exportData).mockResolvedValue({});
+      vi.mocked(saveExport).mockResolvedValue({ saved: false });
+      render(<ProfilePage />);
+
+      fireEvent.click(screen.getByRole('button', { name: /profile\.exportData\.action/ }));
+
+      await waitFor(() => expect(saveExport).toHaveBeenCalled());
+      expect(showSuccessMock).not.toHaveBeenCalled();
+    });
+
+    it('avisa cuando la descarga falla', async () => {
+      vi.mocked(accountService.exportData).mockRejectedValue(new Error('500'));
+      render(<ProfilePage />);
+
+      fireEvent.click(screen.getByRole('button', { name: /profile\.exportData\.action/ }));
+
+      await waitFor(() => expect(showErrorMock).toHaveBeenCalledWith('profile.exportData.error'));
+      expect(saveExport).not.toHaveBeenCalled();
+      // Queda listo para reintentar.
+      expect(screen.getByRole('button', { name: /profile\.exportData\.action/ })).toBeEnabled();
+    });
+  });
+
+  describe('eliminar cuenta', () => {
+    it('abre la hoja de confirmación desde la fila de cuenta', () => {
+      render(<ProfilePage />);
+      expect(screen.queryByTestId('ion-modal')).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'profile.deleteAccount.action' }));
+
+      expect(screen.getByRole('heading', { name: 'profile.deleteAccount.title' })).toBeInTheDocument();
+      expect(deleteAccountMock).not.toHaveBeenCalled();
+    });
+
+    it('al confirmar borra la cuenta, avisa y programa la recarga en la landing', async () => {
+      // La recarga se difiere para que el toast se lea: se comprueba el temporizador, no se espera.
+      const setTimeoutSpy = vi.spyOn(window, 'setTimeout');
+      deleteAccountMock.mockResolvedValue(undefined);
+      render(<ProfilePage />);
+      fireEvent.click(screen.getByRole('button', { name: 'profile.deleteAccount.action' }));
+      fireEvent.change(screen.getByLabelText(/profile\.deleteAccount\.typeToConfirm/), {
+        // El mock de t devuelve la clave: esa es la palabra que espera la hoja.
+        target: { value: 'profile.deleteAccount.confirmWord' },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'profile.deleteAccount.confirm' }));
+
+      await waitFor(() => expect(deleteAccountMock).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('profile.deleteAccount.done'));
+      expect(setTimeoutSpy).toHaveBeenCalledWith(reloadToRoot, 1500);
+      expect(reloadToRoot).not.toHaveBeenCalled();
+      setTimeoutSpy.mockRestore();
+    });
+
+    it('si el borrado falla la hoja muestra el error y no se recarga', async () => {
+      deleteAccountMock.mockRejectedValue(new Error('network'));
+      render(<ProfilePage />);
+      fireEvent.click(screen.getByRole('button', { name: 'profile.deleteAccount.action' }));
+      fireEvent.change(screen.getByLabelText(/profile\.deleteAccount\.typeToConfirm/), {
+        target: { value: 'profile.deleteAccount.confirmWord' },
+      });
+
+      fireEvent.click(screen.getByRole('button', { name: 'profile.deleteAccount.confirm' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('profile.deleteAccount.error');
+      expect(showSuccessMock).not.toHaveBeenCalled();
+      expect(reloadToRoot).not.toHaveBeenCalled();
+    });
   });
 
 describe('ProfilePage — franjas', () => {

@@ -9,6 +9,8 @@ import {
   NotificationType,
   NOTIFICATION_TYPES,
 } from './dto/update-preference.dto';
+import { buildPushCopy, PushCopy, PushCopyParams, PushCopyType } from './push-copy';
+import { normalizePushLanguage, PushLanguage } from './push-language';
 
 @Injectable()
 export class NotificationsService implements OnModuleInit {
@@ -156,32 +158,29 @@ export class NotificationsService implements OnModuleInit {
     return pref?.enabled ?? true;
   }
 
-  async sendToUser(
+  async sendToUser<T extends NotificationType>(
     userId: string,
-    title: string,
-    body: string,
+    type: T,
+    params: PushCopyParams<T>,
     data?: Record<string, string>,
-    notificationType?: NotificationType,
   ) {
-    if (notificationType) {
-      const enabled = await this.isNotificationEnabled(userId, notificationType);
-      if (!enabled) return { sent: 0 };
-    }
+    const enabled = await this.isNotificationEnabled(userId, type);
+    if (!enabled) return { sent: 0 };
 
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId },
+      include: { user: { select: { language: true } } },
     });
 
     if (tokens.length === 0) return { sent: 0 };
 
-    const result = await this.sendToTokens(
-      tokens.map((t) => ({ token: t.token, platform: t.platform })),
-      title,
-      body,
+    const result = await this.dispatch(
+      tokens,
+      type,
+      (language) => buildPushCopy(type, language, params),
       data,
+      type,
     );
-
-    await this.logNotification(userId, title, body, data, notificationType, result);
 
     return { sent: result.sent };
   }
@@ -190,27 +189,27 @@ export class NotificationsService implements OnModuleInit {
     userId: string,
     dto: { type?: NotificationType; title?: string; body?: string },
   ): Promise<{ sent: number }> {
-    const title = dto.title ?? 'Test notification';
-    const body = dto.body ?? 'If you see this, notifications are working!';
-    const data: Record<string, string> = { type: 'test' };
-
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId },
+      include: { user: { select: { language: true } } },
     });
 
     if (tokens.length === 0) return { sent: 0 };
 
-    const result = await this.sendToTokens(
-      tokens.map((t) => ({ token: t.token, platform: t.platform })),
-      title,
-      body,
-      data,
-    );
-
     // Prefix the persisted type so test sends are distinguishable from real
     // notifications in notification_logs / getDebugInfo.
     const loggedType = dto.type ? `test:${dto.type}` : 'test';
-    await this.logNotification(userId, title, body, data, loggedType, result);
+
+    const result = await this.dispatch(
+      tokens,
+      'test',
+      (language) => {
+        const copy = buildPushCopy('test', language, {});
+        return { title: dto.title ?? copy.title, body: dto.body ?? copy.body };
+      },
+      undefined,
+      loggedType,
+    );
 
     return { sent: result.sent };
   }
@@ -231,13 +230,12 @@ export class NotificationsService implements OnModuleInit {
     return { tokens, preferences, recentLogs };
   }
 
-  async sendToGroup(
+  async sendToGroup<T extends NotificationType>(
     groupId: string,
-    title: string,
-    body: string,
+    type: T,
+    params: PushCopyParams<T>,
     excludeUserId?: string,
     data?: Record<string, string>,
-    notificationType?: NotificationType,
   ) {
     const members = await this.prisma.groupMember.findMany({
       where: { groupId },
@@ -246,9 +244,9 @@ export class NotificationsService implements OnModuleInit {
     const allUserIds = members.map((m) => m.userId);
     let userIds = allUserIds.filter((id) => id !== excludeUserId);
 
-    if (notificationType && userIds.length > 0) {
+    if (userIds.length > 0) {
       const disabledPrefs = await this.prisma.notificationPreference.findMany({
-        where: { userId: { in: userIds }, type: notificationType, enabled: false },
+        where: { userId: { in: userIds }, type, enabled: false },
       });
       const disabledSet = new Set(disabledPrefs.map((p) => p.userId));
       userIds = userIds.filter((id) => !disabledSet.has(id));
@@ -264,28 +262,28 @@ export class NotificationsService implements OnModuleInit {
       where: {
         userId: { in: userIds },
       },
+      include: { user: { select: { language: true } } },
     });
 
     if (tokens.length === 0) return { sent: 0 };
 
-    const result = await this.sendToTokens(
-      tokens.map((t) => ({ token: t.token, platform: t.platform })),
-      title,
-      body,
+    const result = await this.dispatch(
+      tokens,
+      type,
+      (language) => buildPushCopy(type, language, params),
       data,
+      type,
     );
-    await this.logNotificationPerUser(tokens, title, body, data, notificationType, result);
 
     return { sent: result.sent, failed: result.failed, tokenCount: result.tokenCount };
   }
 
-  async sendToEventAttendees(
+  async sendToEventAttendees<T extends NotificationType>(
     eventId: string,
-    title: string,
-    body: string,
+    type: T,
+    params: PushCopyParams<T>,
     excludeUserId?: string,
     data?: Record<string, string>,
-    notificationType?: NotificationType,
     statusFilter?: string,
   ) {
     const where: Record<string, unknown> = { eventId };
@@ -297,9 +295,9 @@ export class NotificationsService implements OnModuleInit {
 
     let userIds = attendees.map((a) => a.userId).filter((id) => id !== excludeUserId);
 
-    if (notificationType && userIds.length > 0) {
+    if (userIds.length > 0) {
       const disabledPrefs = await this.prisma.notificationPreference.findMany({
-        where: { userId: { in: userIds }, type: notificationType, enabled: false },
+        where: { userId: { in: userIds }, type, enabled: false },
       });
       const disabledSet = new Set(disabledPrefs.map((p) => p.userId));
       userIds = userIds.filter((id) => !disabledSet.has(id));
@@ -309,19 +307,64 @@ export class NotificationsService implements OnModuleInit {
 
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId: { in: userIds } },
+      include: { user: { select: { language: true } } },
     });
 
     if (tokens.length === 0) return { sent: 0 };
 
-    const result = await this.sendToTokens(
-      tokens.map((t) => ({ token: t.token, platform: t.platform })),
-      title,
-      body,
+    const result = await this.dispatch(
+      tokens,
+      type,
+      (language) => buildPushCopy(type, language, params),
       data,
+      type,
     );
-    await this.logNotificationPerUser(tokens, title, body, data, notificationType, result);
 
     return { sent: result.sent, failed: result.failed, tokenCount: result.tokenCount };
+  }
+
+  /**
+   * One FCM batch per language present among the recipients. Before this, a group with a
+   * Spanish and an English speaker got one Spanish text for everybody; now each batch
+   * carries the copy of its own language, `data.type` is derived from the notification
+   * type instead of being repeated at every call site, and the localized extras a copy
+   * declares (the yes/no button labels of «la pregunta») ride along in `data`.
+   */
+  private async dispatch(
+    tokens: RecipientToken[],
+    type: PushCopyType,
+    copyOf: (language: PushLanguage) => PushCopy,
+    data: Record<string, string> | undefined,
+    loggedType: string,
+  ): Promise<SendResult> {
+    const byLanguage = new Map<PushLanguage, RecipientToken[]>();
+    for (const token of tokens) {
+      const language = normalizePushLanguage(token.user?.language);
+      const bucket = byLanguage.get(language);
+      if (bucket) bucket.push(token);
+      else byLanguage.set(language, [token]);
+    }
+
+    const outcomes = await Promise.all(
+      [...byLanguage].map(async ([language, batch]) => {
+        const copy = copyOf(language);
+        const payload: Record<string, string> = { ...data, ...copy.data, type };
+        const result = await this.sendToTokens(batch, copy.title, copy.body, payload);
+        return { batch, copy, payload, result };
+      }),
+    );
+
+    await Promise.all(
+      outcomes.map(({ batch, copy, payload, result }) =>
+        this.logNotificationPerUser(batch, copy.title, copy.body, payload, loggedType, result),
+      ),
+    );
+
+    return {
+      sent: outcomes.reduce((total, o) => total + o.result.sent, 0),
+      failed: outcomes.reduce((total, o) => total + o.result.failed, 0),
+      tokenCount: tokens.length,
+    };
   }
 
   /**
@@ -537,4 +580,14 @@ interface BatchResult {
 interface TokenEntry {
   token: string;
   platform: string;
+}
+
+/**
+ * A push token plus the language its owner reads. `user` is optional so a caller that
+ * did not join the relation still gets a push — in Spanish, the DB default — instead of
+ * a crash.
+ */
+interface RecipientToken extends TokenEntry {
+  userId: string;
+  user?: { language: string | null } | null;
 }

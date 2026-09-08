@@ -6,6 +6,7 @@ vi.mock('../lib/api', () => ({
   api: {
     get: vi.fn(),
     post: vi.fn(),
+    patch: vi.fn(),
     delete: vi.fn(),
   },
 }));
@@ -31,6 +32,22 @@ describe('groupsService', () => {
     vi.mocked(api.post).mockResolvedValue({ id: 'g1' });
     await groupsService.create({ name: 'Test', emoji: '👥' });
     expect(api.post).toHaveBeenCalledWith('/groups', { name: 'Test', emoji: '👥' });
+  });
+
+  // B3: renombrar el grupo o cambiarle el emoji, cosa de cualquier admin.
+  it('should update a group', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: 'g1' });
+    await groupsService.update('g1', { name: 'La cuadrilla', emoji: '🏔️' });
+    expect(api.patch).toHaveBeenCalledWith('/groups/g1', {
+      name: 'La cuadrilla',
+      emoji: '🏔️',
+    });
+  });
+
+  it('should send only the fields being changed', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ id: 'g1' });
+    await groupsService.update('g1', { emoji: '🏔️' });
+    expect(api.patch).toHaveBeenCalledWith('/groups/g1', { emoji: '🏔️' });
   });
 
   it('should join group', async () => {

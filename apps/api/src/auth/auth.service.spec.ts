@@ -69,6 +69,7 @@ describe('AuthService', () => {
           email: 'test@test.com',
           name: 'Test User',
           avatarEmoji: '😊',
+          language: 'es',
         },
       });
     });
@@ -123,6 +124,95 @@ describe('AuthService', () => {
       const user = createTestUser({ email: 'existing@test.com' });
       (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
         cb(null, { sub: 'user-1', email: 'not-an-email' });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(user);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should store the language from user_metadata when creating the user', async () => {
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'test@test.com',
+          user_metadata: { name: 'Test User', language: 'en' },
+        });
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockResolvedValue(createTestUser());
+
+      await service.validateToken('valid-token');
+
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ language: 'en' }),
+      });
+    });
+
+    it('should fall back to Spanish when the JWT carries no language', async () => {
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', email: 'test@test.com', user_metadata: { name: 'Test User' } });
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockResolvedValue(createTestUser());
+
+      await service.validateToken('valid-token');
+
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ language: 'es' }),
+      });
+    });
+
+    it('should sync the language when it changes in the JWT', async () => {
+      const user = { ...createTestUser(), language: 'es' };
+      const updated = { ...user, language: 'en' };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'test@test.com',
+          user_metadata: { language: 'en' },
+        });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(updated);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(updated);
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { language: 'en' },
+      });
+    });
+
+    it('should sync email and language in a single update', async () => {
+      const user = { ...createTestUser({ email: 'old@test.com' }), language: 'es' };
+      const updated = { ...user, email: 'new@test.com', language: 'en' };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'new@test.com',
+          user_metadata: { language: 'en' },
+        });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(updated);
+
+      await service.validateToken('valid-token');
+
+      expect(prisma.user.update).toHaveBeenCalledTimes(1);
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { email: 'new@test.com', language: 'en' },
+      });
+    });
+
+    it('should ignore an unsupported language in the JWT', async () => {
+      const user = { ...createTestUser(), language: 'es' };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', user_metadata: { language: 'klingon' } });
       });
       prisma.user.findUnique.mockResolvedValue(user);
 

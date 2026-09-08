@@ -11,9 +11,11 @@ import {
   useUpdateMemberRole,
   useKickMember,
   useDeleteGroup,
+  useUpdateGroup,
 } from './useGroups';
 import { groupsService, type GroupWithMembers } from '../services/groups';
 import { createWrapper } from '../test/test-utils';
+import { broadcastSync } from '../lib/group-sync';
 
 vi.mock('../services/groups', () => ({
   groupsService: {
@@ -27,6 +29,7 @@ vi.mock('../services/groups', () => ({
     updateMemberRole: vi.fn(),
     kickMember: vi.fn(),
     deleteGroup: vi.fn(),
+    update: vi.fn(),
   },
 }));
 
@@ -191,6 +194,38 @@ describe('useKickMember', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(groupsService.kickMember).toHaveBeenCalledWith('g1', 'user-2');
+  });
+});
+
+// B3: renombrar el grupo o cambiarle el emoji.
+describe('useUpdateGroup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should update the group and refresh what shows its name', async () => {
+    const group = { id: 'g1', name: 'La cuadrilla' } as unknown as GroupWithMembers;
+    vi.mocked(groupsService.update).mockResolvedValue(group);
+
+    const { result } = renderHook(() => useUpdateGroup('g1'), { wrapper: createWrapper() });
+
+    result.current.mutate({ name: 'La cuadrilla', emoji: '🏔️' });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(groupsService.update).toHaveBeenCalledWith('g1', {
+      name: 'La cuadrilla',
+      emoji: '🏔️',
+    });
+    expect(broadcastSync).toHaveBeenCalledWith('g1', 'groups');
+  });
+
+  it('should surface a rejection instead of swallowing it', async () => {
+    vi.mocked(groupsService.update).mockRejectedValue(new Error('Forbidden'));
+
+    const { result } = renderHook(() => useUpdateGroup('g1'), { wrapper: createWrapper() });
+    result.current.mutate({ name: 'La cuadrilla' });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
   });
 });
 

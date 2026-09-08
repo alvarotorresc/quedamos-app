@@ -31,6 +31,12 @@ vi.mock('@hcaptcha/react-hcaptcha', async () => {
 
 vi.mock('../hooks/useAnalytics', () => ({ useScreenView: () => {} }));
 
+// El botón de reenvío tiene sus propios tests; aquí sólo importa que la pantalla de
+// éxito lo ofrezca con el email del alta.
+vi.mock('../components/ResendConfirmation', () => ({
+  ResendConfirmation: ({ email }: { email: string }) => <div data-testid="resend">{email}</div>,
+}));
+
 const signUpMock = vi.fn(() => Promise.resolve());
 vi.mock('../stores/auth', () => ({
   useAuthStore: (selector: (s: { signUp: () => Promise<void> }) => unknown) =>
@@ -59,6 +65,12 @@ describe('RegisterPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     search = '';
+  });
+
+  it('la pantalla de éxito ofrece reenviar el email al que se acaba de registrar', async () => {
+    await registerAndWaitForSuccess();
+
+    expect(screen.getByTestId('resend')).toHaveTextContent('vera@example.com');
   });
 
   it('tras registrarse, el enlace de entrar conserva el destino de la invitación', async () => {

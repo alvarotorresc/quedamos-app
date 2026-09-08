@@ -13,14 +13,14 @@ import {
   HiOutlineShare,
   HiOutlineCalendar,
 } from 'react-icons/hi2';
-import { useRespondEvent } from '../hooks/useEvents';
+import { useEventResponse } from '../hooks/useEventResponse';
 import { useGroupInvite } from '../hooks/useGroups';
 import { useToast } from '../hooks/useToast';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { spring, useMotionSafe } from '../lib/motion';
 import { useAuthStore } from '../stores/auth';
 import { useThemeStore } from '../stores/theme';
-import { apiDateToKey, formatDateKey, formatShareDate } from '../lib/date-utils';
+import { apiDateToKey, formatShareDate } from '../lib/date-utils';
 import { openInMaps, hasCoordinates } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
 import { downloadICS } from '../lib/ics-utils';
@@ -69,22 +69,27 @@ export function EventCard({
 }: EventCardProps) {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const respondEvent = useRespondEvent(groupId);
+  // El «voy / no voy» lo lleva useEventResponse, compartido con EventDetailModal.
+  const {
+    myStatus,
+    isInvited,
+    isPending,
+    isPastEvent,
+    isCancelled,
+    isResponding,
+    justConfirmed,
+    respond: handleRespond,
+  } = useEventResponse(event);
   const motionSafe = useMotionSafe();
   const { data: invite } = useGroupInvite(groupId);
   const darkMode = useThemeStore((s) => s.darkMode);
   const { showError, showInfo } = useToast();
   const { track } = useAnalytics();
   const [showWeatherDetail, setShowWeatherDetail] = useState(false);
-  const [justConfirmed, setJustConfirmed] = useState(false);
   const [sharing, setSharing] = useState(false);
-
-  const isResponding = respondEvent.isPending;
 
   // Format date
   const dateKey = apiDateToKey(event.date);
-  const today = formatDateKey(new Date());
-  const isPastEvent = dateKey < today;
   const dateObj = new Date(dateKey + 'T00:00:00');
   const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
   const weekdayShort = dateObj
@@ -102,12 +107,6 @@ export function EventCard({
   const totalAttendees = event.attendees.length;
   const missingCount = Math.max(totalAttendees - confirmedAttendees.length, 0);
 
-  // Current user's attendee status
-  const myAttendee = event.attendees.find((a) => a.userId === user?.id);
-  const myStatus = myAttendee?.status ?? 'pending';
-  const isInvited = !!myAttendee;
-  const isPending = isInvited && myStatus === 'pending';
-
   const isCreator = event.createdBy.id === user?.id;
 
   // Ring of every group member in fixed slot order (same order as memberColorMap)
@@ -124,19 +123,6 @@ export function EventCard({
     .map(([, color]) => color);
   const selladaMemberColors =
     confirmedMemberColors.length > 0 ? confirmedMemberColors : [...memberColorMap.values()];
-
-  const handleRespond = (status: 'confirmed' | 'declined') => {
-    respondEvent.mutate(
-      { eventId: event.id, status },
-      {
-        onSuccess: () => {
-          if (status === 'confirmed') {
-            setJustConfirmed(true);
-          }
-        },
-      },
-    );
-  };
 
   // Writing the file or handing it to the share sheet can fail (no storage, no
   // app to receive it) — surface that instead of dropping an unhandled rejection.
@@ -416,7 +402,7 @@ export function EventCard({
       </p>
 
       {/* Respond buttons */}
-      {isPending && event.status !== 'cancelled' && (
+      {isPending && !isCancelled && (
         <div className="flex gap-2 mt-3">
           <Button
             variant="primary"
@@ -440,7 +426,7 @@ export function EventCard({
       )}
 
       {/* User response status — clickable to toggle */}
-      {!isPending && myAttendee && event.status !== 'cancelled' && (
+      {!isPending && isInvited && !isCancelled && (
         <div className="mt-3">
           <button
             onClick={

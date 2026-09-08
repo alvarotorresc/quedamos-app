@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Capacitor } from '@capacitor/core';
 import { useAuthStore } from './auth';
+import { api } from '../lib/api';
 import { supabase } from '../lib/supabase';
+import { unregisterFromBackend } from '../lib/push-notifications';
 import { syncWidgetSession, clearWidgetSession } from '../lib/widget-bridge';
 import { savePendingRedirect, takePendingRedirect } from '../lib/pending-redirect';
 
@@ -9,6 +11,8 @@ type GetSessionResult = Awaited<ReturnType<typeof supabase.auth.getSession>>;
 type SignInResult = Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
 type UpdateUserResult = Awaited<ReturnType<typeof supabase.auth.updateUser>>;
 type ResetPasswordResult = Awaited<ReturnType<typeof supabase.auth.resetPasswordForEmail>>;
+type SignUpResult = Awaited<ReturnType<typeof supabase.auth.signUp>>;
+type ResendResult = Awaited<ReturnType<typeof supabase.auth.resend>>;
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
@@ -23,6 +27,7 @@ vi.mock('../lib/push-notifications', () => ({
 vi.mock('../lib/api', () => ({
   api: {
     patch: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
 
@@ -123,6 +128,89 @@ describe('useAuthStore', () => {
     });
   });
 
+  describe('signUp', () => {
+    it('sends the confirmation email back to the app on web', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as SignUpResult);
+
+      await useAuthStore.getState().signUp('test@test.com', 'pass', 'Test', 'captcha');
+
+      expect(supabase.auth.signUp).toHaveBeenCalledWith({
+        email: 'test@test.com',
+        password: 'pass',
+        options: {
+          data: { name: 'Test' },
+          captchaToken: 'captcha',
+          emailRedirectTo: `${window.location.origin}/auth/confirmed`,
+        },
+      });
+    });
+
+    it('sends the confirmation email to the public url on native, where the app links back', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as SignUpResult);
+
+      await useAuthStore.getState().signUp('test@test.com', 'pass', 'Test', 'captcha');
+
+      expect(supabase.auth.signUp).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            emailRedirectTo: 'https://quedamos.alvarotc.com/auth/confirmed',
+          }),
+        }),
+      );
+    });
+
+    it('throws when supabase rejects the sign-up', async () => {
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: {},
+        error: { message: 'User already registered' },
+      } as unknown as SignUpResult);
+
+      await expect(
+        useAuthStore.getState().signUp('taken@test.com', 'pass', 'Test', 'captcha'),
+      ).rejects.toBeDefined();
+    });
+  });
+
+  describe('resendConfirmation', () => {
+    it('asks supabase for another confirmation email, pointing at the same route', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.mocked(supabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as ResendResult);
+
+      await useAuthStore.getState().resendConfirmation('test@test.com', 'captcha');
+
+      expect(supabase.auth.resend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'test@test.com',
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirmed`,
+          captchaToken: 'captcha',
+        },
+      });
+    });
+
+    it('throws when supabase refuses to resend', async () => {
+      vi.mocked(supabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: { message: 'Email rate limit exceeded' },
+      } as unknown as ResendResult);
+
+      await expect(
+        useAuthStore.getState().resendConfirmation('test@test.com', 'captcha'),
+      ).rejects.toBeDefined();
+    });
+  });
+
   describe('signOut', () => {
     it('should clear user and call supabase signOut', async () => {
       useAuthStore.setState({
@@ -163,6 +251,60 @@ describe('useAuthStore', () => {
       await useAuthStore.getState().signOut();
 
       expect(takePendingRedirect()).toBeNull();
+    });
+  });
+
+  describe('deleteAccount', () => {
+    const signedIn = { id: '1', email: 'a@b.com', name: 'Test', avatarEmoji: '😊' };
+
+    beforeEach(() => {
+      vi.mocked(api.delete).mockReset().mockResolvedValue({ success: true });
+      vi.mocked(supabase.auth.signOut).mockReset().mockResolvedValue({ error: null });
+      vi.mocked(syncWidgetSession).mockClear();
+    });
+
+    it('forgets push and widget tokens before calling the API, then drops only the local session', async () => {
+      useAuthStore.setState({ user: signedIn });
+      savePendingRedirect('/join/12345678');
+      const callOrder: string[] = [];
+      vi.mocked(unregisterFromBackend).mockImplementationOnce(async () => {
+        callOrder.push('unregisterFromBackend');
+      });
+      vi.mocked(clearWidgetSession).mockImplementationOnce(async () => {
+        callOrder.push('clearWidgetSession');
+      });
+      vi.mocked(api.delete).mockImplementationOnce(async () => {
+        callOrder.push('api.delete');
+        return { success: true };
+      });
+      vi.mocked(supabase.auth.signOut).mockImplementationOnce(async () => {
+        callOrder.push('supabase.auth.signOut');
+        return { error: null };
+      });
+
+      await useAuthStore.getState().deleteAccount();
+
+      expect(callOrder).toEqual([
+        'unregisterFromBackend',
+        'clearWidgetSession',
+        'api.delete',
+        'supabase.auth.signOut',
+      ]);
+      expect(api.delete).toHaveBeenCalledWith('/auth/me');
+      expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' });
+      expect(useAuthStore.getState().user).toBeNull();
+      expect(takePendingRedirect()).toBeNull();
+    });
+
+    it('keeps the session and puts the widget back when the API refuses', async () => {
+      useAuthStore.setState({ user: signedIn });
+      vi.mocked(api.delete).mockRejectedValueOnce(new Error('503'));
+
+      await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow('503');
+
+      expect(supabase.auth.signOut).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().user).toEqual(signedIn);
+      expect(syncWidgetSession).toHaveBeenCalled();
     });
   });
 
