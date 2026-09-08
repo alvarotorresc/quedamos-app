@@ -114,17 +114,13 @@ describe('WeeklyReminderService', () => {
       expect(notifications.sendToUser).toHaveBeenCalledTimes(2);
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-2',
-        'Marca tu disponibilidad',
-        expect.any(String),
-        expect.objectContaining({ type: 'weekly_availability_reminder' }),
         'weekly_availability_reminder',
+        {},
       );
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-3',
-        'Marca tu disponibilidad',
-        expect.any(String),
-        expect.objectContaining({ type: 'weekly_availability_reminder' }),
         'weekly_availability_reminder',
+        {},
       );
     });
 
@@ -141,7 +137,7 @@ describe('WeeklyReminderService', () => {
       expect(notifications.sendToUser).toHaveBeenCalledTimes(2);
     });
 
-    it('should pass weekly_availability_reminder as notificationType', async () => {
+    it('should send the weekly_availability_reminder type', async () => {
       prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }]);
       prisma.availability.findMany.mockResolvedValue([]);
 
@@ -149,10 +145,8 @@ describe('WeeklyReminderService', () => {
 
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-1',
-        expect.any(String),
-        expect.any(String),
-        expect.any(Object),
         'weekly_availability_reminder',
+        {},
       );
     });
 

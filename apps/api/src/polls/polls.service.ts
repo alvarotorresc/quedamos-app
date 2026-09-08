@@ -30,26 +30,6 @@ export class PollsService {
     private availabilityService: AvailabilityService,
   ) {}
 
-  private static readonly SLOT_LABEL: Record<string, string> = {
-    Mañana: 'por la mañana',
-    Tarde: 'por la tarde',
-    Noche: 'por la noche',
-  };
-
-  private weekday(date: Date): string {
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      timeZone: DEFAULT_TIMEZONE,
-    });
-  }
-
-  private questionTitle(date: Date, slot: string | null): string {
-    const weekday = this.weekday(date);
-    return slot
-      ? `¿Puedes el ${weekday} ${PollsService.SLOT_LABEL[slot]}?`
-      : `¿Puedes el ${weekday}?`;
-  }
-
   /**
    * Midnight in Europe/Madrid as an absolute instant. Computed from the
    * formatted wall clock so it does not depend on the server timezone.
@@ -120,15 +100,18 @@ export class PollsService {
     });
     const notified = createdToday <= 1;
     if (notified) {
-      const title = this.questionTitle(poll.date, poll.slot);
       this.notifications
         .sendToGroup(
           groupId,
-          title,
-          `Pregunta ${poll.createdBy.name} · ${group.name}`,
-          userId,
-          { type: 'new_poll', pollId: poll.id, groupId, date: dto.date },
           'new_poll',
+          {
+            actorName: poll.createdBy.name,
+            groupName: group.name,
+            date: poll.date,
+            slot: poll.slot,
+          },
+          userId,
+          { pollId: poll.id, groupId, date: dto.date },
         )
         .catch((err) => this.logger.error('new_poll push failed', err));
     }
@@ -185,14 +168,10 @@ export class PollsService {
       });
       if (count === 1) {
         this.notifications
-          .sendToGroup(
+          .sendToGroup(groupId, 'poll_completed', { date: poll.date }, undefined, {
+            pollId,
             groupId,
-            'El aro se cierra',
-            `Podéis todos el ${this.weekday(poll.date)}`,
-            undefined,
-            { type: 'poll_completed', pollId, groupId },
-            'poll_completed',
-          )
+          })
           .catch((err) => this.logger.error('poll_completed push failed', err));
       }
     } else if (!allYes && poll.status === 'completed') {

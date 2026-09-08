@@ -52,11 +52,10 @@ export class ProposalsService {
     this.notificationsService
       .sendToGroup(
         groupId,
-        'Nueva propuesta',
-        `${proposal.createdBy.name} propone "${proposal.title}"`,
-        userId,
-        { type: 'new_proposal', proposalId: proposal.id, groupId },
         'new_proposal',
+        { actorName: proposal.createdBy.name, title: proposal.title },
+        userId,
+        { proposalId: proposal.id, groupId },
       )
       .catch((err) => this.logger.error('Failed to send new_proposal notification', err));
 
@@ -166,16 +165,14 @@ export class ProposalsService {
       select: { name: true },
     });
     const voterName = voter?.name ?? 'Someone';
-    const voteLabel = dto.vote === 'yes' ? 'a favor' : 'en contra';
 
     this.notificationsService
       .sendToGroup(
         groupId,
-        'Voto en propuesta',
-        `${voterName} ha votado ${voteLabel} en "${proposal.title}"`,
-        userId,
-        { type: 'proposal_voted', proposalId, groupId },
         'proposal_voted',
+        { actorName: voterName, title: proposal.title, vote: dto.vote },
+        userId,
+        { proposalId, groupId },
       )
       .catch((err) => this.logger.error('Failed to send proposal_voted notification', err));
 
@@ -267,14 +264,11 @@ export class ProposalsService {
     });
 
     this.notificationsService
-      .sendToGroup(
+      .sendToGroup(groupId, 'proposal_converted', { title: proposal.title }, userId, {
+        proposalId,
         groupId,
-        'Propuesta convertida',
-        `"${proposal.title}" se ha convertido en quedada`,
-        userId,
-        { type: 'proposal_converted', proposalId, groupId, eventId: event.id },
-        'proposal_converted',
-      )
+        eventId: event.id,
+      })
       .catch((err) => this.logger.error('Failed to send proposal_converted notification', err));
 
     return updated;

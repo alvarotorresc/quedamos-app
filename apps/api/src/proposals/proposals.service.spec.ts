@@ -202,11 +202,10 @@ describe('ProposalsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        expect.any(String),
-        expect.any(String),
-        'user-1',
-        expect.objectContaining({ type: 'proposal_voted' }),
         'proposal_voted',
+        expect.objectContaining({ vote: 'yes' }),
+        'user-1',
+        expect.objectContaining({ proposalId: 'proposal-1' }),
       );
     });
   });
@@ -318,11 +317,10 @@ describe('ProposalsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        expect.any(String),
-        expect.any(String),
-        'user-1',
-        expect.objectContaining({ type: 'proposal_converted' }),
         'proposal_converted',
+        expect.objectContaining({ title: expect.any(String) }),
+        'user-1',
+        expect.objectContaining({ proposalId: 'proposal-1' }),
       );
     });
 

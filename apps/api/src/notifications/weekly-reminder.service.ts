@@ -54,13 +54,7 @@ export class WeeklyReminderService {
       const batch = usersToNotify.slice(i, i + BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map((userId) =>
-          this.notificationsService.sendToUser(
-            userId,
-            'Marca tu disponibilidad',
-            'Todavía no has marcado disponibilidad para la semana que viene',
-            { type: 'weekly_availability_reminder' },
-            'weekly_availability_reminder',
-          ),
+          this.notificationsService.sendToUser(userId, 'weekly_availability_reminder', {}),
         ),
       );
 

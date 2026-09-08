@@ -250,11 +250,10 @@ describe('GroupsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'Nuevo miembro',
-        expect.stringContaining('Test User'),
-        'user-1',
-        expect.objectContaining({ type: 'member_joined' }),
         'member_joined',
+        expect.objectContaining({ actorName: 'Test User' }),
+        'user-1',
+        expect.objectContaining({ groupId: 'group-1' }),
       );
     });
   });
@@ -298,11 +297,10 @@ describe('GroupsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'Miembro salió',
-        expect.any(String),
-        'user-2',
-        expect.objectContaining({ type: 'member_left' }),
         'member_left',
+        expect.objectContaining({ actorName: expect.any(String) }),
+        'user-2',
+        expect.objectContaining({ groupId: 'group-1' }),
       );
     });
 
@@ -383,11 +381,10 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada confirmada',
-        expect.stringContaining('Cena'),
-        undefined,
-        expect.objectContaining({ type: 'event_confirmed', eventId: 'event-1' }),
         'event_confirmed',
+        { title: 'Cena', variant: 'all_confirmed' },
+        undefined,
+        expect.objectContaining({ eventId: 'event-1' }),
         'confirmed',
       );
     });
@@ -440,11 +437,10 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'El aro se cierra',
-        expect.any(String),
-        undefined,
-        expect.objectContaining({ type: 'poll_completed', pollId: 'poll-1' }),
         'poll_completed',
+        expect.objectContaining({ date: expect.anything() }),
+        undefined,
+        expect.objectContaining({ pollId: 'poll-1' }),
       );
     });
 
@@ -556,10 +552,9 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-2',
-        'Role updated',
-        expect.stringContaining('admin'),
-        expect.objectContaining({ type: 'role_changed' }),
         'role_changed',
+        { role: 'admin' },
+        { groupId: 'group-1' },
       );
     });
 
@@ -736,11 +731,10 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'Group deleted',
-        expect.stringContaining('Test Group'),
-        'user-1',
-        expect.objectContaining({ type: 'group_deleted' }),
         'group_deleted',
+        { groupName: 'Test Group' },
+        'user-1',
+        { groupId: 'group-1' },
       );
     });
 
@@ -958,10 +952,9 @@ describe('GroupsService', () => {
 
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-2',
-        'Removed from group',
-        expect.any(String),
-        expect.objectContaining({ type: 'member_kicked' }),
         'member_kicked',
+        { groupName: 'Test Group' },
+        { groupId: 'group-1' },
       );
     });
   });

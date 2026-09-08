@@ -131,11 +131,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'Nueva quedada',
-        expect.stringContaining('Test Event'),
-        'user-1',
-        expect.objectContaining({ type: 'new_event' }),
         'new_event',
+        { actorName: 'Test User', title: 'Test Event' },
+        'user-1',
+        expect.objectContaining({ eventId: 'event-1', groupId: 'group-1' }),
       );
     });
 
@@ -158,11 +157,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Nueva quedada',
-        expect.stringContaining('Test Event'),
-        'user-1',
-        expect.objectContaining({ type: 'new_event' }),
         'new_event',
+        { actorName: 'Test User', title: 'Test Event' },
+        'user-1',
+        expect.objectContaining({ eventId: 'event-1', groupId: 'group-1' }),
       );
       expect(notifications.sendToGroup).not.toHaveBeenCalled();
     });
@@ -292,11 +290,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada confirmada',
-        expect.stringContaining('Test Event'),
-        undefined,
-        expect.objectContaining({ type: 'event_confirmed' }),
         'event_confirmed',
+        { title: 'Test Event', variant: 'all_confirmed' },
+        undefined,
+        expect.objectContaining({ eventId: 'event-1' }),
         'confirmed',
       );
     });
@@ -429,11 +426,10 @@ describe('EventsService', () => {
       expect(notifications.sendToGroup).not.toHaveBeenCalled();
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada confirmada',
-        expect.stringContaining('Test Event'),
-        undefined,
-        expect.objectContaining({ type: 'event_confirmed' }),
         'event_confirmed',
+        { title: 'Test Event', variant: 'all_confirmed' },
+        undefined,
+        expect.objectContaining({ eventId: 'event-1' }),
         'confirmed',
       );
       expect(notifications.sendToEventAttendees).toHaveBeenCalledTimes(1);
@@ -655,11 +651,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada confirmada',
-        expect.any(String),
-        undefined,
-        expect.objectContaining({ type: 'event_confirmed' }),
         'event_confirmed',
+        expect.objectContaining({ variant: 'all_confirmed' }),
+        undefined,
+        expect.objectContaining({ eventId: 'event-1' }),
         'confirmed',
       );
     });
@@ -753,11 +748,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Asistencia rechazada',
-        expect.stringContaining('User 2'),
-        'user-2',
-        expect.objectContaining({ type: 'event_declined' }),
         'event_declined',
+        { actorName: 'User 2', title: 'Test Event' },
+        'user-2',
+        expect.objectContaining({ eventId: 'event-1' }),
         'confirmed',
       );
     });
@@ -840,11 +834,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada actualizada',
-        expect.any(String),
-        'user-1',
-        expect.objectContaining({ type: 'event_updated' }),
         'event_updated',
+        { title: 'Test Event' },
+        'user-1',
+        expect.objectContaining({ eventId: 'event-1' }),
       );
     });
 
@@ -1072,11 +1065,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada eliminada',
-        expect.stringContaining('Test Event'),
-        'user-1',
-        expect.objectContaining({ type: 'event_deleted' }),
         'event_deleted',
+        { title: 'Test Event' },
+        'user-1',
+        expect.objectContaining({ eventId: 'event-1' }),
       );
     });
   });
@@ -1126,11 +1118,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada cancelada',
-        expect.stringContaining('Test Event'),
-        'user-1',
-        expect.objectContaining({ type: 'event_cancelled' }),
         'event_cancelled',
+        { title: 'Test Event' },
+        'user-1',
+        expect.objectContaining({ eventId: 'event-1' }),
       );
     });
 
@@ -1221,11 +1212,10 @@ describe('EventsService', () => {
 
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada confirmada',
-        expect.stringContaining('Test Event'),
-        'user-1',
-        expect.objectContaining({ type: 'event_confirmed' }),
         'event_confirmed',
+        { title: 'Test Event', variant: 'manual' },
+        'user-1',
+        expect.objectContaining({ eventId: 'event-1' }),
       );
     });
 

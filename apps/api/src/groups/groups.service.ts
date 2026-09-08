@@ -11,7 +11,7 @@ import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { getFrontendUrl } from '../common/frontend-url';
-import { startOfTodayUTC, weekdayEs } from '../common/date-utils';
+import { startOfTodayUTC } from '../common/date-utils';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { AddCityDto } from './dto/add-city.dto';
@@ -173,11 +173,10 @@ export class GroupsService {
       this.notificationsService
         .sendToGroup(
           group.id,
-          'Nuevo miembro',
-          `${user.name} se ha unido a "${group.name}"`,
-          userId,
-          { type: 'member_joined', groupId: group.id },
           'member_joined',
+          { actorName: user.name, groupName: group.name },
+          userId,
+          { groupId: group.id },
         )
         .catch((err) => this.logger.error('Failed to send member_joined notification', err));
     }
@@ -234,11 +233,10 @@ export class GroupsService {
       this.notificationsService
         .sendToGroup(
           groupId,
-          'Miembro salió',
-          `${user.name} ha salido de "${group.name}"`,
-          userId,
-          { type: 'member_left', groupId },
           'member_left',
+          { actorName: user.name, groupName: group.name },
+          userId,
+          { groupId },
         )
         .catch((err) => this.logger.error('Failed to send member_left notification', err));
     }
@@ -300,11 +298,10 @@ export class GroupsService {
       this.notificationsService
         .sendToEventAttendees(
           event.id,
-          'Quedada confirmada',
-          `Todos han confirmado "${event.title}"`,
-          undefined,
-          { type: 'event_confirmed', eventId: event.id, groupId },
           'event_confirmed',
+          { title: event.title, variant: 'all_confirmed' },
+          undefined,
+          { eventId: event.id, groupId },
           'confirmed',
         )
         .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
@@ -338,14 +335,10 @@ export class GroupsService {
       if (count !== 1) continue;
 
       this.notificationsService
-        .sendToGroup(
+        .sendToGroup(groupId, 'poll_completed', { date: poll.date }, undefined, {
+          pollId: poll.id,
           groupId,
-          'El aro se cierra',
-          `Podéis todos el ${weekdayEs(poll.date)}`,
-          undefined,
-          { type: 'poll_completed', pollId: poll.id, groupId },
-          'poll_completed',
-        )
+        })
         .catch((err) => this.logger.error('poll_completed push failed', err));
     }
   }
@@ -432,16 +425,7 @@ export class GroupsService {
     });
 
     this.notificationsService
-      .sendToUser(
-        targetUserId,
-        'Role updated',
-        `Your role has been changed to ${role}`,
-        {
-          type: 'role_changed',
-          groupId,
-        },
-        'role_changed',
-      )
+      .sendToUser(targetUserId, 'role_changed', { role }, { groupId })
       .catch((err) => this.logger.error('Failed to send role_changed notification', err));
 
     return updated;
@@ -497,18 +481,13 @@ export class GroupsService {
     await this.removeMemberTraces(groupId, targetUserId);
     await this.recomputeAfterMemberRemoval(groupId);
 
-    this.notificationsService
-      .sendToUser(
-        targetUserId,
-        'Removed from group',
-        'You have been removed from a group',
-        {
-          type: 'member_kicked',
-          groupId,
-        },
-        'member_kicked',
-      )
-      .catch((err) => this.logger.error('Failed to send member_kicked notification', err));
+    // The copy names the group, so there is nothing to say if the group vanished
+    // between the read above and here — same shape as leave().
+    if (group) {
+      this.notificationsService
+        .sendToUser(targetUserId, 'member_kicked', { groupName: group.name }, { groupId })
+        .catch((err) => this.logger.error('Failed to send member_kicked notification', err));
+    }
 
     return { success: true };
   }
@@ -528,17 +507,7 @@ export class GroupsService {
 
     // Send notification BEFORE delete and await it to avoid race with CASCADE
     await this.notificationsService
-      .sendToGroup(
-        groupId,
-        'Group deleted',
-        `The group "${group.name}" has been deleted`,
-        userId,
-        {
-          type: 'group_deleted',
-          groupId,
-        },
-        'group_deleted',
-      )
+      .sendToGroup(groupId, 'group_deleted', { groupName: group.name }, userId, { groupId })
       .catch((err) => this.logger.error('Failed to send group_deleted notification', err));
 
     await this.prisma.group.delete({

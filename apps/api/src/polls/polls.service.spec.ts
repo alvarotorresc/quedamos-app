@@ -58,11 +58,10 @@ describe('PollsService', () => {
       expect(availability.mergeFromPoll).toHaveBeenCalledWith('g1', 'u1', '2026-02-13', null);
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
-        expect.stringContaining('¿Puedes'),
-        expect.any(String),
-        'u1',
-        expect.objectContaining({ type: 'new_poll', pollId: 'p1', groupId: 'g1' }),
         'new_poll',
+        expect.objectContaining({ slot: null }),
+        'u1',
+        expect.objectContaining({ pollId: 'p1', groupId: 'g1' }),
       );
       expect(result.notified).toBe(true);
     });
@@ -106,11 +105,10 @@ describe('PollsService', () => {
       expect(availability.mergeFromPoll).toHaveBeenCalledWith('g1', 'u1', '2026-02-13', 'Tarde');
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
-        expect.stringContaining('por la tarde'),
-        expect.any(String),
+        'new_poll',
+        expect.objectContaining({ slot: 'Tarde' }),
         'u1',
         expect.anything(),
-        'new_poll',
       );
     });
   });
@@ -213,11 +211,10 @@ describe('PollsService', () => {
       });
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
-        expect.stringContaining('aro'),
-        expect.any(String),
-        undefined,
-        expect.objectContaining({ type: 'poll_completed', pollId: 'p1' }),
         'poll_completed',
+        expect.objectContaining({ date: expect.anything() }),
+        undefined,
+        expect.objectContaining({ pollId: 'p1' }),
       );
     });
 
