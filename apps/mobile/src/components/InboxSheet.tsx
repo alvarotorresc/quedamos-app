@@ -141,6 +141,13 @@ export function InboxSheet({ isOpen, onClose }: InboxSheetProps) {
   const handleOpen = (notification: InboxNotification) => {
     const route = resolvePushRoute(notification.data ?? {});
 
+    // No screen behind this type (widget_refresh): close the sheet without navigating,
+    // and leave the remembered group exactly as it was.
+    if (!route) {
+      handleClose();
+      return;
+    }
+
     if (route.persistGroupId) {
       const match = groups?.find((g) => g.id === route.persistGroupId);
       if (match) setCurrentGroup(match);

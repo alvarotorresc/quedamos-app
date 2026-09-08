@@ -254,6 +254,18 @@ describe('InboxSheet', () => {
     expect(push).toHaveBeenCalledWith('/tabs/plans');
   });
 
+  it('closes without navigating for a notice with no route', () => {
+    const onClose = vi.fn();
+    inbox.items = [notice({ data: { type: 'widget_refresh' } })];
+
+    render(<InboxSheet isOpen onClose={onClose} />);
+    fireEvent.click(screen.getByText('Nueva quedada'));
+
+    expect(onClose).toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(setCurrentGroup).not.toHaveBeenCalled();
+  });
+
   it('offers another page only when there is one', () => {
     inbox.items = [notice()];
     inbox.hasNextPage = true;
