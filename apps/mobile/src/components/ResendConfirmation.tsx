@@ -66,6 +66,9 @@ export function ResendConfirmation({ email, requestCaptchaToken }: ResendConfirm
 
   return (
     <Button
+      // The login screen renders this inside its form: without an explicit type the
+      // browser default (submit) would fire a sign-in attempt on every resend.
+      type="button"
       variant="secondary"
       size="sm"
       onClick={handleResend}

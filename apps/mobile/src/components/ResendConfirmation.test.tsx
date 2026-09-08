@@ -87,6 +87,23 @@ describe('ResendConfirmation', () => {
     expect(resendConfirmation).toHaveBeenCalledTimes(1);
   });
 
+  it('does not submit the form it sits inside', async () => {
+    const onSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+    render(
+      <form onSubmit={onSubmit}>
+        <ResendConfirmation
+          email="vera@example.com"
+          requestCaptchaToken={() => Promise.resolve('tok')}
+        />
+      </form>,
+    );
+
+    await clickResend();
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(resendConfirmation).toHaveBeenCalledTimes(1);
+  });
+
   it('warns and keeps the button usable when the captcha yields nothing', async () => {
     renderResend(() => Promise.resolve(null));
 
