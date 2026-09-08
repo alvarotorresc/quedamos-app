@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
@@ -18,6 +18,8 @@ interface EmojiPickerFieldProps {
  */
 export function EmojiPickerField({ value, onChange, placeholder = '👥' }: EmojiPickerFieldProps) {
   const { t } = useTranslation();
+  // Id propio por instancia: un literal fijo se duplicaria en cuanto haya dos.
+  const fieldId = useId();
   const [showPicker, setShowPicker] = useState(false);
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -34,11 +36,11 @@ export function EmojiPickerField({ value, onChange, placeholder = '👥' }: Emoj
 
   return (
     <div className="relative">
-      <label className="text-xs text-text-muted mb-1 block" htmlFor="emoji-picker-field">
+      <label className="text-xs text-text-muted mb-1 block" htmlFor={fieldId}>
         {t('group.emoji')}
       </label>
       <button
-        id="emoji-picker-field"
+        id={fieldId}
         type="button"
         aria-label={t('group.emoji')}
         onClick={() => setShowPicker((v) => !v)}

@@ -185,7 +185,7 @@ export function EventDetailModal({
           {pendingAttendees.length > 0 && (
             <div>
               <p className="text-[10px] font-semibold text-warning mb-1">
-                {t('plans.status.pending')} ({pendingAttendees.length})
+                {t('calendar.eventDetail.pending')} ({pendingAttendees.length})
               </p>
               <AvatarStack
                 size={24}

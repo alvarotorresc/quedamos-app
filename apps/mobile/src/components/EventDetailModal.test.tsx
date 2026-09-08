@@ -72,7 +72,7 @@ describe('EventDetailModal', () => {
     expect(screen.getByText('plans.status.confirmed')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'El Chiquito' })).toBeInTheDocument();
     expect(screen.getByText('calendar.eventDetail.confirmed (1)')).toBeInTheDocument();
-    expect(screen.getByText('plans.status.pending (1)')).toBeInTheDocument();
+    expect(screen.getByText('calendar.eventDetail.pending (1)')).toBeInTheDocument();
     expect(screen.getByText('calendar.eventDetail.createdBy:Álvaro')).toBeInTheDocument();
   });
 

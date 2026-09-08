@@ -164,6 +164,7 @@
     },
     "eventDetail": {
       "confirmed": "Confirmados",
+      "pending": "Pendientes",
       "declined": "Rechazados",
       "createdBy": "Creada por {{name}}",
       "download": "Descargar para calendario"
