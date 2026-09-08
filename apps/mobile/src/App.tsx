@@ -25,6 +25,7 @@ import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import DesktopFrame from './components/DesktopFrame';
 import { usePushNotifications } from './hooks/usePushNotifications';
+import PushPrimingSheet from './components/PushPrimingSheet';
 import { useSessionExpiry } from './hooks/useSessionExpiry';
 import { resolveDeepLinkPath, navigateToDeepLink } from './lib/deep-link';
 import { takePendingRedirect } from './lib/pending-redirect';
@@ -47,40 +48,45 @@ function useIsDesktop() {
 
 function AppTabs() {
   const { t } = useTranslation();
-  usePushNotifications();
+  const { permission, requestPermission } = usePushNotifications();
 
   return (
-    <IonTabs>
-      <IonRouterOutlet>
-        <Route exact path="/tabs/calendar" component={CalendarPage} />
-        <Route exact path="/tabs/plans" component={PlansPage} />
-        <Route exact path="/tabs/group/:id" component={GroupDetailPage} />
-        <Route exact path="/tabs/group" component={GroupPage} />
-        <Route exact path="/tabs/profile/notifications" component={NotificationsSettingsPage} />
-        <Route exact path="/tabs/profile" component={ProfilePage} />
-        <Route exact path="/tabs">
-          <Redirect to="/tabs/calendar" />
-        </Route>
-      </IonRouterOutlet>
-      <IonTabBar slot="bottom" className="backdrop-blur-xl">
-        <IonTabButton tab="calendar" href="/tabs/calendar">
-          <IonIcon icon={calendarOutline} />
-          <IonLabel>{t('tabs.calendar')}</IonLabel>
-        </IonTabButton>
-        <IonTabButton tab="plans" href="/tabs/plans">
-          <IonIcon icon={listOutline} />
-          <IonLabel>{t('tabs.plans')}</IonLabel>
-        </IonTabButton>
-        <IonTabButton tab="group" href="/tabs/group">
-          <IonIcon icon={peopleOutline} />
-          <IonLabel>{t('tabs.group')}</IonLabel>
-        </IonTabButton>
-        <IonTabButton tab="profile" href="/tabs/profile">
-          <IonIcon icon={personOutline} />
-          <IonLabel>{t('tabs.profile')}</IonLabel>
-        </IonTabButton>
-      </IonTabBar>
-    </IonTabs>
+    // El sheet va fuera de IonTabs (que sólo admite el outlet y la barra) y se
+    // presenta él solo la primera vez que el permiso está sin decidir.
+    <>
+      <PushPrimingSheet permission={permission} onEnable={requestPermission} />
+      <IonTabs>
+        <IonRouterOutlet>
+          <Route exact path="/tabs/calendar" component={CalendarPage} />
+          <Route exact path="/tabs/plans" component={PlansPage} />
+          <Route exact path="/tabs/group/:id" component={GroupDetailPage} />
+          <Route exact path="/tabs/group" component={GroupPage} />
+          <Route exact path="/tabs/profile/notifications" component={NotificationsSettingsPage} />
+          <Route exact path="/tabs/profile" component={ProfilePage} />
+          <Route exact path="/tabs">
+            <Redirect to="/tabs/calendar" />
+          </Route>
+        </IonRouterOutlet>
+        <IonTabBar slot="bottom" className="backdrop-blur-xl">
+          <IonTabButton tab="calendar" href="/tabs/calendar">
+            <IonIcon icon={calendarOutline} />
+            <IonLabel>{t('tabs.calendar')}</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="plans" href="/tabs/plans">
+            <IonIcon icon={listOutline} />
+            <IonLabel>{t('tabs.plans')}</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="group" href="/tabs/group">
+            <IonIcon icon={peopleOutline} />
+            <IonLabel>{t('tabs.group')}</IonLabel>
+          </IonTabButton>
+          <IonTabButton tab="profile" href="/tabs/profile">
+            <IonIcon icon={personOutline} />
+            <IonLabel>{t('tabs.profile')}</IonLabel>
+          </IonTabButton>
+        </IonTabBar>
+      </IonTabs>
+    </>
   );
 }
 

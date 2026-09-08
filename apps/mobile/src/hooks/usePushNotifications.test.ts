@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { usePushNotifications } from './usePushNotifications';
 import { useAuthStore } from '../stores/auth';
+import { usePushPermissionStore } from '../stores/push-permission';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import {
@@ -58,6 +59,7 @@ async function flushMicrotasks(): Promise<void> {
 describe('usePushNotifications', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    usePushPermissionStore.setState({ permission: 'unknown' });
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
     vi.mocked(useAuthStore).mockImplementation((selector) => selector({ user: { id: 'user-1' } }));
     vi.mocked(sendTokenToBackend).mockResolvedValue(undefined);
@@ -205,18 +207,20 @@ describe('usePushNotifications', () => {
       vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
     });
 
-    it('does not retry on visibilitychange when notification permission is not granted', async () => {
+    it('never registers while the permission is still unanswered, not even on focus', async () => {
       vi.mocked(registerForPush).mockResolvedValue({ token: 'token-a', cleanup: vi.fn() });
       vi.stubGlobal('Notification', { permission: 'default' });
 
       renderHook(() => usePushNotifications());
-      await waitFor(() => expect(registerForPush).toHaveBeenCalledTimes(1));
+      await flushMicrotasks();
+      // Registering would open the system prompt: that is the priming sheet's job now.
+      expect(registerForPush).not.toHaveBeenCalled();
 
       setVisibility('visible');
       fireVisibilityChange();
 
       await flushMicrotasks();
-      expect(registerForPush).toHaveBeenCalledTimes(1);
+      expect(registerForPush).not.toHaveBeenCalled();
     });
 
     it('ignores visibilitychange when the document is hidden', async () => {
@@ -345,6 +349,89 @@ describe('usePushNotifications', () => {
 
       await waitFor(() => expect(sendTokenToBackend).toHaveBeenCalledTimes(2));
       expect(sendTokenToBackend).toHaveBeenLastCalledWith('shared-device-token');
+    });
+  });
+  describe('permission', () => {
+    beforeEach(() => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+    });
+
+    it('publishes what the platform says without asking for anything', async () => {
+      vi.stubGlobal('Notification', { permission: 'default' });
+      vi.mocked(registerForPush).mockResolvedValue({ token: 'token-a', cleanup: vi.fn() });
+
+      const { result } = renderHook(() => usePushNotifications());
+
+      await waitFor(() => expect(result.current.permission).toBe('prompt'));
+      expect(registerForPush).not.toHaveBeenCalled();
+    });
+
+    it('registers straight away when the permission is already granted', async () => {
+      vi.stubGlobal('Notification', { permission: 'granted' });
+      vi.mocked(registerForPush).mockResolvedValue({ token: 'token-a', cleanup: vi.fn() });
+
+      const { result } = renderHook(() => usePushNotifications());
+
+      await waitFor(() => expect(registerForPush).toHaveBeenCalledTimes(1));
+      expect(result.current.permission).toBe('granted');
+    });
+
+    it('leaves a denied permission alone: only the settings app can undo it', async () => {
+      vi.stubGlobal('Notification', { permission: 'denied' });
+      vi.mocked(registerForPush).mockResolvedValue({ token: null, cleanup: vi.fn() });
+
+      const { result } = renderHook(() => usePushNotifications());
+
+      await waitFor(() => expect(result.current.permission).toBe('denied'));
+      expect(registerForPush).not.toHaveBeenCalled();
+    });
+
+    it('reports a browser without notifications as unsupported', async () => {
+      vi.stubGlobal('Notification', undefined);
+      delete (window as unknown as Record<string, unknown>).Notification;
+      vi.mocked(registerForPush).mockResolvedValue({ token: null, cleanup: vi.fn() });
+
+      const { result } = renderHook(() => usePushNotifications());
+
+      await waitFor(() => expect(result.current.permission).toBe('unsupported'));
+      expect(registerForPush).not.toHaveBeenCalled();
+    });
+
+    it('asks and registers when the user opts in from the priming sheet', async () => {
+      const notification = { permission: 'default' as NotificationPermission };
+      vi.stubGlobal('Notification', notification);
+      vi.mocked(registerForPush).mockImplementation(async () => {
+        // registerForPush() is what opens the browser dialog; the answer only shows
+        // up in Notification.permission afterwards.
+        notification.permission = 'granted';
+        return { token: 'token-a', cleanup: vi.fn() };
+      });
+
+      const { result } = renderHook(() => usePushNotifications());
+      await waitFor(() => expect(result.current.permission).toBe('prompt'));
+
+      await result.current.requestPermission();
+
+      expect(registerForPush).toHaveBeenCalledTimes(1);
+      expect(sendTokenToBackend).toHaveBeenCalledWith('token-a');
+      await waitFor(() => expect(result.current.permission).toBe('granted'));
+    });
+
+    it('records the refusal when the user says no to the dialog', async () => {
+      const notification = { permission: 'default' as NotificationPermission };
+      vi.stubGlobal('Notification', notification);
+      vi.mocked(registerForPush).mockImplementation(async () => {
+        notification.permission = 'denied';
+        return { token: null, cleanup: vi.fn() };
+      });
+
+      const { result } = renderHook(() => usePushNotifications());
+      await waitFor(() => expect(result.current.permission).toBe('prompt'));
+
+      await result.current.requestPermission();
+
+      await waitFor(() => expect(result.current.permission).toBe('denied'));
+      expect(sendTokenToBackend).not.toHaveBeenCalled();
     });
   });
 });

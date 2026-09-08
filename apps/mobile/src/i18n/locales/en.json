@@ -663,6 +663,20 @@
     "sent": "Email sent again. Check your inbox.",
     "error": "We couldn't resend the email. Try again in a minute."
   },
+  "push": {
+    "priming": {
+      "title": "Shall we ping you?",
+      "what": "Only about the group: new plans, questions and confirmations.",
+      "when": "No spam, and you pick which alerts you want from your profile.",
+      "enable": "Turn alerts on",
+      "later": "Not now"
+    },
+    "blocked": {
+      "title": "Alerts are blocked by the system",
+      "android": "Settings → Apps → Quedamos → Notifications, and turn them on.",
+      "web": "Click the padlock next to the address bar and allow notifications."
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "sessionExpired": "Your session has expired, sign in again.",

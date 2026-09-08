@@ -39,6 +39,7 @@ vi.mock('@capacitor/push-notifications', () => ({
   PushNotifications: {
     addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
     requestPermissions: vi.fn().mockResolvedValue({ receive: 'granted' }),
+    checkPermissions: vi.fn().mockResolvedValue({ receive: 'granted' }),
     register: vi.fn(),
   },
 }));
