@@ -8,7 +8,7 @@ vi.mock('../i18n', () => ({
 }));
 
 import i18n from '../i18n';
-import { translateAuthError } from './auth-errors';
+import { translateAuthError, isEmailNotConfirmed } from './auth-errors';
 
 describe('translateAuthError', () => {
   beforeEach(() => {
@@ -110,5 +110,25 @@ describe('translateAuthError', () => {
 
       expect(result).toBe('Error: Email not confirmed');
     });
+  });
+});
+
+describe('isEmailNotConfirmed', () => {
+  it('recognises the error code supabase sends', () => {
+    const error = Object.assign(new Error('Email not confirmed'), {
+      code: 'email_not_confirmed',
+    });
+
+    expect(isEmailNotConfirmed(error)).toBe(true);
+  });
+
+  it('recognises it by message when the error carries no code', () => {
+    expect(isEmailNotConfirmed(new Error('Email not confirmed'))).toBe(true);
+  });
+
+  it('leaves every other failure alone', () => {
+    expect(isEmailNotConfirmed(new Error('Invalid login credentials'))).toBe(false);
+    expect(isEmailNotConfirmed('Email not confirmed')).toBe(false);
+    expect(isEmailNotConfirmed(null)).toBe(false);
   });
 });

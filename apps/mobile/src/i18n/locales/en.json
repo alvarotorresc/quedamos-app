@@ -18,6 +18,10 @@
   },
   "login": {
     "title": "Sign in",
+    "notConfirmed": {
+      "title": "Your email isn't confirmed yet",
+      "message": "Open the link we sent you to activate the account. Didn't get it?"
+    },
     "forgotPassword": "Forgot your password?",
     "submit": "Sign in",
     "submitting": "Signing in...",
@@ -652,6 +656,12 @@
       "message": "The link may have expired or been used already. Sign in with your email and password.",
       "login": "Go to sign in"
     }
+  },
+  "resendConfirmation": {
+    "action": "Resend email",
+    "cooldown": "Resend in {{seconds}}s",
+    "sent": "Email sent again. Check your inbox.",
+    "error": "We couldn't resend the email. Try again in a minute."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

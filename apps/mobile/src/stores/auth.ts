@@ -74,6 +74,7 @@ interface AuthState {
   updateName: (name: string) => Promise<void>;
   updateEmail: (email: string) => Promise<void>;
   updateTimeSlots: (timeSlots: TimeSlotPreferences) => Promise<void>;
+  resendConfirmation: (email: string, captchaToken: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -182,5 +183,22 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => ({
       user: state.user ? { ...state.user, timeSlots } : null,
     }));
+  },
+
+  // The first confirmation email gets lost often enough (spam folder, a typo caught
+  // too late, an app closed before opening it) that a signed-up account with no way
+  // to ask for another one is a dead end: signing up again answers "user already
+  // registered". Same destination as the original mail, captcha included because the
+  // endpoint is as unauthenticated as the sign-up itself.
+  resendConfirmation: async (email, captchaToken) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${authRedirectBase()}${EMAIL_CONFIRMED_PATH}`,
+        captchaToken,
+      },
+    });
+    if (error) throw error;
   },
 }));

@@ -11,6 +11,7 @@ import { safeRedirect } from '../lib/safe-redirect';
 import { savePendingRedirect } from '../lib/pending-redirect';
 import { useScreenView } from '../hooks/useAnalytics';
 import { getPasswordChecks, getStrength } from '../lib/password-utils';
+import { ResendConfirmation } from '../components/ResendConfirmation';
 
 const HCAPTCHA_SITEKEY = 'c7aee17a-5df0-43a6-ba90-397e25d83410';
 
@@ -42,6 +43,15 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
   const captchaRef = useRef<HCaptcha>(null);
+  // The form (captcha included) is gone once the success screen takes over, so the
+  // resend gets a challenge of its own.
+  const resendCaptchaRef = useRef<HCaptcha>(null);
+
+  const requestResendCaptchaToken = async (): Promise<string | null> => {
+    const result = await resendCaptchaRef.current?.execute({ async: true });
+    resendCaptchaRef.current?.resetCaptcha();
+    return result?.response ?? null;
+  };
 
   const checks = useMemo(() => getPasswordChecks(password, t), [password, t]);
   const strength = useMemo(() => getStrength(checks, t), [checks, t]);
@@ -97,6 +107,8 @@ export default function RegisterPage() {
               </Trans>
             </p>
             <p className="text-text-dark text-xs mt-3">{t('register.success.spam')}</p>
+            <HCaptcha ref={resendCaptchaRef} sitekey={HCAPTCHA_SITEKEY} size="invisible" />
+            <ResendConfirmation email={email} requestCaptchaToken={requestResendCaptchaToken} />
             <Link to={loginTo} className="text-primary text-sm mt-5">
               {t('register.success.login')}
             </Link>

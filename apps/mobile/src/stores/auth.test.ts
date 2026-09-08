@@ -10,6 +10,7 @@ type SignInResult = Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>
 type UpdateUserResult = Awaited<ReturnType<typeof supabase.auth.updateUser>>;
 type ResetPasswordResult = Awaited<ReturnType<typeof supabase.auth.resetPasswordForEmail>>;
 type SignUpResult = Awaited<ReturnType<typeof supabase.auth.signUp>>;
+type ResendResult = Awaited<ReturnType<typeof supabase.auth.resend>>;
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
@@ -171,6 +172,38 @@ describe('useAuthStore', () => {
 
       await expect(
         useAuthStore.getState().signUp('taken@test.com', 'pass', 'Test', 'captcha'),
+      ).rejects.toBeDefined();
+    });
+  });
+
+  describe('resendConfirmation', () => {
+    it('asks supabase for another confirmation email, pointing at the same route', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.mocked(supabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: null,
+      } as unknown as ResendResult);
+
+      await useAuthStore.getState().resendConfirmation('test@test.com', 'captcha');
+
+      expect(supabase.auth.resend).toHaveBeenCalledWith({
+        type: 'signup',
+        email: 'test@test.com',
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirmed`,
+          captchaToken: 'captcha',
+        },
+      });
+    });
+
+    it('throws when supabase refuses to resend', async () => {
+      vi.mocked(supabase.auth.resend).mockResolvedValue({
+        data: {},
+        error: { message: 'Email rate limit exceeded' },
+      } as unknown as ResendResult);
+
+      await expect(
+        useAuthStore.getState().resendConfirmation('test@test.com', 'captcha'),
       ).rejects.toBeDefined();
     });
   });

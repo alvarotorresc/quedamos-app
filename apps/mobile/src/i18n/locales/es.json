@@ -18,6 +18,10 @@
   },
   "login": {
     "title": "Iniciar sesión",
+    "notConfirmed": {
+      "title": "Tu email aún no está confirmado",
+      "message": "Abre el enlace que te enviamos para activar la cuenta. ¿No te ha llegado?"
+    },
     "forgotPassword": "¿Olvidaste tu contraseña?",
     "submit": "Entrar",
     "submitting": "Entrando...",
@@ -652,6 +656,12 @@
       "message": "El enlace puede haber caducado o ya haberse usado. Entra con tu email y contraseña.",
       "login": "Ir a iniciar sesión"
     }
+  },
+  "resendConfirmation": {
+    "action": "Reenviar email",
+    "cooldown": "Reenviar en {{seconds}} s",
+    "sent": "Email reenviado. Revisa tu bandeja.",
+    "error": "No hemos podido reenviar el email. Inténtalo en un minuto."
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
