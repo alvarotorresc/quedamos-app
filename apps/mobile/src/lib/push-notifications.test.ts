@@ -16,6 +16,25 @@ vi.mock('@capacitor/push-notifications', () => ({
   },
 }));
 
+// The plugin is loaded through a dynamic import inside the native branch, so this mock is
+// what the real one would be on a device.
+const localNotifications = {
+  // Capacitor's registerPlugin hands back a Proxy that answers to ANY property, `then`
+  // included. Reproducing that here is deliberate: if the code ever resolves a promise
+  // with the bare plugin again, the runtime treats it as a thenable, calls this and the
+  // await never settles — which is what "LocalNotifications.then() is not implemented"
+  // looks like on a device.
+  then: vi.fn(),
+  createChannel: vi.fn().mockResolvedValue(undefined),
+  addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
+  checkPermissions: vi.fn().mockResolvedValue({ display: 'granted' }),
+  requestPermissions: vi.fn().mockResolvedValue({ display: 'granted' }),
+  schedule: vi.fn().mockResolvedValue(undefined),
+};
+vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: localNotifications }));
+
+vi.mock('../i18n', () => ({ default: { t: (key: string) => key } }));
+
 // Mock firebase module
 vi.mock('./firebase', () => ({
   getFirebaseMessaging: vi.fn().mockResolvedValue(null),
@@ -892,6 +911,163 @@ describe('push-notifications', () => {
       setupPushListeners();
 
       expect(PushNotifications.addListener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a push that arrives with the app open (Android)', () => {
+    let hrefSetter: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      localNotifications.checkPermissions.mockResolvedValue({ display: 'granted' });
+      hrefSetter = vi.fn();
+      Object.defineProperty(window, 'location', {
+        value: { href: '' },
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(window.location, 'href', {
+        set: hrefSetter,
+        get: () => '',
+        configurable: true,
+      });
+    });
+
+    async function receivedListener(): Promise<
+      (notification: {
+        title?: string;
+        body?: string;
+        data?: Record<string, string>;
+        id: string;
+      }) => void
+    > {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const { setupPushListeners } = await import('./push-notifications');
+      setupPushListeners();
+      const call = vi
+        .mocked(PushNotifications.addListener)
+        .mock.calls.find((c) => c[0] === 'pushNotificationReceived');
+      if (!call) throw new Error('pushNotificationReceived listener not registered');
+      return call[1] as (notification: {
+        title?: string;
+        body?: string;
+        data?: Record<string, string>;
+        id: string;
+      }) => void;
+    }
+
+    it('re-raises it as a local notification instead of swallowing it', async () => {
+      // Android does not draw a push while the app is in the foreground, and this
+      // listener was an empty TODO: the notification never reached the tray.
+      const onReceived = await receivedListener();
+
+      onReceived({
+        id: 'p1',
+        title: 'Nueva quedada',
+        body: 'Cena el viernes',
+        data: { type: 'new_event', eventId: '00000000-0000-0000-0000-000000000050' },
+      });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.schedule).toHaveBeenCalledWith({
+          notifications: [
+            expect.objectContaining({
+              title: 'Nueva quedada',
+              body: 'Cena el viernes',
+              channelId: 'quedamos-push',
+              extra: { type: 'new_event', eventId: '00000000-0000-0000-0000-000000000050' },
+            }),
+          ],
+        });
+      });
+    });
+
+    it('gives each one its own id', async () => {
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', title: 'Una', data: {} });
+      onReceived({ id: 'p2', title: 'Otra', data: {} });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.schedule).toHaveBeenCalledTimes(2);
+      });
+      const ids = localNotifications.schedule.mock.calls.map(
+        (call) => (call[0] as { notifications: Array<{ id: number }> }).notifications[0].id,
+      );
+      expect(new Set(ids).size).toBe(2);
+    });
+
+    it('falls back to the title and body inside data', async () => {
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', data: { type: 'new_event', title: 'Desde data', body: 'Cuerpo' } });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.schedule).toHaveBeenCalledWith({
+          notifications: [expect.objectContaining({ title: 'Desde data', body: 'Cuerpo' })],
+        });
+      });
+    });
+
+    it('shows nothing when there is no title to show', async () => {
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', data: { type: 'new_event' } });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(localNotifications.schedule).not.toHaveBeenCalled();
+    });
+
+    it('gives up quietly when the user refuses the permission', async () => {
+      localNotifications.checkPermissions.mockResolvedValue({ display: 'denied' });
+      localNotifications.requestPermissions.mockResolvedValue({ display: 'denied' });
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', title: 'Nueva quedada', data: {} });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.requestPermissions).toHaveBeenCalled();
+      });
+      expect(localNotifications.schedule).not.toHaveBeenCalled();
+    });
+
+    it('creates the Android channel with a localized name', async () => {
+      await receivedListener();
+
+      await vi.waitFor(() => {
+        expect(localNotifications.createChannel).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'quedamos-push',
+            name: 'push.channelName',
+            description: 'push.channelDescription',
+          }),
+        );
+      });
+    });
+
+    it('routes a tap on it exactly like a tap on a background push', async () => {
+      await receivedListener();
+
+      await vi.waitFor(() => {
+        expect(localNotifications.addListener).toHaveBeenCalledWith(
+          'localNotificationActionPerformed',
+          expect.any(Function),
+        );
+      });
+      const call = localNotifications.addListener.mock.calls.find(
+        (c) => c[0] === 'localNotificationActionPerformed',
+      );
+      const onTap = call![1] as (action: {
+        notification: { extra?: Record<string, string> };
+      }) => void;
+
+      onTap({
+        notification: {
+          extra: { type: 'role_changed', groupId: '00000000-0000-0000-0000-000000000051' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/group/00000000-0000-0000-0000-000000000051');
     });
   });
 

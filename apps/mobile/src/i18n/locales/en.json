@@ -666,5 +666,9 @@
     "shareTarjetaFailed": "Couldn't create the card",
     "downloadICSFailed": "Couldn't download the plan",
     "updateNotificationPreferenceFailed": "Couldn't save that notification"
+  },
+  "push": {
+    "channelName": "Quedamos alerts",
+    "channelDescription": "Plans, questions and group activity"
   }
 }

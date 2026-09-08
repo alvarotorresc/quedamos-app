@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { PushNotifications } from '@capacitor/push-notifications';
+import { PushNotifications, type PushNotificationSchema } from '@capacitor/push-notifications';
 import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from './firebase';
 import { readEnv, firebaseSwConfigParams } from './env';
@@ -171,15 +171,127 @@ export async function unregisterFromBackend(): Promise<void> {
   currentToken = null;
 }
 
+/** Android channel the re-emitted foreground notifications go through. */
+const LOCAL_CHANNEL_ID = 'quedamos-push';
+
+let localNotificationSeq = 0;
+
+/** Local notification ids must be 32-bit ints and unique among the pending ones. */
+function nextLocalNotificationId(): number {
+  localNotificationSeq = (localNotificationSeq % 2147483000) + 1;
+  return localNotificationSeq;
+}
+
+type LocalNotificationsPlugin = (typeof import('@capacitor/local-notifications'))['LocalNotifications'];
+
+let localNotificationsLoad: Promise<{ plugin: LocalNotificationsPlugin } | null> | null = null;
+
+/**
+ * Imported on demand rather than at the top of the module: this file is also loaded by web
+ * builds and by test suites that stub `@capacitor/core` down to `isNativePlatform`, where
+ * registering a native plugin at import time would throw before anything ran.
+ *
+ * The plugin comes back wrapped in an object, never bare: Capacitor's registerPlugin
+ * returns a Proxy that answers to ANY property, `then` included, so resolving a promise
+ * with it makes the runtime treat it as a thenable and call `LocalNotifications.then()` —
+ * a native method that does not exist.
+ */
+function loadLocalNotifications(): Promise<{ plugin: LocalNotificationsPlugin } | null> {
+  localNotificationsLoad ??= import('@capacitor/local-notifications')
+    .then((module) => ({ plugin: module.LocalNotifications }))
+    .catch((err: unknown) => {
+      if (import.meta.env.DEV) {
+        console.error('[Push] LocalNotifications plugin unavailable:', err);
+      }
+      return null;
+    });
+  return localNotificationsLoad;
+}
+
+/**
+ * Create the Android channel and listen for taps on the notifications we raise
+ * ourselves. The channel name is localized through the app's own i18n — Android caches
+ * it, so a language change shows up on the next launch, which is when this runs again.
+ */
+async function setupLocalNotifications(): Promise<void> {
+  const loaded = await loadLocalNotifications();
+  if (!loaded) return;
+  const localNotifications = loaded.plugin;
+
+  try {
+    const { default: i18n } = await import('../i18n');
+    await localNotifications.createChannel({
+      id: LOCAL_CHANNEL_ID,
+      name: i18n.t('push.channelName'),
+      description: i18n.t('push.channelDescription'),
+      importance: 4,
+      visibility: 1,
+    });
+
+    await localNotifications.addListener('localNotificationActionPerformed', (action) => {
+      // The local equivalent of a push's `data`: whatever we put in `extra` below.
+      const data = action.notification.extra as Record<string, string> | undefined;
+      if (!data?.type) return;
+      navigateFromPush(data);
+    });
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.error('[Push] Could not set up local notifications:', err);
+    }
+  }
+}
+
+/**
+ * Android does not draw a push that arrives while the app is in the foreground — the
+ * system hands it to the app instead, and this listener used to be an empty TODO, so the
+ * notification simply never appeared. Re-raise it as a local notification carrying the
+ * same title, body and data, so it reaches the tray and its tap routes exactly like a
+ * background one.
+ */
+async function showForegroundPush(notification: PushNotificationSchema): Promise<void> {
+  const data = (notification.data ?? {}) as Record<string, string>;
+  const title = notification.title ?? data.title;
+  const body = notification.body ?? data.body ?? '';
+  if (!title) return;
+
+  const loaded = await loadLocalNotifications();
+  if (!loaded) return;
+  const localNotifications = loaded.plugin;
+
+  try {
+    let permission = await localNotifications.checkPermissions();
+    if (permission.display !== 'granted') {
+      permission = await localNotifications.requestPermissions();
+    }
+    if (permission.display !== 'granted') return;
+
+    await localNotifications.schedule({
+      notifications: [
+        {
+          id: nextLocalNotificationId(),
+          title,
+          body,
+          channelId: LOCAL_CHANNEL_ID,
+          extra: data,
+        },
+      ],
+    });
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.error('[Push] Could not show a foreground notification:', err);
+    }
+  }
+}
+
 export function setupPushListeners(): void {
   if (nativePushSetup) return;
   if (!Capacitor.isNativePlatform()) return;
   nativePushSetup = true;
 
-  PushNotifications.addListener('pushNotificationReceived', (_notification) => {
-    // On Android, foreground notifications are not shown automatically.
-    // The notification object contains title/body but needs a local notification
-    // plugin to display as a system notification. TODO: use LocalNotifications plugin.
+  void setupLocalNotifications();
+
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    void showForegroundPush(notification);
   });
 
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
