@@ -277,6 +277,16 @@ describe('PlansPage', () => {
       expect(history.replace).toHaveBeenCalledWith('/tabs/plans');
     });
 
+    it('avisa una sola vez de cada cosa cuando faltan las dos', () => {
+      search = '?eventId=e404&proposalId=p404';
+
+      render(<PlansPage />);
+
+      expect(showInfo).toHaveBeenCalledTimes(2);
+      expect(showInfo).toHaveBeenCalledWith('plans.eventNotFound');
+      expect(showInfo).toHaveBeenCalledWith('proposals.notFound');
+    });
+
     it('no avisa de nada cuando la quedada sí está', () => {
       render(<PlansPage />);
 

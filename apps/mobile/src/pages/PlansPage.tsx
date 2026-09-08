@@ -51,7 +51,10 @@ export default function PlansPage() {
   const [highlightProposalId, setHighlightProposalId] = useState<string | null>(null);
   const scrolledRef = useRef(false);
   const proposalScrolledRef = useRef(false);
-  const missingDeepLinkRef = useRef<string | null>(null);
+  // One ref each: a URL carrying both ids, with both gone, would otherwise stack two
+  // toasts — the second effect would compare against the first effect's id and not match.
+  const missingEventRef = useRef<string | null>(null);
+  const missingProposalRef = useRef<string | null>(null);
 
   const { showInfo } = useToast();
   // useToast hands back a fresh closure on every render; through a ref, the effects below
@@ -209,9 +212,9 @@ export default function PlansPage() {
   useEffect(() => {
     if (!targetEventId || !groupId || eventsLoading || !events) return;
     if (events.some((ev) => ev.id === targetEventId)) return;
-    if (missingDeepLinkRef.current === targetEventId) return;
+    if (missingEventRef.current === targetEventId) return;
 
-    missingDeepLinkRef.current = targetEventId;
+    missingEventRef.current = targetEventId;
     showInfoRef.current('plans.eventNotFound');
     clearDeepLinkParams();
   }, [targetEventId, groupId, eventsLoading, events, clearDeepLinkParams]);
@@ -220,9 +223,9 @@ export default function PlansPage() {
   useEffect(() => {
     if (!targetProposalId || !groupId || proposalsLoading || !proposals) return;
     if (proposals.some((p) => p.id === targetProposalId)) return;
-    if (missingDeepLinkRef.current === targetProposalId) return;
+    if (missingProposalRef.current === targetProposalId) return;
 
-    missingDeepLinkRef.current = targetProposalId;
+    missingProposalRef.current = targetProposalId;
     showInfoRef.current('proposals.notFound');
     clearDeepLinkParams();
   }, [targetProposalId, groupId, proposalsLoading, proposals, clearDeepLinkParams]);
