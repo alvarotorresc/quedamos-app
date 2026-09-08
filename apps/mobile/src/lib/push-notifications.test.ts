@@ -304,7 +304,9 @@ describe('push-notifications', () => {
         },
       });
 
-      expect(hrefSetter).toHaveBeenCalledWith('/tabs/plans?eventId=00000000-0000-0000-0000-000000000001');
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/plans?eventId=00000000-0000-0000-0000-000000000001&groupId=00000000-0000-0000-0000-000000000001',
+      );
     });
 
     it('should navigate to plans with eventId for new_event', async () => {
@@ -551,6 +553,117 @@ describe('push-notifications', () => {
       });
 
       expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
+
+    async function actionCallback(): Promise<
+      (action: { notification: { data: Record<string, string> } }) => void
+    > {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const { setupPushListeners } = await import('./push-notifications');
+      setupPushListeners();
+      const call = vi
+        .mocked(PushNotifications.addListener)
+        .mock.calls.find((c) => c[0] === 'pushNotificationActionPerformed');
+      if (!call) throw new Error('pushNotificationActionPerformed listener not registered');
+      return call[1] as (action: { notification: { data: Record<string, string> } }) => void;
+    }
+
+    it('should open the group for role_changed instead of falling through to Planes', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'role_changed', groupId: '00000000-0000-0000-0000-000000000030' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/group/00000000-0000-0000-0000-000000000030');
+    });
+
+    it('should open the proposal for new_proposal instead of falling through to Planes', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_proposal',
+            proposalId: '00000000-0000-0000-0000-000000000031',
+            groupId: '00000000-0000-0000-0000-000000000032',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/plans?proposalId=00000000-0000-0000-0000-000000000031&groupId=00000000-0000-0000-0000-000000000032',
+      );
+    });
+
+    it('should open the calendar for weekly_availability_reminder', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({ notification: { data: { type: 'weekly_availability_reminder' } } });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
+
+    it('should open the group list for member_kicked, never the group you are out of', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'member_kicked', groupId: '00000000-0000-0000-0000-000000000040' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/group');
+    });
+
+    it('should NOT remember the group you were kicked out of', async () => {
+      // This used to be written to localStorage before the type was even looked at, so
+      // the app came back selecting a group the API now answers 403 for.
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'member_kicked', groupId: '00000000-0000-0000-0000-000000000041' },
+        },
+      });
+
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    it('should forget the remembered group when that group is deleted', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      localStorage.setItem('quedamos_current_group_id', '00000000-0000-0000-0000-000000000042');
+      vi.mocked(localStorage.setItem).mockClear();
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'group_deleted', groupId: '00000000-0000-0000-0000-000000000042' },
+        },
+      });
+
+      expect(localStorage.removeItem).toHaveBeenCalledWith('quedamos_current_group_id');
+    });
+
+    it('should leave another remembered group alone when kicked out of a different one', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      localStorage.setItem('quedamos_current_group_id', '00000000-0000-0000-0000-000000000043');
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'member_kicked', groupId: '00000000-0000-0000-0000-000000000044' },
+        },
+      });
+
+      expect(localStorage.removeItem).not.toHaveBeenCalled();
     });
 
     it('should navigate to calendar without pollId when it is not a valid UUID', async () => {
