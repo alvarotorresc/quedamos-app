@@ -432,14 +432,15 @@ export class EventsService {
       ),
     );
 
-    // Notifications outside transaction (fire-and-forget)
+    // Notifications outside transaction (fire-and-forget). The attendee whose answer
+    // completed the round already knows: they are looking at the screen that did it.
     if (dto.status === 'confirmed' && justReachedAllConfirmed) {
       this.notificationsService
         .sendToEventAttendees(
           eventId,
           'event_confirmed',
           { title: eventTitle, variant: 'all_confirmed' },
-          undefined,
+          userId,
           { eventId, groupId },
           'confirmed',
         )

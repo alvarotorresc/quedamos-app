@@ -209,11 +209,12 @@ describe('PollsService', () => {
         where: { id: 'p1', status: 'open' },
         data: { status: 'completed', completedAt: expect.any(Date) },
       });
+      // A quien acaba de responder no hay que contarle que el aro se ha cerrado.
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
         'poll_completed',
         expect.objectContaining({ date: expect.anything() }),
-        undefined,
+        'u3',
         expect.objectContaining({ pollId: 'p1' }),
       );
     });

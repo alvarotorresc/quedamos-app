@@ -167,8 +167,9 @@ export class PollsService {
         data: { status: 'completed', completedAt: new Date() },
       });
       if (count === 1 && (await this.claimCompletedNotice(pollId))) {
+        // Everybody but the one who just closed the ring: they saw it close.
         this.notifications
-          .sendToGroup(groupId, 'poll_completed', { date: poll.date }, undefined, {
+          .sendToGroup(groupId, 'poll_completed', { date: poll.date }, userId, {
             pollId,
             groupId,
           })

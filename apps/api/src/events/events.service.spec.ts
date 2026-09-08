@@ -677,11 +677,12 @@ describe('EventsService', () => {
 
       await service.respond('group-1', 'event-1', 'user-2', { status: 'confirmed' });
 
+      // The person who just tapped «confirmo» knows: excludeUserId is the responder.
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
         'event_confirmed',
         expect.objectContaining({ variant: 'all_confirmed' }),
-        undefined,
+        'user-2',
         expect.objectContaining({ eventId: 'event-1' }),
         'confirmed',
       );
