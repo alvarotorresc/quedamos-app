@@ -7,21 +7,16 @@ import {
   logEvent as firebaseLogEvent,
   Analytics,
 } from 'firebase/analytics';
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-};
+import { getFirebaseWebConfig } from './env';
 
 let app: ReturnType<typeof initializeApp> | null = null;
 
 function getApp() {
   if (!app) {
-    app = initializeApp(firebaseConfig);
+    // Read through lib/env, the single reader of import.meta.env — the messaging service
+    // worker gets the very same object forwarded as a query string, so there is only one
+    // copy of this config in the codebase.
+    app = initializeApp(getFirebaseWebConfig());
   }
   return app;
 }

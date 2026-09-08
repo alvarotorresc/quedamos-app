@@ -2,6 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from './firebase';
+import { readEnv } from './env';
 import { api } from './api';
 
 let currentToken: string | null = null;
@@ -124,8 +125,14 @@ async function registerWeb(): Promise<string | null> {
   const messaging = await getFirebaseMessaging();
   if (!messaging) return null;
 
-  const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-  if (!vapidKey) return null;
+  const vapidKey = readEnv('VITE_FIREBASE_VAPID_KEY');
+  if (!vapidKey) {
+    // Used to be a silent `return null`, indistinguishable from "the user said no": the
+    // whole web push flow stopped here with nothing in the console. Unconditional, same
+    // reasoning as warnMissingEnvVars() — a build deployed without the key looks fine.
+    console.warn('[Push] VITE_FIREBASE_VAPID_KEY is missing: web push stays disabled.');
+    return null;
+  }
 
   await navigator.serviceWorker.register('/firebase-messaging-sw.js');
   const registration = await navigator.serviceWorker.ready;
