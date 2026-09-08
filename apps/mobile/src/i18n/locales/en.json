@@ -182,6 +182,7 @@
     "noGroupsSubtitle": "Create or join a group to organize plans",
     "goToGroups": "Go to groups",
     "goToCalendar": "Go to calendar",
+    "eventNotFound": "That plan no longer exists",
     "upcoming": "Upcoming",
     "upcomingCount_one": "{{count}} upcoming",
     "upcomingCount_other": "{{count}} upcoming",
@@ -640,6 +641,7 @@
     "empty": "No proposals",
     "emptyDescription": "When someone proposes a plan without a fixed date, it will show up here for voting.",
     "closed": "Closed",
+    "notFound": "That proposal no longer exists",
     "votes": "{{yes}} in favor, {{no}} against"
   },
   "authErrors": {
@@ -713,7 +715,9 @@
       "title": "Alerts are blocked by the system",
       "android": "Settings → Apps → Quedamos → Notifications, and turn them on.",
       "web": "Click the padlock next to the address bar and allow notifications."
-    }
+    },
+    "channelName": "Quedamos alerts",
+    "channelDescription": "Plans, questions and group activity"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

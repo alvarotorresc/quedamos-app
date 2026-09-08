@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock Capacitor core
 vi.mock('@capacitor/core', () => ({
@@ -15,6 +15,25 @@ vi.mock('@capacitor/push-notifications', () => ({
     register: vi.fn(),
   },
 }));
+
+// The plugin is loaded through a dynamic import inside the native branch, so this mock is
+// what the real one would be on a device.
+const localNotifications = {
+  // Capacitor's registerPlugin hands back a Proxy that answers to ANY property, `then`
+  // included. Reproducing that here is deliberate: if the code ever resolves a promise
+  // with the bare plugin again, the runtime treats it as a thenable, calls this and the
+  // await never settles — which is what "LocalNotifications.then() is not implemented"
+  // looks like on a device.
+  then: vi.fn(),
+  createChannel: vi.fn().mockResolvedValue(undefined),
+  addListener: vi.fn().mockResolvedValue({ remove: vi.fn() }),
+  checkPermissions: vi.fn().mockResolvedValue({ display: 'granted' }),
+  requestPermissions: vi.fn().mockResolvedValue({ display: 'granted' }),
+  schedule: vi.fn().mockResolvedValue(undefined),
+};
+vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: localNotifications }));
+
+vi.mock('../i18n', () => ({ default: { t: (key: string) => key } }));
 
 // Mock firebase module
 vi.mock('./firebase', () => ({
@@ -304,7 +323,9 @@ describe('push-notifications', () => {
         },
       });
 
-      expect(hrefSetter).toHaveBeenCalledWith('/tabs/plans?eventId=00000000-0000-0000-0000-000000000001');
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/plans?eventId=00000000-0000-0000-0000-000000000001&groupId=00000000-0000-0000-0000-000000000001',
+      );
     });
 
     it('should navigate to plans with eventId for new_event', async () => {
@@ -553,6 +574,117 @@ describe('push-notifications', () => {
       expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
     });
 
+    async function actionCallback(): Promise<
+      (action: { notification: { data: Record<string, string> } }) => void
+    > {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const { setupPushListeners } = await import('./push-notifications');
+      setupPushListeners();
+      const call = vi
+        .mocked(PushNotifications.addListener)
+        .mock.calls.find((c) => c[0] === 'pushNotificationActionPerformed');
+      if (!call) throw new Error('pushNotificationActionPerformed listener not registered');
+      return call[1] as (action: { notification: { data: Record<string, string> } }) => void;
+    }
+
+    it('should open the group for role_changed instead of falling through to Planes', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'role_changed', groupId: '00000000-0000-0000-0000-000000000030' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/group/00000000-0000-0000-0000-000000000030');
+    });
+
+    it('should open the proposal for new_proposal instead of falling through to Planes', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: {
+            type: 'new_proposal',
+            proposalId: '00000000-0000-0000-0000-000000000031',
+            groupId: '00000000-0000-0000-0000-000000000032',
+          },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith(
+        '/tabs/plans?proposalId=00000000-0000-0000-0000-000000000031&groupId=00000000-0000-0000-0000-000000000032',
+      );
+    });
+
+    it('should open the calendar for weekly_availability_reminder', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({ notification: { data: { type: 'weekly_availability_reminder' } } });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/calendar');
+    });
+
+    it('should open the group list for member_kicked, never the group you are out of', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'member_kicked', groupId: '00000000-0000-0000-0000-000000000040' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/group');
+    });
+
+    it('should NOT remember the group you were kicked out of', async () => {
+      // This used to be written to localStorage before the type was even looked at, so
+      // the app came back selecting a group the API now answers 403 for.
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'member_kicked', groupId: '00000000-0000-0000-0000-000000000041' },
+        },
+      });
+
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+    });
+
+    it('should forget the remembered group when that group is deleted', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      localStorage.setItem('quedamos_current_group_id', '00000000-0000-0000-0000-000000000042');
+      vi.mocked(localStorage.setItem).mockClear();
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'group_deleted', groupId: '00000000-0000-0000-0000-000000000042' },
+        },
+      });
+
+      expect(localStorage.removeItem).toHaveBeenCalledWith('quedamos_current_group_id');
+    });
+
+    it('should leave another remembered group alone when kicked out of a different one', async () => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      localStorage.setItem('quedamos_current_group_id', '00000000-0000-0000-0000-000000000043');
+      const callback = await actionCallback();
+
+      callback({
+        notification: {
+          data: { type: 'member_kicked', groupId: '00000000-0000-0000-0000-000000000044' },
+        },
+      });
+
+      expect(localStorage.removeItem).not.toHaveBeenCalled();
+    });
+
     it('should navigate to calendar without pollId when it is not a valid UUID', async () => {
       vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
 
@@ -779,6 +911,222 @@ describe('push-notifications', () => {
       setupPushListeners();
 
       expect(PushNotifications.addListener).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('a push that arrives with the app open (Android)', () => {
+    let hrefSetter: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+      localNotifications.checkPermissions.mockResolvedValue({ display: 'granted' });
+      hrefSetter = vi.fn();
+      Object.defineProperty(window, 'location', {
+        value: { href: '' },
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(window.location, 'href', {
+        set: hrefSetter,
+        get: () => '',
+        configurable: true,
+      });
+    });
+
+    async function receivedListener(): Promise<
+      (notification: {
+        title?: string;
+        body?: string;
+        data?: Record<string, string>;
+        id: string;
+      }) => void
+    > {
+      const { PushNotifications } = await import('@capacitor/push-notifications');
+      const { setupPushListeners } = await import('./push-notifications');
+      setupPushListeners();
+      const call = vi
+        .mocked(PushNotifications.addListener)
+        .mock.calls.find((c) => c[0] === 'pushNotificationReceived');
+      if (!call) throw new Error('pushNotificationReceived listener not registered');
+      return call[1] as (notification: {
+        title?: string;
+        body?: string;
+        data?: Record<string, string>;
+        id: string;
+      }) => void;
+    }
+
+    it('re-raises it as a local notification instead of swallowing it', async () => {
+      // Android does not draw a push while the app is in the foreground, and this
+      // listener was an empty TODO: the notification never reached the tray.
+      const onReceived = await receivedListener();
+
+      onReceived({
+        id: 'p1',
+        title: 'Nueva quedada',
+        body: 'Cena el viernes',
+        data: { type: 'new_event', eventId: '00000000-0000-0000-0000-000000000050' },
+      });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.schedule).toHaveBeenCalledWith({
+          notifications: [
+            expect.objectContaining({
+              title: 'Nueva quedada',
+              body: 'Cena el viernes',
+              channelId: 'quedamos-push',
+              extra: { type: 'new_event', eventId: '00000000-0000-0000-0000-000000000050' },
+            }),
+          ],
+        });
+      });
+    });
+
+    it('gives each one its own id', async () => {
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', title: 'Una', data: {} });
+      onReceived({ id: 'p2', title: 'Otra', data: {} });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.schedule).toHaveBeenCalledTimes(2);
+      });
+      const ids = localNotifications.schedule.mock.calls.map(
+        (call) => (call[0] as { notifications: Array<{ id: number }> }).notifications[0].id,
+      );
+      expect(new Set(ids).size).toBe(2);
+    });
+
+    it('falls back to the title and body inside data', async () => {
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', data: { type: 'new_event', title: 'Desde data', body: 'Cuerpo' } });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.schedule).toHaveBeenCalledWith({
+          notifications: [expect.objectContaining({ title: 'Desde data', body: 'Cuerpo' })],
+        });
+      });
+    });
+
+    it('shows nothing when there is no title to show', async () => {
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', data: { type: 'new_event' } });
+
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(localNotifications.schedule).not.toHaveBeenCalled();
+    });
+
+    it('gives up quietly when the user refuses the permission', async () => {
+      localNotifications.checkPermissions.mockResolvedValue({ display: 'denied' });
+      localNotifications.requestPermissions.mockResolvedValue({ display: 'denied' });
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', title: 'Nueva quedada', data: {} });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.requestPermissions).toHaveBeenCalled();
+      });
+      expect(localNotifications.schedule).not.toHaveBeenCalled();
+    });
+
+    it('creates the Android channel with a localized name', async () => {
+      await receivedListener();
+
+      await vi.waitFor(() => {
+        expect(localNotifications.createChannel).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 'quedamos-push',
+            name: 'push.channelName',
+            description: 'push.channelDescription',
+          }),
+        );
+      });
+    });
+
+    it('routes a tap on it exactly like a tap on a background push', async () => {
+      await receivedListener();
+
+      await vi.waitFor(() => {
+        expect(localNotifications.addListener).toHaveBeenCalledWith(
+          'localNotificationActionPerformed',
+          expect.any(Function),
+        );
+      });
+      const call = localNotifications.addListener.mock.calls.find(
+        (c) => c[0] === 'localNotificationActionPerformed',
+      );
+      const onTap = call![1] as (action: {
+        notification: { extra?: Record<string, string> };
+      }) => void;
+
+      onTap({
+        notification: {
+          extra: { type: 'role_changed', groupId: '00000000-0000-0000-0000-000000000051' },
+        },
+      });
+
+      expect(hrefSetter).toHaveBeenCalledWith('/tabs/group/00000000-0000-0000-0000-000000000051');
+    });
+  });
+
+  describe('registerWeb service worker registration', () => {
+    let register: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+      vi.stubEnv('VITE_FIREBASE_VAPID_KEY', 'vapid-key');
+      vi.stubEnv('VITE_FIREBASE_API_KEY', 'key');
+      vi.stubEnv('VITE_FIREBASE_AUTH_DOMAIN', 'app.firebaseapp.com');
+      vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'app-1');
+      vi.stubEnv('VITE_FIREBASE_MESSAGING_SENDER_ID', '123');
+      vi.stubEnv('VITE_FIREBASE_APP_ID', '1:123:web:abc');
+
+      vi.stubGlobal('Notification', {
+        permission: 'granted',
+        requestPermission: vi.fn().mockResolvedValue('granted'),
+      });
+      vi.mocked(getFirebaseMessaging).mockResolvedValue({ fake: 'messaging' } as never);
+      register = vi.fn().mockResolvedValue({});
+      Object.defineProperty(navigator, 'serviceWorker', {
+        value: { register, ready: Promise.resolve({ scope: '/' }) },
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      Reflect.deleteProperty(navigator, 'serviceWorker');
+    });
+
+    it('forwards the Firebase config in the query string so the worker has no copy of its own', async () => {
+      const { getToken } = await import('firebase/messaging');
+      vi.mocked(getToken).mockResolvedValue('web-token');
+
+      await registerForPush();
+
+      expect(register).toHaveBeenCalledTimes(1);
+      const [url] = register.mock.calls[0] as [string];
+      expect(url.startsWith('/firebase-messaging-sw.js?')).toBe(true);
+      const params = new URLSearchParams(url.slice(url.indexOf('?')));
+      expect(params.get('apiKey')).toBe('key');
+      expect(params.get('projectId')).toBe('app-1');
+      expect(params.get('messagingSenderId')).toBe('123');
+      expect(params.get('appId')).toBe('1:123:web:abc');
+      expect(params.get('authDomain')).toBe('app.firebaseapp.com');
+    });
+
+    it('warns instead of giving up in silence when the VAPID key is missing', async () => {
+      vi.stubEnv('VITE_FIREBASE_VAPID_KEY', '');
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const { token } = await registerForPush();
+
+      expect(token).toBeNull();
+      expect(register).not.toHaveBeenCalled();
+      expect(String(warn.mock.calls[0]?.[0])).toContain('VITE_FIREBASE_VAPID_KEY');
+      warn.mockRestore();
     });
   });
 

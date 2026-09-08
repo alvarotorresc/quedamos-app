@@ -13,9 +13,12 @@ vi.mock('@ionic/react', () => ({
   IonAlert: () => null,
 }));
 let search = '';
+// Stable across renders so tests can assert on it (a fresh object per call would lose
+// every recorded push/replace).
+const history = { push: vi.fn(), replace: vi.fn() };
 vi.mock('react-router-dom', () => ({
-  useHistory: () => ({ push: vi.fn(), replace: vi.fn() }),
-  useLocation: () => ({ search }),
+  useHistory: () => history,
+  useLocation: () => ({ search, pathname: '/tabs/plans' }),
 }));
 const mockT = vi.fn((key: string) => key);
 vi.mock('react-i18next', () => ({
@@ -26,8 +29,9 @@ vi.mock('react-icons/hi2', () => ({
   HiOutlineCalendar: () => <span data-testid="icon-calendar" />,
 }));
 vi.mock('../hooks/useAnalytics', () => ({ useScreenView: () => {}, useAnalytics: () => ({ track: vi.fn() }) }));
+const showInfo = vi.fn();
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }),
+  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo }),
 }));
 vi.mock('../hooks/useGroupSync', () => ({ useGroupSync: () => {} }));
 vi.mock('../hooks/useMyColor', () => ({ useMyColor: () => '#60A5FA' }));
@@ -40,22 +44,40 @@ vi.mock('../stores/auth', () => ({
 }));
 const GROUP = { id: 'g1', name: 'La cuadrilla', emoji: '🏔️', createdById: 'u1', createdAt: '', members: [] };
 let groupsList: (typeof GROUP)[] = [GROUP];
+// One state object for the whole render, with stable function identities: useAutoSelectGroup
+// reads it through three separate selector calls and depends on them not changing.
+const setCurrentGroup = vi.fn();
+const getPersistedGroupId = vi.fn(() => null as string | null);
+const groupState = {
+  currentGroup: null as typeof GROUP | null,
+  setCurrentGroup,
+  getPersistedGroupId,
+};
 vi.mock('../stores/group', () => ({
-  useGroupStore: vi.fn((selector?: (s: { currentGroup: typeof GROUP | null; setCurrentGroup: () => void }) => unknown) => {
-    const state = { currentGroup: groupsList[0] ?? null, setCurrentGroup: vi.fn() };
-    return selector ? selector(state) : state;
-  }),
+  useGroupStore: vi.fn((selector?: (s: typeof groupState) => unknown) =>
+    selector ? selector(groupState) : groupState,
+  ),
 }));
 vi.mock('../hooks/useGroups', () => ({
   useGroups: () => ({ data: groupsList, isLoading: false }),
   useGroup: () => ({ data: GROUP, isLoading: false }),
   useGroupInvite: () => ({ data: undefined }),
 }));
+let proposals: Array<Record<string, unknown>> = [];
 vi.mock('../hooks/useProposals', () => ({
-  useProposals: () => ({ data: [] }),
-  useVoteProposal: () => ({ mutateAsync: vi.fn() }),
-  useCloseProposal: () => ({ mutateAsync: vi.fn() }),
+  useProposals: () => ({ data: proposals, isLoading: false }),
+  useVoteProposal: () => ({ mutate: vi.fn(), mutateAsync: vi.fn() }),
+  useCloseProposal: () => ({ mutate: vi.fn(), mutateAsync: vi.fn() }),
 }));
+
+const prop = (id: string, status: string) => ({
+  id,
+  groupId: 'g1',
+  title: `Propuesta ${id}`,
+  status,
+  createdBy: { id: 'u1', name: 'Vera' },
+  votes: [],
+});
 
 let events: Array<Record<string, unknown>> = [];
 vi.mock('../hooks/useEvents', () => ({
@@ -93,7 +115,10 @@ describe('PlansPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     search = '';
+    proposals = [];
     groupsList = [GROUP];
+    groupState.currentGroup = GROUP;
+    getPersistedGroupId.mockReturnValue(null);
     events = [
       ev('e2', 'Pádel y cañas', '2099-02-01', 'pending', 'pending'),
       ev('e1', 'Cena en casa de Iris', '2099-01-05', 'confirmed'),
@@ -135,6 +160,30 @@ describe('PlansPage', () => {
     expect(btn.className).not.toContain('bg-primary-dark');
   });
 
+  it('al quedarse sin grupos, suelta el que había seleccionado', () => {
+    // La copia que vivía aquí no tenía la rama `groups.length === 0` de
+    // useAutoSelectGroup: al salir del último grupo, Planes seguía apuntando a él.
+    groupsList = [];
+    groupState.currentGroup = GROUP;
+
+    render(<PlansPage />);
+
+    expect(setCurrentGroup).toHaveBeenCalledWith(null);
+  });
+
+  it('el groupId del enlace de la notificación manda sobre el grupo seleccionado', () => {
+    // El service worker no puede tocar el localStorage: el groupId de la URL es el único
+    // canal que le llega, y Planes lo ignoraba.
+    const otro = { ...GROUP, id: 'g2', name: 'La otra' };
+    groupsList = [GROUP, otro];
+    groupState.currentGroup = GROUP;
+    search = '?eventId=e1&groupId=g2';
+
+    render(<PlansPage />);
+
+    expect(setCurrentGroup).toHaveBeenCalledWith(otro);
+  });
+
   it('el vacío de propuestas describe con una clave real de i18n', () => {
     events = [];
     render(<PlansPage />);
@@ -168,6 +217,81 @@ describe('PlansPage', () => {
         vi.advanceTimersByTime(2500);
       });
       expect(document.getElementById('event-e1')?.className).not.toContain('ring-primary');
+    });
+
+    it('abre la pestaña de propuestas y resalta la propuesta del enlace', () => {
+      // new_proposal / proposal_voted caían en Planes con la pestaña de Quedadas
+      // delante: la propuesta ni siquiera estaba en pantalla.
+      search = '?proposalId=p1';
+      proposals = [prop('p1', 'open')];
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+
+      render(<PlansPage />);
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+      expect(document.getElementById('proposal-p1')?.className).toContain('ring-primary');
+
+      act(() => {
+        vi.advanceTimersByTime(2500);
+      });
+      expect(document.getElementById('proposal-p1')?.className).not.toContain('ring-primary');
+    });
+
+    it('despliega las cerradas para llegar a una propuesta ya convertida', () => {
+      search = '?proposalId=p9';
+      proposals = [prop('p1', 'open'), prop('p9', 'converted')];
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+
+      render(<PlansPage />);
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(document.getElementById('proposal-p9')).not.toBeNull();
+      expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    });
+
+    it('avisa y limpia la URL cuando la quedada del aviso ya no existe', () => {
+      // Antes no pasaba absolutamente nada: ni scroll, ni mensaje, y el id se quedaba en
+      // la URL disparando el efecto en cada render.
+      search = '?eventId=e404&groupId=g1';
+
+      render(<PlansPage />);
+
+      expect(showInfo).toHaveBeenCalledWith('plans.eventNotFound');
+      expect(history.replace).toHaveBeenCalledWith('/tabs/plans');
+    });
+
+    it('avisa y limpia la URL cuando la propuesta del aviso ya no existe', () => {
+      search = '?proposalId=p404';
+      proposals = [prop('p1', 'open')];
+
+      render(<PlansPage />);
+
+      expect(showInfo).toHaveBeenCalledWith('proposals.notFound');
+      expect(history.replace).toHaveBeenCalledWith('/tabs/plans');
+    });
+
+    it('avisa una sola vez de cada cosa cuando faltan las dos', () => {
+      search = '?eventId=e404&proposalId=p404';
+
+      render(<PlansPage />);
+
+      expect(showInfo).toHaveBeenCalledTimes(2);
+      expect(showInfo).toHaveBeenCalledWith('plans.eventNotFound');
+      expect(showInfo).toHaveBeenCalledWith('proposals.notFound');
+    });
+
+    it('no avisa de nada cuando la quedada sí está', () => {
+      render(<PlansPage />);
+
+      expect(showInfo).not.toHaveBeenCalled();
+      expect(history.replace).not.toHaveBeenCalled();
     });
 
     it('despliega las pasadas y llega igualmente a una quedada vieja', () => {

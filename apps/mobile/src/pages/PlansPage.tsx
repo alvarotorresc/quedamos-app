@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonContent,
@@ -20,10 +20,12 @@ import { HiOutlineCalendar } from 'react-icons/hi2';
 import { useAuthStore } from '../stores/auth';
 import { useGroupStore } from '../stores/group';
 import { useGroups, useGroup } from '../hooks/useGroups';
+import { useAutoSelectGroup } from '../hooks/useAutoSelectGroup';
 import { useEvents, useDeleteEvent, useCancelEvent, useConfirmEvent } from '../hooks/useEvents';
 import { useProposals, useVoteProposal, useCloseProposal } from '../hooks/useProposals';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupSync } from '../hooks/useGroupSync';
+import { useToast } from '../hooks/useToast';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useGroupWeather } from '../hooks/useWeather';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
@@ -46,28 +48,50 @@ export default function PlansPage() {
   const user = useAuthStore((s) => s.user);
   const myColor = useMyColor();
   const [highlightEventId, setHighlightEventId] = useState<string | null>(null);
+  const [highlightProposalId, setHighlightProposalId] = useState<string | null>(null);
   const scrolledRef = useRef(false);
+  const proposalScrolledRef = useRef(false);
+  // One ref each: a URL carrying both ids, with both gone, would otherwise stack two
+  // toasts — the second effect would compare against the first effect's id and not match.
+  const missingEventRef = useRef<string | null>(null);
+  const missingProposalRef = useRef<string | null>(null);
+
+  const { showInfo } = useToast();
+  // useToast hands back a fresh closure on every render; through a ref, the effects below
+  // depend on the deep link and the loaded data only, instead of re-running (and
+  // rescheduling their timers) on every render.
+  const showInfoRef = useRef(showInfo);
+  showInfoRef.current = showInfo;
+
+  // Deep link params from a push notification (see lib/push-routes.ts).
+  const searchParams = new URLSearchParams(location.search);
+  const targetEventId = searchParams.get('eventId');
+  const targetProposalId = searchParams.get('proposalId');
+  const deepLinkGroupId = searchParams.get('groupId');
 
   // Group selection
   const { data: groups, isLoading: groupsLoading } = useGroups();
-  const { currentGroup, setCurrentGroup, getPersistedGroupId } = useGroupStore();
+  const { currentGroup, setCurrentGroup } = useGroupStore();
 
-  // Auto-select group on load
-  useEffect(() => {
-    if (!groups || groups.length === 0) return;
-    if (currentGroup && groups.find((g) => g.id === currentGroup.id)) return;
-
-    const persistedId = getPersistedGroupId();
-    const match = persistedId ? groups.find((g) => g.id === persistedId) : null;
-    setCurrentGroup(match ?? groups[0]);
-  }, [groups, currentGroup, setCurrentGroup, getPersistedGroupId]);
-
-  // Read eventId from push notification deep link
-  const searchParams = new URLSearchParams(location.search);
-  const targetEventId = searchParams.get('eventId');
+  // Was a copy of useAutoSelectGroup missing its `groups.length === 0` branch, so leaving
+  // your last group left Planes pointing at it: the group selector kept it selected and
+  // every query below still asked the API for a group you are not in.
+  useAutoSelectGroup(groups, deepLinkGroupId);
 
   const groupId = currentGroup?.id ?? '';
   useGroupSync(groupId || undefined);
+
+  // A push can outlive what it points at: the plan was deleted, the proposal closed and
+  // wiped. Leaving the id in the URL meant a silent nothing — no scroll, no message, and
+  // a stale param that fires again on every re-render of this page.
+  const clearDeepLinkParams = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    params.delete('eventId');
+    params.delete('proposalId');
+    params.delete('groupId');
+    const query = params.toString();
+    history.replace(query ? `${location.pathname}?${query}` : location.pathname);
+  }, [history, location.pathname, location.search]);
 
   // Group detail (for members)
   const { data: groupDetail } = useGroup(groupId);
@@ -103,7 +127,7 @@ export default function PlansPage() {
   const confirmEvent = useConfirmEvent(groupId);
 
   // Proposals state
-  const { data: proposals } = useProposals(groupId);
+  const { data: proposals, isLoading: proposalsLoading } = useProposals(groupId);
   const voteProposal = useVoteProposal(groupId);
   const closeProposal = useCloseProposal(groupId);
   const [votingProposalId, setVotingProposalId] = useState<string | null>(null);
@@ -183,6 +207,59 @@ export default function PlansPage() {
       if (fadeHighlight) clearTimeout(fadeHighlight);
     };
   }, [targetEventId, eventsLoading, past, showPast]);
+
+  // The plan the notification pointed at is not in the list any more.
+  useEffect(() => {
+    if (!targetEventId || !groupId || eventsLoading || !events) return;
+    if (events.some((ev) => ev.id === targetEventId)) return;
+    if (missingEventRef.current === targetEventId) return;
+
+    missingEventRef.current = targetEventId;
+    showInfoRef.current('plans.eventNotFound');
+    clearDeepLinkParams();
+  }, [targetEventId, groupId, eventsLoading, events, clearDeepLinkParams]);
+
+  // Same for the proposal.
+  useEffect(() => {
+    if (!targetProposalId || !groupId || proposalsLoading || !proposals) return;
+    if (proposals.some((p) => p.id === targetProposalId)) return;
+    if (missingProposalRef.current === targetProposalId) return;
+
+    missingProposalRef.current = targetProposalId;
+    showInfoRef.current('proposals.notFound');
+    clearDeepLinkParams();
+  }, [targetProposalId, groupId, proposalsLoading, proposals, clearDeepLinkParams]);
+
+  // Same, for a proposal: new_proposal / proposal_voted land here with ?proposalId=.
+  // Opening the right tab is part of the job — Planes shows Quedadas by default, so
+  // without this the notification opened a screen where the proposal is not even
+  // rendered.
+  useEffect(() => {
+    if (!targetProposalId || proposalScrolledRef.current || proposalsLoading) return;
+    const proposal = (proposals ?? []).find((p) => p.id === targetProposalId);
+    if (!proposal) return;
+
+    setActiveTab('proposals');
+    if (proposal.status !== 'open' && !showClosedProposals) {
+      setShowClosedProposals(true);
+    }
+
+    let fadeHighlight: ReturnType<typeof setTimeout> | undefined;
+    const scrollToProposal = setTimeout(() => {
+      const el = document.getElementById(`proposal-${targetProposalId}`);
+      if (el) {
+        proposalScrolledRef.current = true;
+        setHighlightProposalId(targetProposalId);
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        fadeHighlight = setTimeout(() => setHighlightProposalId(null), 2500);
+      }
+    }, 300);
+
+    return () => {
+      clearTimeout(scrollToProposal);
+      if (fadeHighlight) clearTimeout(fadeHighlight);
+    };
+  }, [targetProposalId, proposalsLoading, proposals, showClosedProposals]);
 
   // Loading state
   if (groupsLoading) {
@@ -478,10 +555,11 @@ export default function PlansPage() {
                         {openProposals.map((p, i) => (
                           <motion.div
                             key={p.id}
+                            id={`proposal-${p.id}`}
                             initial={{ opacity: 0, y: 16 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                            className={i === openProposals.length - 1 ? 'border-b border-subtle' : ''}
+                            className={`transition-all duration-500 ${i === openProposals.length - 1 ? 'border-b border-subtle' : ''} ${highlightProposalId === p.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg rounded-lg' : ''}`}
                           >
                             <ProposalCard
                               proposal={p}
@@ -524,6 +602,7 @@ export default function PlansPage() {
                           {closedOrConvertedProposals.map((p, i) => (
                             <motion.div
                               key={p.id}
+                              id={`proposal-${p.id}`}
                               initial={{ opacity: 0, y: 16 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{
@@ -531,11 +610,7 @@ export default function PlansPage() {
                                 duration: 0.4,
                                 ease: [0.16, 1, 0.3, 1],
                               }}
-                              className={
-                                i === closedOrConvertedProposals.length - 1
-                                  ? 'border-b border-subtle'
-                                  : ''
-                              }
+                              className={`transition-all duration-500 ${i === closedOrConvertedProposals.length - 1 ? 'border-b border-subtle' : ''} ${highlightProposalId === p.id ? 'ring-2 ring-primary ring-offset-2 ring-offset-bg rounded-lg' : ''}`}
                             >
                               <ProposalCard
                                 proposal={p}

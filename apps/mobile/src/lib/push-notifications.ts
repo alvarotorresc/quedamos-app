@@ -1,7 +1,9 @@
 import { Capacitor } from '@capacitor/core';
-import { PushNotifications } from '@capacitor/push-notifications';
+import { PushNotifications, type PushNotificationSchema } from '@capacitor/push-notifications';
 import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from './firebase';
+import { readEnv, firebaseSwConfigParams } from './env';
+import { resolvePushRoute } from './push-routes';
 import { api } from './api';
 
 let currentToken: string | null = null;
@@ -124,10 +126,23 @@ async function registerWeb(): Promise<string | null> {
   const messaging = await getFirebaseMessaging();
   if (!messaging) return null;
 
-  const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
-  if (!vapidKey) return null;
+  const vapidKey = readEnv('VITE_FIREBASE_VAPID_KEY');
+  if (!vapidKey) {
+    // Used to be a silent `return null`, indistinguishable from "the user said no": the
+    // whole web push flow stopped here with nothing in the console. Unconditional, same
+    // reasoning as warnMissingEnvVars() — a build deployed without the key looks fine.
+    console.warn('[Push] VITE_FIREBASE_VAPID_KEY is missing: web push stays disabled.');
+    return null;
+  }
 
-  await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  // The config travels in the query string so public/firebase-messaging-sw.js has no
+  // hardcoded copy of its own; the worker reads it back from self.location.search. The
+  // query does not change the registration scope (still '/'), and a different config
+  // registers a different script URL, which is exactly the invalidation we want.
+  const swQuery = firebaseSwConfigParams();
+  await navigator.serviceWorker.register(
+    swQuery ? `/firebase-messaging-sw.js?${swQuery}` : '/firebase-messaging-sw.js',
+  );
   const registration = await navigator.serviceWorker.ready;
 
   const token = await getToken(messaging, {
@@ -156,15 +171,127 @@ export async function unregisterFromBackend(): Promise<void> {
   currentToken = null;
 }
 
+/** Android channel the re-emitted foreground notifications go through. */
+const LOCAL_CHANNEL_ID = 'quedamos-push';
+
+let localNotificationSeq = 0;
+
+/** Local notification ids must be 32-bit ints and unique among the pending ones. */
+function nextLocalNotificationId(): number {
+  localNotificationSeq = (localNotificationSeq % 2147483000) + 1;
+  return localNotificationSeq;
+}
+
+type LocalNotificationsPlugin = (typeof import('@capacitor/local-notifications'))['LocalNotifications'];
+
+let localNotificationsLoad: Promise<{ plugin: LocalNotificationsPlugin } | null> | null = null;
+
+/**
+ * Imported on demand rather than at the top of the module: this file is also loaded by web
+ * builds and by test suites that stub `@capacitor/core` down to `isNativePlatform`, where
+ * registering a native plugin at import time would throw before anything ran.
+ *
+ * The plugin comes back wrapped in an object, never bare: Capacitor's registerPlugin
+ * returns a Proxy that answers to ANY property, `then` included, so resolving a promise
+ * with it makes the runtime treat it as a thenable and call `LocalNotifications.then()` —
+ * a native method that does not exist.
+ */
+function loadLocalNotifications(): Promise<{ plugin: LocalNotificationsPlugin } | null> {
+  localNotificationsLoad ??= import('@capacitor/local-notifications')
+    .then((module) => ({ plugin: module.LocalNotifications }))
+    .catch((err: unknown) => {
+      if (import.meta.env.DEV) {
+        console.error('[Push] LocalNotifications plugin unavailable:', err);
+      }
+      return null;
+    });
+  return localNotificationsLoad;
+}
+
+/**
+ * Create the Android channel and listen for taps on the notifications we raise
+ * ourselves. The channel name is localized through the app's own i18n — Android caches
+ * it, so a language change shows up on the next launch, which is when this runs again.
+ */
+async function setupLocalNotifications(): Promise<void> {
+  const loaded = await loadLocalNotifications();
+  if (!loaded) return;
+  const localNotifications = loaded.plugin;
+
+  try {
+    const { default: i18n } = await import('../i18n');
+    await localNotifications.createChannel({
+      id: LOCAL_CHANNEL_ID,
+      name: i18n.t('push.channelName'),
+      description: i18n.t('push.channelDescription'),
+      importance: 4,
+      visibility: 1,
+    });
+
+    await localNotifications.addListener('localNotificationActionPerformed', (action) => {
+      // The local equivalent of a push's `data`: whatever we put in `extra` below.
+      const data = action.notification.extra as Record<string, string> | undefined;
+      if (!data?.type) return;
+      navigateFromPush(data);
+    });
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.error('[Push] Could not set up local notifications:', err);
+    }
+  }
+}
+
+/**
+ * Android does not draw a push that arrives while the app is in the foreground — the
+ * system hands it to the app instead, and this listener used to be an empty TODO, so the
+ * notification simply never appeared. Re-raise it as a local notification carrying the
+ * same title, body and data, so it reaches the tray and its tap routes exactly like a
+ * background one.
+ */
+async function showForegroundPush(notification: PushNotificationSchema): Promise<void> {
+  const data = (notification.data ?? {}) as Record<string, string>;
+  const title = notification.title ?? data.title;
+  const body = notification.body ?? data.body ?? '';
+  if (!title) return;
+
+  const loaded = await loadLocalNotifications();
+  if (!loaded) return;
+  const localNotifications = loaded.plugin;
+
+  try {
+    let permission = await localNotifications.checkPermissions();
+    if (permission.display !== 'granted') {
+      permission = await localNotifications.requestPermissions();
+    }
+    if (permission.display !== 'granted') return;
+
+    await localNotifications.schedule({
+      notifications: [
+        {
+          id: nextLocalNotificationId(),
+          title,
+          body,
+          channelId: LOCAL_CHANNEL_ID,
+          extra: data,
+        },
+      ],
+    });
+  } catch (err) {
+    if (import.meta.env.DEV) {
+      console.error('[Push] Could not show a foreground notification:', err);
+    }
+  }
+}
+
 export function setupPushListeners(): void {
   if (nativePushSetup) return;
   if (!Capacitor.isNativePlatform()) return;
   nativePushSetup = true;
 
-  PushNotifications.addListener('pushNotificationReceived', (_notification) => {
-    // On Android, foreground notifications are not shown automatically.
-    // The notification object contains title/body but needs a local notification
-    // plugin to display as a system notification. TODO: use LocalNotifications plugin.
+  void setupLocalNotifications();
+
+  PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    void showForegroundPush(notification);
   });
 
   PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
@@ -177,43 +304,24 @@ export function setupPushListeners(): void {
 
 const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
+/**
+ * Open whatever the notification points at. The type -> screen table lives in
+ * `push-routes.ts`, shared (by hand, and checked by its test) with the service worker's
+ * notificationclick handler.
+ */
 function navigateFromPush(data: Record<string, string>): void {
-  const { type, groupId, eventId, pollId } = data;
+  const route = resolvePushRoute(data);
 
-  // Validate UUIDs before using in URLs or storage
-  const validGroupId = groupId && UUID_RE.test(groupId) ? groupId : undefined;
-  const validEventId = eventId && UUID_RE.test(eventId) ? eventId : undefined;
-
-  if (validGroupId) {
-    localStorage.setItem(GROUP_STORAGE_KEY, validGroupId);
+  // Only after resolving, and only for a group you are still in: this used to run
+  // unconditionally before looking at the type, so member_kicked / group_deleted stored
+  // the id of a group you had just been thrown out of as "the current group".
+  if (route.persistGroupId) {
+    localStorage.setItem(GROUP_STORAGE_KEY, route.persistGroupId);
+  } else if (route.forgetGroupId && localStorage.getItem(GROUP_STORAGE_KEY) === route.forgetGroupId) {
+    localStorage.removeItem(GROUP_STORAGE_KEY);
   }
 
-  if (type === 'member_joined' || type === 'member_left') {
-    window.location.href = validGroupId ? `/tabs/group/${validGroupId}` : '/tabs/group';
-  } else if (type === 'new_poll') {
-    // poll_completed is informational only ("El aro se cierra") — its poll is already
-    // `completed`, so the mazo can never focus/consume a pollId for it. Only an open
-    // question (new_poll) gets the deep-link param.
-    //
-    // groupId travels alongside pollId (not just in localStorage above) because the
-    // service worker's notificationclick path replicates this same routing but has no
-    // access to the page's localStorage — the URL is the only channel that reaches it.
-    // Each field validates independently: garbage in one must not suppress the other.
-    const pollOk = typeof pollId === 'string' && UUID_RE.test(pollId);
-    const pollParams = new URLSearchParams();
-    if (pollOk) pollParams.set('pollId', pollId);
-    if (validGroupId) pollParams.set('groupId', validGroupId);
-    const pollQuery = pollParams.toString();
-    window.location.href = pollQuery ? `/tabs/calendar?${pollQuery}` : '/tabs/calendar';
-  } else if (type === 'poll_completed') {
-    window.location.href = '/tabs/calendar';
-  } else if (validEventId) {
-    window.location.href = `/tabs/plans?eventId=${validEventId}`;
-  } else {
-    window.location.href = '/tabs/plans';
-  }
+  window.location.href = route.url;
 }
 
 /**
