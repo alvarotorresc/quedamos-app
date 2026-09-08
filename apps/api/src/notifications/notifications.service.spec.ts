@@ -20,6 +20,15 @@ jest.mock('firebase-admin/messaging', () => ({
 import * as adminApp from 'firebase-admin/app';
 const admin = { initializeApp: adminApp.initializeApp, credential: { cert: adminApp.cert } };
 
+// Stand-ins for the tests that only care about tokens, batching and logging: the
+// weekly reminder takes no params, new_event takes the two the copy interpolates.
+const REMINDER_COPY = {
+  title: 'Marca tu disponibilidad',
+  body: 'Todavía no has marcado disponibilidad para la semana que viene',
+};
+const NEW_EVENT = { actorName: 'Ana', title: 'Cena' };
+const NEW_EVENT_COPY = { title: 'Nueva quedada', body: 'Ana ha creado "Cena"' };
+
 describe('NotificationsService', () => {
   let service: NotificationsService;
   let prisma: ReturnType<typeof createMockPrisma>;
@@ -28,6 +37,8 @@ describe('NotificationsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     prisma = createMockPrisma();
+    // No opt-out rows by default: every send now resolves preferences for its type.
+    prisma.notificationPreference.findMany.mockResolvedValue([]);
     configService = createMockConfigService();
     service = new NotificationsService(
       prisma as unknown as PrismaService,
@@ -269,7 +280,7 @@ describe('NotificationsService', () => {
     it('should return sent 0 when no tokens', async () => {
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      const result = await service.sendToUser('user-1', 'Title', 'Body');
+      const result = await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(result).toEqual({ sent: 0 });
     });
@@ -277,7 +288,7 @@ describe('NotificationsService', () => {
     it('should skip when notificationType is disabled', async () => {
       prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: false });
 
-      const result = await service.sendToUser('user-1', 'Title', 'Body', undefined, 'new_event');
+      const result = await service.sendToUser('user-1', 'new_event', NEW_EVENT);
 
       expect(result).toEqual({ sent: 0 });
       expect(prisma.pushToken.findMany).not.toHaveBeenCalled();
@@ -287,7 +298,7 @@ describe('NotificationsService', () => {
       prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: true });
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      const result = await service.sendToUser('user-1', 'Title', 'Body', undefined, 'new_event');
+      const result = await service.sendToUser('user-1', 'new_event', NEW_EVENT);
 
       expect(result).toEqual({ sent: 0 });
       expect(prisma.pushToken.findMany).toHaveBeenCalled();
@@ -302,14 +313,14 @@ describe('NotificationsService', () => {
         responses: [{ success: true }],
       });
 
-      const result = await service.sendToUser('user-1', 'Title', 'Body', { type: 'test' });
+      const result = await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(result).toEqual({ sent: 1 });
       expect(mockSendEachForMulticast).toHaveBeenCalledWith(
         expect.objectContaining({
           tokens: ['fcm-token-123'],
-          notification: { title: 'Title', body: 'Body' },
-          data: { type: 'test' },
+          notification: REMINDER_COPY,
+          data: { type: 'weekly_availability_reminder' },
         }),
       );
     });
@@ -336,7 +347,7 @@ describe('NotificationsService', () => {
         ],
       });
 
-      const result = await service.sendToUser('user-1', 'Title', 'Body');
+      const result = await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(result).toEqual({ sent: 1 });
       expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
@@ -349,14 +360,17 @@ describe('NotificationsService', () => {
       prisma.pushToken.findMany.mockResolvedValue([{ token: 'tok' }]);
       mockSendEachForMulticast.mockRejectedValue(new Error('FCM down'));
 
-      const result = await service.sendToUser('user-1', 'Title', 'Body');
+      const result = await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(result).toEqual({ sent: 0 });
     });
 
     it('should create a notification log after successful send', async () => {
       service.onModuleInit();
-      prisma.pushToken.findMany.mockResolvedValue([{ token: 'tok-1' }, { token: 'tok-2' }]);
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1' },
+        { userId: 'user-1', token: 'tok-2' },
+      ]);
       prisma.notificationLog.create.mockResolvedValue({});
       mockSendEachForMulticast.mockResolvedValue({
         successCount: 2,
@@ -364,15 +378,15 @@ describe('NotificationsService', () => {
         responses: [{ success: true }, { success: true }],
       });
 
-      await service.sendToUser('user-1', 'Hello', 'World', { screen: 'home' }, 'new_event');
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT, { screen: 'home' });
 
       expect(prisma.notificationLog.create).toHaveBeenCalledWith({
         data: {
           userId: 'user-1',
           type: 'new_event',
-          title: 'Hello',
-          body: 'World',
-          data: { screen: 'home' },
+          title: NEW_EVENT_COPY.title,
+          body: NEW_EVENT_COPY.body,
+          data: { screen: 'home', type: 'new_event' },
           tokenCount: 2,
           sentCount: 2,
           failedCount: 0,
@@ -382,7 +396,10 @@ describe('NotificationsService', () => {
 
     it('should create a notification log with failure counts', async () => {
       service.onModuleInit();
-      prisma.pushToken.findMany.mockResolvedValue([{ token: 'valid' }, { token: 'invalid' }]);
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'valid' },
+        { userId: 'user-1', token: 'invalid' },
+      ]);
       prisma.notificationLog.create.mockResolvedValue({});
       prisma.pushToken.deleteMany.mockResolvedValue({ count: 1 });
       mockSendEachForMulticast.mockResolvedValue({
@@ -397,7 +414,7 @@ describe('NotificationsService', () => {
         ],
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(prisma.notificationLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -412,7 +429,7 @@ describe('NotificationsService', () => {
     it('should not create a log when there are no tokens', async () => {
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(prisma.notificationLog.create).not.toHaveBeenCalled();
     });
@@ -420,7 +437,7 @@ describe('NotificationsService', () => {
     it('should not create a log when notification type is disabled', async () => {
       prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: false });
 
-      await service.sendToUser('user-1', 'Title', 'Body', undefined, 'new_event');
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT);
 
       expect(prisma.notificationLog.create).not.toHaveBeenCalled();
     });
@@ -442,14 +459,14 @@ describe('NotificationsService', () => {
         responses: [{ success: true }],
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body', { type: 'new_event' });
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
       const [[calledMessage]] = mockSendEachForMulticast.mock.calls;
       expect(calledMessage).toEqual(
         expect.objectContaining({
           tokens: ['web-token'],
-          data: { type: 'new_event', title: 'Title', body: 'Body' },
+          data: { type: 'weekly_availability_reminder', ...REMINDER_COPY },
         }),
       );
       expect(calledMessage).not.toHaveProperty('notification');
@@ -467,14 +484,14 @@ describe('NotificationsService', () => {
         responses: [{ success: true }],
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body', { type: 'new_event' });
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
       expect(mockSendEachForMulticast).toHaveBeenCalledWith(
         expect.objectContaining({
           tokens: ['android-token'],
-          notification: { title: 'Title', body: 'Body' },
-          data: { type: 'new_event' },
+          notification: REMINDER_COPY,
+          data: { type: 'weekly_availability_reminder' },
           android: {
             notification: {
               channelId: 'default',
@@ -497,7 +514,7 @@ describe('NotificationsService', () => {
         responses: message.tokens.map(() => ({ success: true })),
       }));
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(2);
       const calls = mockSendEachForMulticast.mock.calls.map(
@@ -510,11 +527,9 @@ describe('NotificationsService', () => {
       );
       const webCall = calls.find((c: { tokens: string[] }) => c.tokens.includes('web-token'));
 
-      expect(androidCall).toEqual(
-        expect.objectContaining({ notification: { title: 'Title', body: 'Body' } }),
-      );
+      expect(androidCall).toEqual(expect.objectContaining({ notification: REMINDER_COPY }));
       expect(webCall).not.toHaveProperty('notification');
-      expect(webCall?.data).toEqual({ title: 'Title', body: 'Body' });
+      expect(webCall?.data).toEqual({ type: 'weekly_availability_reminder', ...REMINDER_COPY });
     });
 
     it('should send a single multicast call for web-only tokens (no notification key)', async () => {
@@ -529,7 +544,7 @@ describe('NotificationsService', () => {
         responses: [{ success: true }, { success: true }],
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
       const [[calledMessage]] = mockSendEachForMulticast.mock.calls;
@@ -549,11 +564,11 @@ describe('NotificationsService', () => {
         responses: [{ success: true }, { success: true }],
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
       expect(mockSendEachForMulticast).toHaveBeenCalledWith(
-        expect.objectContaining({ notification: { title: 'Title', body: 'Body' } }),
+        expect.objectContaining({ notification: REMINDER_COPY }),
       );
     });
 
@@ -584,7 +599,7 @@ describe('NotificationsService', () => {
         };
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(prisma.notificationLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
@@ -622,7 +637,7 @@ describe('NotificationsService', () => {
         };
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(prisma.pushToken.deleteMany).toHaveBeenCalledWith({
         where: { token: { in: ['android-invalid'] } },
@@ -643,12 +658,12 @@ describe('NotificationsService', () => {
         responses: [{ success: true }],
       });
 
-      await service.sendToUser('user-1', 'Title', 'Body');
+      await service.sendToUser('user-1', 'weekly_availability_reminder', {});
 
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
       expect(mockSendEachForMulticast).toHaveBeenCalledWith(
         expect.objectContaining({
-          notification: { title: 'Title', body: 'Body' },
+          notification: REMINDER_COPY,
         }),
       );
     });
@@ -668,9 +683,9 @@ describe('NotificationsService', () => {
       const result = await service.sendTestNotification('user-1', {});
 
       expect(result).toEqual({ sent: 1 });
-      expect(prisma.pushToken.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user-1' },
-      });
+      expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId: 'user-1' } }),
+      );
     });
 
     it('should use custom title and body when provided', async () => {
@@ -710,8 +725,8 @@ describe('NotificationsService', () => {
       expect(mockSendEachForMulticast).toHaveBeenCalledWith(
         expect.objectContaining({
           notification: {
-            title: 'Test notification',
-            body: 'If you see this, notifications are working!',
+            title: 'Notificación de prueba',
+            body: 'Si ves esto, las notificaciones funcionan',
           },
         }),
       );
@@ -834,7 +849,7 @@ describe('NotificationsService', () => {
       prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      await service.sendToGroup('group-1', 'Title', 'Body', 'user-1');
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT, 'user-1');
 
       expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -846,7 +861,7 @@ describe('NotificationsService', () => {
     it('should return sent 0 when no members', async () => {
       prisma.groupMember.findMany.mockResolvedValue([]);
 
-      const result = await service.sendToGroup('group-1', 'Title', 'Body');
+      const result = await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
 
       expect(result).toEqual({ sent: 0 });
     });
@@ -862,7 +877,7 @@ describe('NotificationsService', () => {
       ]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      await service.sendToGroup('group-1', 'Title', 'Body', undefined, undefined, 'new_event');
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
 
       expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -871,13 +886,15 @@ describe('NotificationsService', () => {
       );
     });
 
-    it('should not filter when notificationType is not provided', async () => {
+    it('should look the preference up for the type being sent', async () => {
       prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      await service.sendToGroup('group-1', 'Title', 'Body');
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
 
-      expect(prisma.notificationPreference.findMany).not.toHaveBeenCalled();
+      expect(prisma.notificationPreference.findMany).toHaveBeenCalledWith({
+        where: { userId: { in: ['user-1', 'user-2'] }, type: 'new_event', enabled: false },
+      });
     });
 
     it('should log one notification_logs row per recipient', async () => {
@@ -895,14 +912,7 @@ describe('NotificationsService', () => {
         responses: [{ success: true }, { success: true }],
       });
 
-      await service.sendToGroup(
-        'group-1',
-        'Nueva quedada',
-        'Body',
-        undefined,
-        { type: 'new_event' },
-        'new_event',
-      );
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
 
       expect(prisma.notificationLog.create).toHaveBeenCalledTimes(2);
       for (const userId of ['user-1', 'user-2']) {
@@ -910,7 +920,7 @@ describe('NotificationsService', () => {
           data: expect.objectContaining({
             userId,
             type: 'new_event',
-            title: 'Nueva quedada',
+            title: NEW_EVENT_COPY.title,
             tokenCount: 1,
             sentCount: 1,
             failedCount: 0,
@@ -936,7 +946,7 @@ describe('NotificationsService', () => {
         ],
       });
 
-      await service.sendToGroup('group-1', 'Title', 'Body');
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
 
       expect(prisma.notificationLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ userId: 'user-1', sentCount: 1, failedCount: 0 }),
@@ -957,7 +967,7 @@ describe('NotificationsService', () => {
       ]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      await service.sendToGroup('group-1', 'Title', 'Body', 'user-1', undefined, 'new_event');
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT, 'user-1');
 
       // user-1 excluded, user-2 disabled preference, only user-3 remains
       expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
@@ -978,10 +988,9 @@ describe('NotificationsService', () => {
 
       await service.sendToEventAttendees(
         'event-1',
-        'Title',
-        'Body',
+        'event_cancelled',
+        { title: 'Cena' },
         'user-1',
-        undefined,
         undefined,
         'confirmed',
       );
@@ -1004,7 +1013,7 @@ describe('NotificationsService', () => {
       ]);
       prisma.pushToken.findMany.mockResolvedValue([]);
 
-      await service.sendToEventAttendees('event-1', 'Quedada cancelada', 'Body', 'user-1');
+      await service.sendToEventAttendees('event-1', 'event_cancelled', { title: 'Cena' }, 'user-1');
 
       expect(prisma.eventAttendee.findMany).toHaveBeenCalledWith({
         where: { eventId: 'event-1' },
@@ -1019,7 +1028,9 @@ describe('NotificationsService', () => {
     it('should return sent 0 when no matching attendees', async () => {
       prisma.eventAttendee.findMany.mockResolvedValue([]);
 
-      const result = await service.sendToEventAttendees('event-1', 'Title', 'Body');
+      const result = await service.sendToEventAttendees('event-1', 'event_cancelled', {
+        title: 'Cena',
+      });
 
       expect(result).toEqual({ sent: 0 });
     });
@@ -1042,14 +1053,7 @@ describe('NotificationsService', () => {
         responses: [{ success: true }],
       });
 
-      await service.sendToEventAttendees(
-        'event-1',
-        'Quedada cancelada',
-        'Body',
-        undefined,
-        undefined,
-        'event_cancelled',
-      );
+      await service.sendToEventAttendees('event-1', 'event_cancelled', { title: 'Cena' });
 
       expect(prisma.notificationLog.create).toHaveBeenCalledTimes(2);
       expect(prisma.notificationLog.create).toHaveBeenCalledWith({
@@ -1074,17 +1078,148 @@ describe('NotificationsService', () => {
 
       await service.sendToEventAttendees(
         'event-1',
-        'Title',
-        'Body',
-        undefined,
-        undefined,
         'event_updated',
+        { title: 'Cena' },
+        undefined,
+        undefined,
         'confirmed',
       );
 
       expect(prisma.pushToken.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { userId: { in: ['user-1'] } },
+        }),
+      );
+    });
+  });
+  // One text for the whole group was the bug: a group with an English speaker got the
+  // Spanish copy. The fan-out now sends one FCM batch per language present.
+  describe('per-language fan-out', () => {
+    const MONDAY = new Date('2026-09-07T00:00:00Z');
+
+    beforeEach(() => {
+      service.onModuleInit();
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'es-user' }, { userId: 'en-user' }]);
+      prisma.notificationLog.create.mockResolvedValue({});
+      mockSendEachForMulticast.mockImplementation((message: { tokens: string[] }) => ({
+        successCount: message.tokens.length,
+        failureCount: 0,
+        responses: message.tokens.map(() => ({ success: true })),
+      }));
+    });
+
+    it('should send one batch per language, each with its own copy', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'es-user', token: 'tok-es', platform: 'android', user: { language: 'es' } },
+        { userId: 'en-user', token: 'tok-en', platform: 'android', user: { language: 'en' } },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(2);
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({ tokens: ['tok-es'], notification: NEW_EVENT_COPY }),
+      );
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokens: ['tok-en'],
+          notification: { title: 'New plan', body: 'Ana created "Cena"' },
+        }),
+      );
+    });
+
+    it('should keep one batch when everybody reads the same language', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'es-user', token: 'tok-1', platform: 'android', user: { language: 'es' } },
+        { userId: 'en-user', token: 'tok-2', platform: 'android', user: { language: 'es' } },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fall back to Spanish for a missing or unknown language', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'es-user', token: 'tok-1', platform: 'android' },
+        { userId: 'en-user', token: 'tok-2', platform: 'android', user: { language: 'klingon' } },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({ tokens: ['tok-1', 'tok-2'], notification: NEW_EVENT_COPY }),
+      );
+    });
+
+    it('should log every recipient with the copy of their own language', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'es-user', token: 'tok-es', platform: 'android', user: { language: 'es' } },
+        { userId: 'en-user', token: 'tok-en', platform: 'android', user: { language: 'en' } },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
+
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ userId: 'es-user', title: NEW_EVENT_COPY.title }),
+      });
+      expect(prisma.notificationLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ userId: 'en-user', title: 'New plan' }),
+      });
+    });
+
+    it('should derive data.type from the notification type and keep the caller extras', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'es-user', token: 'tok-es', platform: 'android', user: { language: 'es' } },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT, undefined, {
+        eventId: 'event-1',
+        groupId: 'group-1',
+      });
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { eventId: 'event-1', groupId: 'group-1', type: 'new_event' },
+        }),
+      );
+    });
+
+    it('should localize the yes/no button labels the web SW reads from new_poll data', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'es-user', token: 'tok-es', platform: 'web', user: { language: 'es' } },
+        { userId: 'en-user', token: 'tok-en', platform: 'web', user: { language: 'en' } },
+      ]);
+
+      await service.sendToGroup(
+        'group-1',
+        'new_poll',
+        { actorName: 'Ana', groupName: 'Cuadrilla', date: MONDAY, slot: null },
+        undefined,
+        { pollId: 'poll-1' },
+      );
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokens: ['tok-es'],
+          data: expect.objectContaining({
+            title: '¿Puedes el lunes?',
+            yesLabel: 'Puedo',
+            noLabel: 'No puedo',
+            type: 'new_poll',
+            pollId: 'poll-1',
+          }),
+        }),
+      );
+      expect(mockSendEachForMulticast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokens: ['tok-en'],
+          data: expect.objectContaining({
+            title: 'Can you make Monday?',
+            yesLabel: 'I can',
+            noLabel: "I can't",
+          }),
         }),
       );
     });

@@ -52,11 +52,10 @@ export class ProposalsService {
     this.notificationsService
       .sendToGroup(
         groupId,
-        'Nueva propuesta',
-        `${proposal.createdBy.name} propone "${proposal.title}"`,
-        userId,
-        { type: 'new_proposal', proposalId: proposal.id, groupId },
         'new_proposal',
+        { actorName: proposal.createdBy.name, title: proposal.title },
+        userId,
+        { proposalId: proposal.id, groupId },
       )
       .catch((err) => this.logger.error('Failed to send new_proposal notification', err));
 
@@ -147,6 +146,14 @@ export class ProposalsService {
       throw new ForbiddenException('Cannot vote on a closed or converted proposal');
     }
 
+    // A repeated tap, or a client re-sending the same vote, must not tell the group
+    // again that somebody voted: nothing changed.
+    const previous = await this.prisma.planVote.findUnique({
+      where: { proposalId_userId: { proposalId, userId } },
+      select: { vote: true },
+    });
+    const changed = previous?.vote !== dto.vote;
+
     await this.prisma.planVote.upsert({
       where: { proposalId_userId: { proposalId, userId } },
       create: { proposalId, userId, vote: dto.vote },
@@ -161,23 +168,23 @@ export class ProposalsService {
       },
     });
 
-    const voter = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { name: true },
-    });
-    const voterName = voter?.name ?? 'Someone';
-    const voteLabel = dto.vote === 'yes' ? 'a favor' : 'en contra';
+    if (changed) {
+      const voter = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true },
+      });
+      const voterName = voter?.name ?? 'Someone';
 
-    this.notificationsService
-      .sendToGroup(
-        groupId,
-        'Voto en propuesta',
-        `${voterName} ha votado ${voteLabel} en "${proposal.title}"`,
-        userId,
-        { type: 'proposal_voted', proposalId, groupId },
-        'proposal_voted',
-      )
-      .catch((err) => this.logger.error('Failed to send proposal_voted notification', err));
+      this.notificationsService
+        .sendToGroup(
+          groupId,
+          'proposal_voted',
+          { actorName: voterName, title: proposal.title, vote: dto.vote },
+          userId,
+          { proposalId, groupId },
+        )
+        .catch((err) => this.logger.error('Failed to send proposal_voted notification', err));
+    }
 
     return updated;
   }
@@ -226,8 +233,8 @@ export class ProposalsService {
     }
 
     // Create event using EventsService (status map passed as internal param, not in DTO).
-    // skipNewEventNotification: the group already gets the more specific
-    // proposal_converted push below — avoid the duplicate new_event push.
+    // The group already gets the more specific proposal_converted push below, so neither
+    // new_event nor event_confirmed goes out from here.
     let event: Awaited<ReturnType<EventsService['create']>>;
     try {
       event = await this.eventsService.create(
@@ -244,7 +251,10 @@ export class ProposalsService {
           endTime: dto.endTime,
         },
         attendeeStatusMap,
-        { skipNewEventNotification: true },
+        // proposal_converted below already tells the group the plan is on, and a
+        // unanimous proposal is born confirmed: without this the same conversion sent
+        // two pushes to the same people.
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     } catch (error) {
       // Hand the proposal back so the creator can retry instead of leaving it
@@ -267,14 +277,11 @@ export class ProposalsService {
     });
 
     this.notificationsService
-      .sendToGroup(
+      .sendToGroup(groupId, 'proposal_converted', { title: proposal.title }, userId, {
+        proposalId,
         groupId,
-        'Propuesta convertida',
-        `"${proposal.title}" se ha convertido en quedada`,
-        userId,
-        { type: 'proposal_converted', proposalId, groupId, eventId: event.id },
-        'proposal_converted',
-      )
+        eventId: event.id,
+      })
       .catch((err) => this.logger.error('Failed to send proposal_converted notification', err));
 
     return updated;

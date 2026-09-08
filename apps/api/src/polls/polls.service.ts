@@ -30,26 +30,6 @@ export class PollsService {
     private availabilityService: AvailabilityService,
   ) {}
 
-  private static readonly SLOT_LABEL: Record<string, string> = {
-    Mañana: 'por la mañana',
-    Tarde: 'por la tarde',
-    Noche: 'por la noche',
-  };
-
-  private weekday(date: Date): string {
-    return date.toLocaleDateString('es-ES', {
-      weekday: 'long',
-      timeZone: DEFAULT_TIMEZONE,
-    });
-  }
-
-  private questionTitle(date: Date, slot: string | null): string {
-    const weekday = this.weekday(date);
-    return slot
-      ? `¿Puedes el ${weekday} ${PollsService.SLOT_LABEL[slot]}?`
-      : `¿Puedes el ${weekday}?`;
-  }
-
   /**
    * Midnight in Europe/Madrid as an absolute instant. Computed from the
    * formatted wall clock so it does not depend on the server timezone.
@@ -120,15 +100,18 @@ export class PollsService {
     });
     const notified = createdToday <= 1;
     if (notified) {
-      const title = this.questionTitle(poll.date, poll.slot);
       this.notifications
         .sendToGroup(
           groupId,
-          title,
-          `Pregunta ${poll.createdBy.name} · ${group.name}`,
-          userId,
-          { type: 'new_poll', pollId: poll.id, groupId, date: dto.date },
           'new_poll',
+          {
+            actorName: poll.createdBy.name,
+            groupName: group.name,
+            date: poll.date,
+            slot: poll.slot,
+          },
+          userId,
+          { pollId: poll.id, groupId, date: dto.date },
         )
         .catch((err) => this.logger.error('new_poll push failed', err));
     }
@@ -183,16 +166,13 @@ export class PollsService {
         where: { id: pollId, status: 'open' },
         data: { status: 'completed', completedAt: new Date() },
       });
-      if (count === 1) {
+      if (count === 1 && (await this.claimCompletedNotice(pollId))) {
+        // Everybody but the one who just closed the ring: they saw it close.
         this.notifications
-          .sendToGroup(
+          .sendToGroup(groupId, 'poll_completed', { date: poll.date }, userId, {
+            pollId,
             groupId,
-            'El aro se cierra',
-            `Podéis todos el ${this.weekday(poll.date)}`,
-            undefined,
-            { type: 'poll_completed', pollId, groupId },
-            'poll_completed',
-          )
+          })
           .catch((err) => this.logger.error('poll_completed push failed', err));
       }
     } else if (!allYes && poll.status === 'completed') {
@@ -206,6 +186,22 @@ export class PollsService {
     }
 
     return this.findOne(groupId, pollId, userId);
+  }
+
+  /**
+   * «El aro se cierra» is announced once and only once. A completed poll reopens in
+   * silence when unanimity breaks (B11), so without this claim the next 'yes' that
+   * closed it again sent the same push a second, third and fourth time.
+   *
+   * Kept apart from the status flip: the poll must go back to `completed` every time,
+   * even when the notice was already given.
+   */
+  private async claimCompletedNotice(pollId: string): Promise<boolean> {
+    const { count } = await this.prisma.availabilityPoll.updateMany({
+      where: { id: pollId, completedNotifiedAt: null },
+      data: { completedNotifiedAt: new Date() },
+    });
+    return count === 1;
   }
 
   async close(groupId: string, pollId: string, userId: string) {

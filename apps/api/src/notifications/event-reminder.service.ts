@@ -82,10 +82,9 @@ export class EventReminderService {
           batch.map((userId) =>
             this.notificationsService.sendToUser(
               userId,
-              'Recordatorio',
-              `"${event.title}" es mañana`,
-              { type: 'event_reminder', eventId: event.id, groupId: event.groupId },
               'event_reminder',
+              { title: event.title },
+              { eventId: event.id, groupId: event.groupId },
             ),
           ),
         );

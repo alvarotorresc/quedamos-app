@@ -58,11 +58,10 @@ describe('PollsService', () => {
       expect(availability.mergeFromPoll).toHaveBeenCalledWith('g1', 'u1', '2026-02-13', null);
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
-        expect.stringContaining('¿Puedes'),
-        expect.any(String),
-        'u1',
-        expect.objectContaining({ type: 'new_poll', pollId: 'p1', groupId: 'g1' }),
         'new_poll',
+        expect.objectContaining({ slot: null }),
+        'u1',
+        expect.objectContaining({ pollId: 'p1', groupId: 'g1' }),
       );
       expect(result.notified).toBe(true);
     });
@@ -106,11 +105,10 @@ describe('PollsService', () => {
       expect(availability.mergeFromPoll).toHaveBeenCalledWith('g1', 'u1', '2026-02-13', 'Tarde');
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
-        expect.stringContaining('por la tarde'),
-        expect.any(String),
+        'new_poll',
+        expect.objectContaining({ slot: 'Tarde' }),
         'u1',
         expect.anything(),
-        'new_poll',
       );
     });
   });
@@ -211,14 +209,48 @@ describe('PollsService', () => {
         where: { id: 'p1', status: 'open' },
         data: { status: 'completed', completedAt: expect.any(Date) },
       });
+      // A quien acaba de responder no hay que contarle que el aro se ha cerrado.
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'g1',
-        expect.stringContaining('aro'),
-        expect.any(String),
-        undefined,
-        expect.objectContaining({ type: 'poll_completed', pollId: 'p1' }),
         'poll_completed',
+        expect.objectContaining({ date: expect.anything() }),
+        'u3',
+        expect.objectContaining({ pollId: 'p1' }),
       );
+    });
+
+    // Reabrir es silencioso (B11), así que una pregunta que se completa, se reabre y
+    // vuelve a completarse mandaba «el aro se cierra» otra vez. Se avisa una sola vez.
+    it('avisa una única vez aunque la pregunta se reabra y vuelva a completarse', async () => {
+      prisma.pollResponse.findMany.mockResolvedValue(
+        MEMBERS.map((m) => ({ userId: m.userId, answer: 'yes' })),
+      );
+      prisma.availabilityPoll.updateMany
+        .mockResolvedValueOnce({ count: 1 }) // vuelve a completed
+        .mockResolvedValueOnce({ count: 0 }); // pero el aviso ya estaba dado
+
+      await service.respond('g1', 'p1', 'u3', { answer: 'yes' });
+
+      expect(prisma.availabilityPoll.updateMany).toHaveBeenNthCalledWith(2, {
+        where: { id: 'p1', completedNotifiedAt: null },
+        data: { completedNotifiedAt: expect.any(Date) },
+      });
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
+    });
+
+    it('marca completedNotifiedAt la primera vez que se completa', async () => {
+      prisma.pollResponse.findMany.mockResolvedValue(
+        MEMBERS.map((m) => ({ userId: m.userId, answer: 'yes' })),
+      );
+      prisma.availabilityPoll.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.respond('g1', 'p1', 'u3', { answer: 'yes' });
+
+      expect(prisma.availabilityPoll.updateMany).toHaveBeenNthCalledWith(2, {
+        where: { id: 'p1', completedNotifiedAt: null },
+        data: { completedNotifiedAt: expect.any(Date) },
+      });
+      expect(notifications.sendToGroup).toHaveBeenCalled();
     });
 
     it('si updateMany devuelve count 0 (carrera), no reenvía poll_completed', async () => {

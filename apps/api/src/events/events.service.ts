@@ -64,7 +64,7 @@ export class EventsService {
     userId: string,
     dto: CreateEventDto,
     internalStatusMap?: Record<string, 'confirmed' | 'declined'>,
-    options?: { skipNewEventNotification?: boolean },
+    options?: { skipNewEventNotification?: boolean; skipConfirmedNotification?: boolean },
   ) {
     await this.groupsService.findById(groupId, userId);
 
@@ -142,18 +142,21 @@ export class EventsService {
         });
         event.status = 'confirmed';
 
-        // Coherence with respond(): an event born confirmed also notifies event_confirmed
-        this.notificationsService
-          .sendToEventAttendees(
-            event.id,
-            'Quedada confirmada',
-            `Todos han confirmado "${event.title}"`,
-            undefined,
-            { type: 'event_confirmed', eventId: event.id, groupId },
-            'event_confirmed',
-            'confirmed',
-          )
-          .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+        // Coherence with respond(): an event born confirmed also notifies event_confirmed.
+        // Unless the caller already says the same thing better — converting a unanimous
+        // proposal sends proposal_converted, and both landed on the same phone.
+        if (!options?.skipConfirmedNotification) {
+          this.notificationsService
+            .sendToEventAttendees(
+              event.id,
+              'event_confirmed',
+              { title: event.title, variant: 'all_confirmed' },
+              undefined,
+              { eventId: event.id, groupId },
+              'confirmed',
+            )
+            .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+        }
       }
     }
 
@@ -162,22 +165,20 @@ export class EventsService {
         this.notificationsService
           .sendToEventAttendees(
             event.id,
-            'Nueva quedada',
-            `${event.createdBy.name} ha creado "${event.title}"`,
-            userId,
-            { type: 'new_event', eventId: event.id, groupId },
             'new_event',
+            { actorName: event.createdBy.name, title: event.title },
+            userId,
+            { eventId: event.id, groupId },
           )
           .catch((err) => this.logger.error('Failed to send new_event notification', err));
       } else {
         this.notificationsService
           .sendToGroup(
             groupId,
-            'Nueva quedada',
-            `${event.createdBy.name} ha creado "${event.title}"`,
-            userId,
-            { type: 'new_event', eventId: event.id, groupId },
             'new_event',
+            { actorName: event.createdBy.name, title: event.title },
+            userId,
+            { eventId: event.id, groupId },
           )
           .catch((err) => this.logger.error('Failed to send new_event notification', err));
       }
@@ -261,14 +262,10 @@ export class EventsService {
     });
 
     this.notificationsService
-      .sendToEventAttendees(
+      .sendToEventAttendees(eventId, 'event_updated', { title: updated.title }, userId, {
         eventId,
-        'Quedada actualizada',
-        `"${updated.title}" ha sido editada`,
-        userId,
-        { type: 'event_updated', eventId, groupId },
-        'event_updated',
-      )
+        groupId,
+      })
       .catch((err) => this.logger.error('Failed to send event_updated notification', err));
 
     return updated;
@@ -285,14 +282,10 @@ export class EventsService {
     // the push reads event_attendees, which the delete takes away. Same shape as
     // deleteGroup — the catch keeps a failing push from blocking the deletion.
     await this.notificationsService
-      .sendToEventAttendees(
+      .sendToEventAttendees(eventId, 'event_deleted', { title: event.title }, userId, {
         eventId,
-        'Quedada eliminada',
-        `"${event.title}" ha sido eliminada`,
-        userId,
-        { type: 'event_deleted', eventId, groupId },
-        'event_deleted',
-      )
+        groupId,
+      })
       .catch((err) => this.logger.error('Failed to send event_deleted notification', err));
 
     await this.prisma.event.delete({ where: { id: eventId } });
@@ -317,14 +310,10 @@ export class EventsService {
     });
 
     this.notificationsService
-      .sendToEventAttendees(
+      .sendToEventAttendees(eventId, 'event_cancelled', { title: event.title }, userId, {
         eventId,
-        'Quedada cancelada',
-        `"${event.title}" ha sido cancelada`,
-        userId,
-        { type: 'event_cancelled', eventId, groupId },
-        'event_cancelled',
-      )
+        groupId,
+      })
       .catch((err) => this.logger.error('Failed to send event_cancelled notification', err));
 
     return updated;
@@ -353,11 +342,10 @@ export class EventsService {
     this.notificationsService
       .sendToEventAttendees(
         eventId,
-        'Quedada confirmada',
-        `"${event.title}" ha sido confirmada`,
-        userId,
-        { type: 'event_confirmed', eventId, groupId },
         'event_confirmed',
+        { title: event.title, variant: 'manual' },
+        userId,
+        { eventId, groupId },
       )
       .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
 
@@ -444,16 +432,16 @@ export class EventsService {
       ),
     );
 
-    // Notifications outside transaction (fire-and-forget)
+    // Notifications outside transaction (fire-and-forget). The attendee whose answer
+    // completed the round already knows: they are looking at the screen that did it.
     if (dto.status === 'confirmed' && justReachedAllConfirmed) {
       this.notificationsService
         .sendToEventAttendees(
           eventId,
-          'Quedada confirmada',
-          `Todos han confirmado "${eventTitle}"`,
-          undefined,
-          { type: 'event_confirmed', eventId, groupId },
           'event_confirmed',
+          { title: eventTitle, variant: 'all_confirmed' },
+          userId,
+          { eventId, groupId },
           'confirmed',
         )
         .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
@@ -465,11 +453,10 @@ export class EventsService {
         this.notificationsService
           .sendToEventAttendees(
             eventId,
-            'Asistencia rechazada',
-            `${user.name} ha rechazado "${eventTitle}"`,
-            userId,
-            { type: 'event_declined', eventId, groupId },
             'event_declined',
+            { actorName: user.name, title: eventTitle },
+            userId,
+            { eventId, groupId },
             'confirmed',
           )
           .catch((err) => this.logger.error('Failed to send event_declined notification', err));

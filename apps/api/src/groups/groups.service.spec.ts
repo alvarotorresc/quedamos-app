@@ -250,11 +250,10 @@ describe('GroupsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'Nuevo miembro',
-        expect.stringContaining('Test User'),
-        'user-1',
-        expect.objectContaining({ type: 'member_joined' }),
         'member_joined',
+        expect.objectContaining({ actorName: 'Test User' }),
+        'user-1',
+        expect.objectContaining({ groupId: 'group-1' }),
       );
     });
   });
@@ -298,11 +297,10 @@ describe('GroupsService', () => {
 
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'Miembro salió',
-        expect.any(String),
-        'user-2',
-        expect.objectContaining({ type: 'member_left' }),
         'member_left',
+        expect.objectContaining({ actorName: expect.any(String) }),
+        'user-2',
+        expect.objectContaining({ groupId: 'group-1' }),
       );
     });
 
@@ -316,7 +314,7 @@ describe('GroupsService', () => {
       await service.leave('group-1', 'user-2');
 
       expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
-        where: { groupId: 'group-1', userId: 'user-2' },
+        where: { groupId: 'group-1', userId: 'user-2', date: { gte: expect.any(Date) } },
       });
     });
 
@@ -383,11 +381,10 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToEventAttendees).toHaveBeenCalledWith(
         'event-1',
-        'Quedada confirmada',
-        expect.stringContaining('Cena'),
-        undefined,
-        expect.objectContaining({ type: 'event_confirmed', eventId: 'event-1' }),
         'event_confirmed',
+        { title: 'Cena', variant: 'all_confirmed' },
+        undefined,
+        expect.objectContaining({ eventId: 'event-1' }),
         'confirmed',
       );
     });
@@ -440,11 +437,38 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'El aro se cierra',
-        expect.any(String),
-        undefined,
-        expect.objectContaining({ type: 'poll_completed', pollId: 'poll-1' }),
         'poll_completed',
+        expect.objectContaining({ date: expect.anything() }),
+        undefined,
+        expect.objectContaining({ pollId: 'poll-1' }),
+      );
+    });
+
+    it('should not re-announce a poll that had already closed once', async () => {
+      mockLeavingMember();
+      prisma.availabilityPoll.findMany.mockResolvedValue([
+        {
+          id: 'poll-1',
+          date: new Date('2026-03-06T00:00:00Z'),
+          responses: [
+            { userId: 'user-1', answer: 'yes' },
+            { userId: 'user-3', answer: 'yes' },
+          ],
+        },
+      ]);
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-3' }]);
+      prisma.availabilityPoll.updateMany
+        .mockResolvedValueOnce({ count: 1 }) // back to completed
+        .mockResolvedValueOnce({ count: 0 }); // the notice was already given
+
+      await service.leave('group-1', 'user-2');
+
+      expect(notifications.sendToGroup).not.toHaveBeenCalledWith(
+        'group-1',
+        'poll_completed',
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
       );
     });
 
@@ -470,10 +494,10 @@ describe('GroupsService', () => {
       await service.leave('group-1', 'user-2');
 
       expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
-        where: { userId: 'user-2', poll: { groupId: 'group-1' } },
+        where: { userId: 'user-2', poll: { groupId: 'group-1', date: { gte: expect.any(Date) } } },
       });
       expect(prisma.planVote.deleteMany).toHaveBeenCalledWith({
-        where: { userId: 'user-2', proposal: { groupId: 'group-1' } },
+        where: { userId: 'user-2', proposal: { groupId: 'group-1', status: 'open' } },
       });
     });
 
@@ -495,7 +519,40 @@ describe('GroupsService', () => {
         data: { status: 'confirmed' },
       });
       expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
-        where: { userId: 'user-2', poll: { groupId: 'group-1' } },
+        where: { userId: 'user-2', poll: { groupId: 'group-1', date: { gte: expect.any(Date) } } },
+      });
+    });
+
+    // Leaving a group is not a way to erase your past in it: what already happened
+    // stays, what has not happened yet goes. One rule for leave and for kick.
+    it('should keep everything dated before today and drop today onward', async () => {
+      jest.useFakeTimers({ now: new Date('2026-03-01T23:30:00.000Z') });
+      mockLeavingMember();
+
+      await service.leave('group-1', 'user-2');
+
+      // 23:30 UTC on Sunday is already Monday the 2nd in Madrid.
+      const cutoff = new Date('2026-03-02T00:00:00.000Z');
+      expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
+        where: { groupId: 'group-1', userId: 'user-2', date: { gte: cutoff } },
+      });
+      expect(prisma.eventAttendee.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', event: { groupId: 'group-1', date: { gte: cutoff } } },
+      });
+      expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', poll: { groupId: 'group-1', date: { gte: cutoff } } },
+      });
+
+      jest.useRealTimers();
+    });
+
+    it('should drop the votes of open proposals only, which carry no date yet', async () => {
+      mockKickingAdmin();
+
+      await service.kickMember('group-1', 'user-2', 'user-1');
+
+      expect(prisma.planVote.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', proposal: { groupId: 'group-1', status: 'open' } },
       });
     });
   });
@@ -556,10 +613,9 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-2',
-        'Role updated',
-        expect.stringContaining('admin'),
-        expect.objectContaining({ type: 'role_changed' }),
         'role_changed',
+        { role: 'admin' },
+        { groupId: 'group-1' },
       );
     });
 
@@ -659,7 +715,7 @@ describe('GroupsService', () => {
       await service.kickMember('group-1', 'user-2', 'user-1');
 
       expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
-        where: { groupId: 'group-1', userId: 'user-2' },
+        where: { groupId: 'group-1', userId: 'user-2', date: { gte: expect.any(Date) } },
       });
     });
 
@@ -736,11 +792,10 @@ describe('GroupsService', () => {
       });
       expect(notifications.sendToGroup).toHaveBeenCalledWith(
         'group-1',
-        'Group deleted',
-        expect.stringContaining('Test Group'),
-        'user-1',
-        expect.objectContaining({ type: 'group_deleted' }),
         'group_deleted',
+        { groupName: 'Test Group' },
+        'user-1',
+        { groupId: 'group-1' },
       );
     });
 
@@ -958,10 +1013,9 @@ describe('GroupsService', () => {
 
       expect(notifications.sendToUser).toHaveBeenCalledWith(
         'user-2',
-        'Removed from group',
-        expect.any(String),
-        expect.objectContaining({ type: 'member_kicked' }),
         'member_kicked',
+        { groupName: 'Test Group' },
+        { groupId: 'group-1' },
       );
     });
   });

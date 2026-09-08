@@ -11,7 +11,7 @@ import { randomInt } from 'crypto';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { getFrontendUrl } from '../common/frontend-url';
-import { startOfTodayUTC, weekdayEs } from '../common/date-utils';
+import { startOfTodayUTC } from '../common/date-utils';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { AddCityDto } from './dto/add-city.dto';
@@ -173,11 +173,10 @@ export class GroupsService {
       this.notificationsService
         .sendToGroup(
           group.id,
-          'Nuevo miembro',
-          `${user.name} se ha unido a "${group.name}"`,
-          userId,
-          { type: 'member_joined', groupId: group.id },
           'member_joined',
+          { actorName: user.name, groupName: group.name },
+          userId,
+          { groupId: group.id },
         )
         .catch((err) => this.logger.error('Failed to send member_joined notification', err));
     }
@@ -205,40 +204,23 @@ export class GroupsService {
       throw new ForbiddenException('The group creator cannot leave. Delete the group instead.');
     }
 
-    // Clean up user's availability in this group
-    await this.prisma.availability.deleteMany({
-      where: { groupId, userId },
-    });
-
-    // Clean up user's attendance from future events in this group
-    await this.prisma.eventAttendee.deleteMany({
-      where: {
-        userId,
-        event: {
-          groupId,
-          date: { gte: startOfTodayUTC() },
-        },
-      },
-    });
-
     await this.prisma.groupMember.delete({
       where: {
         groupId_userId: { groupId, userId },
       },
     });
 
-    await this.removeMemberTraces(groupId, userId);
+    await this.removeMemberContributions(groupId, userId);
     await this.recomputeAfterMemberRemoval(groupId);
 
     if (user && group) {
       this.notificationsService
         .sendToGroup(
           groupId,
-          'Miembro salió',
-          `${user.name} ha salido de "${group.name}"`,
-          userId,
-          { type: 'member_left', groupId },
           'member_left',
+          { actorName: user.name, groupName: group.name },
+          userId,
+          { groupId },
         )
         .catch((err) => this.logger.error('Failed to send member_left notification', err));
     }
@@ -247,17 +229,53 @@ export class GroupsService {
   }
 
   /**
-   * Drops what the member leaves behind in the group's polls and proposals. Their
-   * answers no longer count for anybody, and a stale vote would put a non-member in
-   * the attendee list of a proposal converted later on.
+   * What a member leaves behind when they go, whether they left or were kicked.
+   *
+   * One rule for everything: what is dated before today stays, what is dated today or
+   * later goes. Their availability and their answers no longer count for anybody
+   * planning something, and a stale vote would put a non-member in the attendee list of
+   * a proposal converted later on — but the group's history is not theirs alone to
+   * erase, and leaving is not a way to wipe it. Before this, availability, poll answers
+   * and votes were deleted whole, past included, while only attendance was filtered.
+   *
+   * Votes are the exception to the date rule: a proposal has no date until it is
+   * converted, so only the votes of proposals still open are dropped.
    */
-  private async removeMemberTraces(groupId: string, userId: string) {
+  private async removeMemberContributions(groupId: string, userId: string) {
+    const today = this.startOfTodayInMadrid();
+
+    await this.prisma.availability.deleteMany({
+      where: { groupId, userId, date: { gte: today } },
+    });
+    await this.prisma.eventAttendee.deleteMany({
+      where: { userId, event: { groupId, date: { gte: today } } },
+    });
     await this.prisma.pollResponse.deleteMany({
-      where: { userId, poll: { groupId } },
+      where: { userId, poll: { groupId, date: { gte: today } } },
     });
     await this.prisma.planVote.deleteMany({
-      where: { userId, proposal: { groupId } },
+      where: { userId, proposal: { groupId, status: 'open' } },
     });
+  }
+
+  /**
+   * Today in Madrid as the UTC-midnight instant the `@db.Date` columns store. Deliberate
+   * twin of the helper in WeeklyReminderService: v0.1 hardcodes the group timezone in
+   * each place that needs it, and v0.2 will lift them together when it becomes a group
+   * setting. Reading the server's own day moves the boundary by an hour or two and, late
+   * at night, would take today's quedada down with tomorrow's.
+   */
+  private startOfTodayInMadrid(now: Date = new Date()): Date {
+    const [year, month, day] = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .format(now)
+      .split('-')
+      .map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
   }
 
   /**
@@ -300,11 +318,10 @@ export class GroupsService {
       this.notificationsService
         .sendToEventAttendees(
           event.id,
-          'Quedada confirmada',
-          `Todos han confirmado "${event.title}"`,
-          undefined,
-          { type: 'event_confirmed', eventId: event.id, groupId },
           'event_confirmed',
+          { title: event.title, variant: 'all_confirmed' },
+          undefined,
+          { eventId: event.id, groupId },
           'confirmed',
         )
         .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
@@ -337,15 +354,19 @@ export class GroupsService {
       });
       if (count !== 1) continue;
 
+      // Announced once per poll, ever: a poll that reopened in silence and closes again
+      // here must not re-send «el aro se cierra».
+      const claimed = await this.prisma.availabilityPoll.updateMany({
+        where: { id: poll.id, completedNotifiedAt: null },
+        data: { completedNotifiedAt: new Date() },
+      });
+      if (claimed.count !== 1) continue;
+
       this.notificationsService
-        .sendToGroup(
+        .sendToGroup(groupId, 'poll_completed', { date: poll.date }, undefined, {
+          pollId: poll.id,
           groupId,
-          'El aro se cierra',
-          `Podéis todos el ${weekdayEs(poll.date)}`,
-          undefined,
-          { type: 'poll_completed', pollId: poll.id, groupId },
-          'poll_completed',
-        )
+        })
         .catch((err) => this.logger.error('poll_completed push failed', err));
     }
   }
@@ -432,16 +453,7 @@ export class GroupsService {
     });
 
     this.notificationsService
-      .sendToUser(
-        targetUserId,
-        'Role updated',
-        `Your role has been changed to ${role}`,
-        {
-          type: 'role_changed',
-          groupId,
-        },
-        'role_changed',
-      )
+      .sendToUser(targetUserId, 'role_changed', { role }, { groupId })
       .catch((err) => this.logger.error('Failed to send role_changed notification', err));
 
     return updated;
@@ -478,37 +490,17 @@ export class GroupsService {
       where: { groupId_userId: { groupId, userId: targetUserId } },
     });
 
-    // Same cleanup as leave(): the kicked member leaves no availability behind and
-    // stops being a pending attendee of today's quedada too.
-    await this.prisma.availability.deleteMany({
-      where: { groupId, userId: targetUserId },
-    });
-
-    await this.prisma.eventAttendee.deleteMany({
-      where: {
-        userId: targetUserId,
-        event: {
-          groupId,
-          date: { gte: startOfTodayUTC() },
-        },
-      },
-    });
-
-    await this.removeMemberTraces(groupId, targetUserId);
+    // Same rule as leave(): today onward goes, the past stays.
+    await this.removeMemberContributions(groupId, targetUserId);
     await this.recomputeAfterMemberRemoval(groupId);
 
-    this.notificationsService
-      .sendToUser(
-        targetUserId,
-        'Removed from group',
-        'You have been removed from a group',
-        {
-          type: 'member_kicked',
-          groupId,
-        },
-        'member_kicked',
-      )
-      .catch((err) => this.logger.error('Failed to send member_kicked notification', err));
+    // The copy names the group, so there is nothing to say if the group vanished
+    // between the read above and here — same shape as leave().
+    if (group) {
+      this.notificationsService
+        .sendToUser(targetUserId, 'member_kicked', { groupName: group.name }, { groupId })
+        .catch((err) => this.logger.error('Failed to send member_kicked notification', err));
+    }
 
     return { success: true };
   }
@@ -528,17 +520,7 @@ export class GroupsService {
 
     // Send notification BEFORE delete and await it to avoid race with CASCADE
     await this.notificationsService
-      .sendToGroup(
-        groupId,
-        'Group deleted',
-        `The group "${group.name}" has been deleted`,
-        userId,
-        {
-          type: 'group_deleted',
-          groupId,
-        },
-        'group_deleted',
-      )
+      .sendToGroup(groupId, 'group_deleted', { groupName: group.name }, userId, { groupId })
       .catch((err) => this.logger.error('Failed to send group_deleted notification', err));
 
     await this.prisma.group.delete({
