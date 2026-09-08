@@ -3,9 +3,10 @@ import { AvailabilityController } from './availability.controller';
 import { AvailabilityService } from './availability.service';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
+import { WidgetRefreshModule } from '../widget-refresh/widget-refresh.module';
 
 @Module({
-  imports: [AuthModule, GroupsModule],
+  imports: [AuthModule, GroupsModule, WidgetRefreshModule],
   controllers: [AvailabilityController],
   providers: [AvailabilityService],
   exports: [AvailabilityService],

@@ -2,12 +2,18 @@ import { ConflictException, ForbiddenException, NotFoundException } from '@nestj
 import { PollsService } from './polls.service';
 import { createMockPrisma, createMockNotificationsService } from '../common/test-utils';
 
+/** The widget nudge is a side effect with no return value anybody reads. */
+function createMockWidgetRefresh() {
+  return { notifyGroupWidgets: jest.fn().mockResolvedValue({ sent: 0 }) };
+}
+
 describe('PollsService', () => {
   let service: PollsService;
   let prisma: ReturnType<typeof createMockPrisma>;
   let groupsService: { findById: jest.Mock; getMembers: jest.Mock };
   let notifications: ReturnType<typeof createMockNotificationsService>;
   let availability: { mergeFromPoll: jest.Mock };
+  let widgetRefresh: ReturnType<typeof createMockWidgetRefresh>;
 
   const MEMBERS = [{ userId: 'u1' }, { userId: 'u2' }, { userId: 'u3' }];
 
@@ -19,11 +25,13 @@ describe('PollsService', () => {
     };
     notifications = createMockNotificationsService();
     availability = { mergeFromPoll: jest.fn().mockResolvedValue({}) };
+    widgetRefresh = createMockWidgetRefresh();
     service = new PollsService(
       prisma as never,
       groupsService as never,
       notifications as never,
       availability as never,
+      widgetRefresh as never,
     );
   });
 
@@ -364,6 +372,61 @@ describe('PollsService', () => {
         where: { id: 'p1' },
         data: { status: 'closed' },
       });
+    });
+  });
+
+  describe('the android widgets of the group', () => {
+    it('are nudged when a question is asked', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue(null);
+      prisma.availabilityPoll.create.mockResolvedValue({
+        id: 'p1',
+        groupId: 'g1',
+        date: new Date('2026-02-13'),
+        slot: null,
+        createdBy: { id: 'u1', name: 'Álvaro', avatarEmoji: '😊' },
+      });
+
+      await service.create('g1', 'u1', { date: '2026-02-13' });
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('g1', 'u1');
+    });
+
+    it('are nudged when somebody answers — a yes marks availability', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue({
+        id: 'p1',
+        status: 'open',
+        date: new Date('2026-02-13'),
+        slot: null,
+      });
+      prisma.pollResponse.findMany.mockResolvedValue([{ userId: 'u2', answer: 'yes' }]);
+
+      await service.respond('g1', 'p1', 'u2', { answer: 'yes' });
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('g1', 'u2');
+    });
+
+    it('are nudged when the creator closes it', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue({
+        id: 'p1',
+        createdById: 'u1',
+        status: 'open',
+      });
+      prisma.availabilityPoll.update.mockResolvedValue({ id: 'p1', status: 'closed' });
+
+      await service.close('g1', 'p1', 'u1');
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('g1', 'u1');
+    });
+
+    it('are left alone when the close is refused', async () => {
+      prisma.availabilityPoll.findFirst.mockResolvedValue({
+        id: 'p1',
+        createdById: 'u1',
+        status: 'open',
+      });
+
+      await expect(service.close('g1', 'p1', 'u2')).rejects.toThrow(ForbiddenException);
+      expect(widgetRefresh.notifyGroupWidgets).not.toHaveBeenCalled();
     });
   });
 });

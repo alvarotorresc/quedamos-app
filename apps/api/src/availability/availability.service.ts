@@ -4,12 +4,14 @@ import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
 import { CreateAvailabilityDto } from './dto/create-availability.dto';
 import { isCalendarDate } from '../common/date-utils';
+import { WidgetRefreshService } from '../widget-refresh/widget-refresh.service';
 
 @Injectable()
 export class AvailabilityService {
   constructor(
     private prisma: PrismaService,
     private groupsService: GroupsService,
+    private widgetRefresh: WidgetRefreshService,
   ) {}
 
   async findAllForGroup(groupId: string, userId: string) {
@@ -67,7 +69,7 @@ export class AvailabilityService {
     const startTime = dto.type === 'range' ? dto.startTime : null;
     const endTime = dto.type === 'range' ? dto.endTime : null;
 
-    return this.prisma.availability.upsert({
+    const saved = await this.prisma.availability.upsert({
       where: {
         userId_groupId_date: {
           userId,
@@ -91,6 +93,10 @@ export class AvailabilityService {
         endTime,
       },
     });
+
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
+
+    return saved;
   }
 
   async update(groupId: string, date: string, userId: string, dto: CreateAvailabilityDto) {
@@ -112,7 +118,7 @@ export class AvailabilityService {
       throw new NotFoundException('Availability not found');
     }
 
-    return this.prisma.availability.update({
+    const saved = await this.prisma.availability.update({
       where: { id: existing.id },
       data: {
         type: dto.type,
@@ -121,6 +127,10 @@ export class AvailabilityService {
         endTime: dto.type === 'range' ? dto.endTime : null,
       },
     });
+
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
+
+    return saved;
   }
 
   /**
@@ -211,6 +221,8 @@ export class AvailabilityService {
     await this.prisma.availability.delete({
       where: { id: existing.id },
     });
+
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
 
     return { success: true };
   }

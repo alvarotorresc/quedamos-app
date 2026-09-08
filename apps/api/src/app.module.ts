@@ -15,6 +15,7 @@ import { PollsModule } from './polls/polls.module';
 import { WeatherModule } from './weather/weather.module';
 import { InviteModule } from './invite/invite.module';
 import { WidgetModule } from './widget/widget.module';
+import { WidgetRefreshModule } from './widget-refresh/widget-refresh.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { HealthController } from './health.controller';
 
@@ -44,6 +45,7 @@ import { HealthController } from './health.controller';
     WeatherModule,
     InviteModule,
     WidgetModule,
+    WidgetRefreshModule,
   ],
   providers: [
     {

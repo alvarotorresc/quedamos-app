@@ -33,6 +33,9 @@ if (
     // notification on top of the one we show below. Read title/body from `data` first, with
     // a fallback to `notification` for resilience during rollout (old backend + new SW).
     const data = payload.data || {};
+    // Machinery, not an announcement: the API only sends widget_refresh to android
+    // tokens, but if one ever reached a browser it must draw nothing at all.
+    if (data.type === 'widget_refresh') return;
     const notification = payload.notification || {};
     const title = data.title || notification.title;
     const body = data.body || notification.body;
@@ -73,6 +76,7 @@ if (
 // simple enough to parse — one "type": "target" pair per line.
 // ---------------------------------------------------------------------------
 const PUSH_ROUTE_TABLE = {
+  "widget_refresh": "none",
   "new_event": "event",
   "event_updated": "event",
   "event_deleted": "event",
@@ -109,6 +113,8 @@ function pushRouteUrl(data, answer) {
   const known = Object.prototype.hasOwnProperty.call(PUSH_ROUTE_TABLE, type);
   const target = known ? PUSH_ROUTE_TABLE[type] : eventId ? 'event' : 'plans';
 
+  // No screen behind it: the caller must not open or navigate anything.
+  if (target === 'none') return null;
   if (target === 'groupList') return '/tabs/group';
   if (target === 'group') return groupId ? '/tabs/group/' + groupId : '/tabs/group';
 
@@ -146,6 +152,7 @@ self.addEventListener('notificationclick', (event) => {
   // other value is treated the same as no answer — only an exact 'yes'/'no' precharges
   // the mazo's auto-submit (usePollDeepLink.ts / Mazo.tsx).
   const url = pushRouteUrl(data, event.action);
+  if (!url) return;
 
   event.waitUntil(
     (async () => {

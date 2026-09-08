@@ -3,7 +3,8 @@ import { PushNotifications, type PushNotificationSchema } from '@capacitor/push-
 import { getToken, onMessage } from 'firebase/messaging';
 import { getFirebaseMessaging } from './firebase';
 import { readEnv, firebaseSwConfigParams } from './env';
-import { resolvePushRoute } from './push-routes';
+import { resolvePushRoute, WIDGET_REFRESH_TYPE } from './push-routes';
+import { notifyWidgetDataChanged } from './widget-bridge';
 import { api } from './api';
 
 let currentToken: string | null = null;
@@ -291,6 +292,18 @@ export function setupPushListeners(): void {
   void setupLocalNotifications();
 
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
+    // Machinery, not an announcement: refresh the home-screen widgets and draw nothing.
+    //
+    // QuedamosMessagingService already swallows this type before the plugin sees it, so
+    // in a current build this branch only runs for a phone still on an older APK, whose
+    // plugin does hand it over. Without it, that phone shows a titleless local
+    // notification — or, once the payload ever carries a title, a visible one.
+    const data = (notification.data ?? {}) as Record<string, string>;
+    if (data.type === WIDGET_REFRESH_TYPE) {
+      void notifyWidgetDataChanged();
+      return;
+    }
+
     void showForegroundPush(notification);
   });
 
@@ -311,6 +324,9 @@ const GROUP_STORAGE_KEY = 'quedamos_current_group_id';
  */
 function navigateFromPush(data: Record<string, string>): void {
   const route = resolvePushRoute(data);
+  // No screen behind this type (widget_refresh): do not navigate, and leave the
+  // remembered group exactly as it was.
+  if (!route) return;
 
   // Only after resolving, and only for a group you are still in: this used to run
   // unconditionally before looking at the type, so member_kicked / group_deleted stored

@@ -13,6 +13,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { RespondEventDto } from './dto/respond-event.dto';
+import { WidgetRefreshService } from '../widget-refresh/widget-refresh.service';
 
 @Injectable()
 export class EventsService {
@@ -22,6 +23,7 @@ export class EventsService {
     private prisma: PrismaService,
     private groupsService: GroupsService,
     private notificationsService: NotificationsService,
+    private widgetRefresh: WidgetRefreshService,
   ) {}
 
   async findAllForGroup(groupId: string, userId: string) {
@@ -184,6 +186,8 @@ export class EventsService {
       }
     }
 
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
+
     return event;
   }
 
@@ -268,6 +272,8 @@ export class EventsService {
       })
       .catch((err) => this.logger.error('Failed to send event_updated notification', err));
 
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
+
     return updated;
   }
 
@@ -289,6 +295,8 @@ export class EventsService {
       .catch((err) => this.logger.error('Failed to send event_deleted notification', err));
 
     await this.prisma.event.delete({ where: { id: eventId } });
+
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
 
     return { success: true };
   }
@@ -315,6 +323,10 @@ export class EventsService {
         groupId,
       })
       .catch((err) => this.logger.error('Failed to send event_cancelled notification', err));
+
+    // A cancelled plan drops out of the widget: widget-summary.service.ts filters
+    // `status: { not: 'cancelled' }`.
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
 
     return updated;
   }
@@ -348,6 +360,8 @@ export class EventsService {
         { eventId, groupId },
       )
       .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
 
     return updated;
   }

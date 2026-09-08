@@ -4,17 +4,25 @@ import { GroupsService } from '../groups/groups.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createTestGroup } from '../common/test-utils';
 
+/** The widget nudge is a side effect with no return value anybody reads. */
+function createMockWidgetRefresh() {
+  return { notifyGroupWidgets: jest.fn().mockResolvedValue({ sent: 0 }) };
+}
+
 describe('AvailabilityService', () => {
   let service: AvailabilityService;
   let prisma: ReturnType<typeof createMockPrisma>;
   let groupsService: jest.Mocked<Partial<GroupsService>>;
+  let widgetRefresh: ReturnType<typeof createMockWidgetRefresh>;
 
   beforeEach(() => {
     prisma = createMockPrisma();
     groupsService = { findById: jest.fn().mockResolvedValue(createTestGroup()) };
+    widgetRefresh = createMockWidgetRefresh();
     service = new AvailabilityService(
       prisma as unknown as PrismaService,
       groupsService as unknown as GroupsService,
+      widgetRefresh as never,
     );
   });
 
@@ -443,6 +451,43 @@ describe('AvailabilityService', () => {
       await expect(service.delete('group-1', '2026-03-01', 'user-1')).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('the android widgets of the group', () => {
+    it('are nudged when availability is marked', async () => {
+      prisma.availability.upsert.mockResolvedValue({ id: '1' });
+
+      await service.create('group-1', 'user-1', { date: '2026-03-01', type: 'day' });
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are nudged when availability is edited', async () => {
+      prisma.availability.findUnique.mockResolvedValue({ id: '1' });
+      prisma.availability.update.mockResolvedValue({ id: '1' });
+
+      await service.update('group-1', '2026-03-01', 'user-1', { date: '2026-03-01', type: 'day' });
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are nudged when availability is removed', async () => {
+      prisma.availability.findUnique.mockResolvedValue({ id: '1' });
+      prisma.availability.delete.mockResolvedValue({ id: '1' });
+
+      await service.delete('group-1', '2026-03-01', 'user-1');
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are left alone when the write never happened', async () => {
+      prisma.availability.findUnique.mockResolvedValue(null);
+
+      await expect(service.delete('group-1', '2026-03-01', 'user-1')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(widgetRefresh.notifyGroupWidgets).not.toHaveBeenCalled();
     });
   });
 });
