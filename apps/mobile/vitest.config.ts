@@ -7,6 +7,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // Misma resolución que vite.config.ts: los tests ven la fuente del paquete
+      // compartido, no un `dist` que puede no existir.
+      '@quedamos/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
   test: {

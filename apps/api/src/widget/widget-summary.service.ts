@@ -1,12 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { GroupsService } from '../groups/groups.service';
+import { DEFAULT_TIME_SLOTS, sanitizeTimeSlots, type TimeSlotPreferences } from '@quedamos/shared';
 
 export interface WidgetSummary {
   group: { id: string; name: string; emoji: string };
   members: { id: string; name: string; colorIndex: number }[];
   days: { date: string; availableMemberIds: string[]; hasEvent: boolean }[];
   bestDay: { date: string; count: number; closesAro: boolean } | null;
+  /**
+   * Las franjas de quien mira el widget: a que hora empieza y acaba su manana,
+   * su tarde y su noche. Van en el resumen para que una franja se pueda pintar
+   * con horas reales en vez de con las de nadie.
+   */
+  timeSlots: TimeSlotPreferences;
   generatedAt: string;
 }
 
@@ -64,7 +71,7 @@ export class WidgetSummaryService {
       gte: new Date(`${from}T00:00:00.000Z`),
       lt: new Date(`${until}T00:00:00.000Z`),
     };
-    const [availability, events] = await Promise.all([
+    const [availability, events, tokenUser] = await Promise.all([
       this.prisma.availability.findMany({
         where: { groupId, date: window },
         select: { userId: true, date: true },
@@ -76,6 +83,10 @@ export class WidgetSummaryService {
           date: window,
         },
         select: { date: true },
+      }),
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { timeSlots: true },
       }),
     ]);
 
@@ -118,6 +129,7 @@ export class WidgetSummaryService {
       members,
       days,
       bestDay,
+      timeSlots: sanitizeTimeSlots(tokenUser?.timeSlots) ?? DEFAULT_TIME_SLOTS,
       generatedAt: new Date().toISOString(),
     };
   }

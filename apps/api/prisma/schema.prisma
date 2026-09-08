@@ -22,6 +22,10 @@ model User {
   // Language every push to this user is written in ('es' | 'en'). Synced from the
   // Supabase JWT on every request; 'es' keeps the ADD COLUMN valid on existing rows.
   language    String   @default("es")
+  // Las franjas del usuario (su mañana, su tarde y su noche) tal y como las
+  // guarda en `user_metadata`: la API las copia del JWT para poder convertir una
+  // franja en horas reales. NULL = todavía no ha tocado las suyas.
+  timeSlots   Json?    @map("time_slots")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 

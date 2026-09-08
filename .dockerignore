@@ -1,5 +1,10 @@
-# Dependencies — installed inside the container
+# Dependencies — installed inside the container. Los patrones sin barra solo
+# casan con la raiz del contexto, asi que cada workspace lleva el suyo: sin
+# ellos, un `docker build` desde un checkout con node_modules intenta pisar los
+# que acaba de instalar la imagen.
 node_modules
+apps/*/node_modules
+packages/*/node_modules
 .pnpm-store
 
 # Build outputs — built inside the container
@@ -53,8 +58,8 @@ progress.md
 # Mobile app — not needed for API image
 apps/mobile
 
-# Shared package — API does not depend on it
-packages
+# Shared package — only its sources are needed, its dist is built inside
+packages/*/dist
 
 # Tools
 tools

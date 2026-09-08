@@ -4,6 +4,7 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import * as jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import { isPushLanguage, normalizePushLanguage } from '../notifications/push-language';
+import { sanitizeTimeSlots, timeSlotsEqual, type TimeSlotPreferences } from '@quedamos/shared';
 
 interface SupabaseJwtPayload {
   sub: string;
@@ -12,6 +13,7 @@ interface SupabaseJwtPayload {
     name?: string;
     avatarEmoji?: string;
     language?: string;
+    timeSlots?: unknown;
   };
   exp: number;
 }
@@ -71,6 +73,11 @@ export class AuthService {
       where: { id: payload.sub },
     });
 
+    // Las franjas las escribe el propio usuario en su `user_metadata`, asi que
+    // solo entra lo que sobrevive al saneado; lo demas se ignora igual que un
+    // idioma desconocido.
+    const timeSlots = sanitizeTimeSlots(payload.user_metadata?.timeSlots);
+
     if (!dbUser) {
       const name = (payload.user_metadata?.name ?? 'Usuario').trim().slice(0, 100);
       const email = (payload.email ?? '').trim().slice(0, 255);
@@ -85,6 +92,7 @@ export class AuthService {
             name,
             avatarEmoji,
             language,
+            ...(timeSlots && { timeSlots }),
           },
         });
       } catch (error: unknown) {
@@ -100,7 +108,7 @@ export class AuthService {
     } else {
       // One write for everything the JWT is authoritative about, so a login that changes
       // both the email and the language does not cost two round trips.
-      const data: { email?: string; language?: string } = {};
+      const data: { email?: string; language?: string; timeSlots?: TimeSlotPreferences } = {};
 
       if (payload.email && dbUser.email !== payload.email) {
         // Sync email when user confirms an email change in Supabase
@@ -117,6 +125,12 @@ export class AuthService {
       const language = payload.user_metadata?.language;
       if (isPushLanguage(language) && dbUser.language !== language) {
         data.language = language;
+      }
+
+      // Sin franjas validas en el token no se toca la columna: un JWT viejo no es
+      // el usuario diciendo "borra las mias", solo un token que no las llevaba.
+      if (timeSlots && !timeSlotsEqual(dbUser.timeSlots, timeSlots)) {
+        data.timeSlots = timeSlots;
       }
 
       if (Object.keys(data).length > 0) {

@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { WidgetSummaryService } from './widget-summary.service';
 import { createMockPrisma, MockPrisma } from '../common/test-utils';
+import { DEFAULT_TIME_SLOTS } from '@quedamos/shared';
 
 const GROUP = {
   id: 'group-1',
@@ -42,6 +43,7 @@ describe('WidgetSummaryService', () => {
     findById.mockReset().mockResolvedValue(GROUP);
     prisma.availability.findMany.mockResolvedValue([]);
     prisma.event.findMany.mockResolvedValue([]);
+    prisma.user.findUnique.mockResolvedValue(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     service = new WidgetSummaryService(prisma as any, { findById } as any);
   });
@@ -160,6 +162,37 @@ describe('WidgetSummaryService', () => {
       ]);
       const s = await service.getSummary('u-a', 'group-1', '2026-08-31', '2026-09-02');
       expect(s.bestDay).toEqual({ date: '2026-09-12', count: 2, closesAro: false });
+    });
+  });
+
+  describe('time slots', () => {
+    it('publishes the slot hours of whoever holds the widget token', async () => {
+      const slots = { ...DEFAULT_TIME_SLOTS, afternoonEnd: '21:00', nightStart: '21:00' };
+      prisma.user.findUnique.mockResolvedValue({ timeSlots: slots });
+
+      const s = await service.getSummary('u-a', 'group-1', '2026-08-31', '2026-09-02');
+
+      expect(s.timeSlots).toEqual(slots);
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: 'u-a' },
+        select: { timeSlots: true },
+      });
+    });
+
+    it('falls back to the defaults when the user never set his own', async () => {
+      prisma.user.findUnique.mockResolvedValue({ timeSlots: null });
+
+      const s = await service.getSummary('u-a', 'group-1', '2026-08-31', '2026-09-02');
+
+      expect(s.timeSlots).toEqual(DEFAULT_TIME_SLOTS);
+    });
+
+    it('falls back to the defaults when what is stored is not a coherent slot set', async () => {
+      prisma.user.findUnique.mockResolvedValue({ timeSlots: { morningStart: '08:00' } });
+
+      const s = await service.getSummary('u-a', 'group-1', '2026-08-31', '2026-09-02');
+
+      expect(s.timeSlots).toEqual(DEFAULT_TIME_SLOTS);
     });
   });
 

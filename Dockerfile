@@ -16,10 +16,16 @@ RUN echo "node-linker=hoisted" > .npmrc
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/package.json
+COPY packages/shared/package.json packages/shared/package.json
 
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
+COPY packages/shared packages/shared
 COPY apps/api apps/api
+
+# The API imports @quedamos/shared from its dist, so the workspace package is
+# compiled before nest resolves it.
+RUN pnpm --filter @quedamos/shared build
 
 WORKDIR /app/apps/api
 RUN npx prisma generate && npx nest build
@@ -36,9 +42,11 @@ RUN echo "node-linker=hoisted" > .npmrc
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/package.json
+COPY packages/shared/package.json packages/shared/package.json
 
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
+COPY --from=build /app/packages/shared/dist packages/shared/dist
 COPY --from=build /app/apps/api/dist apps/api/dist
 COPY --from=build /app/apps/api/prisma apps/api/prisma
 

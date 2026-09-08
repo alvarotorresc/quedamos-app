@@ -2,6 +2,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CreateEventModal } from './CreateEventModal';
 import { createWrapper } from '../test/test-utils';
+import { useAuthStore } from '../stores/auth';
+import { DEFAULT_TIME_SLOTS } from '../lib/time-slot-utils';
 
 // IonModal is a Stencil web component that only projects its children after an
 // async "present" animation — it never runs under jsdom, so children stay stuck
@@ -91,6 +93,60 @@ describe('CreateEventModal prellenado', () => {
     expect(screen.getByText('Álvaro')).toBeInTheDocument();
     expect(screen.getByText('Misa')).toBeInTheDocument();
     expect(screen.getByText('Sara')).toBeInTheDocument();
+  });
+});
+
+describe('CreateEventModal · de franja a hora', () => {
+  const slotPrefill = { ...prefill, suggestedSlot: 'afternoon', suggestedTime: '17:00' };
+
+  // Se limpia antes de cada caso, no después: el desmontaje de testing-library
+  // corre en su propio afterEach y un setState del store con el modal aún
+  // montado dispara el aviso de act().
+  beforeEach(() => {
+    useAuthStore.setState({ user: null });
+  });
+
+  it('prellena la hora con la que el usuario dice que empieza esa franja', () => {
+    useAuthStore.setState({
+      user: {
+        id: 'u1',
+        email: 'alvaro@test.com',
+        name: 'Álvaro',
+        avatarEmoji: '😊',
+        timeSlots: { ...DEFAULT_TIME_SLOTS, afternoonStart: '16:30', nightStart: '21:00', afternoonEnd: '21:00' },
+      },
+    });
+
+    render(
+      <CreateEventModal isOpen onClose={vi.fn()} groupId="g1" prefill={slotPrefill} />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByDisplayValue('16:30')).toBeInTheDocument();
+    expect(screen.queryByDisplayValue('17:00')).not.toBeInTheDocument();
+  });
+
+  it('sin franjas propias usa las de por defecto', () => {
+    render(
+      <CreateEventModal isOpen onClose={vi.fn()} groupId="g1" prefill={slotPrefill} />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByDisplayValue('14:00')).toBeInTheDocument();
+  });
+
+  it('mantiene la hora del prellenado cuando la sugerencia no trae una franja', () => {
+    render(
+      <CreateEventModal
+        isOpen
+        onClose={vi.fn()}
+        groupId="g1"
+        prefill={{ ...prefill, suggestedSlot: null, suggestedTime: '19:00' }}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByDisplayValue('19:00')).toBeInTheDocument();
   });
 });
 

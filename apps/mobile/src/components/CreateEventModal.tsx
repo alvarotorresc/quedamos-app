@@ -13,6 +13,12 @@ import { LocationSearch } from './LocationSearch';
 import { formatDateKey, capitalizeFirst } from '../lib/date-utils';
 import type { WeatherData } from '../services/weather';
 import { getMemberColorByUserId } from '../lib/constants';
+import {
+  DEFAULT_TIME_SLOTS,
+  getSlotRange,
+  isTimeSlotKey,
+  type TimeSlotPreferences,
+} from '../lib/time-slot-utils';
 import { buildMemberColorMap } from '../lib/member-colors';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
@@ -26,6 +32,18 @@ export interface EventPrefill {
   availableMembers: { userId: string; name: string; color: string }[];
   availableCount: number;
   weather?: WeatherData[] | null;
+}
+
+/**
+ * Con qué hora nace una quedada creada desde un día del calendario. Si la
+ * sugerencia trae una franja («por la tarde»), la hora es a la que empieza la
+ * tarde DE QUIEN la crea, no una hora fija para todo el mundo; sin franja se
+ * respeta lo que venga en el prellenado.
+ */
+function suggestedStartTime(prefill: EventPrefill | null, slots: TimeSlotPreferences): string {
+  if (!prefill) return '';
+  if (isTimeSlotKey(prefill.suggestedSlot)) return getSlotRange(prefill.suggestedSlot, slots).start;
+  return prefill.suggestedTime ?? '';
 }
 
 interface CreateEventModalProps {
@@ -93,7 +111,7 @@ export function CreateEventModal({
       setLocation('');
       setLocationLat(null);
       setLocationLon(null);
-      setTime(prefill?.suggestedTime ?? '');
+      setTime(suggestedStartTime(prefill, user?.timeSlots ?? DEFAULT_TIME_SLOTS));
       setEndTime('');
       setDate('');
       setSelectedMemberIds(
