@@ -10,6 +10,7 @@ import { PUBLIC_USER_SELECT } from '../common/prisma/user-select';
 import { GroupsService } from '../groups/groups.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { AvailabilityService } from '../availability/availability.service';
+import { WidgetRefreshService } from '../widget-refresh/widget-refresh.service';
 import { CreatePollDto } from './dto/create-poll.dto';
 import { RespondPollDto } from './dto/respond-poll.dto';
 
@@ -28,6 +29,7 @@ export class PollsService {
     private groupsService: GroupsService,
     private notifications: NotificationsService,
     private availabilityService: AvailabilityService,
+    private widgetRefresh: WidgetRefreshService,
   ) {}
 
   /**
@@ -116,6 +118,8 @@ export class PollsService {
         .catch((err) => this.logger.error('new_poll push failed', err));
     }
 
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
+
     return { ...poll, notified };
   }
 
@@ -185,6 +189,8 @@ export class PollsService {
       });
     }
 
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
+
     return this.findOne(groupId, pollId, userId);
   }
 
@@ -215,10 +221,14 @@ export class PollsService {
       throw new ForbiddenException('Only the creator can close a poll');
     }
 
-    return this.prisma.availabilityPoll.update({
+    const closed = await this.prisma.availabilityPoll.update({
       where: { id: pollId },
       data: { status: 'closed' },
     });
+
+    this.widgetRefresh.notifyGroupWidgets(groupId, userId);
+
+    return closed;
   }
 
   private async findOne(groupId: string, pollId: string, userId: string) {

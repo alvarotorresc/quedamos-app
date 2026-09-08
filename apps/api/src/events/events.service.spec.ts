@@ -11,11 +11,17 @@ import {
   createTestEvent,
 } from '../common/test-utils';
 
+/** The widget nudge is a side effect with no return value anybody reads. */
+function createMockWidgetRefresh() {
+  return { notifyGroupWidgets: jest.fn().mockResolvedValue({ sent: 0 }) };
+}
+
 describe('EventsService', () => {
   let service: EventsService;
   let prisma: ReturnType<typeof createMockPrisma>;
   let groupsService: jest.Mocked<Partial<GroupsService>>;
   let notifications: ReturnType<typeof createMockNotificationsService>;
+  let widgetRefresh: ReturnType<typeof createMockWidgetRefresh>;
 
   beforeEach(() => {
     prisma = createMockPrisma();
@@ -27,10 +33,12 @@ describe('EventsService', () => {
       ]),
     };
     notifications = createMockNotificationsService();
+    widgetRefresh = createMockWidgetRefresh();
     service = new EventsService(
       prisma as unknown as PrismaService,
       groupsService as unknown as GroupsService,
       notifications as unknown as NotificationsService,
+      widgetRefresh as never,
     );
   });
 
@@ -1405,6 +1413,70 @@ describe('EventsService', () => {
           }),
         }),
       );
+    });
+  });
+
+  describe('the android widgets of the group', () => {
+    const anEvent = () => ({
+      ...createTestEvent(),
+      createdBy: createTestUser(),
+      attendees: [],
+    });
+
+    it('are nudged when a plan is created', async () => {
+      prisma.event.create.mockResolvedValue(anEvent());
+
+      await service.create('group-1', 'user-1', { title: 'Cena', date: '2026-12-01' });
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are nudged when a plan is edited', async () => {
+      prisma.event.findFirst.mockResolvedValue(anEvent());
+      prisma.event.update.mockResolvedValue(anEvent());
+
+      await service.update('group-1', 'event-1', 'user-1', { title: 'Otra' });
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are nudged when a plan is confirmed', async () => {
+      prisma.event.findFirst.mockResolvedValue(anEvent());
+      prisma.event.update.mockResolvedValue({ ...anEvent(), status: 'confirmed' });
+
+      await service.confirm('group-1', 'event-1', 'user-1');
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are nudged when a plan is cancelled — it leaves the widget', async () => {
+      prisma.event.findFirst.mockResolvedValue(anEvent());
+      prisma.event.update.mockResolvedValue({ ...anEvent(), status: 'cancelled' });
+
+      await service.cancel('group-1', 'event-1', 'user-1');
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are nudged when a plan is deleted', async () => {
+      prisma.event.findFirst.mockResolvedValue(anEvent());
+      prisma.event.delete.mockResolvedValue(anEvent());
+
+      await service.delete('group-1', 'event-1', 'user-1');
+
+      expect(widgetRefresh.notifyGroupWidgets).toHaveBeenCalledWith('group-1', 'user-1');
+    });
+
+    it('are left alone when the caller is not the creator', async () => {
+      prisma.event.findFirst.mockResolvedValue({
+        ...anEvent(),
+        createdById: 'user-2',
+      });
+
+      await expect(service.delete('group-1', 'event-1', 'user-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(widgetRefresh.notifyGroupWidgets).not.toHaveBeenCalled();
     });
   });
 });
