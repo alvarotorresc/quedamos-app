@@ -182,6 +182,43 @@ describe('WeeklyReminderService', () => {
       jest.useRealTimers();
     });
 
+    // The cron fires at 20:00 in Madrid, and the week it asks about has to be the
+    // Monday-to-Sunday the user sees on their calendar, not the one UTC is on.
+    it('should be scheduled in Europe/Madrid', () => {
+      const options = Reflect.getMetadata(
+        'SCHEDULE_CRON_OPTIONS',
+        WeeklyReminderService.prototype.sendWeeklyReminders,
+      );
+
+      expect(options).toEqual(expect.objectContaining({ timeZone: 'Europe/Madrid' }));
+    });
+
+    it('should take next week from the Madrid day, not the UTC one (winter)', () => {
+      // Sunday 23:30 UTC is already Monday 00:30 in Madrid: next week starts on the 9th.
+      const { nextMonday, nextSunday } = service.getNextWeekRange(
+        new Date('2026-03-01T23:30:00.000Z'),
+      );
+
+      expect(nextMonday.toISOString().slice(0, 10)).toBe('2026-03-09');
+      expect(nextSunday.toISOString().slice(0, 10)).toBe('2026-03-15');
+    });
+
+    it('should take next week from the Madrid day, not the UTC one (summer)', () => {
+      // Sunday 22:30 UTC is Monday 00:30 in Madrid once CEST is in force.
+      const { nextMonday, nextSunday } = service.getNextWeekRange(
+        new Date('2026-07-05T22:30:00.000Z'),
+      );
+
+      expect(nextMonday.toISOString().slice(0, 10)).toBe('2026-07-13');
+      expect(nextSunday.toISOString().slice(0, 10)).toBe('2026-07-19');
+    });
+
+    it('should start next week at UTC midnight, the way @db.Date rows are stored', () => {
+      const { nextMonday } = service.getNextWeekRange(new Date('2026-03-01T20:00:00.000Z'));
+
+      expect(nextMonday.toISOString()).toBe('2026-03-02T00:00:00.000Z');
+    });
+
     it('should process users in batches to limit concurrent DB connections', async () => {
       // Create 25 users to force multiple batches (BATCH_SIZE = 10)
       const members = Array.from({ length: 25 }, (_, i) => ({
