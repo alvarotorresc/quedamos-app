@@ -1,4 +1,4 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -21,18 +21,33 @@ jest.mock('jsonwebtoken', () => ({
 
 import * as jwt from 'jsonwebtoken';
 
+const SERVICE_KEY = 'service-role-key';
+
 describe('AuthService', () => {
   let service: AuthService;
   let prisma: ReturnType<typeof createMockPrisma>;
   let configService: ReturnType<typeof createMockConfigService>;
+  let fetchMock: jest.Mock;
 
-  beforeEach(() => {
+  function build(configOverrides: Record<string, string> = {}) {
     prisma = createMockPrisma();
-    configService = createMockConfigService();
+    configService = createMockConfigService({
+      SUPABASE_SERVICE_KEY: SERVICE_KEY,
+      ...configOverrides,
+    });
     service = new AuthService(
       configService as unknown as ConfigService,
       prisma as unknown as PrismaService,
     );
+    // Por defecto Supabase Auth dice que el usuario sigue ahi, que es lo que
+    // pasa en cuanto alguien se registra: las pruebas del alta no tienen que
+    // repetirlo.
+    fetchMock = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+    service.setFetch(fetchMock as unknown as typeof fetch);
+  }
+
+  beforeEach(() => {
+    build();
   });
 
   describe('validateToken', () => {
@@ -408,6 +423,96 @@ describe('AuthService', () => {
       });
 
       await expect(service.validateToken('no-sub-token')).rejects.toThrow(UnauthorizedException);
+    });
+
+    describe('when the row does not exist yet', () => {
+      function tokenFor(sub: string) {
+        (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+          cb(null, { sub, email: 'test@test.com', user_metadata: { name: 'Test User' } });
+        });
+      }
+
+      it('rejects the token of a deleted account instead of recreating the row', async () => {
+        // El JWT sigue firmado y sin caducar, pero la cuenta ya no esta en
+        // Supabase Auth: recrear la fila dejaria el email pillado para siempre.
+        tokenFor('deleted-user');
+        prisma.user.findUnique.mockResolvedValue(null);
+        fetchMock.mockResolvedValue({ ok: false, status: 404 });
+
+        await expect(service.validateToken('valid-token')).rejects.toThrow(UnauthorizedException);
+
+        expect(prisma.user.create).not.toHaveBeenCalled();
+        expect(prisma.user.update).not.toHaveBeenCalled();
+      });
+
+      it('asks Supabase Auth with the service key before creating the user', async () => {
+        tokenFor('user-1');
+        prisma.user.findUnique.mockResolvedValue(null);
+        prisma.user.create.mockResolvedValue(createTestUser());
+
+        await service.validateToken('valid-token');
+
+        expect(fetchMock).toHaveBeenCalledWith(
+          'https://test.supabase.co/auth/v1/admin/users/user-1',
+          expect.objectContaining({
+            method: 'GET',
+            headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
+            signal: expect.any(AbortSignal),
+          }),
+        );
+        expect(prisma.user.create).toHaveBeenCalled();
+      });
+
+      it('does not ask Supabase Auth when the row is already there', async () => {
+        // El camino de siempre no puede pagar una llamada de red por peticion.
+        const user = createTestUser();
+        tokenFor('user-1');
+        prisma.user.findUnique.mockResolvedValue(user);
+
+        const result = await service.validateToken('valid-token');
+
+        expect(result).toEqual(user);
+        expect(fetchMock).not.toHaveBeenCalled();
+      });
+
+      it('refuses with 503 when Supabase Auth is unreachable', async () => {
+        tokenFor('user-1');
+        prisma.user.findUnique.mockResolvedValue(null);
+        fetchMock.mockRejectedValue(new Error('network down'));
+
+        await expect(service.validateToken('valid-token')).rejects.toBeInstanceOf(
+          ServiceUnavailableException,
+        );
+
+        expect(prisma.user.create).not.toHaveBeenCalled();
+      });
+
+      it('refuses with 503 when Supabase Auth answers with an error status', async () => {
+        // Un 500 (o un 401 por una service key mal puesta) no prueba que la
+        // cuenta no exista: solo un 404 lo hace.
+        tokenFor('user-1');
+        prisma.user.findUnique.mockResolvedValue(null);
+        fetchMock.mockResolvedValue({ ok: false, status: 500 });
+
+        await expect(service.validateToken('valid-token')).rejects.toBeInstanceOf(
+          ServiceUnavailableException,
+        );
+
+        expect(prisma.user.create).not.toHaveBeenCalled();
+      });
+
+      it('refuses with 503 and asks nothing when the service key is missing', async () => {
+        build({ SUPABASE_SERVICE_KEY: '' });
+        tokenFor('user-1');
+        prisma.user.findUnique.mockResolvedValue(null);
+
+        await expect(service.validateToken('valid-token')).rejects.toBeInstanceOf(
+          ServiceUnavailableException,
+        );
+
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(prisma.user.create).not.toHaveBeenCalled();
+      });
     });
   });
 

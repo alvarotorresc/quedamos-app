@@ -1,10 +1,20 @@
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../common/prisma/prisma.service';
 import * as jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import { isPushLanguage, normalizePushLanguage } from '../notifications/push-language';
 import { sanitizeTimeSlots, timeSlotsEqual, type TimeSlotPreferences } from '@quedamos/shared';
+
+// La comprobacion corre dentro de la peticion del usuario, asi que espera menos
+// que el borrado de cuenta: si Supabase Auth tarda mas que esto, mejor un 503 que
+// dejar la peticion colgada.
+const SUPABASE_TIMEOUT_MS = 5_000;
 
 interface SupabaseJwtPayload {
   sub: string;
@@ -22,17 +32,25 @@ interface SupabaseJwtPayload {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private jwks: JwksClient;
+  private fetchFn: typeof fetch;
+  private readonly supabaseUrl: string;
 
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
   ) {
-    const supabaseUrl = this.configService.getOrThrow('SUPABASE_URL');
+    this.supabaseUrl = this.configService.getOrThrow('SUPABASE_URL');
     this.jwks = new JwksClient({
-      jwksUri: `${supabaseUrl}/auth/v1/.well-known/jwks.json`,
+      jwksUri: `${this.supabaseUrl}/auth/v1/.well-known/jwks.json`,
       cache: true,
       cacheMaxAge: 600000, // 10 min
     });
+    this.fetchFn = fetch;
+  }
+
+  /** Allow injecting a custom fetch for testing */
+  setFetch(fn: typeof fetch): void {
+    this.fetchFn = fn;
   }
 
   private getKey(header: jwt.JwtHeader, callback: (err: Error | null, key?: string) => void) {
@@ -79,6 +97,13 @@ export class AuthService {
     const timeSlots = sanitizeTimeSlots(payload.user_metadata?.timeSlots);
 
     if (!dbUser) {
+      // Un JWT sigue siendo valido hasta una hora despues de borrar la cuenta.
+      // Sin esta comprobacion, la siguiente peticion desde otro movil o otra
+      // pestana que aun lo lleve volveria a crear la fila: un fantasma sin
+      // usuario en Supabase Auth que ademas deja el email pillado por el
+      // UNIQUE de la tabla, y esa persona ya no puede registrarse otra vez.
+      await this.assertAuthUserExists(payload.sub);
+
       const name = (payload.user_metadata?.name ?? 'Usuario').trim().slice(0, 100);
       const email = (payload.email ?? '').trim().slice(0, 255);
       const avatarEmoji = (payload.user_metadata?.avatarEmoji ?? '😊').slice(0, 10);
@@ -149,6 +174,61 @@ export class AuthService {
     }
 
     return dbUser;
+  }
+
+  /**
+   * Confirms with Supabase Auth that the account behind the token still exists.
+   * Only a 404 proves it is gone; a bad service key, an outage or a timeout leave
+   * the answer unknown, and an unknown answer never creates a row: the request
+   * fails with 503 and the caller can retry.
+   *
+   * Called only when the row is missing — the usual path never pays for it.
+   */
+  private async assertAuthUserExists(userId: string): Promise<void> {
+    const serviceKey = this.configService.get<string>('SUPABASE_SERVICE_KEY');
+    if (!serviceKey) {
+      this.logger.error(
+        'SUPABASE_SERVICE_KEY is not set: cannot verify accounts against Supabase Auth',
+      );
+      throw new ServiceUnavailableException(
+        'Could not verify the account right now. Please try again.',
+      );
+    }
+
+    let response: Response;
+    try {
+      response = await this.fetchFn(
+        `${this.supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`,
+        {
+          method: 'GET',
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+          },
+          signal: AbortSignal.timeout(SUPABASE_TIMEOUT_MS),
+        },
+      );
+    } catch (error) {
+      this.logger.error(`Supabase Auth lookup failed for user ${userId}`, error);
+      throw new ServiceUnavailableException(
+        'Could not verify the account right now. Please try again.',
+      );
+    }
+
+    if (response.status === 404) {
+      this.logger.warn(
+        `Rejected token for ${userId}: the account no longer exists in Supabase Auth`,
+      );
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    if (!response.ok) {
+      // Un 401 aqui es nuestra service key, no la cuenta del usuario.
+      this.logger.error(`Supabase Auth lookup returned ${response.status} for user ${userId}`);
+      throw new ServiceUnavailableException(
+        'Could not verify the account right now. Please try again.',
+      );
+    }
   }
 
   async getProfile(userId: string) {
