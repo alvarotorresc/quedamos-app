@@ -6,7 +6,9 @@ import {
   HiOutlineArrowDownTray,
 } from 'react-icons/hi2';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
 import { Sheet } from '../ui/Sheet';
+import { useEventResponse } from '../hooks/useEventResponse';
 import { AvatarStack } from '../ui/AvatarStack';
 import { openInMaps } from '../lib/maps-utils';
 import { sanitizeUrl } from '../lib/url-utils';
@@ -35,6 +37,8 @@ export function EventDetailModal({
   memberColorMap,
 }: EventDetailModalProps) {
   const { t, i18n } = useTranslation();
+  // Antes del early return: el hook no puede quedar detrás de un condicional.
+  const { myStatus, isPending, canRespond, isResponding, respond } = useEventResponse(event);
 
   if (!event) return null;
 
@@ -66,6 +70,48 @@ export function EventDetailModal({
           {event.title}
           {event.isOnline && <HiOutlineVideoCamera className="w-4 h-4 text-primary shrink-0" />}
         </span>
+      }
+      footer={
+        canRespond ? (
+          isPending ? (
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => respond('confirmed')}
+                disabled={isResponding}
+                className="flex-1"
+              >
+                {t('plans.confirm')}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => respond('declined')}
+                disabled={isResponding}
+                className="flex-1"
+              >
+                {t('plans.decline')}
+              </Button>
+            </div>
+          ) : (
+            <div>
+              <button
+                onClick={() => respond(myStatus === 'confirmed' ? 'declined' : 'confirmed')}
+                disabled={isResponding}
+                className={`w-full py-2 rounded-btn text-xs font-semibold text-center border transition-opacity ${
+                  myStatus === 'confirmed'
+                    ? 'bg-success-tint text-success border-subtle'
+                    : 'bg-error-tint text-error border-subtle'
+                }`}
+                style={{ opacity: isResponding ? 0.6 : 1 }}
+              >
+                {myStatus === 'confirmed' ? t('plans.youConfirmed') : t('plans.youDeclined')}
+              </button>
+              <p className="text-[10px] text-text-dark text-center mt-1">{t('plans.tapToChange')}</p>
+            </div>
+          )
+        ) : undefined
       }
       headerEnd={
         <>
