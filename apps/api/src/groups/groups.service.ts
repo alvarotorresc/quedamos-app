@@ -204,29 +204,13 @@ export class GroupsService {
       throw new ForbiddenException('The group creator cannot leave. Delete the group instead.');
     }
 
-    // Clean up user's availability in this group
-    await this.prisma.availability.deleteMany({
-      where: { groupId, userId },
-    });
-
-    // Clean up user's attendance from future events in this group
-    await this.prisma.eventAttendee.deleteMany({
-      where: {
-        userId,
-        event: {
-          groupId,
-          date: { gte: startOfTodayUTC() },
-        },
-      },
-    });
-
     await this.prisma.groupMember.delete({
       where: {
         groupId_userId: { groupId, userId },
       },
     });
 
-    await this.removeMemberTraces(groupId, userId);
+    await this.removeMemberContributions(groupId, userId);
     await this.recomputeAfterMemberRemoval(groupId);
 
     if (user && group) {
@@ -245,17 +229,53 @@ export class GroupsService {
   }
 
   /**
-   * Drops what the member leaves behind in the group's polls and proposals. Their
-   * answers no longer count for anybody, and a stale vote would put a non-member in
-   * the attendee list of a proposal converted later on.
+   * What a member leaves behind when they go, whether they left or were kicked.
+   *
+   * One rule for everything: what is dated before today stays, what is dated today or
+   * later goes. Their availability and their answers no longer count for anybody
+   * planning something, and a stale vote would put a non-member in the attendee list of
+   * a proposal converted later on — but the group's history is not theirs alone to
+   * erase, and leaving is not a way to wipe it. Before this, availability, poll answers
+   * and votes were deleted whole, past included, while only attendance was filtered.
+   *
+   * Votes are the exception to the date rule: a proposal has no date until it is
+   * converted, so only the votes of proposals still open are dropped.
    */
-  private async removeMemberTraces(groupId: string, userId: string) {
+  private async removeMemberContributions(groupId: string, userId: string) {
+    const today = this.startOfTodayInMadrid();
+
+    await this.prisma.availability.deleteMany({
+      where: { groupId, userId, date: { gte: today } },
+    });
+    await this.prisma.eventAttendee.deleteMany({
+      where: { userId, event: { groupId, date: { gte: today } } },
+    });
     await this.prisma.pollResponse.deleteMany({
-      where: { userId, poll: { groupId } },
+      where: { userId, poll: { groupId, date: { gte: today } } },
     });
     await this.prisma.planVote.deleteMany({
-      where: { userId, proposal: { groupId } },
+      where: { userId, proposal: { groupId, status: 'open' } },
     });
+  }
+
+  /**
+   * Today in Madrid as the UTC-midnight instant the `@db.Date` columns store. Deliberate
+   * twin of the helper in WeeklyReminderService: v0.1 hardcodes the group timezone in
+   * each place that needs it, and v0.2 will lift them together when it becomes a group
+   * setting. Reading the server's own day moves the boundary by an hour or two and, late
+   * at night, would take today's quedada down with tomorrow's.
+   */
+  private startOfTodayInMadrid(now: Date = new Date()): Date {
+    const [year, month, day] = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Madrid',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .format(now)
+      .split('-')
+      .map(Number);
+    return new Date(Date.UTC(year, month - 1, day));
   }
 
   /**
@@ -470,23 +490,8 @@ export class GroupsService {
       where: { groupId_userId: { groupId, userId: targetUserId } },
     });
 
-    // Same cleanup as leave(): the kicked member leaves no availability behind and
-    // stops being a pending attendee of today's quedada too.
-    await this.prisma.availability.deleteMany({
-      where: { groupId, userId: targetUserId },
-    });
-
-    await this.prisma.eventAttendee.deleteMany({
-      where: {
-        userId: targetUserId,
-        event: {
-          groupId,
-          date: { gte: startOfTodayUTC() },
-        },
-      },
-    });
-
-    await this.removeMemberTraces(groupId, targetUserId);
+    // Same rule as leave(): today onward goes, the past stays.
+    await this.removeMemberContributions(groupId, targetUserId);
     await this.recomputeAfterMemberRemoval(groupId);
 
     // The copy names the group, so there is nothing to say if the group vanished

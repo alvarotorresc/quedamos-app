@@ -314,7 +314,7 @@ describe('GroupsService', () => {
       await service.leave('group-1', 'user-2');
 
       expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
-        where: { groupId: 'group-1', userId: 'user-2' },
+        where: { groupId: 'group-1', userId: 'user-2', date: { gte: expect.any(Date) } },
       });
     });
 
@@ -494,10 +494,10 @@ describe('GroupsService', () => {
       await service.leave('group-1', 'user-2');
 
       expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
-        where: { userId: 'user-2', poll: { groupId: 'group-1' } },
+        where: { userId: 'user-2', poll: { groupId: 'group-1', date: { gte: expect.any(Date) } } },
       });
       expect(prisma.planVote.deleteMany).toHaveBeenCalledWith({
-        where: { userId: 'user-2', proposal: { groupId: 'group-1' } },
+        where: { userId: 'user-2', proposal: { groupId: 'group-1', status: 'open' } },
       });
     });
 
@@ -519,7 +519,40 @@ describe('GroupsService', () => {
         data: { status: 'confirmed' },
       });
       expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
-        where: { userId: 'user-2', poll: { groupId: 'group-1' } },
+        where: { userId: 'user-2', poll: { groupId: 'group-1', date: { gte: expect.any(Date) } } },
+      });
+    });
+
+    // Leaving a group is not a way to erase your past in it: what already happened
+    // stays, what has not happened yet goes. One rule for leave and for kick.
+    it('should keep everything dated before today and drop today onward', async () => {
+      jest.useFakeTimers({ now: new Date('2026-03-01T23:30:00.000Z') });
+      mockLeavingMember();
+
+      await service.leave('group-1', 'user-2');
+
+      // 23:30 UTC on Sunday is already Monday the 2nd in Madrid.
+      const cutoff = new Date('2026-03-02T00:00:00.000Z');
+      expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
+        where: { groupId: 'group-1', userId: 'user-2', date: { gte: cutoff } },
+      });
+      expect(prisma.eventAttendee.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', event: { groupId: 'group-1', date: { gte: cutoff } } },
+      });
+      expect(prisma.pollResponse.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', poll: { groupId: 'group-1', date: { gte: cutoff } } },
+      });
+
+      jest.useRealTimers();
+    });
+
+    it('should drop the votes of open proposals only, which carry no date yet', async () => {
+      mockKickingAdmin();
+
+      await service.kickMember('group-1', 'user-2', 'user-1');
+
+      expect(prisma.planVote.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'user-2', proposal: { groupId: 'group-1', status: 'open' } },
       });
     });
   });
@@ -682,7 +715,7 @@ describe('GroupsService', () => {
       await service.kickMember('group-1', 'user-2', 'user-1');
 
       expect(prisma.availability.deleteMany).toHaveBeenCalledWith({
-        where: { groupId: 'group-1', userId: 'user-2' },
+        where: { groupId: 'group-1', userId: 'user-2', date: { gte: expect.any(Date) } },
       });
     });
 
