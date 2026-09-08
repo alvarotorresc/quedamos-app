@@ -317,6 +317,9 @@
     "deleteConfirm": "¿Eliminar el grupo?",
     "lastAdminError": "Debe haber al menos un admin",
     "roleChanged": "Rol actualizado",
+    "unavailableTitle": "Este grupo ya no est\u00e1 disponible",
+    "unavailableDescription": "Puede que lo hayan eliminado o que ya no seas miembro.",
+    "backToGroups": "Volver a mis grupos",
     "creator": "Fundador"
   },
   "joinGroup": {

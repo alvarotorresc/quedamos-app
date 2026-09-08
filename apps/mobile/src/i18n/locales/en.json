@@ -317,6 +317,9 @@
     "deleteConfirm": "Delete the group?",
     "lastAdminError": "There must be at least one admin",
     "roleChanged": "Role updated",
+    "unavailableTitle": "This group is no longer available",
+    "unavailableDescription": "It may have been deleted, or you may no longer be a member.",
+    "backToGroups": "Back to my groups",
     "creator": "Creator"
   },
   "joinGroup": {

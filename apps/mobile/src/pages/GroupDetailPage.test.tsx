@@ -21,9 +21,11 @@ vi.mock('@ionic/react', () => ({
     isOpen ? <div role="menu">{header}</div> : null,
 }));
 
+const mockPush = vi.fn();
+const mockReplace = vi.fn();
 vi.mock('react-router-dom', () => ({
   useParams: () => ({ id: 'g1' }),
-  useHistory: () => ({ push: vi.fn(), replace: vi.fn() }),
+  useHistory: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 const mockT = vi.fn((key: string) => key);
@@ -65,8 +67,13 @@ const GROUP = {
     user: u,
   })),
 };
+// A4: la pantalla tiene tres caras (cargando, error, grupo) y cada prueba elige
+// la suya, asi que el resultado de useGroup se lee tarde desde esta variable.
+type GroupQuery = { data: typeof GROUP | undefined; isLoading: boolean; isError: boolean };
+const LOADED: GroupQuery = { data: GROUP, isLoading: false, isError: false };
+let groupQuery: GroupQuery = LOADED;
 vi.mock('../hooks/useGroups', () => ({
-  useGroup: () => ({ data: GROUP, isLoading: false }),
+  useGroup: () => groupQuery,
   useGroupInvite: () => ({
     data: { inviteCode: '48213956', inviteUrl: 'https://quedamos.alvarotc.com/join/48213956' },
   }),
@@ -152,7 +159,43 @@ vi.mock('../hooks/useGroupCities', () => ({
 vi.mock('../hooks/useCitySearch', () => ({ useCitySearch: () => ({ data: [], isLoading: false }) }));
 
 describe('GroupDetailPage', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    groupQuery = LOADED;
+  });
+
+  // A4: `if (!group) return null` dejaba la pantalla en blanco — sin cabecera y
+  // sin el atras — cuando la API responde 404 (grupo borrado o ya no eres miembro).
+  describe('cuando el grupo no esta disponible', () => {
+    it('mientras carga ensena esqueletos, no una pantalla en blanco', () => {
+      groupQuery = { data: undefined, isLoading: true, isError: false };
+      const { container } = render(<GroupDetailPage />);
+      expect(container.querySelectorAll('.skeleton').length).toBeGreaterThan(0);
+      expect(screen.queryByRole('heading', { name: 'La cuadrilla' })).toBeNull();
+    });
+
+    it('si la API responde con error lo dice y deja volver a los grupos', () => {
+      groupQuery = { data: undefined, isLoading: false, isError: true };
+      render(<GroupDetailPage />);
+      expect(screen.getByText('group.unavailableTitle')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'group.backToGroups' })).toBeInTheDocument();
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.backToGroups' }));
+      expect(mockReplace).toHaveBeenCalledWith('/tabs/group');
+    });
+
+    it('conserva la cabecera con el boton atras en el estado de error', () => {
+      groupQuery = { data: undefined, isLoading: false, isError: true };
+      render(<GroupDetailPage />);
+      expect(screen.getByRole('button', { name: 'back' })).toBeInTheDocument();
+    });
+
+    it('trata un grupo ausente sin error como no disponible, no como pantalla en blanco', () => {
+      groupQuery = { data: undefined, isLoading: false, isError: false };
+      render(<GroupDetailPage />);
+      expect(screen.getByText('group.unavailableTitle')).toBeInTheDocument();
+    });
+  });
 
   it('presenta el grupo con su aro, su nombre y tu color', () => {
     render(<GroupDetailPage />);

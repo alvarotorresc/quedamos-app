@@ -6,7 +6,6 @@ import {
   IonToolbar,
   IonButtons,
   IonBackButton,
-  IonSpinner,
   IonAlert,
   IonActionSheet,
   IonLoading,
@@ -51,6 +50,7 @@ import {
   HiOutlineEllipsisHorizontal,
 } from 'react-icons/hi2';
 import { Tile } from '../ui/Tile';
+import { EmptyState, SkeletonCard } from '../ui';
 import { Aro, type AroMember } from '../ui/Aro';
 import { useEvents } from '../hooks/useEvents';
 import { usePolls } from '../hooks/usePolls';
@@ -78,7 +78,7 @@ export default function GroupDetailPage() {
   const history = useHistory();
   const currentUserId = useAuthStore((s) => s.user?.id);
 
-  const { data: group, isLoading } = useGroup(id);
+  const { data: group, isLoading, isError } = useGroup(id);
   useGroupSync(id);
   const { data: invite } = useGroupInvite(id);
   const refreshInvite = useRefreshInvite();
@@ -266,22 +266,54 @@ export default function GroupDetailPage() {
     });
   };
 
+  // Cabecera comun a las tres caras de la pantalla: sin ella el estado de error
+  // se quedaba sin boton atras y solo se salia matando la app.
+  const header = (
+    <IonHeader className="ion-no-border">
+      <IonToolbar className="py-2">
+        <IonButtons slot="start">
+          <IonBackButton defaultHref="/tabs/group" text="" />
+        </IonButtons>
+      </IonToolbar>
+    </IonHeader>
+  );
+
   if (isLoading) {
     return (
       <IonPage>
-        <IonContent>
-          <div className="flex items-center justify-center h-full">
-            <IonSpinner name="crescent" className="text-primary w-8 h-8" />
+        {header}
+        <IonContent className="ion-padding">
+          <div className="max-w-md mx-auto px-4 pt-4">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         </IonContent>
       </IonPage>
     );
   }
 
-  const isAdmin =
-    group?.members.some((m) => m.userId === currentUserId && m.role === 'admin') ?? false;
+  // La API devuelve 404 tanto si el grupo no existe como si dejaste de ser
+  // miembro, asi que el mensaje cubre los dos casos sin adivinar cual es.
+  if (isError || !group) {
+    return (
+      <IonPage>
+        {header}
+        <IonContent className="ion-padding">
+          <EmptyState
+            emoji="🫥"
+            title={t('group.unavailableTitle')}
+            description={t('group.unavailableDescription')}
+            action={t('group.backToGroups')}
+            onAction={() => history.replace('/tabs/group')}
+          />
+        </IonContent>
+      </IonPage>
+    );
+  }
 
-  if (!group) return null;
+  const isAdmin =
+    group.members.some((m) => m.userId === currentUserId && m.role === 'admin') ?? false;
 
   const dayOf = (dateStr: string) => new Date(apiDateToKey(dateStr) + 'T00:00:00');
   const weekdayShort = (d: Date) =>
@@ -310,13 +342,7 @@ export default function GroupDetailPage() {
 
   return (
     <IonPage>
-      <IonHeader className="ion-no-border">
-        <IonToolbar className="py-2">
-          <IonButtons slot="start">
-            <IonBackButton defaultHref="/tabs/group" text="" />
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+      {header}
       <IonContent className="ion-padding">
         <div className="max-w-md mx-auto px-4 pb-6">
           {/* Identidad: el aro de la cuadrilla */}
