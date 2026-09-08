@@ -1261,6 +1261,113 @@ describe('NotificationsService', () => {
     });
   });
 
+  /**
+   * The bandeja itself: paging, the unread counter and the two ways of marking read.
+   */
+  describe('inbox reading', () => {
+    const ROW = {
+      id: '11111111-1111-4111-8111-111111111111',
+      type: 'new_event',
+      title: 'Nueva quedada',
+      body: 'Ana ha creado "Cena"',
+      data: { type: 'new_event', eventId: 'e1' },
+      readAt: null,
+      createdAt: new Date('2026-09-08T10:00:00Z'),
+    };
+
+    describe('listInbox', () => {
+      it('should return the newest first, with the unread counter', async () => {
+        prisma.notification.findMany.mockResolvedValue([ROW]);
+        prisma.notification.count.mockResolvedValue(3);
+
+        const result = await service.listInbox('user-1', {});
+
+        expect(result).toEqual({ items: [ROW], nextCursor: null, unreadCount: 3 });
+        expect(prisma.notification.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { userId: 'user-1' },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            take: 31,
+          }),
+        );
+        expect(prisma.notification.count).toHaveBeenCalledWith({
+          where: { userId: 'user-1', readAt: null },
+        });
+      });
+
+      it('should hand back a cursor only when there is another page', async () => {
+        const page = Array.from({ length: 3 }, (_, i) => ({ ...ROW, id: `row-${i}` }));
+        prisma.notification.findMany.mockResolvedValue(page);
+
+        const result = await service.listInbox('user-1', { limit: 2 });
+
+        expect(result.items.map((n) => n.id)).toEqual(['row-0', 'row-1']);
+        expect(result.nextCursor).toBe('row-1');
+      });
+
+      it('should page from the cursor row, ties broken by id', async () => {
+        prisma.notification.findFirst.mockResolvedValue({ id: ROW.id, createdAt: ROW.createdAt });
+        prisma.notification.findMany.mockResolvedValue([]);
+
+        await service.listInbox('user-1', { cursor: ROW.id });
+
+        expect(prisma.notification.findFirst).toHaveBeenCalledWith({
+          where: { id: ROW.id, userId: 'user-1' },
+          select: { id: true, createdAt: true },
+        });
+        const [[args]] = prisma.notification.findMany.mock.calls;
+        expect(args.where).toEqual({
+          userId: 'user-1',
+          OR: [
+            { createdAt: { lt: ROW.createdAt } },
+            { createdAt: ROW.createdAt, id: { lt: ROW.id } },
+          ],
+        });
+      });
+
+      it('should ignore a cursor that is not one of your own notices', async () => {
+        prisma.notification.findFirst.mockResolvedValue(null);
+        prisma.notification.findMany.mockResolvedValue([]);
+
+        await service.listInbox('user-1', { cursor: ROW.id });
+
+        const [[args]] = prisma.notification.findMany.mock.calls;
+        expect(args.where).toEqual({ userId: 'user-1' });
+      });
+    });
+
+    describe('markAllRead', () => {
+      it('should stamp every unread notice of the caller', async () => {
+        prisma.notification.updateMany.mockResolvedValue({ count: 4 });
+
+        const result = await service.markAllRead('user-1');
+
+        expect(result).toEqual({ updated: 4 });
+        const [[args]] = prisma.notification.updateMany.mock.calls;
+        expect(args.where).toEqual({ userId: 'user-1', readAt: null });
+        expect(args.data.readAt).toBeInstanceOf(Date);
+      });
+    });
+
+    describe('markRead', () => {
+      it('should stamp one notice, scoped to its owner', async () => {
+        prisma.notification.updateMany.mockResolvedValue({ count: 1 });
+
+        const result = await service.markRead('user-1', ROW.id);
+
+        expect(result).toEqual({ success: true });
+        const [[args]] = prisma.notification.updateMany.mock.calls;
+        expect(args.where).toEqual({ id: ROW.id, userId: 'user-1', readAt: null });
+      });
+
+      it('should stay quiet about an id that is not yours', async () => {
+        prisma.notification.updateMany.mockResolvedValue({ count: 0 });
+
+        await expect(service.markRead('user-1', ROW.id)).resolves.toEqual({ success: true });
+      });
+    });
+  });
+
   describe('per-language fan-out', () => {
     const MONDAY = new Date('2026-09-07T00:00:00Z');
 

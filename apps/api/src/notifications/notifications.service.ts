@@ -10,6 +10,7 @@ import {
   NOTIFICATION_TYPES,
 } from './dto/update-preference.dto';
 import { buildPushCopy, PushCopy, PushCopyParams, PushCopyType } from './push-copy';
+import { INBOX_DEFAULT_LIMIT, ListNotificationsDto } from './dto/list-notifications.dto';
 import { normalizePushLanguage, PushLanguage } from './push-language';
 
 @Injectable()
@@ -330,6 +331,89 @@ export class NotificationsService implements OnModuleInit {
   }
 
   /**
+   * One page of the bandeja, newest first, plus the unread counter the bell shows.
+   *
+   * Keyset paging on `(created_at DESC, id DESC)` — the index the table was created
+   * with — instead of an OFFSET that would skip or repeat notices as new ones land at
+   * the top while somebody scrolls. The cursor is resolved with the caller's own id in
+   * the `where`, so a cursor that belongs to somebody else (or to nothing) is ignored
+   * and simply returns the first page rather than positioning it.
+   *
+   * `unreadCount` is counted on its own: it is the total, not what fits in the page.
+   */
+  async listInbox(userId: string, query: ListNotificationsDto): Promise<InboxPage> {
+    const limit = query.limit ?? INBOX_DEFAULT_LIMIT;
+
+    const cursorRow = query.cursor
+      ? await this.prisma.notification.findFirst({
+          where: { id: query.cursor, userId },
+          select: { id: true, createdAt: true },
+        })
+      : null;
+
+    const [rows, unreadCount] = await Promise.all([
+      this.prisma.notification.findMany({
+        where: {
+          userId,
+          ...(cursorRow
+            ? {
+                OR: [
+                  { createdAt: { lt: cursorRow.createdAt } },
+                  { createdAt: cursorRow.createdAt, id: { lt: cursorRow.id } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: limit + 1,
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          body: true,
+          data: true,
+          readAt: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.notification.count({ where: { userId, readAt: null } }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+
+    return {
+      items,
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+      unreadCount,
+    };
+  }
+
+  /** What opening the bandeja does: everything pending becomes read at once. */
+  async markAllRead(userId: string): Promise<{ updated: number }> {
+    const { count } = await this.prisma.notification.updateMany({
+      where: { userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+
+    return { updated: count };
+  }
+
+  /**
+   * Marks one notice read. Idempotent and silent about ids that are not yours: an
+   * unknown id answering 404 and a foreign one answering 200 would tell a caller which
+   * notices exist, and there is nothing to gain from the distinction.
+   */
+  async markRead(userId: string, notificationId: string): Promise<{ success: true }> {
+    await this.prisma.notification.updateMany({
+      where: { id: notificationId, userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+
+    return { success: true };
+  }
+
+  /**
    * Writes the inbox row of every recipient, at the same point as the push and before
    * the `tokens.length === 0` early returns below.
    *
@@ -618,6 +702,25 @@ export class NotificationsService implements OnModuleInit {
       this.logger.error('Failed to create notification log', error);
     }
   }
+}
+
+/** One notice as the bandeja renders it. */
+export interface InboxItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  data: unknown;
+  readAt: Date | null;
+  createdAt: Date;
+}
+
+export interface InboxPage {
+  items: InboxItem[];
+  /** Id to send back as `cursor` for the next page, or null when there is no more. */
+  nextCursor: string | null;
+  /** Every unread notice of the user, not only the ones in this page. */
+  unreadCount: number;
 }
 
 interface SendResult {

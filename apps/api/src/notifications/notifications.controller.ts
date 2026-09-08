@@ -5,6 +5,9 @@ import {
   Get,
   Put,
   Body,
+  Param,
+  ParseUUIDPipe,
+  Query,
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,6 +20,7 @@ import { RegisterTokenDto } from './dto/register-token.dto';
 import { UnregisterTokenDto } from './dto/unregister-token.dto';
 import { UpdatePreferenceDto } from './dto/update-preference.dto';
 import { SendTestNotificationDto } from './dto/send-test-notification.dto';
+import { ListNotificationsDto } from './dto/list-notifications.dto';
 
 @ApiTags('Notifications')
 @ApiBearerAuth()
@@ -50,6 +54,26 @@ export class NotificationsController {
   @Throttle({ default: { ttl: 60000, limit: 5 } })
   sendTestNotification(@CurrentUser() user: { id: string }, @Body() dto: SendTestNotificationDto) {
     return this.notificationsService.sendTestNotification(user.id, dto);
+  }
+
+  /**
+   * The bandeja: one page of the caller's notices, newest first, with the unread
+   * counter the bell shows. `cursor` is the `nextCursor` of the previous page.
+   */
+  @Get()
+  listInbox(@CurrentUser() user: { id: string }, @Query() query: ListNotificationsDto) {
+    return this.notificationsService.listInbox(user.id, query);
+  }
+
+  /** Opening the bandeja clears the bell. */
+  @Post('read-all')
+  readAll(@CurrentUser() user: { id: string }) {
+    return this.notificationsService.markAllRead(user.id);
+  }
+
+  @Post(':id/read')
+  read(@CurrentUser() user: { id: string }, @Param('id', ParseUUIDPipe) id: string) {
+    return this.notificationsService.markRead(user.id, id);
   }
 
   /**
