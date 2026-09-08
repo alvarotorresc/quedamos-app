@@ -39,11 +39,19 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @quedamos/api exec prisma generate
 
+      # La API importa @quedamos/shared desde su dist, y los pasos de test van
+      # por --filter (sin turbo), asi que nadie lo compilaria por ellos.
+      - name: Build shared package
+        run: pnpm --filter @quedamos/shared build
+
       - name: Lint
         run: pnpm lint
 
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Shared tests
+        run: pnpm --filter @quedamos/shared test
 
       - name: Backend tests
         run: pnpm --filter @quedamos/api test -- --coverage
@@ -112,6 +120,9 @@ jobs:
 
       - name: Generate Prisma client
         run: pnpm --filter @quedamos/api exec prisma generate
+
+      - name: Build shared package
+        run: pnpm --filter @quedamos/shared build
 
       - name: Apply migrations on an empty database
         run: pnpm --filter @quedamos/api exec prisma migrate deploy
