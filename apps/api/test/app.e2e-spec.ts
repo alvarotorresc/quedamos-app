@@ -169,11 +169,10 @@ describe('API (e2e)', () => {
     );
     expect(sendToGroup).toHaveBeenCalledWith(
       groupId,
-      'Nuevo miembro',
-      expect.stringContaining('Bob'),
-      bob.id,
-      expect.objectContaining({ type: 'member_joined', groupId }),
       'member_joined',
+      { actorName: 'Bob', groupName: `Cuadrilla ${suffix}` },
+      bob.id,
+      { groupId },
     );
   });
 
@@ -212,11 +211,10 @@ describe('API (e2e)', () => {
     expect(statusOf(bob)).toBe('pending');
     expect(sendToGroup).toHaveBeenCalledWith(
       groupId,
-      'Nueva quedada',
-      expect.stringContaining('Cena'),
-      alice.id,
-      expect.objectContaining({ type: 'new_event', eventId, groupId }),
       'new_event',
+      { actorName: 'Alice', title: 'Cena' },
+      alice.id,
+      { eventId, groupId },
     );
   });
 
@@ -234,11 +232,10 @@ describe('API (e2e)', () => {
     );
     expect(sendToEventAttendees).toHaveBeenCalledWith(
       eventId,
-      'Quedada confirmada',
-      expect.stringContaining('Cena'),
-      undefined,
-      expect.objectContaining({ type: 'event_confirmed', eventId, groupId }),
       'event_confirmed',
+      { title: 'Cena', variant: 'all_confirmed' },
+      bob.id,
+      { eventId, groupId },
       'confirmed',
     );
   });
