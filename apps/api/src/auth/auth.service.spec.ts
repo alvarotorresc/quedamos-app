@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { createMockPrisma, createMockConfigService, createTestUser } from '../common/test-utils';
+import { DEFAULT_TIME_SLOTS } from '@quedamos/shared';
 
 // Mock jwks-rsa
 jest.mock('jwks-rsa', () => ({
@@ -220,6 +221,126 @@ describe('AuthService', () => {
 
       expect(result).toEqual(user);
       expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should store the time slots from user_metadata when creating the user', async () => {
+      const slots = { ...DEFAULT_TIME_SLOTS, nightStart: '21:00' };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'test@test.com',
+          user_metadata: { name: 'Test User', timeSlots: slots },
+        });
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockResolvedValue(createTestUser());
+
+      await service.validateToken('valid-token');
+
+      expect(prisma.user.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ timeSlots: slots }),
+      });
+    });
+
+    it('should leave the time slots unset when the JWT carries none', async () => {
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', email: 'test@test.com' });
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockResolvedValue(createTestUser());
+
+      await service.validateToken('valid-token');
+
+      expect(prisma.user.create.mock.calls[0][0].data).not.toHaveProperty('timeSlots');
+    });
+
+    it('should sync the time slots when they change in the JWT', async () => {
+      const user = { ...createTestUser(), timeSlots: DEFAULT_TIME_SLOTS };
+      const slots = { ...DEFAULT_TIME_SLOTS, afternoonStart: '16:00' };
+      const updated = { ...user, timeSlots: slots };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', user_metadata: { timeSlots: slots } });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(updated);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(updated);
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { timeSlots: slots },
+      });
+    });
+
+    it('should not write when the stored time slots already say the same', async () => {
+      // Mismos seis valores, otro orden de claves: lo que devuelve Postgres para
+      // una columna JSONB no tiene por que respetar el orden con el que se escribio.
+      const user = {
+        ...createTestUser(),
+        timeSlots: {
+          nightEnd: '00:00',
+          nightStart: '20:00',
+          afternoonEnd: '20:00',
+          afternoonStart: '14:00',
+          morningEnd: '14:00',
+          morningStart: '08:00',
+        },
+      };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, { sub: 'user-1', user_metadata: { timeSlots: DEFAULT_TIME_SLOTS } });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(user);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should ignore malformed time slots in the JWT', async () => {
+      // user_metadata lo escribe el propio cliente: lo que no sea una franja
+      // coherente no llega a la columna.
+      const user = { ...createTestUser(), timeSlots: DEFAULT_TIME_SLOTS };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          user_metadata: { timeSlots: { morningStart: '25:00', injected: 'whatever' } },
+        });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+
+      const result = await service.validateToken('valid-token');
+
+      expect(result).toEqual(user);
+      expect(prisma.user.update).not.toHaveBeenCalled();
+    });
+
+    it('should sync email, language and time slots in a single update', async () => {
+      const user = {
+        ...createTestUser({ email: 'old@test.com' }),
+        language: 'es',
+        timeSlots: null,
+      };
+      const slots = { ...DEFAULT_TIME_SLOTS, morningStart: '07:00' };
+      const updated = { ...user, email: 'new@test.com', language: 'en', timeSlots: slots };
+      (jwt.verify as jest.Mock).mockImplementation((_token, _key, _opts, cb) => {
+        cb(null, {
+          sub: 'user-1',
+          email: 'new@test.com',
+          user_metadata: { language: 'en', timeSlots: slots },
+        });
+      });
+      prisma.user.findUnique.mockResolvedValue(user);
+      prisma.user.update.mockResolvedValue(updated);
+
+      await service.validateToken('valid-token');
+
+      expect(prisma.user.update).toHaveBeenCalledTimes(1);
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: 'user-1' },
+        data: { email: 'new@test.com', language: 'en', timeSlots: slots },
+      });
     });
 
     it('should handle concurrent user creation (P2002 unique constraint)', async () => {
