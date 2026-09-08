@@ -126,16 +126,28 @@ describe('WidgetRefreshService', () => {
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(2);
     });
 
-    it('is per user: a member silenced a second ago does not silence the others', async () => {
-      prisma.pushToken.findMany.mockResolvedValueOnce([{ userId: BEA, token: 'token-bea' }]);
+    it('is per user: only the ones nudged a moment ago are left out', async () => {
+      // Ana marks something: Bea and Carlos are nudged and go quiet for a minute.
       await service.notifyGroupWidgets(GROUP, ANA);
 
+      // Ten seconds later Bea changes something too. Carlos is still inside his window;
+      // Ana was never nudged and must be.
       jest.advanceTimersByTime(10_000);
-      prisma.pushToken.findMany.mockResolvedValueOnce([{ userId: CARLOS, token: 'token-carlos' }]);
-      await service.notifyGroupWidgets(GROUP, ANA);
+      await service.notifyGroupWidgets(GROUP, BEA);
 
-      expect(prisma.pushToken.findMany.mock.calls[1][0].where.userId.in).toEqual([CARLOS]);
+      expect(prisma.pushToken.findMany.mock.calls[1][0].where.userId.in).toEqual([ANA]);
       expect(mockSendEachForMulticast).toHaveBeenCalledTimes(2);
+    });
+
+    it('closes the window before the first await, so two changes at once do not both send', async () => {
+      // Both start before either has queried its tokens: without marking up front they
+      // would each read an empty window and each push.
+      await Promise.all([
+        service.notifyGroupWidgets(GROUP, ANA),
+        service.notifyGroupWidgets(GROUP, ANA),
+      ]);
+
+      expect(mockSendEachForMulticast).toHaveBeenCalledTimes(1);
     });
 
     it('does not grow without bound: expired windows are forgotten', async () => {

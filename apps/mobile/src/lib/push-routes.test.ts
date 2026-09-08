@@ -297,17 +297,21 @@ describe('push routing', () => {
   describe('the service worker resolves the same URLs', () => {
     for (const testCase of CASES) {
       it(testCase.name, async () => {
-        const sw = loadServiceWorker({ clientUrls: [`${ORIGIN}/tabs/calendar`] });
+        // Only the "opens nothing" case gets a tab already open, so both escape hatches
+        // — navigating that tab and opening a new window — can be shown not to fire. The
+        // rest keep asserting on openWindow, as they did before widget_refresh existed.
+        const sw = loadServiceWorker(
+          testCase.url === null ? { clientUrls: [`${ORIGIN}/tabs/calendar`] } : {},
+        );
 
         await sw.notificationClick(testCase.data, testCase.answer ?? '');
 
         if (testCase.url === null) {
-          // Nothing opens and nothing navigates: no window is disturbed.
           expect(sw.opened).toEqual([]);
           expect(sw.navigated).toEqual([]);
           return;
         }
-        expect(sw.navigated).toEqual([testCase.url]);
+        expect(sw.opened).toEqual([testCase.url]);
       });
     }
   });

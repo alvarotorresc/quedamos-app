@@ -78,16 +78,18 @@ export class WidgetRefreshService {
     });
     if (allowed.length === 0) return { sent: 0 };
 
+    // Marked here, before the first await: two changes landing at once would otherwise
+    // both read an empty window and both send, because neither had marked anything yet
+    // when the other looked. A member with no android token burns a window for nothing —
+    // at worst one missed nudge, and only if they register a token within the minute.
+    for (const userId of allowed) this.lastPushAt.set(userId, now);
+    this.forgetExpiredWindows(now);
+
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId: { in: allowed }, platform: 'android' },
       select: { userId: true, token: true },
     });
     if (tokens.length === 0) return { sent: 0 };
-
-    // Before the await, not after: two changes landing in the same tick would otherwise
-    // both find an empty window and both send.
-    for (const { userId } of tokens) this.lastPushAt.set(userId, now);
-    this.forgetExpiredWindows(now);
 
     const message: MulticastMessage = {
       tokens: tokens.map((t) => t.token),
