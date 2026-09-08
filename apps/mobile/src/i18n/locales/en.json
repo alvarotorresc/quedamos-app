@@ -320,6 +320,10 @@
     "unavailableTitle": "This group is no longer available",
     "unavailableDescription": "It may have been deleted, or you may no longer be a member.",
     "backToGroups": "Back to my groups",
+    "closePoll": "Close question",
+    "closePollConfirm": "Close the question?",
+    "closePollMessage": "It will stop showing up and no one else will be able to answer it.",
+    "pollClosed": "Question closed",
     "creator": "Creator"
   },
   "joinGroup": {
@@ -667,6 +671,7 @@
     "deleteGroupNotCreator": "Only the group's creator can delete it",
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",
+    "closePollFailed": "Couldn't close the question",
     "respondEventFailed": "Couldn't save your response",
     "shareTarjetaFailed": "Couldn't create the card",
     "downloadICSFailed": "Couldn't download the plan",

@@ -320,6 +320,10 @@
     "unavailableTitle": "Este grupo ya no est\u00e1 disponible",
     "unavailableDescription": "Puede que lo hayan eliminado o que ya no seas miembro.",
     "backToGroups": "Volver a mis grupos",
+    "closePoll": "Cerrar pregunta",
+    "closePollConfirm": "\u00bfCerrar la pregunta?",
+    "closePollMessage": "Dejar\u00e1 de aparecer y ya nadie podr\u00e1 responderla.",
+    "pollClosed": "Pregunta cerrada",
     "creator": "Fundador"
   },
   "joinGroup": {
@@ -667,6 +671,7 @@
     "deleteGroupNotCreator": "Solo quien cre\u00f3 el grupo puede eliminarlo",
     "copyFailed": "No se pudo copiar el código",
     "answerPollFailed": "No se pudo guardar tu respuesta",
+    "closePollFailed": "No se pudo cerrar la pregunta",
     "respondEventFailed": "No se pudo guardar tu asistencia",
     "shareTarjetaFailed": "No se pudo crear la tarjeta",
     "downloadICSFailed": "No se pudo descargar la quedada",

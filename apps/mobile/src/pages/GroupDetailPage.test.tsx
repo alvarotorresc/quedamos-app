@@ -58,8 +58,9 @@ vi.mock('../hooks/useAnalytics', () => ({
   useAnalytics: () => ({ track: vi.fn() }),
 }));
 const mockShowError = vi.fn();
+const mockShowSuccess = vi.fn();
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: mockShowError, showSuccess: vi.fn(), showInfo: vi.fn() }),
+  useToast: () => ({ showError: mockShowError, showSuccess: mockShowSuccess, showInfo: vi.fn() }),
 }));
 vi.mock('../hooks/useGroupSync', () => ({ useGroupSync: () => {} }));
 vi.mock('../hooks/useMyColor', () => ({ useMyColor: () => '#60A5FA' }));
@@ -148,13 +149,16 @@ vi.mock('../hooks/useEvents', () => ({
     isLoading: false,
   }),
 }));
+const mockClosePoll = vi.fn();
+let mockPollCreatedById = 'u5';
 vi.mock('../hooks/usePolls', () => ({
+  useClosePoll: () => ({ mutateAsync: mockClosePoll, isPending: false }),
   usePolls: () => ({
     data: [
       {
         id: 'p1',
         groupId: 'g1',
-        createdById: 'u5',
+        createdById: mockPollCreatedById,
         date: '2099-01-05',
         slot: 'Noche',
         status: 'open',
@@ -182,6 +186,8 @@ describe('GroupDetailPage', () => {
     vi.clearAllMocks();
     groupQuery = LOADED;
     mockDeleteGroup.mockResolvedValue({ success: true });
+    mockClosePoll.mockResolvedValue({ id: 'p1', status: 'closed' });
+    mockPollCreatedById = 'u5';
   });
 
   // A4: `if (!group) return null` dejaba la pantalla en blanco — sin cabecera y
@@ -297,6 +303,53 @@ describe('GroupDetailPage', () => {
       fireEvent.click(screen.getByTestId('alert-group.deleteGroup'));
 
       await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.deleteGroupFailed'));
+    });
+  });
+
+  // B4: la API ya sabía cerrar una pregunta (POST .../close), pero la app no lo
+  // ofrecía en ninguna pantalla; solo la puede cerrar quien la hizo.
+  describe('cerrar la pregunta en el aire', () => {
+    const asAskerOfTheOpenPoll = () => {
+      mockPollCreatedById = 'u1';
+    };
+
+    it('no se lo ofrece a quien no hizo la pregunta', () => {
+      render(<GroupDetailPage />);
+      expect(screen.queryByRole('button', { name: 'group.closePoll' })).toBeNull();
+    });
+
+    it('quien preguntó puede cerrarla, con confirmación de por medio', async () => {
+      asAskerOfTheOpenPoll();
+      render(<GroupDetailPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.closePoll' }));
+      // Confirmar primero: cerrar no se deshace.
+      expect(mockClosePoll).not.toHaveBeenCalled();
+      expect(screen.getByRole('alertdialog')).toHaveTextContent('group.closePollConfirm');
+
+      fireEvent.click(screen.getByTestId('alert-group.closePoll'));
+      await waitFor(() => expect(mockClosePoll).toHaveBeenCalledWith('p1'));
+      expect(mockShowSuccess).toHaveBeenCalledWith('group.pollClosed');
+    });
+
+    it('cerrar no navega al calendario por debajo del botón', () => {
+      asAskerOfTheOpenPoll();
+      render(<GroupDetailPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.closePoll' }));
+
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+
+    it('avisa si la API no deja cerrarla', async () => {
+      asAskerOfTheOpenPoll();
+      mockClosePoll.mockRejectedValue(new ApiError('Forbidden', 403));
+      render(<GroupDetailPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.closePoll' }));
+      fireEvent.click(screen.getByTestId('alert-group.closePoll'));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.closePollFailed'));
     });
   });
 

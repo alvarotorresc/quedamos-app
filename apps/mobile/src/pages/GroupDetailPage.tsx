@@ -54,7 +54,7 @@ import { Tile } from '../ui/Tile';
 import { EmptyState, SkeletonCard } from '../ui';
 import { Aro, type AroMember } from '../ui/Aro';
 import { useEvents } from '../hooks/useEvents';
-import { usePolls } from '../hooks/usePolls';
+import { usePolls, useClosePoll } from '../hooks/usePolls';
 import { apiDateToKey, formatDateKey, capitalizeFirst } from '../lib/date-utils';
 import { SLOT_KEYS } from '../lib/availability-label';
 import { getWeatherIcon } from '../components/WeatherWidget';
@@ -87,9 +87,10 @@ export default function GroupDetailPage() {
   const updateRole = useUpdateMemberRole(id);
   const kickMember = useKickMember(id);
   const deleteGroup = useDeleteGroup();
+  const closePoll = useClosePoll(id);
 
   const { track } = useAnalytics();
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
   const [copied, setCopied] = useState(false);
   const [showLeaveAlert, setShowLeaveAlert] = useState(false);
   const [showRegenerateAlert, setShowRegenerateAlert] = useState(false);
@@ -101,6 +102,7 @@ export default function GroupDetailPage() {
   } | null>(null);
   const [showDeleteGroupAlert, setShowDeleteGroupAlert] = useState(false);
   const [showKickAlert, setShowKickAlert] = useState(false);
+  const [showClosePollAlert, setShowClosePollAlert] = useState(false);
 
   // Weather & Cities
   const { data: cities } = useGroupCities(id);
@@ -260,6 +262,14 @@ export default function GroupDetailPage() {
     return buttons;
   };
 
+  const handleClosePoll = async () => {
+    if (!openPoll) return;
+    await runWithErrorToast(() => closePoll.mutateAsync(openPoll.id), showError, {
+      onSuccess: () => showSuccess('group.pollClosed'),
+      errorKey: 'errors.closePollFailed',
+    });
+  };
+
   const handleDeleteGroup = async () => {
     // runWithErrorToast solo sabe de una clave: aqui hay que mirar el status para
     // separar «no eres el fundador» (403) de un fallo cualquiera.
@@ -326,6 +336,8 @@ export default function GroupDetailPage() {
   // Borrar el grupo no es cosa de cualquier admin: la API exige createdById
   // (groups.service.ts, deleteGroup), asi que el boton se ofrece solo al fundador.
   const isCreator = group.createdById === currentUserId;
+  // Cerrar una pregunta es cosa de quien la hizo (polls.service.ts, close).
+  const isPollAsker = !!openPoll && openPoll.createdById === currentUserId;
 
   const dayOf = (dateStr: string) => new Date(apiDateToKey(dateStr) + 'T00:00:00');
   const weekdayShort = (d: Date) =>
@@ -436,6 +448,20 @@ export default function GroupDetailPage() {
                         ? t('group.tiles.missing', { names: missing.join(', '), count: missing.length })
                         : t('group.tiles.everyoneAnswered')}
                     </p>
+                    {isPollAsker && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          // La ficha entera navega al calendario: cerrar no es navegar.
+                          e.stopPropagation();
+                          setShowClosePollAlert(true);
+                        }}
+                        disabled={closePoll.isPending}
+                        className="mt-1 text-[11px] font-bold text-text-muted bg-transparent border-none p-0"
+                      >
+                        {t('group.closePoll')}
+                      </button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -722,6 +748,16 @@ export default function GroupDetailPage() {
                   if (actionMember) handleKick(actionMember.userId);
                 },
               },
+            ]}
+          />
+          <IonAlert
+            isOpen={showClosePollAlert}
+            onDidDismiss={() => setShowClosePollAlert(false)}
+            header={t('group.closePollConfirm')}
+            message={t('group.closePollMessage')}
+            buttons={[
+              { text: t('group.cancel'), role: 'cancel' },
+              { text: t('group.closePoll'), role: 'destructive', handler: handleClosePoll },
             ]}
           />
           <IonLoading isOpen={kickMember.isPending} message={t('group.kickMember')} />
