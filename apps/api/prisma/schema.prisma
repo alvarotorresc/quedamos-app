@@ -19,6 +19,9 @@ model User {
   email       String   @unique
   name        String
   avatarEmoji String   @default("😊") @map("avatar_emoji")
+  // Language every push to this user is written in ('es' | 'en'). Synced from the
+  // Supabase JWT on every request; 'es' keeps the ADD COLUMN valid on existing rows.
+  language    String   @default("es")
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
