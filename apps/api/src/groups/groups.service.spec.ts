@@ -1166,4 +1166,113 @@ describe('GroupsService', () => {
       ).resolves.toEqual({ id: 'city-5' });
     });
   });
+
+  // B3: renombrar el grupo o cambiarle el emoji, cosa de cualquier admin.
+  describe('updateGroup', () => {
+    const asMemberOfGroup = () => prisma.group.findFirst.mockResolvedValue(createTestGroup());
+    const withRole = (role: string) =>
+      prisma.groupMember.findUnique.mockResolvedValue({
+        groupId: 'group-1',
+        userId: 'user-1',
+        role,
+      });
+
+    it('should update name and emoji for an admin', async () => {
+      asMemberOfGroup();
+      withRole('admin');
+      const updated = createTestGroup({ name: 'La cuadrilla', emoji: '🏔️' });
+      prisma.group.update.mockResolvedValue(updated);
+
+      const result = await service.updateGroup('group-1', 'user-1', {
+        name: 'La cuadrilla',
+        emoji: '🏔️',
+      });
+
+      expect(result).toEqual(updated);
+      expect(prisma.group.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'group-1' },
+          data: { name: 'La cuadrilla', emoji: '🏔️' },
+        }),
+      );
+    });
+
+    it('should trim the new name', async () => {
+      asMemberOfGroup();
+      withRole('admin');
+      prisma.group.update.mockResolvedValue(createTestGroup());
+
+      await service.updateGroup('group-1', 'user-1', { name: '  La cuadrilla  ' });
+
+      expect(prisma.group.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { name: 'La cuadrilla' } }),
+      );
+    });
+
+    it('should leave the emoji alone when only the name is sent', async () => {
+      asMemberOfGroup();
+      withRole('admin');
+      prisma.group.update.mockResolvedValue(createTestGroup());
+
+      await service.updateGroup('group-1', 'user-1', { name: 'La cuadrilla' });
+
+      const data = prisma.group.update.mock.calls[0][0].data;
+      expect(data).toEqual({ name: 'La cuadrilla' });
+      expect(data).not.toHaveProperty('emoji');
+    });
+
+    it('should leave the name alone when only the emoji is sent', async () => {
+      asMemberOfGroup();
+      withRole('admin');
+      prisma.group.update.mockResolvedValue(createTestGroup());
+
+      await service.updateGroup('group-1', 'user-1', { emoji: '🏔️' });
+
+      const data = prisma.group.update.mock.calls[0][0].data;
+      expect(data).toEqual({ emoji: '🏔️' });
+      expect(data).not.toHaveProperty('name');
+    });
+
+    it('should not touch the database when there is nothing to change', async () => {
+      const group = createTestGroup();
+      prisma.group.findFirst.mockResolvedValue(group);
+      withRole('admin');
+
+      const result = await service.updateGroup('group-1', 'user-1', {});
+
+      expect(result).toEqual(group);
+      expect(prisma.group.update).not.toHaveBeenCalled();
+    });
+
+    it('should reject a plain member with ForbiddenException', async () => {
+      asMemberOfGroup();
+      withRole('member');
+
+      await expect(
+        service.updateGroup('group-1', 'user-1', { name: 'La cuadrilla' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.group.update).not.toHaveBeenCalled();
+    });
+
+    it('should answer NotFoundException to someone who is not a member', async () => {
+      prisma.group.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateGroup('group-1', 'stranger', { name: 'La cuadrilla' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.group.update).not.toHaveBeenCalled();
+    });
+
+    it('should never leak the invite code in the updated group', async () => {
+      asMemberOfGroup();
+      withRole('admin');
+      prisma.group.update.mockResolvedValue(createTestGroup());
+
+      await service.updateGroup('group-1', 'user-1', { name: 'La cuadrilla' });
+
+      const select = prisma.group.update.mock.calls[0][0].select;
+      expect(select).toBeDefined();
+      expect(select).not.toHaveProperty('inviteCode');
+    });
+  });
 });

@@ -49,4 +49,8 @@ export const pollsService = {
 
   respond: (groupId: string, pollId: string, answer: 'yes' | 'no' | 'unsure') =>
     api.post<Poll>(`/groups/${groupId}/polls/${pollId}/respond`, { answer }),
+
+  /** Cierra la pregunta antes de que respondan todos. Solo su creador (B4). */
+  close: (groupId: string, pollId: string) =>
+    api.post<Poll>(`/groups/${groupId}/polls/${pollId}/close`, {}),
 };

@@ -167,6 +167,9 @@
       "title": "Disponibilidad del día"
     },
     "eventDetail": {
+      "confirmed": "Confirmados",
+      "pending": "Pendientes",
+      "declined": "Rechazados",
       "createdBy": "Creada por {{name}}",
       "download": "Descargar para calendario"
     }
@@ -319,6 +322,17 @@
     "deleteConfirm": "¿Eliminar el grupo?",
     "lastAdminError": "Debe haber al menos un admin",
     "roleChanged": "Rol actualizado",
+    "unavailableTitle": "Este grupo ya no est\u00e1 disponible",
+    "unavailableDescription": "Puede que lo hayan eliminado o que ya no seas miembro.",
+    "backToGroups": "Volver a mis grupos",
+    "closePoll": "Cerrar pregunta",
+    "closePollConfirm": "\u00bfCerrar la pregunta?",
+    "closePollMessage": "Dejar\u00e1 de aparecer y ya nadie podr\u00e1 responderla.",
+    "pollClosed": "Pregunta cerrada",
+    "editGroup": "Editar",
+    "groupUpdated": "Grupo actualizado",
+    "save": "Guardar",
+    "saving": "Guardando...",
     "creator": "Fundador"
   },
   "joinGroup": {
@@ -448,6 +462,7 @@
   },
   "landing2": {
     "cta": "Abrir Quedamos",
+    "registerCta": "Crear cuenta",
     "githubCta": "Ver el código en GitHub",
     "feedbackCta": "Reportar un error",
     "nav": {
@@ -717,8 +732,11 @@
     "updateRoleFailed": "No se pudo actualizar el rol",
     "kickMemberFailed": "No se pudo expulsar al miembro",
     "deleteGroupFailed": "No se pudo eliminar el grupo",
+    "updateGroupFailed": "No se pudo actualizar el grupo",
+    "deleteGroupNotCreator": "Solo quien cre\u00f3 el grupo puede eliminarlo",
     "copyFailed": "No se pudo copiar el código",
     "answerPollFailed": "No se pudo guardar tu respuesta",
+    "closePollFailed": "No se pudo cerrar la pregunta",
     "respondEventFailed": "No se pudo guardar tu asistencia",
     "shareTarjetaFailed": "No se pudo crear la tarjeta",
     "downloadICSFailed": "No se pudo descargar la quedada",

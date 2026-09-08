@@ -70,6 +70,11 @@ export function NavIsla(): JSX.Element {
         >
           {t('landing2.nav.codeOpen')}
         </a>
+        {/* Secundario: mismo enlace en texto apagado que «Codigo abierto», para
+            que quien aun no tiene cuenta no tenga que buscarla dentro del login. */}
+        <Link to="/register" className="text-sm text-text-muted hover:text-text">
+          {t('landing2.registerCta')}
+        </Link>
         <Link
           to="/login"
           className="flex items-center gap-2.5 h-11 pl-5 pr-1.5 rounded-pill bg-primary text-on-primary font-bold text-sm"

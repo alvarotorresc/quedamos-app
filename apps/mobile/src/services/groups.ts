@@ -31,6 +31,10 @@ export const groupsService = {
   create: (data: { name: string; emoji?: string }) =>
     api.post<GroupWithMembers>('/groups', data),
 
+  /** Renombra el grupo o le cambia el emoji. Solo admins (B3). */
+  update: (id: string, data: { name?: string; emoji?: string }) =>
+    api.patch<GroupWithMembers>(`/groups/${id}`, data),
+
   join: (inviteCode: string) =>
     api.post<GroupWithMembers>('/groups/join', { inviteCode }),
 

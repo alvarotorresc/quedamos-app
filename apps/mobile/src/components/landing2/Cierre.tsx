@@ -35,13 +35,18 @@ export function Cierre(): JSX.Element {
         {t('landing2.cierre.quote')}
       </p>
       <p className="text-lg text-text-muted">{t('landing2.cierre.subtitle')}</p>
-      <Link
-        to="/login"
-        className="flex items-center gap-2.5 h-14 pl-[26px] pr-2 rounded-pill bg-primary text-on-primary font-bold text-base self-start"
-      >
-        <span>{t('landing2.cta')}</span>
-        <CtaArrow size={40} />
-      </Link>
+      <div className="flex flex-wrap items-center gap-6 self-start">
+        <Link
+          to="/login"
+          className="flex items-center gap-2.5 h-14 pl-[26px] pr-2 rounded-pill bg-primary text-on-primary font-bold text-base"
+        >
+          <span>{t('landing2.cta')}</span>
+          <CtaArrow size={40} />
+        </Link>
+        <Link to="/register" className="text-sm text-text-muted hover:text-text">
+          {t('landing2.registerCta')}
+        </Link>
+      </div>
       <div className="flex flex-wrap items-center gap-10 pt-6 border-t border-subtle text-sm text-text-muted">
         <span>{t('landing2.nav.codeOpen')}</span>
         <a href={GITHUB_URL} target="_blank" rel="noreferrer" className="hover:text-text">

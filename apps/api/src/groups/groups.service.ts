@@ -15,6 +15,7 @@ import { startOfTodayUTC } from '../common/date-utils';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { AddCityDto } from './dto/add-city.dto';
+import { UpdateGroupDto } from './dto/update-group.dto';
 
 /** Fields to return for group queries. Excludes inviteCode for security (SEC-18). */
 const GROUP_PUBLIC_SELECT = {
@@ -603,5 +604,35 @@ export class GroupsService {
       inviteCode: newCode,
       inviteUrl: `${getFrontendUrl()}/join/${newCode}`,
     };
+  }
+
+  /**
+   * Renames a group or changes its emoji (B3). Any admin may do it — unlike
+   * deleteGroup, which the API reserves for the creator. Non-members get the
+   * same 404 findById gives everywhere else, so this endpoint cannot be used to
+   * probe which group ids exist.
+   */
+  async updateGroup(groupId: string, userId: string, dto: UpdateGroupDto) {
+    const group = await this.findById(groupId, userId);
+
+    const admin = await this.isAdmin(groupId, userId);
+    if (!admin) {
+      throw new ForbiddenException('Only admins can update the group');
+    }
+
+    const data: { name?: string; emoji?: string } = {};
+    if (dto.name !== undefined) data.name = dto.name.trim();
+    if (dto.emoji !== undefined) data.emoji = dto.emoji;
+
+    // Nothing to change: skip the write rather than bump updatedAt for nothing.
+    if (Object.keys(data).length === 0) {
+      return group;
+    }
+
+    return this.prisma.group.update({
+      where: { id: groupId },
+      data,
+      select: GROUP_WITH_MEMBERS_SELECT,
+    });
   }
 }

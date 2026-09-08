@@ -19,6 +19,7 @@ const mockGroupsService = {
   updateMemberRole: jest.fn(),
   kickMember: jest.fn(),
   deleteGroup: jest.fn(),
+  updateGroup: jest.fn(),
 };
 
 const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -232,6 +233,29 @@ describe('GroupsController', () => {
       expect(result).toEqual({ success: true });
       expect(mockGroupsService.kickMember).toHaveBeenCalledWith('group-1', 'user-2', 'user-1');
       expect(mockGroupsService.kickMember).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('updateGroup', () => {
+    it('should call groupsService.updateGroup with groupId, userId and dto', async () => {
+      const dto = { name: 'La cuadrilla', emoji: '🏔️' };
+      mockGroupsService.updateGroup.mockResolvedValue({ id: 'group-1', ...dto });
+
+      const result = await controller.updateGroup('group-1', { id: 'user-1' }, dto);
+
+      expect(result).toEqual({ id: 'group-1', ...dto });
+      expect(mockGroupsService.updateGroup).toHaveBeenCalledWith('group-1', 'user-1', dto);
+      expect(mockGroupsService.updateGroup).toHaveBeenCalledTimes(1);
+    });
+
+    it('should forward a partial dto untouched', async () => {
+      mockGroupsService.updateGroup.mockResolvedValue({ id: 'group-1' });
+
+      await controller.updateGroup('group-1', { id: 'user-1' }, { emoji: '🏔️' });
+
+      expect(mockGroupsService.updateGroup).toHaveBeenCalledWith('group-1', 'user-1', {
+        emoji: '🏔️',
+      });
     });
   });
 

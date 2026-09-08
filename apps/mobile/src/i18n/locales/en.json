@@ -167,6 +167,9 @@
       "title": "Day availability"
     },
     "eventDetail": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "declined": "Declined",
       "createdBy": "Created by {{name}}",
       "download": "Download for calendar"
     }
@@ -319,6 +322,17 @@
     "deleteConfirm": "Delete the group?",
     "lastAdminError": "There must be at least one admin",
     "roleChanged": "Role updated",
+    "unavailableTitle": "This group is no longer available",
+    "unavailableDescription": "It may have been deleted, or you may no longer be a member.",
+    "backToGroups": "Back to my groups",
+    "closePoll": "Close question",
+    "closePollConfirm": "Close the question?",
+    "closePollMessage": "It will stop showing up and no one else will be able to answer it.",
+    "pollClosed": "Question closed",
+    "editGroup": "Edit",
+    "groupUpdated": "Group updated",
+    "save": "Save",
+    "saving": "Saving...",
     "creator": "Creator"
   },
   "joinGroup": {
@@ -448,6 +462,7 @@
   },
   "landing2": {
     "cta": "Open Quedamos",
+    "registerCta": "Create account",
     "githubCta": "View the code on GitHub",
     "feedbackCta": "Report a bug",
     "nav": {
@@ -717,8 +732,11 @@
     "updateRoleFailed": "Couldn't update the role",
     "kickMemberFailed": "Couldn't remove the member",
     "deleteGroupFailed": "Couldn't delete the group",
+    "updateGroupFailed": "Couldn't update the group",
+    "deleteGroupNotCreator": "Only the group's creator can delete it",
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",
+    "closePollFailed": "Couldn't close the question",
     "respondEventFailed": "Couldn't save your response",
     "shareTarjetaFailed": "Couldn't create the card",
     "downloadICSFailed": "Couldn't download the plan",
