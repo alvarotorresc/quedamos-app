@@ -233,8 +233,8 @@ export class ProposalsService {
     }
 
     // Create event using EventsService (status map passed as internal param, not in DTO).
-    // skipNewEventNotification: the group already gets the more specific
-    // proposal_converted push below — avoid the duplicate new_event push.
+    // The group already gets the more specific proposal_converted push below, so neither
+    // new_event nor event_confirmed goes out from here.
     let event: Awaited<ReturnType<EventsService['create']>>;
     try {
       event = await this.eventsService.create(
@@ -251,7 +251,10 @@ export class ProposalsService {
           endTime: dto.endTime,
         },
         attendeeStatusMap,
-        { skipNewEventNotification: true },
+        // proposal_converted below already tells the group the plan is on, and a
+        // unanimous proposal is born confirmed: without this the same conversion sent
+        // two pushes to the same people.
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     } catch (error) {
       // Hand the proposal back so the creator can retry instead of leaving it

@@ -403,7 +403,7 @@ describe('EventsService', () => {
       expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
     });
 
-    it('should still send event_confirmed when converting a proposal with skipNewEventNotification', async () => {
+    it('should send event_confirmed for an event born confirmed', async () => {
       const event = {
         ...createTestEvent(),
         createdBy: createTestUser(),
@@ -433,6 +433,34 @@ describe('EventsService', () => {
         'confirmed',
       );
       expect(notifications.sendToEventAttendees).toHaveBeenCalledTimes(1);
+    });
+
+    // A unanimous proposal already announces itself with proposal_converted; the
+    // event_confirmed born with the event was a second push about the same thing.
+    it('should not send event_confirmed when skipConfirmedNotification is set', async () => {
+      const event = {
+        ...createTestEvent(),
+        createdBy: createTestUser(),
+        attendees: [
+          { userId: 'user-1', status: 'confirmed' },
+          { userId: 'user-2', status: 'confirmed' },
+        ],
+      };
+      prisma.event.create.mockResolvedValue(event);
+      prisma.event.update.mockResolvedValue({ ...event, status: 'confirmed' });
+
+      const created = await service.create(
+        'group-1',
+        'user-1',
+        { title: 'From Proposal', date: '2026-12-01' },
+        { 'user-2': 'confirmed' },
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
+      );
+
+      // Still confirmed — only the push is skipped.
+      expect(created.status).toBe('confirmed');
+      expect(notifications.sendToEventAttendees).not.toHaveBeenCalled();
+      expect(notifications.sendToGroup).not.toHaveBeenCalled();
     });
   });
 

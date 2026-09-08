@@ -64,7 +64,7 @@ export class EventsService {
     userId: string,
     dto: CreateEventDto,
     internalStatusMap?: Record<string, 'confirmed' | 'declined'>,
-    options?: { skipNewEventNotification?: boolean },
+    options?: { skipNewEventNotification?: boolean; skipConfirmedNotification?: boolean },
   ) {
     await this.groupsService.findById(groupId, userId);
 
@@ -142,17 +142,21 @@ export class EventsService {
         });
         event.status = 'confirmed';
 
-        // Coherence with respond(): an event born confirmed also notifies event_confirmed
-        this.notificationsService
-          .sendToEventAttendees(
-            event.id,
-            'event_confirmed',
-            { title: event.title, variant: 'all_confirmed' },
-            undefined,
-            { eventId: event.id, groupId },
-            'confirmed',
-          )
-          .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+        // Coherence with respond(): an event born confirmed also notifies event_confirmed.
+        // Unless the caller already says the same thing better — converting a unanimous
+        // proposal sends proposal_converted, and both landed on the same phone.
+        if (!options?.skipConfirmedNotification) {
+          this.notificationsService
+            .sendToEventAttendees(
+              event.id,
+              'event_confirmed',
+              { title: event.title, variant: 'all_confirmed' },
+              undefined,
+              { eventId: event.id, groupId },
+              'confirmed',
+            )
+            .catch((err) => this.logger.error('Failed to send event_confirmed notification', err));
+        }
       }
     }
 

@@ -378,6 +378,30 @@ describe('ProposalsService', () => {
       );
     });
 
+    it('should let the event be born without its own event_confirmed push', async () => {
+      prisma.planProposal.findFirst.mockResolvedValue({
+        ...createTestProposal(),
+        createdBy: createTestUser(),
+        votes: [
+          { userId: 'user-1', vote: 'yes' },
+          { userId: 'user-2', vote: 'yes' },
+        ],
+      });
+
+      await service.convert('group-1', 'proposal-1', 'user-1', {
+        date: '2026-12-01',
+        time: '18:00',
+      });
+
+      expect(eventsService.create).toHaveBeenCalledWith(
+        'group-1',
+        'user-1',
+        expect.anything(),
+        expect.anything(),
+        expect.objectContaining({ skipConfirmedNotification: true }),
+      );
+    });
+
     it('should transfer yes votes as confirmed and no votes as declined', async () => {
       prisma.planProposal.findFirst.mockResolvedValue({
         ...createTestProposal(),
@@ -411,7 +435,7 @@ describe('ProposalsService', () => {
           'user-2': 'confirmed',
           'user-3': 'declined',
         },
-        { skipNewEventNotification: true },
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     });
 
@@ -514,7 +538,7 @@ describe('ProposalsService', () => {
         'user-1',
         expect.any(Object),
         expect.any(Object),
-        { skipNewEventNotification: true },
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     });
   });
@@ -749,7 +773,7 @@ describe('ProposalsService', () => {
           meetingUrl: 'https://meet.google.com/abc',
         }),
         { 'user-1': 'confirmed' },
-        { skipNewEventNotification: true },
+        { skipNewEventNotification: true, skipConfirmedNotification: true },
       );
     });
   });
