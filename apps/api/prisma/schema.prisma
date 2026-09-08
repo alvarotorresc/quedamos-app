@@ -269,7 +269,7 @@ model AvailabilityPoll {
   // Set the first time the ring closes, and never cleared: reopening is silent, so
   // without this the next unanimous 'yes' re-sent «el aro se cierra».
   completedNotifiedAt DateTime? @map("completed_notified_at") @db.Timestamptz
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  createdAt           DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   // Relations
   group     Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
