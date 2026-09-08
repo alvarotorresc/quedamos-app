@@ -3,12 +3,18 @@ import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { EventReminderService } from './event-reminder.service';
 import { WeeklyReminderService } from './weekly-reminder.service';
+import { NotificationRetentionService } from './notification-retention.service';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [AuthModule],
   controllers: [NotificationsController],
-  providers: [NotificationsService, EventReminderService, WeeklyReminderService],
+  providers: [
+    NotificationsService,
+    EventReminderService,
+    WeeklyReminderService,
+    NotificationRetentionService,
+  ],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}
