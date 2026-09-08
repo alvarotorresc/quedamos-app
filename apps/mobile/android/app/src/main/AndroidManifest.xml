@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="false"
@@ -54,6 +55,31 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!--
+            Nuestro servicio de FCM. Extiende el del plugin de Capacitor, así que
+            registrarlo no le quita nada: todo lo que no sea el push data-only de los
+            widgets sigue llegándole por super.onMessageReceived, y onNewToken se hereda
+            tal cual.
+
+            FCM resuelve UN solo servicio para com.google.firebase.MESSAGING_EVENT, así
+            que dejar los dos declarados sería una carrera con el orden de resolución del
+            PackageManager. El tools:node="remove" de abajo borra el del plugin durante el
+            merge del manifiesto (el del módulo app manda sobre el de la librería) y deja
+            exactamente un candidato; el android:priority es el cinturón por si el nombre
+            de esa clase cambiara algún día y el remove dejara de encontrarla.
+        -->
+        <service
+            android:name="app.quedamos.push.QuedamosMessagingService"
+            android:exported="false">
+            <intent-filter android:priority="1">
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
+            tools:node="remove" />
 
         <receiver
             android:name="app.quedamos.widget.SemanaWidgetProvider"

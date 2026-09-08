@@ -14,4 +14,9 @@ ext {
     androidxEspressoCoreVersion = '3.6.1'
     cordovaAndroidVersion = '10.1.1'
     workManagerVersion = '2.10.0'
+    // La misma que usa @capacitor/push-notifications por defecto: la app la declara
+    // explícitamente porque QuedamosMessagingService extiende su MessagingService, y el
+    // plugin la trae como `implementation` (no llega al classpath de compilación de app).
+    // Declararla aquí también fija la del plugin, que lee esta property.
+    firebaseMessagingVersion = '24.1.0'
 }
