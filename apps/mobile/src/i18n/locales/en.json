@@ -719,6 +719,19 @@
     "channelName": "Quedamos alerts",
     "channelDescription": "Plans, questions and group activity"
   },
+  "inbox": {
+    "title": "Notices",
+    "open": "See notices",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "now": "now",
+    "unread": "Unread",
+    "loadMore": "See more",
+    "empty": {
+      "title": "Nothing here yet",
+      "description": "Your groups' notices land here: plans, questions and who joins or leaves."
+    }
+  },
   "errors": {
     "generic": "Something went wrong. Please try again.",
     "sessionExpired": "Your session has expired, sign in again.",

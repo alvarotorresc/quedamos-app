@@ -33,6 +33,7 @@ import type { WeatherData } from '../services/weather';
 import { EventCard } from '../components/EventCard';
 import { EditEventModal } from '../components/EditEventModal';
 import { ProposalCard } from '../components/ProposalCard';
+import { InboxBell } from '../components/InboxBell';
 import { CreateProposalModal } from '../components/CreateProposalModal';
 import { EditProposalModal } from '../components/EditProposalModal';
 import { ConvertProposalModal } from '../components/ConvertProposalModal';
@@ -356,7 +357,8 @@ export default function PlansPage() {
     <IonPage>
       <IonHeader className="ion-no-border">
         <IonToolbar className="py-2">
-          <div slot="end" className="pr-4">
+          <div slot="end" className="pr-4 flex items-center gap-3">
+            <InboxBell />
             <Avatar
               name={user?.name ?? 'U'}
               color={myColor}

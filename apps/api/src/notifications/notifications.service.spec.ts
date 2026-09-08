@@ -1094,6 +1094,280 @@ describe('NotificationsService', () => {
   });
   // One text for the whole group was the bug: a group with an English speaker got the
   // Spanish copy. The fan-out now sends one FCM batch per language present.
+  /**
+   * The inbox row is written at the same point as the push, so a notice reaches
+   * somebody who has no device registered — or who never granted permission — instead
+   * of evaporating. It carries the copy in the reader's own language and the same
+   * `data` the push routes on.
+   */
+  describe('inbox persistence', () => {
+    beforeEach(() => {
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: 'es' }]);
+      prisma.pushToken.findMany.mockResolvedValue([]);
+      prisma.notificationLog.create.mockResolvedValue({});
+    });
+
+    it('should persist a row for a recipient with no push tokens', async () => {
+      prisma.notificationPreference.findUnique.mockResolvedValue(null);
+
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT, { eventId: 'e1' });
+
+      expect(prisma.notification.createMany).toHaveBeenCalledWith({
+        data: [
+          {
+            userId: 'user-1',
+            type: 'new_event',
+            title: NEW_EVENT_COPY.title,
+            body: NEW_EVENT_COPY.body,
+            data: { eventId: 'e1', type: 'new_event' },
+          },
+        ],
+      });
+    });
+
+    it('should not persist anything when the user turned the type off', async () => {
+      prisma.notificationPreference.findUnique.mockResolvedValue({ enabled: false });
+
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT);
+
+      expect(prisma.notification.createMany).not.toHaveBeenCalled();
+    });
+
+    it('should write each row in its own reader language', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'user-1', language: 'es' },
+        { id: 'user-2', language: 'en' },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT, undefined, {
+        eventId: 'e1',
+        groupId: 'group-1',
+      });
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows).toEqual([
+        expect.objectContaining({ userId: 'user-1', title: 'Nueva quedada' }),
+        expect.objectContaining({ userId: 'user-2', title: 'New plan' }),
+      ]);
+    });
+
+    it('should fall back to Spanish for a user whose language is unknown', async () => {
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: null }]);
+
+      await service.sendToUser('user-1', 'new_event', NEW_EVENT);
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows[0].title).toBe(NEW_EVENT_COPY.title);
+    });
+
+    it('should skip a recipient the users table does not know', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'ghost' }]);
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: 'es' }]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT);
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows.map((r: { userId: string }) => r.userId)).toEqual(['user-1']);
+    });
+
+    it('should exclude the actor, like the push does', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }, { userId: 'user-2' }]);
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'user-1', language: 'es' },
+        { id: 'user-2', language: 'es' },
+      ]);
+
+      await service.sendToGroup('group-1', 'new_event', NEW_EVENT, 'user-2');
+
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
+        where: { id: { in: ['user-1'] } },
+        select: { id: true, language: true },
+      });
+    });
+
+    it('should persist for event attendees too', async () => {
+      prisma.eventAttendee.findMany.mockResolvedValue([{ userId: 'user-1' }]);
+
+      await service.sendToEventAttendees('event-1', 'event_updated', { title: 'Cena' }, undefined, {
+        eventId: 'event-1',
+      });
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows[0]).toEqual(
+        expect.objectContaining({
+          userId: 'user-1',
+          type: 'event_updated',
+          data: { eventId: 'event-1', type: 'event_updated' },
+        }),
+      );
+    });
+
+    it('should not persist the test notification', async () => {
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android', user: { language: 'es' } },
+      ]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+      service.onModuleInit();
+
+      await service.sendTestNotification('user-1', {});
+
+      expect(prisma.notification.createMany).not.toHaveBeenCalled();
+    });
+
+    it('should still send the push when the inbox write fails', async () => {
+      jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+      prisma.notification.createMany.mockRejectedValue(new Error('db down'));
+      prisma.pushToken.findMany.mockResolvedValue([
+        { userId: 'user-1', token: 'tok-1', platform: 'android', user: { language: 'es' } },
+      ]);
+      mockSendEachForMulticast.mockResolvedValue({
+        successCount: 1,
+        failureCount: 0,
+        responses: [{ success: true }],
+      });
+      service.onModuleInit();
+
+      const result = await service.sendToUser('user-1', 'new_event', NEW_EVENT);
+
+      expect(result).toEqual({ sent: 1 });
+    });
+
+    it('should carry the localized data extras of the copy', async () => {
+      prisma.groupMember.findMany.mockResolvedValue([{ userId: 'user-1' }]);
+      prisma.user.findMany.mockResolvedValue([{ id: 'user-1', language: 'en' }]);
+
+      await service.sendToGroup(
+        'group-1',
+        'new_poll',
+        {
+          actorName: 'Ana',
+          groupName: 'Cuadrilla',
+          date: new Date('2026-09-07T00:00:00Z'),
+          slot: null,
+        },
+        undefined,
+        { pollId: 'poll-1', groupId: 'group-1' },
+      );
+
+      const [[{ data: rows }]] = prisma.notification.createMany.mock.calls;
+      expect(rows[0].data).toEqual(
+        expect.objectContaining({ pollId: 'poll-1', groupId: 'group-1', type: 'new_poll' }),
+      );
+    });
+  });
+
+  /**
+   * The bandeja itself: paging, the unread counter and the two ways of marking read.
+   */
+  describe('inbox reading', () => {
+    const ROW = {
+      id: '11111111-1111-4111-8111-111111111111',
+      type: 'new_event',
+      title: 'Nueva quedada',
+      body: 'Ana ha creado "Cena"',
+      data: { type: 'new_event', eventId: 'e1' },
+      readAt: null,
+      createdAt: new Date('2026-09-08T10:00:00Z'),
+    };
+
+    describe('listInbox', () => {
+      it('should return the newest first, with the unread counter', async () => {
+        prisma.notification.findMany.mockResolvedValue([ROW]);
+        prisma.notification.count.mockResolvedValue(3);
+
+        const result = await service.listInbox('user-1', {});
+
+        expect(result).toEqual({ items: [ROW], nextCursor: null, unreadCount: 3 });
+        expect(prisma.notification.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { userId: 'user-1' },
+            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+            take: 31,
+          }),
+        );
+        expect(prisma.notification.count).toHaveBeenCalledWith({
+          where: { userId: 'user-1', readAt: null },
+        });
+      });
+
+      it('should hand back a cursor only when there is another page', async () => {
+        const page = Array.from({ length: 3 }, (_, i) => ({ ...ROW, id: `row-${i}` }));
+        prisma.notification.findMany.mockResolvedValue(page);
+
+        const result = await service.listInbox('user-1', { limit: 2 });
+
+        expect(result.items.map((n) => n.id)).toEqual(['row-0', 'row-1']);
+        expect(result.nextCursor).toBe('row-1');
+      });
+
+      it('should page from the cursor row, ties broken by id', async () => {
+        prisma.notification.findFirst.mockResolvedValue({ id: ROW.id, createdAt: ROW.createdAt });
+        prisma.notification.findMany.mockResolvedValue([]);
+
+        await service.listInbox('user-1', { cursor: ROW.id });
+
+        expect(prisma.notification.findFirst).toHaveBeenCalledWith({
+          where: { id: ROW.id, userId: 'user-1' },
+          select: { id: true, createdAt: true },
+        });
+        const [[args]] = prisma.notification.findMany.mock.calls;
+        expect(args.where).toEqual({
+          userId: 'user-1',
+          OR: [
+            { createdAt: { lt: ROW.createdAt } },
+            { createdAt: ROW.createdAt, id: { lt: ROW.id } },
+          ],
+        });
+      });
+
+      it('should ignore a cursor that is not one of your own notices', async () => {
+        prisma.notification.findFirst.mockResolvedValue(null);
+        prisma.notification.findMany.mockResolvedValue([]);
+
+        await service.listInbox('user-1', { cursor: ROW.id });
+
+        const [[args]] = prisma.notification.findMany.mock.calls;
+        expect(args.where).toEqual({ userId: 'user-1' });
+      });
+    });
+
+    describe('markAllRead', () => {
+      it('should stamp every unread notice of the caller', async () => {
+        prisma.notification.updateMany.mockResolvedValue({ count: 4 });
+
+        const result = await service.markAllRead('user-1');
+
+        expect(result).toEqual({ updated: 4 });
+        const [[args]] = prisma.notification.updateMany.mock.calls;
+        expect(args.where).toEqual({ userId: 'user-1', readAt: null });
+        expect(args.data.readAt).toBeInstanceOf(Date);
+      });
+    });
+
+    describe('markRead', () => {
+      it('should stamp one notice, scoped to its owner', async () => {
+        prisma.notification.updateMany.mockResolvedValue({ count: 1 });
+
+        const result = await service.markRead('user-1', ROW.id);
+
+        expect(result).toEqual({ success: true });
+        const [[args]] = prisma.notification.updateMany.mock.calls;
+        expect(args.where).toEqual({ id: ROW.id, userId: 'user-1', readAt: null });
+      });
+
+      it('should stay quiet about an id that is not yours', async () => {
+        prisma.notification.updateMany.mockResolvedValue({ count: 0 });
+
+        await expect(service.markRead('user-1', ROW.id)).resolves.toEqual({ success: true });
+      });
+    });
+  });
+
   describe('per-language fan-out', () => {
     const MONDAY = new Date('2026-09-07T00:00:00Z');
 

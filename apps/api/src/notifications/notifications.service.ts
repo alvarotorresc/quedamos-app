@@ -10,6 +10,7 @@ import {
   NOTIFICATION_TYPES,
 } from './dto/update-preference.dto';
 import { buildPushCopy, PushCopy, PushCopyParams, PushCopyType } from './push-copy';
+import { INBOX_DEFAULT_LIMIT, ListNotificationsDto } from './dto/list-notifications.dto';
 import { normalizePushLanguage, PushLanguage } from './push-language';
 
 @Injectable()
@@ -167,6 +168,8 @@ export class NotificationsService implements OnModuleInit {
     const enabled = await this.isNotificationEnabled(userId, type);
     if (!enabled) return { sent: 0 };
 
+    await this.persistInbox([userId], type, params, data);
+
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId },
       include: { user: { select: { language: true } } },
@@ -258,6 +261,8 @@ export class NotificationsService implements OnModuleInit {
 
     if (userIds.length === 0) return { sent: 0 };
 
+    await this.persistInbox(userIds, type, params, data);
+
     const tokens = await this.prisma.pushToken.findMany({
       where: {
         userId: { in: userIds },
@@ -305,6 +310,8 @@ export class NotificationsService implements OnModuleInit {
 
     if (userIds.length === 0) return { sent: 0 };
 
+    await this.persistInbox(userIds, type, params, data);
+
     const tokens = await this.prisma.pushToken.findMany({
       where: { userId: { in: userIds } },
       include: { user: { select: { language: true } } },
@@ -321,6 +328,145 @@ export class NotificationsService implements OnModuleInit {
     );
 
     return { sent: result.sent, failed: result.failed, tokenCount: result.tokenCount };
+  }
+
+  /**
+   * One page of the bandeja, newest first, plus the unread counter the bell shows.
+   *
+   * Keyset paging on `(created_at DESC, id DESC)` — the index the table was created
+   * with — instead of an OFFSET that would skip or repeat notices as new ones land at
+   * the top while somebody scrolls. The cursor is resolved with the caller's own id in
+   * the `where`, so a cursor that belongs to somebody else (or to nothing) is ignored
+   * and simply returns the first page rather than positioning it.
+   *
+   * `unreadCount` is counted on its own: it is the total, not what fits in the page.
+   */
+  async listInbox(userId: string, query: ListNotificationsDto): Promise<InboxPage> {
+    const limit = query.limit ?? INBOX_DEFAULT_LIMIT;
+
+    const cursorRow = query.cursor
+      ? await this.prisma.notification.findFirst({
+          where: { id: query.cursor, userId },
+          select: { id: true, createdAt: true },
+        })
+      : null;
+
+    const [rows, unreadCount] = await Promise.all([
+      this.prisma.notification.findMany({
+        where: {
+          userId,
+          ...(cursorRow
+            ? {
+                OR: [
+                  { createdAt: { lt: cursorRow.createdAt } },
+                  { createdAt: cursorRow.createdAt, id: { lt: cursorRow.id } },
+                ],
+              }
+            : {}),
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: limit + 1,
+        select: {
+          id: true,
+          type: true,
+          title: true,
+          body: true,
+          data: true,
+          readAt: true,
+          createdAt: true,
+        },
+      }),
+      this.prisma.notification.count({ where: { userId, readAt: null } }),
+    ]);
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+
+    return {
+      items,
+      nextCursor: hasMore ? items[items.length - 1].id : null,
+      unreadCount,
+    };
+  }
+
+  /** What opening the bandeja does: everything pending becomes read at once. */
+  async markAllRead(userId: string): Promise<{ updated: number }> {
+    const { count } = await this.prisma.notification.updateMany({
+      where: { userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+
+    return { updated: count };
+  }
+
+  /**
+   * Marks one notice read. Idempotent and silent about ids that are not yours: an
+   * unknown id answering 404 and a foreign one answering 200 would tell a caller which
+   * notices exist, and there is nothing to gain from the distinction.
+   */
+  async markRead(userId: string, notificationId: string): Promise<{ success: true }> {
+    await this.prisma.notification.updateMany({
+      where: { id: notificationId, userId, readAt: null },
+      data: { readAt: new Date() },
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * Writes the inbox row of every recipient, at the same point as the push and before
+   * the `tokens.length === 0` early returns below.
+   *
+   * That order is the whole point: somebody with no device registered, or who never
+   * granted the permission, still finds the notice in the bell. Preferences are already
+   * resolved by the caller, so an opted-out type never reaches here — the bandeja shows
+   * exactly what the push would have said.
+   *
+   * The language cannot be taken from the push tokens (a recipient without tokens has
+   * none), so it is read from `users` in one query; that read is also what keeps a
+   * recipient the table does not know out of the batch, since one bad FK would abort
+   * the whole `createMany`. A failure is logged and swallowed: the inbox must never
+   * cost a push.
+   */
+  private async persistInbox<T extends NotificationType>(
+    userIds: string[],
+    type: T,
+    params: PushCopyParams<T>,
+    data: Record<string, string> | undefined,
+  ): Promise<void> {
+    if (userIds.length === 0) return;
+
+    try {
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, language: true },
+      });
+      if (users.length === 0) return;
+
+      const copyByLanguage = new Map<PushLanguage, PushCopy>();
+      const copyFor = (language: PushLanguage): PushCopy => {
+        const cached = copyByLanguage.get(language);
+        if (cached) return cached;
+        const built = buildPushCopy(type, language, params);
+        copyByLanguage.set(language, built);
+        return built;
+      };
+
+      const rows = users.map((user) => {
+        const copy = copyFor(normalizePushLanguage(user.language));
+        return {
+          userId: user.id,
+          type,
+          title: copy.title,
+          body: copy.body,
+          data: { ...data, ...copy.data, type },
+        };
+      });
+
+      await this.prisma.notification.createMany({ data: rows });
+    } catch (error) {
+      this.logger.error('Failed to persist inbox notifications', error);
+    }
   }
 
   /**
@@ -556,6 +702,25 @@ export class NotificationsService implements OnModuleInit {
       this.logger.error('Failed to create notification log', error);
     }
   }
+}
+
+/** One notice as the bandeja renders it. */
+export interface InboxItem {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  data: unknown;
+  readAt: Date | null;
+  createdAt: Date;
+}
+
+export interface InboxPage {
+  items: InboxItem[];
+  /** Id to send back as `cursor` for the next page, or null when there is no more. */
+  nextCursor: string | null;
+  /** Every unread notice of the user, not only the ones in this page. */
+  unreadCount: number;
 }
 
 interface SendResult {

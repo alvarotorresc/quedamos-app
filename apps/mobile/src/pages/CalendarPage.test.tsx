@@ -27,6 +27,7 @@ vi.mock('../hooks/usePollDeepLink', () => ({
 }));
 vi.mock('../hooks/useAutoSelectGroup', () => ({ useAutoSelectGroup: () => {} }));
 vi.mock('../hooks/useWidgetGroupsSync', () => ({ useWidgetGroupsSync: () => {} }));
+vi.mock('../components/InboxBell', () => ({ InboxBell: () => null }));
 vi.mock('../hooks/useAvailability', () => ({
   useAvailability: () => ({ data: [], isLoading: false }),
   useMyAvailability: () => ({ data: [] }),

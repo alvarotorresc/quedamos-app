@@ -28,6 +28,7 @@ import { AvailabilityDetailModal } from '../components/AvailabilityDetailModal';
 import { CreateEventModal } from '../components/CreateEventModal';
 import { EventDetailModal } from '../components/EventDetailModal';
 import { AskGroupSheet } from '../components/AskGroupSheet';
+import { InboxBell } from '../components/InboxBell';
 import { MazoGate } from '../components/MazoGate';
 import type { EventPrefill } from '../components/CreateEventModal';
 import type { Availability } from '../services/availability';
@@ -301,6 +302,7 @@ export default function CalendarPage() {
             >
               +
             </button>
+            <InboxBell />
             <Avatar
               name={user?.name ?? 'U'}
               color={myColor}

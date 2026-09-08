@@ -39,6 +39,7 @@ model User {
   createdPolls            AvailabilityPoll[]       @relation("PollCreator")
   pollResponses           PollResponse[]
   widgetTokens            WidgetToken[]
+  notifications           Notification[]
 
   @@map("users")
 }
@@ -204,6 +205,28 @@ model NotificationLog {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("notification_logs")
+}
+
+/// Bandeja de avisos: el mismo aviso que sale por push, guardado para poder leerlo
+/// dentro de la app. Se escribe en el fan-out de NotificationsService, en el mismo
+/// punto que el push y con el texto ya en el idioma de cada destinatario.
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  type      String
+  title     String
+  body      String
+  /// Mismo payload que viaja en el push: `resolvePushRoute` lo lee para navegar.
+  data      Json?     @db.JsonB
+  readAt    DateTime? @map("read_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@map("notifications")
 }
 
 model GroupCity {

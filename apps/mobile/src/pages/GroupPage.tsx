@@ -15,6 +15,7 @@ import { EmptyState } from '../ui';
 import { getMemberColorByUserId } from '../lib/constants';
 import { buildMemberColorMap } from '../lib/member-colors';
 import { ApiError } from '../lib/api';
+import { InboxBell } from '../components/InboxBell';
 
 type FormMode = 'create' | 'join' | null;
 
@@ -106,7 +107,8 @@ export default function GroupPage() {
       <IonHeader className="ion-no-border">
         <IonToolbar className="py-2">
           <IonTitle>{t('group.title')}</IonTitle>
-          <div slot="end" className="pr-4">
+          <div slot="end" className="pr-4 flex items-center gap-3">
+            <InboxBell />
             <Avatar
               name={user?.name ?? 'U'}
               color={myColor}

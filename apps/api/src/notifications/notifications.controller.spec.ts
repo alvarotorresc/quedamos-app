@@ -11,6 +11,9 @@ const mockNotificationsService = {
   updatePreference: jest.fn(),
   sendTestNotification: jest.fn(),
   getDebugInfo: jest.fn(),
+  listInbox: jest.fn(),
+  markAllRead: jest.fn(),
+  markRead: jest.fn(),
 };
 
 const mockAuthGuard = { canActivate: jest.fn().mockReturnValue(true) };
@@ -182,6 +185,37 @@ describe('NotificationsController', () => {
       process.env.ENABLE_NOTIFICATIONS_DEBUG = 'true';
       mockNotificationsService.getDebugInfo.mockResolvedValue({ tokens: [] });
       await expect(controller.getDebugInfo({ id: 'user-1' })).resolves.toEqual({ tokens: [] });
+    });
+  });
+  describe('inbox', () => {
+    const USER = { id: 'user-1' };
+    const ID = '11111111-1111-4111-8111-111111111111';
+
+    it('should hand the paging query straight to the service', async () => {
+      const page = { items: [], nextCursor: null, unreadCount: 0 };
+      mockNotificationsService.listInbox.mockResolvedValue(page);
+
+      const result = await controller.listInbox(USER, { limit: 10, cursor: ID });
+
+      expect(mockNotificationsService.listInbox).toHaveBeenCalledWith('user-1', {
+        limit: 10,
+        cursor: ID,
+      });
+      expect(result).toBe(page);
+    });
+
+    it('should mark everything read', async () => {
+      mockNotificationsService.markAllRead.mockResolvedValue({ updated: 2 });
+
+      await expect(controller.readAll(USER)).resolves.toEqual({ updated: 2 });
+      expect(mockNotificationsService.markAllRead).toHaveBeenCalledWith('user-1');
+    });
+
+    it('should mark one notice read', async () => {
+      mockNotificationsService.markRead.mockResolvedValue({ success: true });
+
+      await expect(controller.read(USER, ID)).resolves.toEqual({ success: true });
+      expect(mockNotificationsService.markRead).toHaveBeenCalledWith('user-1', ID);
     });
   });
 });
