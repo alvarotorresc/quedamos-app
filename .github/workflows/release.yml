@@ -30,6 +30,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Build shared package
+        run: pnpm --filter @quedamos/shared build
+
+      - name: Shared tests
+        run: pnpm --filter @quedamos/shared test
+
       - name: Generate Prisma client
         run: pnpm --filter @quedamos/api exec prisma generate
 
