@@ -23,6 +23,7 @@ Table users {
   createdPolls availability_polls [not null]
   pollResponses poll_responses [not null]
   widgetTokens widget_tokens [not null]
+  notifications notifications [not null]
 }
 
 Table groups {
@@ -158,6 +159,22 @@ Table notification_logs {
   user users [not null]
 }
 
+Table notifications {
+  id String [pk]
+  userId String [not null]
+  type String [not null]
+  title String [not null]
+  body String [not null]
+  data Json [note: 'Mismo payload que viaja en el push: `resolvePushRoute` lo lee para navegar.']
+  readAt DateTime
+  createdAt DateTime [default: `now()`, not null]
+  user users [not null]
+
+  Note: 'Bandeja de avisos: el mismo aviso que sale por push, guardado para poder leerlo
+dentro de la app. Se escribe en el fan-out de NotificationsService, en el mismo
+punto que el push y con el texto ya en el idioma de cada destinatario.'
+}
+
 Table group_cities {
   id String [pk]
   groupId String [not null]
@@ -253,6 +270,8 @@ Ref: widget_tokens.userId > users.id [delete: Cascade]
 Ref: notification_preferences.userId > users.id [delete: Cascade]
 
 Ref: notification_logs.userId > users.id [delete: Cascade]
+
+Ref: notifications.userId > users.id [delete: Cascade]
 
 Ref: group_cities.groupId > groups.id [delete: Cascade]
 
