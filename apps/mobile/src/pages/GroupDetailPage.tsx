@@ -28,6 +28,7 @@ import { useScreenView } from '../hooks/useAnalytics';
 import { useAuthStore } from '../stores/auth';
 import { useToast } from '../hooks/useToast';
 import { runWithErrorToast } from '../lib/mutation-utils';
+import { ApiError } from '../lib/api';
 import { motion } from 'framer-motion';
 import { Avatar } from '../ui/Avatar';
 import { useGroupWeather } from '../hooks/useWeather';
@@ -260,10 +261,18 @@ export default function GroupDetailPage() {
   };
 
   const handleDeleteGroup = async () => {
-    await runWithErrorToast(() => deleteGroup.mutateAsync(id), showError, {
-      onSuccess: () => history.replace('/tabs/group'),
-      errorKey: 'errors.deleteGroupFailed',
-    });
+    // runWithErrorToast solo sabe de una clave: aqui hay que mirar el status para
+    // separar «no eres el fundador» (403) de un fallo cualquiera.
+    try {
+      await deleteGroup.mutateAsync(id);
+      history.replace('/tabs/group');
+    } catch (err) {
+      showError(
+        err instanceof ApiError && err.status === 403
+          ? 'errors.deleteGroupNotCreator'
+          : 'errors.deleteGroupFailed',
+      );
+    }
   };
 
   // Cabecera comun a las tres caras de la pantalla: sin ella el estado de error
@@ -314,6 +323,9 @@ export default function GroupDetailPage() {
 
   const isAdmin =
     group.members.some((m) => m.userId === currentUserId && m.role === 'admin') ?? false;
+  // Borrar el grupo no es cosa de cualquier admin: la API exige createdById
+  // (groups.service.ts, deleteGroup), asi que el boton se ofrece solo al fundador.
+  const isCreator = group.createdById === currentUserId;
 
   const dayOf = (dateStr: string) => new Date(apiDateToKey(dateStr) + 'T00:00:00');
   const weekdayShort = (d: Date) =>
@@ -643,7 +655,7 @@ export default function GroupDetailPage() {
             >
               {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
             </button>
-            {isAdmin && (
+            {isCreator && (
               <button
                 type="button"
                 onClick={() => setShowDeleteGroupAlert(true)}

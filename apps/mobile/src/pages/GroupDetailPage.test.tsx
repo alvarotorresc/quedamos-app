@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import GroupDetailPage from './GroupDetailPage';
 import { Share } from '@capacitor/share';
+import { ApiError } from '../lib/api';
 
 // Los web components de Ionic no se presentan bajo jsdom: se pintan los hijos
 // (mismo patrón que GroupPage.test.tsx). Las alertas muestran su cabecera al abrirse.
@@ -15,8 +16,25 @@ vi.mock('@ionic/react', () => ({
   IonContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   IonSpinner: () => <div data-testid="spinner" />,
   IonLoading: () => null,
-  IonAlert: ({ isOpen, header }: { isOpen: boolean; header?: string }) =>
-    isOpen ? <div role="alertdialog">{header}</div> : null,
+  IonAlert: ({
+    isOpen,
+    header,
+    buttons,
+  }: {
+    isOpen: boolean;
+    header?: string;
+    buttons?: Array<{ text: string; handler?: () => void }>;
+  }) =>
+    isOpen ? (
+      <div role="alertdialog">
+        {header}
+        {(buttons ?? []).map((b) => (
+          <button key={b.text} data-testid={`alert-${b.text}`} onClick={() => b.handler?.()}>
+            {b.text}
+          </button>
+        ))}
+      </div>
+    ) : null,
   IonActionSheet: ({ isOpen, header }: { isOpen: boolean; header?: string }) =>
     isOpen ? <div role="menu">{header}</div> : null,
 }));
@@ -69,6 +87,7 @@ const GROUP = {
 };
 // A4: la pantalla tiene tres caras (cargando, error, grupo) y cada prueba elige
 // la suya, asi que el resultado de useGroup se lee tarde desde esta variable.
+const mockDeleteGroup = vi.fn();
 type GroupQuery = { data: typeof GROUP | undefined; isLoading: boolean; isError: boolean };
 const LOADED: GroupQuery = { data: GROUP, isLoading: false, isError: false };
 let groupQuery: GroupQuery = LOADED;
@@ -81,7 +100,7 @@ vi.mock('../hooks/useGroups', () => ({
   useLeaveGroup: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useUpdateMemberRole: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useKickMember: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useDeleteGroup: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeleteGroup: () => ({ mutateAsync: mockDeleteGroup, isPending: false }),
 }));
 
 const attendee = (id: string, status: string) => ({
@@ -162,6 +181,7 @@ describe('GroupDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     groupQuery = LOADED;
+    mockDeleteGroup.mockResolvedValue({ success: true });
   });
 
   // A4: `if (!group) return null` dejaba la pantalla en blanco — sin cabecera y
@@ -233,6 +253,51 @@ describe('GroupDetailPage', () => {
     render(<GroupDetailPage />);
     for (const name of NAMES) expect(screen.getAllByText(name).length).toBeGreaterThan(0);
     expect(screen.getByText('group.creator')).toBeInTheDocument();
+  });
+
+  // A5: la API solo deja borrar a quien creó el grupo (createdById), pero el botón
+  // se ofrecía a cualquier admin, que se comía un 403 al pulsarlo.
+  describe('eliminar el grupo', () => {
+    const asAdminNotCreator = () => {
+      groupQuery = {
+        data: { ...GROUP, createdById: 'u9' },
+        isLoading: false,
+        isError: false,
+      };
+    };
+
+    it('quien creó el grupo ve el botón de eliminarlo', () => {
+      render(<GroupDetailPage />);
+      expect(screen.getByRole('button', { name: 'group.deleteGroup' })).toBeInTheDocument();
+    });
+
+    it('un admin que no lo creó no ve el botón', () => {
+      asAdminNotCreator();
+      render(<GroupDetailPage />);
+      expect(screen.queryByRole('button', { name: 'group.deleteGroup' })).toBeNull();
+      // Sigue siendo admin para lo demás: regenerar el código no se toca.
+      expect(screen.getByRole('button', { name: /group.regenerateCode/ })).toBeInTheDocument();
+    });
+
+    it('si la API responde 403 lo dice con su propio aviso', async () => {
+      mockDeleteGroup.mockRejectedValue(new ApiError('Forbidden', 403));
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.deleteGroup' }));
+      fireEvent.click(screen.getByTestId('alert-group.deleteGroup'));
+
+      await waitFor(() =>
+        expect(mockShowError).toHaveBeenCalledWith('errors.deleteGroupNotCreator'),
+      );
+    });
+
+    it('cualquier otro fallo cae en el aviso genérico de borrado', async () => {
+      mockDeleteGroup.mockRejectedValue(new Error('network'));
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.deleteGroup' }));
+      fireEvent.click(screen.getByTestId('alert-group.deleteGroup'));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.deleteGroupFailed'));
+    });
   });
 
   it('salir del grupo pide confirmación', () => {
