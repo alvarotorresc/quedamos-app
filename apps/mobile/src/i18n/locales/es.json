@@ -644,6 +644,7 @@
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",
+    "sessionExpired": "Tu sesión ha caducado, vuelve a entrar.",
     "saveAvailabilityFailed": "No se pudo guardar tu disponibilidad",
     "deleteAvailabilityFailed": "No se pudo eliminar tu disponibilidad",
     "createEventFailed": "No se pudo crear la quedada",

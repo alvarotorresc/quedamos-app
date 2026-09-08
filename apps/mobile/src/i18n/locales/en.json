@@ -644,6 +644,7 @@
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",
+    "sessionExpired": "Your session has expired, sign in again.",
     "saveAvailabilityFailed": "Couldn't save your availability",
     "deleteAvailabilityFailed": "Couldn't delete your availability",
     "createEventFailed": "Couldn't create the plan",

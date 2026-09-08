@@ -24,6 +24,7 @@ import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import DesktopFrame from './components/DesktopFrame';
 import { usePushNotifications } from './hooks/usePushNotifications';
+import { useSessionExpiry } from './hooks/useSessionExpiry';
 import { resolveDeepLinkPath, navigateToDeepLink } from './lib/deep-link';
 import { takePendingRedirect } from './lib/pending-redirect';
 
@@ -176,6 +177,9 @@ export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
   const isLoading = useAuthStore((s) => s.isLoading);
   const initializeTheme = useThemeStore((s) => s.initialize);
+  // Registered at the root so a 401 is explained even while the session is still
+  // being restored, before any route is mounted.
+  useSessionExpiry();
 
   useEffect(() => {
     initialize();
