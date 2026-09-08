@@ -93,6 +93,7 @@ const GROUP = {
 // A4: la pantalla tiene tres caras (cargando, error, grupo) y cada prueba elige
 // la suya, asi que el resultado de useGroup se lee tarde desde esta variable.
 const mockDeleteGroup = vi.fn();
+const mockLeaveGroup = vi.fn();
 type GroupQuery = { data: typeof GROUP | undefined; isLoading: boolean; isError: boolean };
 const LOADED: GroupQuery = { data: GROUP, isLoading: false, isError: false };
 let groupQuery: GroupQuery = LOADED;
@@ -102,7 +103,7 @@ vi.mock('../hooks/useGroups', () => ({
     data: { inviteCode: '48213956', inviteUrl: 'https://quedamos.alvarotc.com/join/48213956' },
   }),
   useRefreshInvite: () => ({ mutateAsync: vi.fn(), isPending: false }),
-  useLeaveGroup: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useLeaveGroup: () => ({ mutateAsync: mockLeaveGroup, isPending: false }),
   useUpdateMemberRole: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useKickMember: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeleteGroup: () => ({ mutateAsync: mockDeleteGroup, isPending: false }),
@@ -192,6 +193,7 @@ describe('GroupDetailPage', () => {
     vi.clearAllMocks();
     groupQuery = LOADED;
     mockDeleteGroup.mockResolvedValue({ success: true });
+    mockLeaveGroup.mockResolvedValue({ success: true });
     mockClosePoll.mockResolvedValue({ id: 'p1', status: 'closed' });
     mockPollCreatedById = 'u5';
     mockUpdateGroup.mockResolvedValue(GROUP);
@@ -428,10 +430,87 @@ describe('GroupDetailPage', () => {
     });
   });
 
-  it('salir del grupo pide confirmación', () => {
-    render(<GroupDetailPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'group.leaveGroup' }));
-    expect(screen.getByRole('alertdialog')).toHaveTextContent('group.leaveTitle');
+  // La API no deja salir a quien creó el grupo (groups.service.ts, leave: «borra el
+  // grupo en su lugar»), pero el botón se le ofrecía igual y se comía un 403.
+  describe('salir del grupo', () => {
+    const asAdminNotCreator = () => {
+      groupQuery = { data: { ...GROUP, createdById: 'u9' }, isLoading: false, isError: false };
+    };
+    const asPlainMember = () => {
+      groupQuery = {
+        data: {
+          ...GROUP,
+          createdById: 'u9',
+          members: GROUP.members.map((m) => (m.userId === 'u1' ? { ...m, role: 'member' } : m)),
+        },
+        isLoading: false,
+        isError: false,
+      };
+    };
+
+    it('quien creó el grupo no ve el botón de salir', () => {
+      render(<GroupDetailPage />);
+      expect(screen.queryByRole('button', { name: 'group.leaveGroup' })).toBeNull();
+    });
+
+    it('a quien lo creó se le explica que en su lugar puede eliminarlo', () => {
+      render(<GroupDetailPage />);
+      expect(screen.getByText('group.creatorCannotLeave')).toBeInTheDocument();
+    });
+
+    it('un miembro raso sí puede salir, y no le sobra la explicación', () => {
+      asPlainMember();
+      render(<GroupDetailPage />);
+      expect(screen.getByRole('button', { name: 'group.leaveGroup' })).toBeInTheDocument();
+      expect(screen.queryByText('group.creatorCannotLeave')).toBeNull();
+    });
+
+    it('un admin que no lo creó también puede salir', () => {
+      asAdminNotCreator();
+      render(<GroupDetailPage />);
+      expect(screen.getByRole('button', { name: 'group.leaveGroup' })).toBeInTheDocument();
+    });
+
+    it('salir del grupo pide confirmación', () => {
+      asPlainMember();
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.leaveGroup' }));
+      expect(screen.getByRole('alertdialog')).toHaveTextContent('group.leaveTitle');
+    });
+
+    it('si la API responde 403 lo dice con su propio aviso', async () => {
+      // Ocultar el botón no basta: el grupo puede haber cambiado de manos con la
+      // pantalla abierta, así que el 403 sigue siendo posible.
+      asPlainMember();
+      mockLeaveGroup.mockRejectedValue(new ApiError('Forbidden', 403));
+      render(<GroupDetailPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.leaveGroup' }));
+      fireEvent.click(screen.getByTestId('alert-group.leaveGroup'));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.leaveGroupCreator'));
+    });
+
+    it('cualquier otro fallo cae en el aviso genérico de salida', async () => {
+      asPlainMember();
+      mockLeaveGroup.mockRejectedValue(new Error('network'));
+      render(<GroupDetailPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.leaveGroup' }));
+      fireEvent.click(screen.getByTestId('alert-group.leaveGroup'));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.leaveGroupFailed'));
+    });
+
+    it('salir con éxito devuelve a la lista de grupos', async () => {
+      asPlainMember();
+      render(<GroupDetailPage />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'group.leaveGroup' }));
+      fireEvent.click(screen.getByTestId('alert-group.leaveGroup'));
+
+      await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/tabs/group'));
+    });
   });
 
   describe('compartir la invitación', () => {
