@@ -224,10 +224,18 @@ export default function GroupDetailPage() {
   };
 
   const handleLeave = async () => {
-    await runWithErrorToast(() => leaveGroup.mutateAsync(id), showError, {
-      onSuccess: () => history.replace('/tabs/group'),
-      errorKey: 'errors.leaveGroupFailed',
-    });
+    // La pantalla ya no ofrece salir al fundador, pero el grupo puede haber cambiado
+    // de manos con ella abierta: el 403 de la API merece su propio aviso.
+    try {
+      await leaveGroup.mutateAsync(id);
+      history.replace('/tabs/group');
+    } catch (err) {
+      showError(
+        err instanceof ApiError && err.status === 403
+          ? 'errors.leaveGroupCreator'
+          : 'errors.leaveGroupFailed',
+      );
+    }
   };
 
   const handleUpdateRole = async (userId: string, role: 'admin' | 'member') => {
@@ -703,21 +711,29 @@ export default function GroupDetailPage() {
 
           {/* Salir / eliminar */}
           <div className="flex flex-col items-center gap-1 mt-5">
-            <button
-              type="button"
-              onClick={() => setShowLeaveAlert(true)}
-              disabled={leaveGroup.isPending}
-              className="py-3 px-4 text-[13px] font-bold text-danger bg-transparent border-none"
-            >
-              {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
-            </button>
-            {isCreator && (
+            {/* La API deniega la salida del fundador (groups.service.ts, leave), asi que
+                en su lugar se le explica que lo suyo es eliminar el grupo. */}
+            {isCreator ? (
+              <>
+                <p className="px-6 text-center text-[11px] text-text-dark">
+                  {t('group.creatorCannotLeave')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteGroupAlert(true)}
+                  className="py-2 px-4 text-[11px] text-text-dark bg-transparent border-none"
+                >
+                  {t('group.deleteGroup')}
+                </button>
+              </>
+            ) : (
               <button
                 type="button"
-                onClick={() => setShowDeleteGroupAlert(true)}
-                className="py-2 px-4 text-[11px] text-text-dark bg-transparent border-none"
+                onClick={() => setShowLeaveAlert(true)}
+                disabled={leaveGroup.isPending}
+                className="py-3 px-4 text-[13px] font-bold text-danger bg-transparent border-none"
               >
-                {t('group.deleteGroup')}
+                {leaveGroup.isPending ? t('group.leaving') : t('group.leaveGroup')}
               </button>
             )}
           </div>
