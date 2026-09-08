@@ -9,11 +9,22 @@ import {
   validateTimeSlots,
   type TimeSlotPreferences,
 } from '../lib/time-slot-utils';
-import { PUBLIC_WEB_URL } from '../lib/constants';
+import { PUBLIC_WEB_URL, EMAIL_CONFIRMED_PATH } from '../lib/constants';
 import { clearPendingRedirect } from '../lib/pending-redirect';
 import i18n from '../i18n';
 
 let authSubscription: { unsubscribe: () => void } | null = null;
+
+/**
+ * Where Supabase must send someone back after they click a link in an email.
+ *
+ * Capacitor's WebView reports `https://localhost` as its origin, which isn't in
+ * Supabase's allowlist, so native builds point at the public site and let Android's
+ * verified App Links reopen the app on that URL.
+ */
+function authRedirectBase(): string {
+  return Capacitor.isNativePlatform() ? PUBLIC_WEB_URL : window.location.origin;
+}
 
 interface User {
   id: string;
@@ -64,6 +75,7 @@ interface AuthState {
   updateName: (name: string) => Promise<void>;
   updateEmail: (email: string) => Promise<void>;
   updateTimeSlots: (timeSlots: TimeSlotPreferences) => Promise<void>;
+  resendConfirmation: (email: string, captchaToken: string) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -83,12 +95,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signUp: async (email, password, name, captchaToken) => {
+    // Without an explicit destination the confirmation link lands wherever the
+    // project's Site URL points, which on Android means the browser: another origin,
+    // another localStorage, and the parked invite lost. /auth/confirmed is a route of
+    // this app, and on Android the verified App Link opens it inside the app.
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { name },
         captchaToken,
+        emailRedirectTo: `${authRedirectBase()}${EMAIL_CONFIRMED_PATH}`,
       },
     });
     if (error) throw error;
@@ -150,9 +167,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   resetPassword: async (email, captchaToken) => {
-    const base = Capacitor.isNativePlatform() ? PUBLIC_WEB_URL : window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${base}/reset-password`,
+      redirectTo: `${authRedirectBase()}/reset-password`,
       captchaToken,
     });
     if (error) throw error;
@@ -173,10 +189,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   updateEmail: async (email) => {
-    const base = Capacitor.isNativePlatform() ? PUBLIC_WEB_URL : window.location.origin;
     const { error } = await supabase.auth.updateUser(
       { email },
-      { emailRedirectTo: `${base}/tabs/profile` },
+      { emailRedirectTo: `${authRedirectBase()}/tabs/profile` },
     );
     if (error) throw error;
   },
@@ -189,5 +204,22 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => ({
       user: state.user ? { ...state.user, timeSlots } : null,
     }));
+  },
+
+  // The first confirmation email gets lost often enough (spam folder, a typo caught
+  // too late, an app closed before opening it) that a signed-up account with no way
+  // to ask for another one is a dead end: signing up again answers "user already
+  // registered". Same destination as the original mail, captcha included because the
+  // endpoint is as unauthenticated as the sign-up itself.
+  resendConfirmation: async (email, captchaToken) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${authRedirectBase()}${EMAIL_CONFIRMED_PATH}`,
+        captchaToken,
+      },
+    });
+    if (error) throw error;
   },
 }));

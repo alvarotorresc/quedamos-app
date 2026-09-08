@@ -7,6 +7,7 @@ vi.mock('./supabase', () => ({
       getSession: vi.fn().mockResolvedValue({
         data: { session: { access_token: 'test-token' } },
       }),
+      refreshSession: vi.fn(),
     },
   },
 }));
@@ -15,11 +16,30 @@ const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 // Import after mocking
-const { api, ApiError } = await import('./api');
+const { api, ApiError, setSessionExpiredHandler, resetSessionExpiredNotice } = await import('./api');
+const { supabase } = await import('./supabase');
+
+function unauthorized() {
+  return {
+    ok: false,
+    status: 401,
+    json: () => Promise.resolve({ message: 'Unauthorized' }),
+  };
+}
+
+function okResponse(body: unknown = {}) {
+  return { ok: true, status: 200, json: () => Promise.resolve(body) };
+}
 
 describe('api', () => {
   beforeEach(() => {
     mockFetch.mockReset();
+    setSessionExpiredHandler(null);
+    resetSessionExpiredNotice();
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { access_token: 'test-token' } },
+    } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.mocked(supabase.auth.refreshSession).mockReset();
   });
 
   it('should make GET request with auth header', async () => {
@@ -135,5 +155,125 @@ describe('api', () => {
         }),
       }),
     );
+  });
+});
+
+describe('api session expiry', () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+    setSessionExpiredHandler(null);
+    resetSessionExpiredNotice();
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { access_token: 'test-token' } },
+    } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    vi.mocked(supabase.auth.refreshSession).mockReset();
+  });
+
+  it('refreshes the session once and replays the request when the API answers 401', async () => {
+    mockFetch.mockResolvedValueOnce(unauthorized()).mockResolvedValueOnce(okResponse({ ok: true }));
+    vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
+      data: { session: { access_token: 'fresh-token' } },
+      error: null,
+    } as unknown as Awaited<ReturnType<typeof supabase.auth.refreshSession>>);
+    vi.mocked(supabase.auth.getSession)
+      .mockResolvedValueOnce({
+        data: { session: { access_token: 'test-token' } },
+      } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>)
+      .mockResolvedValue({
+        data: { session: { access_token: 'fresh-token' } },
+      } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    const onExpired = vi.fn();
+    setSessionExpiredHandler(onExpired);
+
+    const result = await api.get('/me');
+
+    expect(result).toEqual({ ok: true });
+    expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(mockFetch.mock.calls[1][1].headers.Authorization).toBe('Bearer fresh-token');
+    expect(onExpired).not.toHaveBeenCalled();
+  });
+
+  it('signals an expired session and throws when the replay is rejected too', async () => {
+    mockFetch.mockResolvedValue(unauthorized());
+    vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
+      data: { session: { access_token: 'fresh-token' } },
+      error: null,
+    } as unknown as Awaited<ReturnType<typeof supabase.auth.refreshSession>>);
+    const onExpired = vi.fn();
+    setSessionExpiredHandler(onExpired);
+
+    await expect(api.get('/me')).rejects.toMatchObject({ status: 401 });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+  });
+
+  it('signals an expired session without replaying when the refresh fails', async () => {
+    mockFetch.mockResolvedValue(unauthorized());
+    vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
+      data: { session: null },
+      error: new Error('refresh_token_not_found'),
+    } as unknown as Awaited<ReturnType<typeof supabase.auth.refreshSession>>);
+    const onExpired = vi.fn();
+    setSessionExpiredHandler(onExpired);
+
+    await expect(api.get('/me')).rejects.toMatchObject({ status: 401 });
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(onExpired).toHaveBeenCalledTimes(1);
+  });
+
+  it('shares a single refresh across a burst of 401s', async () => {
+    mockFetch.mockResolvedValueOnce(unauthorized()).mockResolvedValueOnce(unauthorized());
+    mockFetch.mockResolvedValue(okResponse({ ok: true }));
+    let resolveRefresh: (value: unknown) => void = () => {};
+    vi.mocked(supabase.auth.refreshSession).mockReturnValue(
+      new Promise((resolve) => {
+        resolveRefresh = resolve;
+      }) as ReturnType<typeof supabase.auth.refreshSession>,
+    );
+
+    const both = Promise.all([api.get('/a'), api.get('/b')]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    resolveRefresh({ data: { session: { access_token: 'fresh-token' } }, error: null });
+    await both;
+
+    expect(supabase.auth.refreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports an expired session only once until a request succeeds again', async () => {
+    mockFetch.mockResolvedValue(unauthorized());
+    vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
+      data: { session: null },
+      error: new Error('refresh_token_not_found'),
+    } as unknown as Awaited<ReturnType<typeof supabase.auth.refreshSession>>);
+    const onExpired = vi.fn();
+    setSessionExpiredHandler(onExpired);
+
+    await expect(api.get('/a')).rejects.toMatchObject({ status: 401 });
+    await expect(api.get('/b')).rejects.toMatchObject({ status: 401 });
+    expect(onExpired).toHaveBeenCalledTimes(1);
+
+    mockFetch.mockResolvedValue(okResponse({ ok: true }));
+    await api.get('/c');
+
+    mockFetch.mockResolvedValue(unauthorized());
+    await expect(api.get('/d')).rejects.toMatchObject({ status: 401 });
+    expect(onExpired).toHaveBeenCalledTimes(2);
+  });
+
+  it('stays quiet on a 401 when there was no session to expire', async () => {
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: null },
+    } as unknown as Awaited<ReturnType<typeof supabase.auth.getSession>>);
+    mockFetch.mockResolvedValue(unauthorized());
+    const onExpired = vi.fn();
+    setSessionExpiredHandler(onExpired);
+
+    await expect(api.get('/public')).rejects.toMatchObject({ status: 401 });
+
+    expect(supabase.auth.refreshSession).not.toHaveBeenCalled();
+    expect(onExpired).not.toHaveBeenCalled();
   });
 });

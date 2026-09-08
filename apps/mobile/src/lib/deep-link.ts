@@ -11,7 +11,7 @@
 const ALLOWED_HOSTS = ['quedamos.alvarotc.com', 'quedamos-app-mobile.vercel.app'];
 
 /** Rutas que un enlace externo puede abrir (exactas o con subruta). */
-const ALLOWED_PATHS = ['/reset-password', '/join', '/tabs'];
+const ALLOWED_PATHS = ['/reset-password', '/join', '/tabs', '/auth'];
 
 function isAllowedPath(pathname: string): boolean {
   return ALLOWED_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

@@ -24,6 +24,7 @@ import {
   type TimeSlotError,
 } from '../lib/time-slot-utils';
 import { broadcastSync } from '../lib/group-sync';
+import PushPermissionBanner from '../components/PushPermissionBanner';
 import { useGroups } from '../hooks/useGroups';
 import {
   HiOutlineBell,
@@ -317,6 +318,8 @@ export default function ProfilePage() {
               {error}
             </div>
           )}
+
+          <PushPermissionBanner />
 
           {/* Mosaico */}
           <div className="grid grid-cols-2 gap-2.5">

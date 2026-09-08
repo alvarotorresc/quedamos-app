@@ -160,6 +160,16 @@ describe('PendingRedirectGate', () => {
     expect(takePendingRedirect()).toBe('/join/12345678');
   });
 
+  it('deja la confirmación de email en paz: la página consume el destino ella misma', () => {
+    authState.user = { id: 'user-1' };
+    savePendingRedirect('/join/12345678');
+
+    renderGate('/auth/confirmed');
+
+    expect(visited).toEqual(['/auth/confirmed']);
+    expect(takePendingRedirect()).toBe('/join/12345678');
+  });
+
   it('si ya está en el destino lo consume sin volver a navegar', () => {
     authState.user = { id: 'user-1' };
     savePendingRedirect('/join/12345678');
