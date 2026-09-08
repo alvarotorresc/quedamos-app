@@ -1,0 +1,25 @@
+name: Smoke web
+
+# Vercel deploys the web app on its own and reports every deployment to GitHub. Once a
+# production deployment succeeds, run the same smoke test the API deploy runs.
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke test after Vercel deploy
+    runs-on: ubuntu-latest
+    if: >-
+      ${{ github.event.deployment_status.state == 'success'
+      && github.event.deployment.environment == 'Production' }}
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.event.deployment.sha }}
+
+      - name: Smoke test
+        run: bash scripts/smoke.sh
