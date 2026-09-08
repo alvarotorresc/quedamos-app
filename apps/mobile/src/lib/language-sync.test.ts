@@ -62,6 +62,18 @@ describe('language-sync', () => {
     });
   });
 
+  // Booting the app is not a language change: i18next resolves the initial language
+  // during init(), before the listener is attached. If that ever stopped being true,
+  // every launch would spend a Supabase write (and a fresh JWT) on an unchanged value.
+  describe('boot', () => {
+    it('should not write the profile just for loading i18n', async () => {
+      await import('../i18n');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(supabase.auth.updateUser).not.toHaveBeenCalled();
+    });
+  });
+
   describe('registerLanguageSync', () => {
     it('should push the new language on languageChanged', async () => {
       const i18n = fakeI18n();
