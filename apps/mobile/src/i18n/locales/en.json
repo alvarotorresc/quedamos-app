@@ -175,6 +175,7 @@
     "noGroupsSubtitle": "Create or join a group to organize plans",
     "goToGroups": "Go to groups",
     "goToCalendar": "Go to calendar",
+    "eventNotFound": "That plan no longer exists",
     "upcoming": "Upcoming",
     "upcomingCount_one": "{{count}} upcoming",
     "upcomingCount_other": "{{count}} upcoming",
@@ -598,6 +599,7 @@
     "empty": "No proposals",
     "emptyDescription": "When someone proposes a plan without a fixed date, it will show up here for voting.",
     "closed": "Closed",
+    "notFound": "That proposal no longer exists",
     "votes": "{{yes}} in favor, {{no}} against"
   },
   "authErrors": {

@@ -29,8 +29,9 @@ vi.mock('react-icons/hi2', () => ({
   HiOutlineCalendar: () => <span data-testid="icon-calendar" />,
 }));
 vi.mock('../hooks/useAnalytics', () => ({ useScreenView: () => {}, useAnalytics: () => ({ track: vi.fn() }) }));
+const showInfo = vi.fn();
 vi.mock('../hooks/useToast', () => ({
-  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo: vi.fn() }),
+  useToast: () => ({ showError: vi.fn(), showSuccess: vi.fn(), showInfo }),
 }));
 vi.mock('../hooks/useGroupSync', () => ({ useGroupSync: () => {} }));
 vi.mock('../hooks/useMyColor', () => ({ useMyColor: () => '#60A5FA' }));
@@ -253,6 +254,34 @@ describe('PlansPage', () => {
 
       expect(document.getElementById('proposal-p9')).not.toBeNull();
       expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+    });
+
+    it('avisa y limpia la URL cuando la quedada del aviso ya no existe', () => {
+      // Antes no pasaba absolutamente nada: ni scroll, ni mensaje, y el id se quedaba en
+      // la URL disparando el efecto en cada render.
+      search = '?eventId=e404&groupId=g1';
+
+      render(<PlansPage />);
+
+      expect(showInfo).toHaveBeenCalledWith('plans.eventNotFound');
+      expect(history.replace).toHaveBeenCalledWith('/tabs/plans');
+    });
+
+    it('avisa y limpia la URL cuando la propuesta del aviso ya no existe', () => {
+      search = '?proposalId=p404';
+      proposals = [prop('p1', 'open')];
+
+      render(<PlansPage />);
+
+      expect(showInfo).toHaveBeenCalledWith('proposals.notFound');
+      expect(history.replace).toHaveBeenCalledWith('/tabs/plans');
+    });
+
+    it('no avisa de nada cuando la quedada sí está', () => {
+      render(<PlansPage />);
+
+      expect(showInfo).not.toHaveBeenCalled();
+      expect(history.replace).not.toHaveBeenCalled();
     });
 
     it('despliega las pasadas y llega igualmente a una quedada vieja', () => {

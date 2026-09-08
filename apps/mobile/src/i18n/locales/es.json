@@ -175,6 +175,7 @@
     "noGroupsSubtitle": "Crea o únete a un grupo para organizar quedadas",
     "goToGroups": "Ir a grupos",
     "goToCalendar": "Ir al calendario",
+    "eventNotFound": "Esa quedada ya no existe",
     "upcoming": "Próximas",
     "upcomingCount_one": "{{count}} próxima",
     "upcomingCount_other": "{{count}} próximas",
@@ -598,6 +599,7 @@
     "empty": "No hay propuestas",
     "emptyDescription": "Cuando alguien proponga un plan sin fecha cerrada, aparecerá aquí para votarlo.",
     "closed": "Cerradas",
+    "notFound": "Esa propuesta ya no existe",
     "votes": "{{yes}} a favor, {{no}} en contra"
   },
   "authErrors": {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   IonPage,
   IonContent,
@@ -25,6 +25,7 @@ import { useEvents, useDeleteEvent, useCancelEvent, useConfirmEvent } from '../h
 import { useProposals, useVoteProposal, useCloseProposal } from '../hooks/useProposals';
 import { useMyColor } from '../hooks/useMyColor';
 import { useGroupSync } from '../hooks/useGroupSync';
+import { useToast } from '../hooks/useToast';
 import { useScreenView } from '../hooks/useAnalytics';
 import { useGroupWeather } from '../hooks/useWeather';
 import { apiDateToKey, formatDateKey } from '../lib/date-utils';
@@ -50,6 +51,14 @@ export default function PlansPage() {
   const [highlightProposalId, setHighlightProposalId] = useState<string | null>(null);
   const scrolledRef = useRef(false);
   const proposalScrolledRef = useRef(false);
+  const missingDeepLinkRef = useRef<string | null>(null);
+
+  const { showInfo } = useToast();
+  // useToast hands back a fresh closure on every render; through a ref, the effects below
+  // depend on the deep link and the loaded data only, instead of re-running (and
+  // rescheduling their timers) on every render.
+  const showInfoRef = useRef(showInfo);
+  showInfoRef.current = showInfo;
 
   // Deep link params from a push notification (see lib/push-routes.ts).
   const searchParams = new URLSearchParams(location.search);
@@ -68,6 +77,18 @@ export default function PlansPage() {
 
   const groupId = currentGroup?.id ?? '';
   useGroupSync(groupId || undefined);
+
+  // A push can outlive what it points at: the plan was deleted, the proposal closed and
+  // wiped. Leaving the id in the URL meant a silent nothing — no scroll, no message, and
+  // a stale param that fires again on every re-render of this page.
+  const clearDeepLinkParams = useCallback(() => {
+    const params = new URLSearchParams(location.search);
+    params.delete('eventId');
+    params.delete('proposalId');
+    params.delete('groupId');
+    const query = params.toString();
+    history.replace(query ? `${location.pathname}?${query}` : location.pathname);
+  }, [history, location.pathname, location.search]);
 
   // Group detail (for members)
   const { data: groupDetail } = useGroup(groupId);
@@ -183,6 +204,28 @@ export default function PlansPage() {
       if (fadeHighlight) clearTimeout(fadeHighlight);
     };
   }, [targetEventId, eventsLoading, past, showPast]);
+
+  // The plan the notification pointed at is not in the list any more.
+  useEffect(() => {
+    if (!targetEventId || !groupId || eventsLoading || !events) return;
+    if (events.some((ev) => ev.id === targetEventId)) return;
+    if (missingDeepLinkRef.current === targetEventId) return;
+
+    missingDeepLinkRef.current = targetEventId;
+    showInfoRef.current('plans.eventNotFound');
+    clearDeepLinkParams();
+  }, [targetEventId, groupId, eventsLoading, events, clearDeepLinkParams]);
+
+  // Same for the proposal.
+  useEffect(() => {
+    if (!targetProposalId || !groupId || proposalsLoading || !proposals) return;
+    if (proposals.some((p) => p.id === targetProposalId)) return;
+    if (missingDeepLinkRef.current === targetProposalId) return;
+
+    missingDeepLinkRef.current = targetProposalId;
+    showInfoRef.current('proposals.notFound');
+    clearDeepLinkParams();
+  }, [targetProposalId, groupId, proposalsLoading, proposals, clearDeepLinkParams]);
 
   // Same, for a proposal: new_proposal / proposal_voted land here with ?proposalId=.
   // Opening the right tab is part of the job — Planes shows Quedadas by default, so
