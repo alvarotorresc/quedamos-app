@@ -408,7 +408,30 @@
       "help": "Help",
       "account": "Account"
     },
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "exportData": {
+      "action": "Download my data",
+      "hint": "JSON",
+      "loading": "Preparing...",
+      "done": "Data downloaded",
+      "error": "Your data could not be downloaded. Please try again."
+    },
+    "deleteAccount": {
+      "action": "Delete account",
+      "title": "Delete account",
+      "subtitle": "This cannot be undone",
+      "intro": "When you delete your account:",
+      "bulletProfile": "Your profile, availability, answers, votes and the devices registered for alerts and widgets are erased.",
+      "bulletSoloGroups": "Groups where you are the only member disappear with everything in them.",
+      "bulletFoundedGroups": "Groups you founded with other people go to the longest-standing admin or, if there is no other admin, to the longest-standing member.",
+      "bulletCreatedContent": "The plans, proposals and questions you created are kept and handed to whoever runs the group.",
+      "typeToConfirm": "Type {{word}} to confirm",
+      "confirmWord": "DELETE",
+      "confirm": "Delete my account",
+      "done": "Account deleted",
+      "error": "The account could not be deleted. Please try again.",
+      "unavailable": "Account deletion is not available right now. Please try again later."
+    }
   },
   "settings": {
     "language": "Language"
