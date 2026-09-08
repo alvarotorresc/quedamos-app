@@ -136,6 +136,61 @@ describe('WeekView rediseñada', () => {
     expect(screen.queryByText('calendar.ask')).not.toBeInTheDocument();
   });
 
+  // WeekView declaraba `secondBestDayKey` y `onViewDetail` en sus props pero no los
+  // desestructuraba, así que la insignia de segunda opción solo se veía en Lista y
+  // «quién puede este día» solo se abría desde Mes.
+  describe('segunda opción y detalle del día', () => {
+    // week[6] (domingo): nunca es pasado dentro de la semana en curso y nunca es el
+    // mejor día (week[4], que se pinta como panel), así que siempre es una fila normal.
+    const rowDay = () => getWeekDays(new Date(), 0)[6];
+
+    const withRowAvailability = () => {
+      const props = buildProps();
+      const rowKey = formatDateKey(rowDay());
+      const availabilityByDate = new Map(props.availabilityByDate);
+      availabilityByDate.set(rowKey, [{ userId: 'u1', type: 'day' }] as never[]);
+      return { ...props, availabilityByDate, secondBestDayKey: rowKey };
+    };
+
+    it('pinta la insignia de segunda opción en el día que se le pasa', () => {
+      render(<WeekView {...withRowAvailability()} />);
+      expect(screen.getByText('calendar.secondRecommended')).toBeInTheDocument();
+    });
+
+    it('sin segundo mejor día no pinta ninguna insignia', () => {
+      render(<WeekView {...withRowAvailability()} secondBestDayKey={null} />);
+      expect(screen.queryByText('calendar.secondRecommended')).toBeNull();
+    });
+
+    it('el aro de un día con disponibilidad abre el detalle con esa fecha', () => {
+      const onViewDetail = vi.fn<(day: Date) => void>();
+      render(<WeekView {...withRowAvailability()} onViewDetail={onViewDetail} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'calendar.availabilityDetail.title' }));
+
+      expect(onViewDetail).toHaveBeenCalledOnce();
+      // Por clave de fecha: WeekView recalcula `new Date()` internamente.
+      expect(formatDateKey(onViewDetail.mock.calls[0][0])).toBe(formatDateKey(rowDay()));
+    });
+
+    it('abrir el detalle no despliega además la fila', () => {
+      const props = withRowAvailability();
+      render(<WeekView {...props} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'calendar.availabilityDetail.title' }));
+
+      expect(props.onSelectDay).not.toHaveBeenCalled();
+    });
+
+    it('un día sin nadie disponible no ofrece el detalle', () => {
+      // buildProps solo tiene disponibilidad en el mejor día, que se pinta como panel.
+      render(<WeekView {...buildProps()} />);
+      expect(
+        screen.queryByRole('button', { name: 'calendar.availabilityDetail.title' }),
+      ).toBeNull();
+    });
+  });
+
   describe('compartir la tarjeta del mejor día', () => {
     it('muestra el botón Compartir dentro del panel de mejor día', () => {
       render(<WeekView {...buildProps()} />);

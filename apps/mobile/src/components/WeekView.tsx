@@ -48,8 +48,10 @@ export function WeekView({
   memberColorMap,
   totalMembers,
   bestDayKey,
+  secondBestDayKey,
   onMarkAvailability,
   onCreateEvent,
+  onViewDetail,
   weatherByDate,
   eventsByDate,
   onEventClick,
@@ -242,9 +244,36 @@ export function WeekView({
                   {day.toLocaleDateString(locale, { weekday: 'short' }).replace('.', '')}
                 </span>
               </div>
-              <Aro members={aroMembers} size={36} />
+              {availCount > 0 ? (
+                <button
+                  type="button"
+                  aria-label={t('calendar.availabilityDetail.title')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewDetail(day);
+                  }}
+                  className="shrink-0 bg-transparent border-none p-0 flex items-center"
+                >
+                  <Aro members={aroMembers} size={36} />
+                </button>
+              ) : (
+                <Aro members={aroMembers} size={36} />
+              )}
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-text">{countLabel}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[13px] font-semibold text-text">{countLabel}</p>
+                  {key === secondBestDayKey && (
+                    <span
+                      className="text-[10px] font-bold tracking-wide px-2 py-0.5 rounded-[7px]"
+                      style={{
+                        background: 'color-mix(in srgb, var(--app-text-muted) 10%, transparent)',
+                        color: 'var(--app-text-muted)',
+                      }}
+                    >
+                      {t('calendar.secondRecommended')}
+                    </span>
+                  )}
+                </div>
                 {myAvail ? (
                   <p className="text-[11px] text-text-muted truncate">
                     {t('calendar.you')}: {availabilityLabel(myAvail, t)}
