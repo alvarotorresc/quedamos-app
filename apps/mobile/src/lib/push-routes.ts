@@ -15,6 +15,9 @@
  * This file must stay dependency-free: the parity test loads it on its own.
  */
 
+/** `data.type` of the data-only push that only tells the Android widgets to re-read. */
+export const WIDGET_REFRESH_TYPE = 'widget_refresh';
+
 /** The kind of screen a push opens. */
 export type PushRouteTarget =
   | 'event' // a plan's card in Planes
@@ -23,7 +26,8 @@ export type PushRouteTarget =
   | 'poll' // Calendario, with the open question focused in the mazo
   | 'calendar' // Calendario, nothing focused
   | 'group' // one group's detail
-  | 'groupList'; // the list of groups — you are not in that group any more
+  | 'groupList' // the list of groups — you are not in that group any more
+  | 'none'; // nothing: the push is machinery, there is no screen behind it
 
 /**
  * Every `type` the API sends in a push payload (see the notification services in
@@ -31,6 +35,11 @@ export type PushRouteTarget =
  * the plan's card when the payload carries an eventId, Planes otherwise.
  */
 export const PUSH_ROUTE_TABLE: Record<string, PushRouteTarget> = {
+  // Data-only nudge for the Android home-screen widgets (see the API's
+  // widget-refresh module). It is never drawn and never tapped, so it has no
+  // destination — and it is deliberately absent from NOTIFICATION_TYPES: there is no
+  // preference to switch it off, because there is nothing to switch off.
+  widget_refresh: 'none',
   new_event: 'event',
   event_updated: 'event',
   event_deleted: 'event',
@@ -85,11 +94,14 @@ function validId(value: string | undefined): string | undefined {
  *
  * `answer` is the id of the notification action button the user pressed ('yes' / 'no',
  * web only); it only travels for an open question, where the mazo can auto-submit it.
+ *
+ * Returns null for a push that opens nothing (`widget_refresh`): the caller must not
+ * navigate, focus a window or touch the remembered group.
  */
 export function resolvePushRoute(
   data: Record<string, string | undefined>,
   answer?: string,
-): PushRoute {
+): PushRoute | null {
   const groupId = validId(data.groupId);
   const eventId = validId(data.eventId);
   const proposalId = validId(data.proposalId);
@@ -107,6 +119,10 @@ export function resolvePushRoute(
   // storage — the URL is the only channel that reaches it. Each field validates
   // independently: garbage in one must not suppress the other.
   const params = new URLSearchParams();
+
+  // No screen, so nothing to remember or forget either: a widget_refresh must leave the
+  // current group untouched.
+  if (target === 'none') return null;
 
   if (target === 'groupList') {
     return { url: '/tabs/group', target, forgetGroupId: groupId };

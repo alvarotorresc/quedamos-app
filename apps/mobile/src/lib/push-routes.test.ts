@@ -136,7 +136,8 @@ interface RouteCase {
   name: string;
   data: Record<string, string>;
   answer?: string;
-  url: string;
+  /** null for a push that opens nothing at all. */
+  url: string | null;
 }
 
 const CASES: RouteCase[] = [
@@ -253,6 +254,11 @@ const CASES: RouteCase[] = [
     url: '/tabs/group',
   },
   {
+    name: 'widget_refresh opens nothing: it is machinery, not an announcement',
+    data: { type: 'widget_refresh', groupId: GROUP },
+    url: null,
+  },
+  {
     name: 'an unknown type with an eventId still opens the plan',
     data: { type: 'something_new', eventId: EVENT },
     url: `/tabs/plans?eventId=${EVENT}`,
@@ -278,7 +284,12 @@ describe('push routing', () => {
   describe('resolvePushRoute', () => {
     for (const testCase of CASES) {
       it(testCase.name, () => {
-        expect(resolvePushRoute(testCase.data, testCase.answer).url).toBe(testCase.url);
+        const route = resolvePushRoute(testCase.data, testCase.answer);
+        if (testCase.url === null) {
+          expect(route).toBeNull();
+          return;
+        }
+        expect(route?.url).toBe(testCase.url);
       });
     }
   });
@@ -286,11 +297,17 @@ describe('push routing', () => {
   describe('the service worker resolves the same URLs', () => {
     for (const testCase of CASES) {
       it(testCase.name, async () => {
-        const sw = loadServiceWorker();
+        const sw = loadServiceWorker({ clientUrls: [`${ORIGIN}/tabs/calendar`] });
 
         await sw.notificationClick(testCase.data, testCase.answer ?? '');
 
-        expect(sw.opened).toEqual([testCase.url]);
+        if (testCase.url === null) {
+          // Nothing opens and nothing navigates: no window is disturbed.
+          expect(sw.opened).toEqual([]);
+          expect(sw.navigated).toEqual([]);
+          return;
+        }
+        expect(sw.navigated).toEqual([testCase.url]);
       });
     }
   });
@@ -407,6 +424,17 @@ describe('push routing', () => {
         { action: 'yes', title: 'Puedo' },
         { action: 'no', title: 'No puedo' },
       ]);
+    });
+
+    it('draws nothing at all for a widget refresh', () => {
+      const sw = loadServiceWorker();
+
+      // A widget_refresh only ever goes to android tokens, so this is belt and braces:
+      // if one ever reached a browser, the worker must stay silent rather than pop a
+      // notification with whatever happened to be in `data`.
+      sw.backgroundMessage({ data: { type: 'widget_refresh', groupId: GROUP, title: 'nope' } });
+
+      expect(sw.shown).toEqual([]);
     });
 
     it('offers no buttons for anything that is not an open question', () => {

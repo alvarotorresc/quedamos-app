@@ -35,6 +35,15 @@ vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: localNoti
 
 vi.mock('../i18n', () => ({ default: { t: (key: string) => key } }));
 
+// The Android widget bridge: a no-op outside Android in the real module, mocked here so
+// the widget_refresh path can be asserted instead of inferred.
+// vi.hoisted: push-notifications.ts imports the bridge at the top of the module, so the
+// factory runs before a plain const at this point in the file would exist.
+const widgetBridge = vi.hoisted(() => ({
+  notifyWidgetDataChanged: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock('./widget-bridge', () => widgetBridge);
+
 // Mock firebase module
 vi.mock('./firebase', () => ({
   getFirebaseMessaging: vi.fn().mockResolvedValue(null),
@@ -1009,6 +1018,30 @@ describe('push-notifications', () => {
       });
     });
 
+    it('refreshes the widgets on a widget_refresh, and draws nothing', async () => {
+      // The push is data-only and never has a title, so "nothing is drawn" would pass
+      // with no code at all: the refresh is the assertion that matters.
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', data: { type: 'widget_refresh', groupId: 'g1' } });
+
+      await vi.waitFor(() => {
+        expect(widgetBridge.notifyWidgetDataChanged).toHaveBeenCalled();
+      });
+      expect(localNotifications.schedule).not.toHaveBeenCalled();
+    });
+
+    it('does not refresh the widgets for an ordinary push', async () => {
+      const onReceived = await receivedListener();
+
+      onReceived({ id: 'p1', title: 'Nueva quedada', data: { type: 'new_event' } });
+
+      await vi.waitFor(() => {
+        expect(localNotifications.schedule).toHaveBeenCalled();
+      });
+      expect(widgetBridge.notifyWidgetDataChanged).not.toHaveBeenCalled();
+    });
+
     it('shows nothing when there is no title to show', async () => {
       const onReceived = await receivedListener();
 
@@ -1068,6 +1101,31 @@ describe('push-notifications', () => {
       });
 
       expect(hrefSetter).toHaveBeenCalledWith('/tabs/group/00000000-0000-0000-0000-000000000051');
+    });
+
+    it('never navigates for a type with no screen behind it', async () => {
+      await receivedListener();
+
+      await vi.waitFor(() => {
+        expect(localNotifications.addListener).toHaveBeenCalledWith(
+          'localNotificationActionPerformed',
+          expect.any(Function),
+        );
+      });
+      const call = localNotifications.addListener.mock.calls.find(
+        (c) => c[0] === 'localNotificationActionPerformed',
+      );
+      const onTap = call![1] as (action: {
+        notification: { extra?: Record<string, string> };
+      }) => void;
+
+      onTap({
+        notification: {
+          extra: { type: 'widget_refresh', groupId: '00000000-0000-0000-0000-000000000051' },
+        },
+      });
+
+      expect(hrefSetter).not.toHaveBeenCalled();
     });
   });
 
