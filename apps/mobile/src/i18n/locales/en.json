@@ -324,6 +324,10 @@
     "closePollConfirm": "Close the question?",
     "closePollMessage": "It will stop showing up and no one else will be able to answer it.",
     "pollClosed": "Question closed",
+    "editGroup": "Edit",
+    "groupUpdated": "Group updated",
+    "save": "Save",
+    "saving": "Saving...",
     "creator": "Creator"
   },
   "joinGroup": {
@@ -668,6 +672,7 @@
     "updateRoleFailed": "Couldn't update the role",
     "kickMemberFailed": "Couldn't remove the member",
     "deleteGroupFailed": "Couldn't delete the group",
+    "updateGroupFailed": "Couldn't update the group",
     "deleteGroupNotCreator": "Only the group's creator can delete it",
     "copyFailed": "Couldn't copy the code",
     "answerPollFailed": "Couldn't save your answer",

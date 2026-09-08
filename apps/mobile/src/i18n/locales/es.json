@@ -324,6 +324,10 @@
     "closePollConfirm": "\u00bfCerrar la pregunta?",
     "closePollMessage": "Dejar\u00e1 de aparecer y ya nadie podr\u00e1 responderla.",
     "pollClosed": "Pregunta cerrada",
+    "editGroup": "Editar",
+    "groupUpdated": "Grupo actualizado",
+    "save": "Guardar",
+    "saving": "Guardando...",
     "creator": "Fundador"
   },
   "joinGroup": {
@@ -668,6 +672,7 @@
     "updateRoleFailed": "No se pudo actualizar el rol",
     "kickMemberFailed": "No se pudo expulsar al miembro",
     "deleteGroupFailed": "No se pudo eliminar el grupo",
+    "updateGroupFailed": "No se pudo actualizar el grupo",
     "deleteGroupNotCreator": "Solo quien cre\u00f3 el grupo puede eliminarlo",
     "copyFailed": "No se pudo copiar el código",
     "answerPollFailed": "No se pudo guardar tu respuesta",

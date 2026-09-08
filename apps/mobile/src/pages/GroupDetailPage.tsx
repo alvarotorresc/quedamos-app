@@ -22,6 +22,7 @@ import {
   useUpdateMemberRole,
   useKickMember,
   useDeleteGroup,
+  useUpdateGroup,
 } from '../hooks/useGroups';
 import { useGroupSync } from '../hooks/useGroupSync';
 import { useScreenView } from '../hooks/useAnalytics';
@@ -49,9 +50,11 @@ import {
   HiOutlineUsers,
   HiOutlineUser,
   HiOutlineEllipsisHorizontal,
+  HiOutlinePencil,
 } from 'react-icons/hi2';
 import { Tile } from '../ui/Tile';
-import { EmptyState, SkeletonCard } from '../ui';
+import { EmptyState, SkeletonCard, Button, Sheet } from '../ui';
+import { EmojiPickerField } from '../components/EmojiPickerField';
 import { Aro, type AroMember } from '../ui/Aro';
 import { useEvents } from '../hooks/useEvents';
 import { usePolls, useClosePoll } from '../hooks/usePolls';
@@ -88,6 +91,7 @@ export default function GroupDetailPage() {
   const kickMember = useKickMember(id);
   const deleteGroup = useDeleteGroup();
   const closePoll = useClosePoll(id);
+  const updateGroup = useUpdateGroup(id);
 
   const { track } = useAnalytics();
   const { showError, showSuccess } = useToast();
@@ -103,6 +107,7 @@ export default function GroupDetailPage() {
   const [showDeleteGroupAlert, setShowDeleteGroupAlert] = useState(false);
   const [showKickAlert, setShowKickAlert] = useState(false);
   const [showClosePollAlert, setShowClosePollAlert] = useState(false);
+  const [editing, setEditing] = useState<{ name: string; emoji: string } | null>(null);
 
   // Weather & Cities
   const { data: cities } = useGroupCities(id);
@@ -260,6 +265,21 @@ export default function GroupDetailPage() {
 
     buttons.push({ text: t('group.cancel'), role: 'cancel' });
     return buttons;
+  };
+
+  const handleSaveGroup = async () => {
+    if (!editing || !editing.name.trim()) return;
+    await runWithErrorToast(
+      () => updateGroup.mutateAsync({ name: editing.name.trim(), emoji: editing.emoji }),
+      showError,
+      {
+        onSuccess: () => {
+          setEditing(null);
+          showSuccess('group.groupUpdated');
+        },
+        errorKey: 'errors.updateGroupFailed',
+      },
+    );
   };
 
   const handleClosePoll = async () => {
@@ -554,6 +574,16 @@ export default function GroupDetailPage() {
                   <span className="text-text-muted">{cities?.length ?? 0}</span>
                 </div>
               </div>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setEditing({ name: group.name, emoji: group.emoji })}
+                  className="inline-flex items-center gap-1 self-start text-[11px] text-text-muted bg-transparent border-none p-0"
+                >
+                  <HiOutlinePencil className="w-3 h-3" />
+                  {t('group.editGroup')}
+                </button>
+              )}
             </Tile>
 
             {/* Miembros */}
@@ -750,6 +780,46 @@ export default function GroupDetailPage() {
               },
             ]}
           />
+          <Sheet
+            isOpen={editing !== null}
+            onClose={() => setEditing(null)}
+            title={t('group.editGroup')}
+            footer={
+              <Button
+                variant="primary"
+                onClick={handleSaveGroup}
+                disabled={updateGroup.isPending || !editing?.name.trim()}
+                className="w-full"
+              >
+                {updateGroup.isPending ? t('group.saving') : t('group.save')}
+              </Button>
+            }
+          >
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="text-xs text-text-muted mb-1 block" htmlFor="group-name-field">
+                  {t('group.groupName')}
+                </label>
+                <input
+                  id="group-name-field"
+                  type="text"
+                  maxLength={100}
+                  value={editing?.name ?? ''}
+                  onChange={(e) =>
+                    setEditing((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                  }
+                  placeholder={t('group.groupNamePlaceholder')}
+                  className="w-full bg-bg-input border border-strong rounded-btn px-4 py-3 text-sm text-text placeholder-text-dark focus:border-primary"
+                />
+              </div>
+              <EmojiPickerField
+                value={editing?.emoji ?? ''}
+                onChange={(emoji) =>
+                  setEditing((prev) => (prev ? { ...prev, emoji } : prev))
+                }
+              />
+            </div>
+          </Sheet>
           <IonAlert
             isOpen={showClosePollAlert}
             onDidDismiss={() => setShowClosePollAlert(false)}

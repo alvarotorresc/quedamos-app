@@ -16,6 +16,8 @@ vi.mock('@ionic/react', () => ({
   IonContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   IonSpinner: () => <div data-testid="spinner" />,
   IonLoading: () => null,
+  IonModal: ({ isOpen, children }: { isOpen: boolean; children?: React.ReactNode }) =>
+    isOpen ? <div data-testid="sheet">{children}</div> : null,
   IonAlert: ({
     isOpen,
     header,
@@ -53,6 +55,8 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@capacitor/share', () => ({ Share: { canShare: vi.fn(), share: vi.fn() } }));
+vi.mock('@emoji-mart/react', () => ({ default: () => null }));
+vi.mock('@emoji-mart/data', () => ({ default: {} }));
 vi.mock('../hooks/useAnalytics', () => ({
   useScreenView: () => {},
   useAnalytics: () => ({ track: vi.fn() }),
@@ -102,6 +106,7 @@ vi.mock('../hooks/useGroups', () => ({
   useUpdateMemberRole: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useKickMember: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeleteGroup: () => ({ mutateAsync: mockDeleteGroup, isPending: false }),
+  useUpdateGroup: () => ({ mutateAsync: mockUpdateGroup, isPending: false }),
 }));
 
 const attendee = (id: string, status: string) => ({
@@ -149,6 +154,7 @@ vi.mock('../hooks/useEvents', () => ({
     isLoading: false,
   }),
 }));
+const mockUpdateGroup = vi.fn();
 const mockClosePoll = vi.fn();
 let mockPollCreatedById = 'u5';
 vi.mock('../hooks/usePolls', () => ({
@@ -188,6 +194,7 @@ describe('GroupDetailPage', () => {
     mockDeleteGroup.mockResolvedValue({ success: true });
     mockClosePoll.mockResolvedValue({ id: 'p1', status: 'closed' });
     mockPollCreatedById = 'u5';
+    mockUpdateGroup.mockResolvedValue(GROUP);
   });
 
   // A4: `if (!group) return null` dejaba la pantalla en blanco — sin cabecera y
@@ -350,6 +357,74 @@ describe('GroupDetailPage', () => {
       fireEvent.click(screen.getByTestId('alert-group.closePoll'));
 
       await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.closePollFailed'));
+    });
+  });
+
+  // B3: el nombre y el emoji del grupo eran de solo lectura en toda la app.
+  describe('editar el grupo', () => {
+    const asPlainMember = () => {
+      groupQuery = {
+        data: {
+          ...GROUP,
+          createdById: 'u9',
+          members: GROUP.members.map((m) =>
+            m.userId === 'u1' ? { ...m, role: 'member' } : m,
+          ),
+        },
+        isLoading: false,
+        isError: false,
+      };
+    };
+
+    it('un admin ve el botón de editar en la ficha del grupo', () => {
+      render(<GroupDetailPage />);
+      expect(screen.getByRole('button', { name: 'group.editGroup' })).toBeInTheDocument();
+    });
+
+    it('un miembro raso no lo ve', () => {
+      asPlainMember();
+      render(<GroupDetailPage />);
+      expect(screen.queryByRole('button', { name: 'group.editGroup' })).toBeNull();
+    });
+
+    it('la hoja se abre con el nombre y el emoji que ya tiene', () => {
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.editGroup' }));
+
+      expect(screen.getByTestId('sheet')).toBeInTheDocument();
+      expect(screen.getByLabelText('group.groupName')).toHaveValue('La cuadrilla');
+      expect(screen.getByRole('button', { name: 'group.emoji' })).toHaveTextContent('🏔️');
+    });
+
+    it('guardar manda el nombre nuevo recortado y avisa', async () => {
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.editGroup' }));
+      fireEvent.change(screen.getByLabelText('group.groupName'), {
+        target: { value: '  Los del monte  ' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'group.save' }));
+
+      await waitFor(() =>
+        expect(mockUpdateGroup).toHaveBeenCalledWith({ name: 'Los del monte', emoji: '🏔️' }),
+      );
+      expect(mockShowSuccess).toHaveBeenCalledWith('group.groupUpdated');
+    });
+
+    it('no deja guardar un nombre vacío', () => {
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.editGroup' }));
+      fireEvent.change(screen.getByLabelText('group.groupName'), { target: { value: '   ' } });
+
+      expect(screen.getByRole('button', { name: 'group.save' })).toBeDisabled();
+    });
+
+    it('avisa si la API rechaza el cambio', async () => {
+      mockUpdateGroup.mockRejectedValue(new ApiError('Forbidden', 403));
+      render(<GroupDetailPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'group.editGroup' }));
+      fireEvent.click(screen.getByRole('button', { name: 'group.save' }));
+
+      await waitFor(() => expect(mockShowError).toHaveBeenCalledWith('errors.updateGroupFailed'));
     });
   });
 
