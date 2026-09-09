@@ -84,20 +84,27 @@ jobs:
         run: |
           echo "::warning::ANDROID_KEYSTORE_BASE64 is not set. The APK is signed with the runner's throwaway debug key, so it cannot be upgraded in place and cannot go to Google Play."
 
+      - name: Get version
+        id: version
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "name=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      # versionCode must grow with every upload to Play, so it comes from the
+      # workflow run number, which GitHub never reuses for this workflow.
       - name: Build release APK
         working-directory: apps/mobile/android
         env:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
+          ANDROID_VERSION_NAME: ${{ steps.version.outputs.name }}
         run: |
           chmod +x ./gradlew
           ./gradlew assembleRelease
           ls -la app/build/outputs/apk/release
-
-      - name: Get version
-        id: version
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
       - name: Rename APK
         run: mv apps/mobile/android/app/build/outputs/apk/release/app-release.apk quedamos-${{ steps.version.outputs.tag }}.apk

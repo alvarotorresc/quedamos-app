@@ -8,8 +8,13 @@ android {
         applicationId "app.quedamos"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // CI derives both from the release: the tag gives the name and the
+        // workflow run number gives a strictly increasing code, which Play
+        // requires. Locally the variables are absent and the defaults apply.
+        def releaseVersionCode = System.getenv("ANDROID_VERSION_CODE")
+        def releaseVersionName = System.getenv("ANDROID_VERSION_NAME")
+        versionCode(releaseVersionCode ? releaseVersionCode.toInteger() : 1)
+        versionName(releaseVersionName ?: "1.0.0")
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
