@@ -9,6 +9,7 @@
   },
   "scripts": {
     "shoot": "node src/shoot.ts",
+    "rodaje": "node src/rodaje.ts",
     "test": "node --test \"test/*.test.ts\"",
     "typecheck": "tsc -p tsconfig.json"
   },
