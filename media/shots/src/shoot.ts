@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from './args.ts';
 import { closeShotPage, launch, login, openShotPage, runScene, shootShot } from './browser.ts';
@@ -12,6 +12,8 @@ const shots = args.only === 'icon' ? [] : selectShots(buildCatalog(), args.only)
 
 // labels.json no depende del navegador: se escribe siempre.
 mkdirSync(join(OUT_ROOT, 'web'), { recursive: true });
+// media/video/scripts/preparar.mjs exige cover-{lang}.png aquí; se copia desde web/ más abajo.
+mkdirSync(join(OUT_ROOT, 'video-src'), { recursive: true });
 writeFileSync(join(OUT_ROOT, 'web', 'labels.json'), `${JSON.stringify(buildLabels(), null, 2)}\n`);
 
 const browser = await launch();
@@ -31,6 +33,11 @@ try {
       try {
         await runScene(page, shot, env);
         const path = await shootShot(page, shot, OUT_ROOT);
+        // media/video/scripts/preparar.mjs la exige en video-src/ a tamaño escritorio: es la
+        // misma captura que web/cover-{lang}.png, no una nueva a tamaño móvil.
+        if (shot.key === 'cover') {
+          copyFileSync(path, join(OUT_ROOT, 'video-src', `cover-${shot.lang}.png`));
+        }
         console.log(`ok ${shot.id} -> ${path}`);
       } finally {
         await closeShotPage(context);

@@ -222,6 +222,7 @@ export async function runScene(page: Page, shot: Shot, env: ShotsEnv): Promise<v
       const askButton = await findAskButton(page, lang);
       await askButton.click();
       await page.getByRole('heading', { name: TEXT.askTitle[lang] }).waitFor();
+      await settle(page);
       break;
     }
     case 'proposals':
@@ -249,7 +250,6 @@ export async function runScene(page: Page, shot: Shot, env: ShotsEnv): Promise<v
 }
 
 export async function shootShot(page: Page, shot: Shot, outRoot: string): Promise<string> {
-  assertNoSkeletons(await page.locator('.skeleton').count(), shot.id);
   assertTheme(
     await page.evaluate(() => document.documentElement.classList.contains('light')),
     shot.theme,
@@ -259,6 +259,10 @@ export async function shootShot(page: Page, shot: Shot, outRoot: string): Promis
     () => page.screenshot({ fullPage: false, animations: 'disabled', caret: 'hide' }),
     { label: shot.id },
   );
+  // Justo antes de escribir el fichero, sobre el estado ya estabilizado: si un esqueleto
+  // aparece durante captureStable (p. ej. el cuerpo de la hoja de 'ask' cargando datos del
+  // grupo), esta comprobación lo detecta antes de que llegue a disco.
+  assertNoSkeletons(await page.locator('.skeleton').count(), shot.id);
   assertPng(buf, shot.size, shot.id);
   const path = join(outRoot, shot.out);
   mkdirSync(dirname(path), { recursive: true });
