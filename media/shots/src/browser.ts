@@ -12,6 +12,7 @@ import {
   supabaseStorageKey,
   type ShotsEnv,
   type SupabasePasswordGrantResponse,
+  type SupabaseSession,
 } from './env.ts';
 import { assertNoSkeletons, assertPng, assertRoute, assertTheme, captureStable } from './guards.ts';
 
@@ -55,13 +56,25 @@ export function launch(): Promise<Browser> {
  * openShotPage la lea igual que antes.
  */
 export async function login(env: ShotsEnv): Promise<void> {
+  await loginAs(env, { email: env.email, password: env.password }, AUTH_STATE);
+}
+
+/**
+ * Lo mismo que `login` para cualquier cuenta: guarda su storageState en `statePath` y
+ * devuelve la sesión (el access_token sirve también para llamar a la API desde Node).
+ */
+export async function loginAs(
+  env: Pick<ShotsEnv, 'supabaseUrl' | 'supabaseAnonKey'>,
+  account: { email: string; password: string },
+  statePath: string,
+): Promise<SupabaseSession> {
   const res = await fetch(`${env.supabaseUrl}/auth/v1/token?grant_type=password`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', apikey: env.supabaseAnonKey },
-    body: JSON.stringify({ email: env.email, password: env.password }),
+    body: JSON.stringify({ email: account.email, password: account.password }),
   });
   if (!res.ok) {
-    throw new Error(`Login de Marta contra Supabase falló: ${res.status} ${res.statusText}`);
+    throw new Error(`Login de ${account.email} contra Supabase falló: ${res.status} ${res.statusText}`);
   }
   const session = buildSupabaseSession((await res.json()) as SupabasePasswordGrantResponse);
   const state = {
@@ -70,18 +83,23 @@ export async function login(env: ShotsEnv): Promise<void> {
       { origin: BASE_URL, localStorage: [{ name: supabaseStorageKey(env.supabaseUrl), value: JSON.stringify(session) }] },
     ],
   };
-  mkdirSync(dirname(AUTH_STATE), { recursive: true });
-  writeFileSync(AUTH_STATE, JSON.stringify(state));
+  mkdirSync(dirname(statePath), { recursive: true });
+  writeFileSync(statePath, JSON.stringify(state));
+  return session;
 }
+
+/** Lo que openShotPage necesita de una captura (el rodaje no usa el catálogo). */
+export type PageSpec = Pick<Shot, 'id' | 'device' | 'lang' | 'theme'>;
 
 export async function openShotPage(
   browser: Browser,
-  shot: Shot,
-  env: ShotsEnv,
+  shot: PageSpec,
+  env: Pick<ShotsEnv, 'seedToday'>,
+  authState: string = AUTH_STATE,
 ): Promise<{ context: BrowserContext; page: Page }> {
   const vp = VIEWPORTS[shot.device];
   const context = await browser.newContext({
-    storageState: AUTH_STATE,
+    storageState: authState,
     viewport: { width: vp.width, height: vp.height },
     deviceScaleFactor: vp.deviceScaleFactor,
     isMobile: vp.isMobile,
@@ -112,8 +130,8 @@ export async function openShotPage(
   // que supabase-js no la vea caducada ni refresque. Tokens intactos. Este init script se
   // registra después del de tema/idioma y pisa el valor que carga storageState.
   const fixed = fixedClock(env.seedToday, new Date());
-  const stored = findSupabaseSession(JSON.parse(readFileSync(AUTH_STATE, 'utf8')));
-  if (stored === null) throw new Error(`${shot.id}: no hay sesión sb-*-auth-token en ${AUTH_STATE}`);
+  const stored = findSupabaseSession(JSON.parse(readFileSync(authState, 'utf8')));
+  if (stored === null) throw new Error(`${shot.id}: no hay sesión sb-*-auth-token en el storageState`);
   await context.addInitScript(
     ({ name, value }) => {
       try {
@@ -137,7 +155,7 @@ export async function closeShotPage(context: BrowserContext): Promise<void> {
   await context.close();
 }
 
-async function settle(page: Page): Promise<void> {
+export async function settle(page: Page): Promise<void> {
   await page.waitForLoadState('networkidle');
   await page.waitForFunction(() => document.querySelectorAll('.skeleton').length === 0, null, {
     timeout: 20_000,
@@ -148,7 +166,7 @@ async function settle(page: Page): Promise<void> {
   await page.waitForFunction(() => Array.from(document.images).every((img) => img.complete));
 }
 
-async function gotoAndSettle(page: Page, path: string): Promise<void> {
+export async function gotoAndSettle(page: Page, path: string): Promise<void> {
   await page.goto(`${BASE_URL}${path}`);
   await settle(page);
   // Sin sesión, ProtectedRoute manda a /login o a /, y esa pantalla pasaría el resto de guardas.
@@ -156,7 +174,7 @@ async function gotoAndSettle(page: Page, path: string): Promise<void> {
 }
 
 /** El mazo se abre solo si hay preguntas o quedadas pendientes; «Al mapa» solo lo cierra. */
-async function dismissMazo(page: Page, lang: Lang): Promise<void> {
+export async function dismissMazo(page: Page, lang: Lang): Promise<void> {
   const toMap = page.getByRole('button', { name: TEXT.toMap[lang] });
   const visible = await toMap.waitFor({ state: 'visible', timeout: 2_000 }).then(
     () => true,
@@ -249,7 +267,11 @@ export async function runScene(page: Page, shot: Shot, env: ShotsEnv): Promise<v
   }
 }
 
-export async function shootShot(page: Page, shot: Shot, outRoot: string): Promise<string> {
+export async function shootShot(
+  page: Page,
+  shot: Pick<Shot, 'id' | 'theme' | 'size' | 'out'>,
+  outRoot: string,
+): Promise<string> {
   assertTheme(
     await page.evaluate(() => document.documentElement.classList.contains('light')),
     shot.theme,

@@ -8,8 +8,18 @@ export const OUT_ROOT = join(MEDIA_ROOT, 'out');
 export const SEED_ENV_PATH = join(MEDIA_ROOT, 'seed', '.env');
 export const BASE_URL = 'https://quedamos.alvarotc.com';
 
+/** Las cinco cuentas demo que crea la siembra (media/seed). */
+export const DEMO_ACCOUNTS = ['marta', 'hugo', 'noa', 'leo', 'julia'] as const;
+export type DemoAccount = (typeof DEMO_ACCOUNTS)[number];
+
+export function demoEmail(account: DemoAccount): string {
+  return `demo-${account}@quedamos.alvarotc.com`;
+}
+
 /** Correo fijo de la cuenta de captura (lo crea la siembra). */
-export const MARTA_EMAIL = 'demo-marta@quedamos.alvarotc.com';
+export const MARTA_EMAIL = demoEmail('marta');
+/** API de producción (la misma que usa media/seed si no hay API_URL). */
+export const DEFAULT_API_URL = 'https://quedamos.api.alvarotc.com';
 /** Vida que se le da a la sesión parcheada, contada desde el reloj fijado. */
 const SESSION_SECONDS = 3600;
 
@@ -66,6 +76,18 @@ export function readShotsEnv(
   return { email: MARTA_EMAIL, password, seedToday };
 }
 
+/** DEMO_PASSWORD_<CUENTA> de las cinco cuentas; dice cuáles faltan sin enseñar ningún valor. */
+export function readDemoPasswords(
+  vars: Readonly<Record<string, string | undefined>>,
+): Record<DemoAccount, string> {
+  const key = (account: DemoAccount): string => `DEMO_PASSWORD_${account.toUpperCase()}`;
+  const missing = DEMO_ACCOUNTS.filter((account) => (vars[key(account)] ?? '') === '').map(key);
+  if (missing.length > 0) throw new Error(`media/seed/.env: faltan ${missing.join(', ')}`);
+  const out: Partial<Record<DemoAccount, string>> = {};
+  for (const account of DEMO_ACCOUNTS) out[account] = vars[key(account)] ?? '';
+  return out as Record<DemoAccount, string>;
+}
+
 /** VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY de la .env de mobile que apunta MOBILE_ENV_PATH. */
 export function readMobileSupabaseEnv(vars: Readonly<Record<string, string | undefined>>): {
   supabaseUrl: string;
@@ -82,14 +104,19 @@ export function readMobileSupabaseEnv(vars: Readonly<Record<string, string | und
   return { supabaseUrl: supabaseUrl.replace(/\/+$/, ''), supabaseAnonKey };
 }
 
-export function loadShotsEnv(path: string = SEED_ENV_PATH): ShotsEnv {
+/** Variables crudas de media/seed/.env (contraseñas incluidas: no imprimir). */
+export function loadSeedVars(path: string = SEED_ENV_PATH): Record<string, string> {
   let text: string;
   try {
     text = readFileSync(path, 'utf8');
   } catch {
     throw new Error(`No existe ${path}: lanza antes la siembra (media/seed)`);
   }
-  const seedVars = parseDotEnv(text);
+  return parseDotEnv(text);
+}
+
+export function loadShotsEnv(path: string = SEED_ENV_PATH): ShotsEnv {
+  const seedVars = loadSeedVars(path);
   const base = readShotsEnv(seedVars);
   const mobileEnvPath = seedVars.MOBILE_ENV_PATH;
   if (!mobileEnvPath) throw new Error(`${path}: falta MOBILE_ENV_PATH`);
