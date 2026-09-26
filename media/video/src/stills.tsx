@@ -1,7 +1,8 @@
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
 import type { PromoProps } from './copy';
-import { Navegador, Phone, medidasPhone } from './ui/Dispositivos';
+import { Phone, medidasPhone } from './ui/Dispositivos';
+import type { Slot } from './ui/Dispositivos';
 import { Logo } from './ui/Logo';
 import { Fondo, Rotulo } from './ui/tema';
 
@@ -9,22 +10,33 @@ import { Fondo, Rotulo } from './ui/tema';
 const LOGO = 132;
 const TITULO = 96;
 const HUECO_TITULO = 28;
-const HUECO_COLUMNAS = 110;
-const NAVEGADOR = 900;
-const PHONE = 700;
-const SOLAPE_PHONE = 0.42; // parte del móvil que queda por delante del navegador
+const HUECO_COLUMNAS = 150;
+const PHONE_CENTRO = 760;
+const PHONE_LADO = 620;
+const SOLAPE_LADO = 0.38; // parte de cada móvil lateral que queda detrás del central
+const BAJADA_LADO = 50; // los laterales, algo más abajo que el central
+const BRILLO_LADO = 0.72; // los laterales, un punto más oscuros para dar fondo
 
 /**
  * Dos columnas centradas en el lienzo: marca (logo sobre «Quedamos») a la izquierda,
- * centrada en vertical; a la derecha el navegador con `cover` y el móvil con `shot-01`
- * por delante de su borde izquierdo. Sin texto pequeño.
+ * centrada en vertical; a la derecha tres móviles escalonados: quedada detrás a la
+ * izquierda, grupo detrás a la derecha y calendario delante en el centro. Sin texto pequeño.
  */
 const Composicion: React.FC<PromoProps & { escala: number }> = ({ lang, escala }) => {
-  const phone = medidasPhone(PHONE * escala);
-  const navegador = NAVEGADOR * escala;
-  const navegadorAlto = (navegador * 1000) / 1600 + navegador * 0.035;
-  const grupoAncho = phone.anchoTotal * (1 - SOLAPE_PHONE) + navegador;
-  const grupoAlto = Math.max(phone.altoTotal, navegadorAlto);
+  const centro = medidasPhone(PHONE_CENTRO * escala);
+  const lado = medidasPhone(PHONE_LADO * escala);
+  const asoma = lado.anchoTotal * (1 - SOLAPE_LADO);
+  const grupoAncho = centro.anchoTotal + 2 * asoma;
+  const grupoAlto = centro.altoTotal;
+  const topLado = (grupoAlto - lado.altoTotal) / 2 + BAJADA_LADO * escala;
+  const lateral = (slot: Slot, izquierda: boolean) => (
+    <Phone
+      lang={lang}
+      alto={PHONE_LADO * escala}
+      capas={[{ slot }]}
+      style={{ top: topLado, filter: `brightness(${BRILLO_LADO})`, ...(izquierda ? { left: 0 } : { right: 0 }) }}
+    />
+  );
   return (
     <AbsoluteFill>
       <Fondo />
@@ -36,8 +48,9 @@ const Composicion: React.FC<PromoProps & { escala: number }> = ({ lang, escala }
           </Rotulo>
         </div>
         <div style={{ position: 'relative', width: grupoAncho, height: grupoAlto, flexShrink: 0 }}>
-          <Navegador lang={lang} ancho={navegador} style={{ right: 0, top: (grupoAlto - navegadorAlto) / 2 }} />
-          <Phone lang={lang} alto={PHONE * escala} capas={[{ slot: 'shot-01' }]} style={{ left: 0, top: (grupoAlto - phone.altoTotal) / 2 }} />
+          {lateral('shot-04', true)}
+          {lateral('shot-05', false)}
+          <Phone lang={lang} alto={PHONE_CENTRO * escala} capas={[{ slot: 'shot-01' }]} style={{ left: asoma, top: 0 }} />
         </div>
       </AbsoluteFill>
     </AbsoluteFill>
