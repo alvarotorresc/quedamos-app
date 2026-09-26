@@ -65,3 +65,8 @@ progress.md
 
 # Backlog: material de trabajo, local
 BACKLOG.md
+
+# Media (material de producto)
+media/seed/.env
+media/out/
+media/**/node_modules/
