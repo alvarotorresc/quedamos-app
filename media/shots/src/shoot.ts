@@ -37,6 +37,11 @@ try {
       }
     }
   }
+} catch (error) {
+  // Sin este catch, una excepción aquí sigue cerrando el navegador (el finally de abajo
+  // corre igual) pero puede acabar dejando código de salida 0: con esto queda explícito.
+  console.error(error instanceof Error ? (error.stack ?? error.message) : error);
+  process.exitCode = 1;
 } finally {
   await browser.close();
 }

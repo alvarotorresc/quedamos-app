@@ -188,8 +188,3 @@ export function buildLabels(): Record<string, Label> {
   labels.icon = { files: { es: 'icon.png', en: 'icon.png' }, ...ICON_LABEL };
   return labels;
 }
-
-/** Índice de la fila `[data-testid="day-row"]` de ese día: la semana va de lunes a domingo (getWeekDays). */
-export function weekRowIndex(isoDate: string): number {
-  return (new Date(`${isoDate}T12:00:00Z`).getUTCDay() + 6) % 7;
-}

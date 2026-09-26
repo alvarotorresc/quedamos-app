@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
-import { VIEWPORTS, weekRowIndex, type Lang, type Shot } from './catalog.ts';
+import { chromium, type Browser, type BrowserContext, type Locator, type Page } from 'playwright';
+import { VIEWPORTS, type Lang, type Shot } from './catalog.ts';
 import {
   BASE_URL,
   SHOTS_ROOT,
@@ -167,6 +167,43 @@ async function dismissMazo(page: Page, lang: Lang): Promise<void> {
   await toMap.waitFor({ state: 'detached' });
 }
 
+/**
+ * El botón «Preguntar» es hermano de `[data-testid="day-row"]`, no descendiente (WeekView los
+ * pinta en un Fragment): hay que buscarlo a nivel de página, no dentro de la fila. Tampoco vale
+ * un índice fijo para elegir la fila — el mejor día de la semana ni siquiera es una fila (lo
+ * sustituye el panel «Quedamos»/«Editar disponibilidad») y los días pasados no muestran el
+ * botón, así que qué fila sirve depende de los datos sembrados. Se prueba fila por fila, por
+ * orden real de fecha, hasta encontrar una donde aparezca, prefiriendo un día con disponibilidad
+ * ya marcada (el aro solo es un botón —abre el detalle— cuando alguien ha respondido: más
+ * elocuente en la captura que preguntar sobre un día vacío).
+ */
+async function findAskButton(page: Page, lang: Lang): Promise<Locator> {
+  const rows = page.locator('[data-testid="day-row"]');
+  const total = await rows.count();
+  const askButton = page.getByRole('button', { name: TEXT.ask[lang], exact: true });
+  let fallbackIndex: number | null = null;
+  for (let i = 0; i < total; i++) {
+    const row = rows.nth(i);
+    const hasAvailability = (await row.getByRole('button').count()) > 0;
+    // Esquina izquierda (el número del día): en el centro puede caer el botón del aro,
+    // que abre el detalle de disponibilidad en vez de seleccionar el día.
+    await row.click({ position: { x: 10, y: 10 } });
+    const visible = await askButton.waitFor({ state: 'visible', timeout: 1_000 }).then(
+      () => true,
+      () => false,
+    );
+    if (visible && hasAvailability) return askButton;
+    if (visible && fallbackIndex === null) fallbackIndex = i;
+    await row.click({ position: { x: 10, y: 10 } }); // no era esta: deselecciona antes de probar la siguiente
+  }
+  if (fallbackIndex !== null) {
+    await rows.nth(fallbackIndex).click({ position: { x: 10, y: 10 } });
+    await askButton.waitFor({ state: 'visible' });
+    return askButton;
+  }
+  throw new Error('Ninguna fila de la semana enseña el botón «Preguntar» (¿todos los días pasados o el mejor día?)');
+}
+
 // SOLO NAVEGACIÓN. Nunca pulsar el botón de enviar de la hoja de preguntar (calendar.askAction),
 // Puedo/No puedo/Voy del mazo, votos ni envíos de formulario: escribirían en producción y
 // mandarían pushes a los cinco miembros.
@@ -181,11 +218,9 @@ export async function runScene(page: Page, shot: Shot, env: ShotsEnv): Promise<v
     case 'ask': {
       await gotoAndSettle(page, '/tabs/calendar');
       await dismissMazo(page, lang);
-      const row = page.locator('[data-testid="day-row"]').nth(weekRowIndex(env.seedToday));
-      // Esquina izquierda (el número del día): en el centro puede caer el botón del aro,
-      // que abre el detalle de disponibilidad en vez de seleccionar el día.
-      await row.click({ position: { x: 10, y: 10 } });
-      await row.getByRole('button', { name: TEXT.ask[lang], exact: true }).click();
+      await page.locator('[data-testid="day-row"]').first().waitFor();
+      const askButton = await findAskButton(page, lang);
+      await askButton.click();
       await page.getByRole('heading', { name: TEXT.askTitle[lang] }).waitFor();
       break;
     }

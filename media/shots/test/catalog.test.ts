@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { VIEWPORTS, buildCatalog, buildLabels, selectShots, weekRowIndex } from '../src/catalog.ts';
+import { VIEWPORTS, buildCatalog, buildLabels, selectShots } from '../src/catalog.ts';
 
 const catalog = buildCatalog();
 
@@ -61,10 +61,4 @@ test('labels: alt y caption no vacíos en es y en, también para el icono', () =
       assert.ok(l.alt[lang].length > 0 && l.caption[lang].length > 0, `${key}.${lang}`);
     }
   }
-});
-
-test('weekRowIndex: semana de lunes (0) a domingo (6)', () => {
-  assert.equal(weekRowIndex('2026-09-28'), 0);
-  assert.equal(weekRowIndex('2026-09-26'), 5);
-  assert.equal(weekRowIndex('2026-09-27'), 6);
 });
