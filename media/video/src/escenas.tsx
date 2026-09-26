@@ -6,7 +6,8 @@ import { Logo } from './ui/Logo';
 import { COLOR, MIEMBRO, Rotulo, progreso } from './ui/tema';
 
 /** Golpes de la intro, en ataques de la música: el segundo texto entra con un corte y el aro después. */
-export const INTRO = { golpe2: 25, aro: 50 } as const;
+/** Intro: primero la marca (aro que se dibuja y «Quedamos»), luego los dos golpes de texto. */
+export const INTRO = { golpe1: 75, golpe2: 112 } as const;
 
 /**
  * Marca centrada: aro y «Quedamos» como un bloque con el mismo aire arriba y abajo. `ajuste` corrige lo
@@ -42,15 +43,17 @@ const Golpe: React.FC<{ children: React.ReactNode; color?: string }> = ({ childr
 
 export const Escena1Intro: React.FC<PromoProps> = ({ lang }) => {
   const frame = useCurrentFrame();
+  if (frame < INTRO.golpe1) {
+    return <Marca logo={260} titulo={128} hueco={40} ajuste={-6} dibujo={progreso(frame, 0, 24)} entraTitulo={8} />;
+  }
   if (frame < INTRO.golpe2) {
     return (
-      <AbsoluteFill style={{ opacity: progreso(frame, 0, 6) }}>
+      <AbsoluteFill style={{ opacity: progreso(frame, INTRO.golpe1, 6) }}>
         <Golpe>{texto(lang, 'intro.golpe1')}</Golpe>
       </AbsoluteFill>
     );
   }
-  if (frame < INTRO.aro) return <Golpe>{texto(lang, 'intro.golpe2')}</Golpe>;
-  return <Marca logo={260} titulo={128} hueco={40} ajuste={-6} dibujo={progreso(frame, INTRO.aro, 24)} entraTitulo={INTRO.aro + 8} />;
+  return <Golpe>{texto(lang, 'intro.golpe2')}</Golpe>;
 };
 
 /** Rótulo de una escena del escenario, en la franja inferior centrada; se va antes de que entre el siguiente. */

@@ -1,18 +1,18 @@
 export const FPS = 30;
 export const ANCHO = 1920;
 export const ALTO = 1080;
-export const DURACION_TOTAL = 1020;
+export const DURACION_TOTAL = 1110;
 
 const s = (segundos: number) => segundos * FPS;
 
 export const ESCENAS = [
-  { n: 1, nombre: 'intro', desde: s(0), duracion: s(3) },
-  { n: 2, nombre: 'calendario', desde: s(3), duracion: s(3) },
-  { n: 3, nombre: 'proponer', desde: s(6), duracion: s(7) },
-  { n: 4, nombre: 'responder', desde: s(13), duracion: s(6) },
-  { n: 5, nombre: 'respuestas', desde: s(19), duracion: s(6) },
-  { n: 6, nombre: 'fijada', desde: s(25), duracion: s(5) },
-  { n: 7, nombre: 'cierre', desde: s(30), duracion: s(4) },
+  { n: 1, nombre: 'intro', desde: s(0), duracion: s(5) },
+  { n: 2, nombre: 'calendario', desde: s(5), duracion: s(4) },
+  { n: 3, nombre: 'proponer', desde: s(9), duracion: s(7) },
+  { n: 4, nombre: 'responder', desde: s(16), duracion: s(6) },
+  { n: 5, nombre: 'respuestas', desde: s(22), duracion: s(6) },
+  { n: 6, nombre: 'fijada', desde: s(28), duracion: s(5) },
+  { n: 7, nombre: 'cierre', desde: s(33), duracion: s(4) },
 ] as const;
 
 export type NumEscena = (typeof ESCENAS)[number]['n'];

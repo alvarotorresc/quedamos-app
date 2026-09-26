@@ -46,11 +46,11 @@ export type Movil = 'marta' | 'hugo';
  * Para moverlos basta con cambiar estos números: los cambios de estado cuelgan de ellos.
  */
 export const FRAME_TAP: Record<Tap, number> = {
-  quedamos: 199,
-  titulo: 256,
-  crear: 334,
-  voy: 495,
-  confirmar: 803,
+  quedamos: 289,
+  titulo: 346,
+  crear: 424,
+  voy: 585,
+  confirmar: 893,
 };
 
 export const QUIEN_TOCA: Record<Tap, Movil> = { quedamos: 'marta', titulo: 'marta', crear: 'marta', voy: 'hugo', confirmar: 'marta' };
@@ -70,9 +70,9 @@ export const duracionEfecto = (efecto: Efecto): number =>
 const tras = (tap: Tap) => FRAME_TAP[tap] + REACCION;
 
 /** Aviso «Nueva quedada» sobre el móvil de Hugo: cae, se queda y sube antes de que entre el mazo. */
-export const AVISO = { cae: 404, sube: 452 } as const;
+export const AVISO = { cae: 494, sube: 542 } as const;
 /** Etiqueta «Leo · No voy» junto al móvil de Hugo. */
-export const ETIQUETA_LEO = { entra: 706, sale: escena(5).desde + escena(5).duracion - TRANSICION } as const;
+export const ETIQUETA_LEO = { entra: 796, sale: escena(5).desde + escena(5).duracion - TRANSICION } as const;
 
 export const PASOS: Record<Movil, Paso[]> = {
   marta: [
@@ -85,12 +85,12 @@ export const PASOS: Record<Movil, Paso[]> = {
   ],
   hugo: [
     { desde: escena(2).desde, estado: 'h-cal', efecto: 'corte' },
-    { desde: 462, estado: 'h-mazo', efecto: 'entra' },
+    { desde: 552, estado: 'h-mazo', efecto: 'entra' },
     { desde: tras('voy'), estado: 'h-voy', efecto: 'fundido' },
-    { desde: 528, estado: 'h-plan-2', efecto: 'fundido' },
-    { desde: 598, estado: 'h-plan-3', efecto: 'fundido' },
-    { desde: 643, estado: 'h-plan-4', efecto: 'fundido' },
-    { desde: 700, estado: 'h-plan-leo', efecto: 'fundido' },
+    { desde: 618, estado: 'h-plan-2', efecto: 'fundido' },
+    { desde: 688, estado: 'h-plan-3', efecto: 'fundido' },
+    { desde: 733, estado: 'h-plan-4', efecto: 'fundido' },
+    { desde: 790, estado: 'h-plan-leo', efecto: 'fundido' },
     { desde: tras('confirmar'), estado: 'h-plan-confirmada', efecto: 'fundido' },
   ],
 };

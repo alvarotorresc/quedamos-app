@@ -14,7 +14,7 @@ const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MEDIA_OUT = join(raiz, '..', 'out');
 // Un frame asentado por escena y los momentos delicados: hoja a medio subir, título a medio escribir,
 // pulsos en su pico, aviso, mazo entrando y etiqueta de Leo.
-const FRAMES_ESCENA = [12, 37, 85, 170, 201, 207, 266, 300, 336, 342, 380, 420, 466, 498, 560, 610, 720, 790, 806, 850, 960, 1005];
+const FRAMES_ESCENA = [20, 60, 90, 130, 230, 291, 297, 356, 390, 426, 432, 470, 510, 556, 588, 650, 700, 810, 880, 896, 940, 1050, 1095];
 
 const ejecutar = (cmd, args) => execFileSync(cmd, args, { cwd: raiz, stdio: 'inherit' });
 const still = (comp, salida, props, frame) =>
