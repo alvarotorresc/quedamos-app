@@ -1,17 +1,18 @@
 export const FPS = 30;
 export const ANCHO = 1920;
 export const ALTO = 1080;
-export const DURACION_TOTAL = 870;
+export const DURACION_TOTAL = 1020;
 
 const s = (segundos: number) => segundos * FPS;
 
 export const ESCENAS = [
-  { n: 1, nombre: 'intro', desde: s(0), duracion: s(4) },
-  { n: 2, nombre: 'calendario', desde: s(4), duracion: s(5) },
-  { n: 3, nombre: 'proponer', desde: s(9), duracion: s(5) },
-  { n: 4, nombre: 'fijada', desde: s(14), duracion: s(4) },
-  { n: 5, nombre: 'navegacion', desde: s(18), duracion: s(6) },
-  { n: 6, nombre: 'cierre', desde: s(24), duracion: s(5) },
+  { n: 1, nombre: 'intro', desde: s(0), duracion: s(3) },
+  { n: 2, nombre: 'calendario', desde: s(3), duracion: s(3) },
+  { n: 3, nombre: 'proponer', desde: s(6), duracion: s(7) },
+  { n: 4, nombre: 'responder', desde: s(13), duracion: s(6) },
+  { n: 5, nombre: 'respuestas', desde: s(19), duracion: s(6) },
+  { n: 6, nombre: 'fijada', desde: s(25), duracion: s(5) },
+  { n: 7, nombre: 'cierre', desde: s(30), duracion: s(4) },
 ] as const;
 
 export type NumEscena = (typeof ESCENAS)[number]['n'];
@@ -20,8 +21,8 @@ export const escena = (n: NumEscena) => ESCENAS[n - 1];
 
 export const msAFrames = (ms: number, fps: number = FPS) => Math.round((ms * fps) / 1000);
 
-/** Transición estándar: fundidos y desplazamientos de 300 a 400 ms, sin rebotes. */
-export const TRANSICION = msAFrames(350);
+/** Transición estándar: fundidos y desplazamientos de 300 ms (el guion pide 250-350 ms), sin rebotes. */
+export const TRANSICION = msAFrames(300);
 
 /** Volumen de la música: entra en 0,5 s y se apaga en el último segundo, acabando en 0 en el frame final. */
 export const VOLUMEN_MUSICA = 0.6;

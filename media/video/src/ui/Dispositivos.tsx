@@ -48,13 +48,13 @@ export const medidasPhone = (alto: number) => {
 
 export type CapaPhone = { slot: Slot; zoom?: number; origen?: string; opacidad?: number };
 
-/** Móvil sin marca: marco oscuro fino y pantalla con una o varias capas (la última encima). */
-export const Phone: React.FC<{ lang: Lang; capas: CapaPhone[]; alto: number; resalte?: number; style?: React.CSSProperties }> = ({
-  lang,
-  capas,
+/** Marco del móvil sin marca: borde oscuro fino y pantalla recortada con lo que se le pase dentro. */
+export const Marco: React.FC<{ alto: number; resalte?: number; style?: React.CSSProperties; pantalla?: React.CSSProperties; children: React.ReactNode }> = ({
   alto,
   resalte = 0,
   style,
+  pantalla,
+  children,
 }) => {
   const m = medidasPhone(alto);
   return (
@@ -72,14 +72,27 @@ export const Phone: React.FC<{ lang: Lang; capas: CapaPhone[]; alto: number; res
         ...style,
       }}
     >
-      <div style={{ position: 'relative', width: m.ancho, height: m.alto, borderRadius: m.radio, overflow: 'hidden', backgroundColor: COLOR.fondo }}>
-        {capas.map((c, i) => (
-          <Captura key={`${c.slot}-${i}`} lang={lang} slot={c.slot} zoom={c.zoom} origen={c.origen} opacidad={c.opacidad} />
-        ))}
+      <div style={{ position: 'relative', width: m.ancho, height: m.alto, borderRadius: m.radio, overflow: 'hidden', backgroundColor: COLOR.fondo, ...pantalla }}>
+        {children}
       </div>
     </div>
   );
 };
+
+/** Móvil con una o varias capas de captura (la última encima). */
+export const Phone: React.FC<{ lang: Lang; capas: CapaPhone[]; alto: number; resalte?: number; style?: React.CSSProperties }> = ({
+  lang,
+  capas,
+  alto,
+  resalte = 0,
+  style,
+}) => (
+  <Marco alto={alto} resalte={resalte} style={style}>
+    {capas.map((c, i) => (
+      <Captura key={`${c.slot}-${i}`} lang={lang} slot={c.slot} zoom={c.zoom} origen={c.origen} opacidad={c.opacidad} />
+    ))}
+  </Marco>
+);
 
 /** Ventana de navegador sin URL ni texto: barra con tres puntos y la captura de escritorio (1600×1000). */
 export const Navegador: React.FC<{ lang: Lang; ancho: number; style?: React.CSSProperties }> = ({ lang, ancho, style }) => {
