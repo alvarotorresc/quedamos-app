@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 // Render final: capturas → música → tests → render maestro (CRF 18) → compresión web → verificación.
 // Uso: npm run render            (es y en)
 //      npm run render -- es      (solo un idioma)
+//      RODAJE=/ruta npm run render  (rodaje del vídeo fuera de ../out/rodaje)
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
 const WEB = join(raiz, '..', 'out', 'web');
 const langs = process.argv.slice(2).filter((a) => a === 'es' || a === 'en');
