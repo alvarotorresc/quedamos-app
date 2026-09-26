@@ -1,44 +1,51 @@
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
 import type { PromoProps } from './copy';
-import { ALTO, ANCHO } from './timing';
-import { Navegador, Phone } from './ui/Dispositivos';
+import { Navegador, Phone, medidasPhone } from './ui/Dispositivos';
 import { Logo } from './ui/Logo';
 import { Fondo, Rotulo } from './ui/tema';
 
-/** Still de marketing 1920×1080: navegador con `cover` detrás y móvil con `shot-01` delante; sin texto pequeño. */
-export const Promo: React.FC<PromoProps> = ({ lang }) => (
-  <AbsoluteFill>
-    <Fondo />
-    <Logo tamano={120} style={{ position: 'absolute', left: 120, top: 110 }} />
-    <Rotulo entra={-30} tamano={96} peso={800} style={{ left: 270, top: 118 }}>
-      Quedamos
-    </Rotulo>
-    <Navegador lang={lang} ancho={1180} style={{ left: 620, top: 220 }} />
-    <Phone lang={lang} alto={760} capas={[{ slot: 'shot-01' }]} style={{ left: 250, top: 250 }} />
-  </AbsoluteFill>
-);
+// Medidas a escala 1 (still de 1920×1080); la feature graphic las reduce con `escala`.
+const LOGO = 132;
+const TITULO = 96;
+const HUECO_TITULO = 28;
+const HUECO_COLUMNAS = 110;
+const NAVEGADOR = 900;
+const PHONE = 700;
+const SOLAPE_PHONE = 0.42; // parte del móvil que queda por delante del navegador
 
-const FG_ANCHO = 1024;
-const FG_ALTO = 500;
-const ESCALA_FG = Math.min((FG_ANCHO * 0.9) / ANCHO, (FG_ALTO * 0.9) / ALTO);
+/**
+ * Dos columnas centradas en el lienzo: marca (logo sobre «Quedamos») a la izquierda,
+ * centrada en vertical; a la derecha el navegador con `cover` y el móvil con `shot-01`
+ * por delante de su borde izquierdo. Sin texto pequeño.
+ */
+const Composicion: React.FC<PromoProps & { escala: number }> = ({ lang, escala }) => {
+  const phone = medidasPhone(PHONE * escala);
+  const navegador = NAVEGADOR * escala;
+  const navegadorAlto = (navegador * 1000) / 1600 + navegador * 0.035;
+  const grupoAncho = phone.anchoTotal * (1 - SOLAPE_PHONE) + navegador;
+  const grupoAlto = Math.max(phone.altoTotal, navegadorAlto);
+  return (
+    <AbsoluteFill>
+      <Fondo />
+      <AbsoluteFill style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: HUECO_COLUMNAS * escala }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: HUECO_TITULO * escala, flexShrink: 0 }}>
+          <Logo tamano={LOGO * escala} />
+          <Rotulo entra={-30} tamano={TITULO * escala} peso={800} style={{ position: 'relative' }}>
+            Quedamos
+          </Rotulo>
+        </div>
+        <div style={{ position: 'relative', width: grupoAncho, height: grupoAlto, flexShrink: 0 }}>
+          <Navegador lang={lang} ancho={navegador} style={{ right: 0, top: (grupoAlto - navegadorAlto) / 2 }} />
+          <Phone lang={lang} alto={PHONE * escala} capas={[{ slot: 'shot-01' }]} style={{ left: 0, top: (grupoAlto - phone.altoTotal) / 2 }} />
+        </div>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
 
-/** Feature graphic de Play 1024×500: la misma composición, reducida y centrada con margen. */
-export const FeatureGraphic: React.FC<PromoProps> = ({ lang }) => (
-  <AbsoluteFill>
-    <Fondo />
-    <div
-      style={{
-        position: 'absolute',
-        left: (FG_ANCHO - ANCHO * ESCALA_FG) / 2,
-        top: (FG_ALTO - ALTO * ESCALA_FG) / 2,
-        width: ANCHO,
-        height: ALTO,
-        transform: `scale(${ESCALA_FG})`,
-        transformOrigin: '0 0',
-      }}
-    >
-      <Promo lang={lang} />
-    </div>
-  </AbsoluteFill>
-);
+/** Still de marketing 1920×1080. */
+export const Promo: React.FC<PromoProps> = ({ lang }) => <Composicion lang={lang} escala={1} />;
+
+/** Feature graphic de Play 1024×500: la misma maqueta con medidas propias, no el promo encogido. */
+export const FeatureGraphic: React.FC<PromoProps> = ({ lang }) => <Composicion lang={lang} escala={0.5} />;
