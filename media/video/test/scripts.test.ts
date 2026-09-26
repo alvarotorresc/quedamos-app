@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { comprobarPng, leerPng } from '../scripts/png.mjs';
-import { mapear, preparar } from '../scripts/preparar.mjs';
+import { ESTADOS, TAPS, comprobarTaps, mapear, preparar, prepararRodaje } from '../scripts/preparar.mjs';
 
 const FIRMA = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const chunk = (tipo: string, datos: Buffer) => {
@@ -76,5 +76,50 @@ describe('preparar', () => {
 
   it('lista lo que falta si no existe el origen', () => {
     expect(preparar(join(dir, 'no-existe'), publico)).toHaveLength(14);
+  });
+});
+
+describe('prepararRodaje', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'rodaje-'));
+  const origen = join(dir, 'rodaje');
+  const publico = join(dir, 'public');
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+  const caja = { x: 0.1, y: 0.2, w: 0.3, h: 0.05 };
+  const cajas = Object.fromEntries(TAPS.map((t: string) => [t, caja]));
+  const rodar = () => {
+    rmSync(origen, { recursive: true, force: true });
+    for (const lang of ['es', 'en']) {
+      mkdirSync(join(origen, lang), { recursive: true });
+      for (const e of ESTADOS) writeFileSync(join(origen, lang, `${e}.png`), png(1080, 2340, 6));
+    }
+    writeFileSync(join(origen, 'taps.json'), JSON.stringify({ es: cajas, en: { ...cajas, extra: caja } }));
+  };
+
+  it('copia los 28 estados y deja solo las cinco cajas por idioma', () => {
+    rodar();
+    expect(prepararRodaje(origen, publico)).toEqual([]);
+    expect(readdirSync(join(publico, 'rodaje', 'en')).sort()).toEqual(ESTADOS.map((e: string) => `${e}.png`).sort());
+    const taps = JSON.parse(readFileSync(join(publico, 'rodaje', 'taps.json'), 'utf8'));
+    expect(Object.keys(taps.en).sort()).toEqual([...TAPS].sort());
+  });
+
+  it('falla con claridad si falta un estado o un toque', () => {
+    rodar();
+    rmSync(join(origen, 'en', 'h-voy.png'));
+    writeFileSync(join(origen, 'taps.json'), JSON.stringify({ es: cajas, en: { ...cajas, voy: undefined } }));
+    const errores = prepararRodaje(origen, publico).join('\n');
+    expect(errores).toMatch(/falta el estado .*en\/h-voy\.png/);
+    expect(errores).toMatch(/falta el toque en\.voy/);
+  });
+
+  it('rechaza una medida equivocada y una caja fuera de la pantalla', () => {
+    expect(comprobarTaps({ es: { ...cajas, crear: { x: 0.9, y: 0.9, w: 0.2, h: 0.05 } }, en: cajas }).join()).toMatch(/es\.crear se sale/);
+    rodar();
+    writeFileSync(join(origen, 'es', 'm-cal.png'), png(1080, 1920));
+    expect(prepararRodaje(origen, publico).join()).toMatch(/m-cal\.png: mide 1080×1920/);
+  });
+
+  it('lista todo lo que falta si no existe el rodaje', () => {
+    expect(prepararRodaje(join(dir, 'no-existe'), publico)).toHaveLength(ESTADOS.length * 2 + 1);
   });
 });
