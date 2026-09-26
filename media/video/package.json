@@ -1,0 +1,28 @@
+{
+  "name": "quedamos-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vídeo de producto y stills de Quedamos, hechos con Remotion",
+  "scripts": {
+    "studio": "remotion studio src/index.tsx",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "preparar": "node scripts/preparar.mjs",
+    "audio": "node scripts/audio.mjs",
+    "stills": "node scripts/stills.mjs",
+    "render": "node scripts/render.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/google-fonts": "4.0.529",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
+  }
+}
