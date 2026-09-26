@@ -148,7 +148,8 @@ function fakeApi(world: FakeWorld, userId: string): Api {
       }
       const poll = { id: newId(world), groupId, date: dbDate, slot, createdById: userId, responses: [] };
       world.polls.push(poll);
-      return structuredClone(poll);
+      // La API real (PollsService.create) no incluye `responses` en la respuesta de creación.
+      return { id: poll.id, date: poll.date, slot: poll.slot };
     },
     async respondPoll(groupId, pollId, answer) {
       memberGroup(groupId);

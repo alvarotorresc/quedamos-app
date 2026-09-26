@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-import { createRealDeps, type Api, type Deps } from './clients.js';
+import { createRealDeps, type Api, type Deps, type PollCreateDto, type PollDto } from './clients.js';
 import { loadConfig } from './env.js';
 import {
   DEMO_USERS,
@@ -119,17 +119,21 @@ export async function runSeed(deps: Deps): Promise<SeedSummary> {
   }
 
   const pollOwner = s[POLL_CREATOR];
-  let poll = (await pollOwner.api.listPolls(groupId)).find(
+  let poll: PollDto | PollCreateDto | undefined = (await pollOwner.api.listPolls(groupId)).find(
     (p) => p.date.slice(0, 10) === pollDate && p.slot === POLL_SLOT,
   );
   if (!poll) {
     poll = await pollOwner.api.createPoll(groupId, pollDate, POLL_SLOT);
     deps.log(`pregunta creada: ${poll.id}`);
   }
+  // POST /polls no devuelve `responses` (PollsService.create solo incluye createdBy): una
+  // pregunta recién creada se trata como sin respuestas. responder() es un upsert, así que
+  // repetirlo para el creador no hace daño.
+  const responses = 'responses' in poll ? poll.responses : [];
   for (const key of USER_KEYS) {
     const answer = POLL_ANSWERS[key];
     if (!answer) continue;
-    const done = poll.responses.some((r) => r.userId === s[key].userId && r.answer === answer);
+    const done = responses.some((r) => r.userId === s[key].userId && r.answer === answer);
     if (!done) await s[key].api.respondPoll(groupId, poll.id, answer);
   }
 

@@ -34,11 +34,25 @@ export interface ProposalDto {
   title: string;
   votes?: { userId: string; vote: string }[];
 }
+export interface PollResponseDto {
+  userId: string;
+  answer: string;
+}
+/** GET /groups/:id/polls y POST .../respond (PollsService.findAllForGroup / respond -> findOne). */
 export interface PollDto {
   id: string;
   date: string;
   slot: string | null;
-  responses: { userId: string; answer: string }[];
+  responses: PollResponseDto[];
+}
+/**
+ * POST /groups/:id/polls (PollsService.create) solo hace `include: { createdBy }`:
+ * no trae `responses`, aunque el creador ya tiene un "yes" implícito guardado.
+ */
+export interface PollCreateDto {
+  id: string;
+  date: string;
+  slot: string | null;
 }
 export interface EventDto {
   id: string;
@@ -65,7 +79,7 @@ export interface Api {
   ): Promise<ProposalDto>;
   voteProposal(groupId: string, proposalId: string, vote: 'yes' | 'no'): Promise<void>;
   listPolls(groupId: string): Promise<PollDto[]>;
-  createPoll(groupId: string, date: string, slot: Slot): Promise<PollDto>;
+  createPoll(groupId: string, date: string, slot: Slot): Promise<PollCreateDto>;
   respondPoll(groupId: string, pollId: string, answer: 'yes' | 'no' | 'unsure'): Promise<void>;
   listEvents(groupId: string): Promise<EventDto[]>;
   createEvent(
@@ -171,7 +185,7 @@ export function createApi(request: Requester, apiUrl: string, token: string): Ap
       await call<unknown>('POST', `${g(groupId)}/proposals/${proposalId}/vote`, { vote });
     },
     listPolls: (groupId) => call<PollDto[]>('GET', `${g(groupId)}/polls`),
-    createPoll: (groupId, date, slot) => call<PollDto>('POST', `${g(groupId)}/polls`, { date, slot }),
+    createPoll: (groupId, date, slot) => call<PollCreateDto>('POST', `${g(groupId)}/polls`, { date, slot }),
     respondPoll: async (groupId, pollId, answer) => {
       await call<unknown>('POST', `${g(groupId)}/polls/${pollId}/respond`, { answer });
     },

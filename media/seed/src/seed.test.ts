@@ -92,6 +92,26 @@ describe('runSeed', () => {
     expect(again.saved).toEqual({});
   });
 
+  it('createPoll no devuelve `responses`, igual que la API real, y runSeed no revienta con eso', async () => {
+    const world = createWorld();
+    const deps = createFakeDeps(world);
+
+    await deps.admin.createUser(DEMO_USERS[0], 'pw-test');
+    const token = await deps.login(DEMO_USERS[0].email, 'pw-test');
+    const api = deps.api(token);
+    const group = await api.createGroup('Grupo test', '🧪');
+
+    // Regresión: PollsService.create solo hace `include: { createdBy }`, así que la
+    // respuesta real de POST /groups/:id/polls no trae `responses` (a diferencia del
+    // listado). El fake debe reproducir esa forma exacta.
+    const created = await api.createPoll(group.id, '2026-12-25', 'Tarde');
+    expect(created).not.toHaveProperty('responses');
+
+    // Con esa forma real, sembrar el grupo completo (que crea una pregunta nueva y lee
+    // sus respuestas justo después) no debe lanzar "Cannot read properties of undefined".
+    await expect(runSeed(deps)).resolves.toBeDefined();
+  });
+
   it('falla antes de escribir nada si no queda un sábado con los cinco', async () => {
     const world = createWorld();
     const deps = createFakeDeps(world);
