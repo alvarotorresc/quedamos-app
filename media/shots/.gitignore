@@ -1,0 +1,3 @@
+node_modules/
+# Sesión viva de producción (storageState de Marta). Nunca al repo público.
+.auth/
