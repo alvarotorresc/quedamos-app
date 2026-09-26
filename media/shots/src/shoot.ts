@@ -24,7 +24,7 @@ try {
     // Solo hace falta la cuenta de Marta si hay capturas de producción.
     const env = loadShotsEnv();
     // Login nuevo en cada ejecución: el JWT vale 1 h de reloj real desde aquí.
-    await login(browser, env);
+    await login(env);
     // En serie: una sola sesión y nada de refrescos de token en paralelo.
     for (const shot of shots) {
       const { context, page } = await openShotPage(browser, shot, env);

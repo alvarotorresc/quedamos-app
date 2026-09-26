@@ -18,6 +18,9 @@ export interface ShotsEnv {
   password: string;
   /** Día que la siembra toma como «hoy», AAAA-MM-DD. */
   seedToday: string;
+  /** De la .env de mobile (MOBILE_ENV_PATH en media/seed/.env). */
+  supabaseUrl: string;
+  supabaseAnonKey: string;
 }
 
 export function parseDotEnv(text: string): Record<string, string> {
@@ -44,7 +47,9 @@ function isIsoDate(value: string): boolean {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
-export function readShotsEnv(vars: Readonly<Record<string, string | undefined>>): ShotsEnv {
+export function readShotsEnv(
+  vars: Readonly<Record<string, string | undefined>>,
+): Pick<ShotsEnv, 'email' | 'password' | 'seedToday'> {
   const password = vars.DEMO_PASSWORD_MARTA ?? '';
   const seedToday = vars.SEED_TODAY ?? '';
   const entries: Array<[string, string]> = [
@@ -61,6 +66,22 @@ export function readShotsEnv(vars: Readonly<Record<string, string | undefined>>)
   return { email: MARTA_EMAIL, password, seedToday };
 }
 
+/** VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY de la .env de mobile que apunta MOBILE_ENV_PATH. */
+export function readMobileSupabaseEnv(vars: Readonly<Record<string, string | undefined>>): {
+  supabaseUrl: string;
+  supabaseAnonKey: string;
+} {
+  const supabaseUrl = vars.VITE_SUPABASE_URL ?? '';
+  const supabaseAnonKey = vars.VITE_SUPABASE_ANON_KEY ?? '';
+  const missing: string[] = [];
+  if (supabaseUrl === '') missing.push('VITE_SUPABASE_URL');
+  if (supabaseAnonKey === '') missing.push('VITE_SUPABASE_ANON_KEY');
+  if (missing.length > 0) {
+    throw new Error(`.env de mobile (MOBILE_ENV_PATH): faltan ${missing.join(', ')}`);
+  }
+  return { supabaseUrl: supabaseUrl.replace(/\/+$/, ''), supabaseAnonKey };
+}
+
 export function loadShotsEnv(path: string = SEED_ENV_PATH): ShotsEnv {
   let text: string;
   try {
@@ -68,7 +89,18 @@ export function loadShotsEnv(path: string = SEED_ENV_PATH): ShotsEnv {
   } catch {
     throw new Error(`No existe ${path}: lanza antes la siembra (media/seed)`);
   }
-  return readShotsEnv(parseDotEnv(text));
+  const seedVars = parseDotEnv(text);
+  const base = readShotsEnv(seedVars);
+  const mobileEnvPath = seedVars.MOBILE_ENV_PATH;
+  if (!mobileEnvPath) throw new Error(`${path}: falta MOBILE_ENV_PATH`);
+  let mobileText: string;
+  try {
+    mobileText = readFileSync(mobileEnvPath, 'utf8');
+  } catch {
+    throw new Error(`No existe el fichero de MOBILE_ENV_PATH indicado en ${path}`);
+  }
+  const { supabaseUrl, supabaseAnonKey } = readMobileSupabaseEnv(parseDotEnv(mobileText));
+  return { ...base, supabaseUrl, supabaseAnonKey };
 }
 
 /**
@@ -97,6 +129,59 @@ export function findSupabaseSession(state: unknown): { name: string; value: stri
     }
   }
   return null;
+}
+
+/**
+ * El "ref" con el que supabase-js hace de namespace la sesión: el primer subdominio del
+ * host (ver SupabaseClient: `sb-${baseUrl.hostname.split('.')[0]}-auth-token`).
+ */
+export function supabaseProjectRef(supabaseUrl: string): string {
+  const ref = new URL(supabaseUrl).hostname.split('.')[0];
+  if (!ref) throw new Error('No se pudo obtener el ref de Supabase de la URL');
+  return ref;
+}
+
+/** Clave de localStorage donde supabase-js guarda la sesión (el cliente no usa storageKey propia). */
+export function supabaseStorageKey(supabaseUrl: string): string {
+  return `sb-${supabaseProjectRef(supabaseUrl)}-auth-token`;
+}
+
+/** Cuerpo de la respuesta de POST /auth/v1/token?grant_type=password. */
+export interface SupabasePasswordGrantResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  expires_at?: number;
+  token_type: string;
+  user: unknown;
+}
+
+export interface SupabaseSession {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  expires_at: number;
+  token_type: string;
+  user: unknown;
+}
+
+/**
+ * El objeto que supabase-js v2 guarda en localStorage tras un login (GoTrueClient._saveSession
+ * clona la sesión tal cual). Si el servidor no manda expires_at, se calcula como el resto del
+ * cliente (ver auth-js _sessionResponse): ahora + expires_in.
+ */
+export function buildSupabaseSession(response: SupabasePasswordGrantResponse): SupabaseSession {
+  if (!response.access_token || !response.refresh_token) {
+    throw new Error('La respuesta de login no tiene access_token/refresh_token');
+  }
+  return {
+    access_token: response.access_token,
+    refresh_token: response.refresh_token,
+    expires_in: response.expires_in,
+    expires_at: response.expires_at ?? Math.floor(Date.now() / 1000) + response.expires_in,
+    token_type: response.token_type,
+    user: response.user,
+  };
 }
 
 /**

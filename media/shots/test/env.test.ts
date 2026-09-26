@@ -2,11 +2,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   MARTA_EMAIL,
+  buildSupabaseSession,
   findSupabaseSession,
   fixedClock,
   parseDotEnv,
   patchSupabaseSession,
+  readMobileSupabaseEnv,
   readShotsEnv,
+  supabaseProjectRef,
+  supabaseStorageKey,
 } from '../src/env.ts';
 
 test('parseDotEnv ignora comentarios y líneas rotas y quita comillas', () => {
@@ -91,4 +95,76 @@ test('patchSupabaseSession adelanta expires_at al reloj fijado sin tocar los tok
 test('patchSupabaseSession falla si la sesión no es legible o no tiene tokens', () => {
   assert.throws(() => patchSupabaseSession('no-json', 0), /sesión/);
   assert.throws(() => patchSupabaseSession(JSON.stringify({ expires_at: 1 }), 0), /sesión/);
+});
+
+test('supabaseProjectRef toma el primer subdominio del host', () => {
+  assert.equal(supabaseProjectRef('https://abcdefgh.supabase.co'), 'abcdefgh');
+  assert.equal(supabaseProjectRef('https://abcdefgh.supabase.co/'), 'abcdefgh');
+  assert.equal(supabaseProjectRef('https://custom.example.com'), 'custom');
+});
+
+test('supabaseProjectRef falla con una URL sin host', () => {
+  assert.throws(() => supabaseProjectRef('not-a-url'));
+});
+
+test('supabaseStorageKey coincide con la clave por defecto de supabase-js (sb-<ref>-auth-token)', () => {
+  assert.equal(supabaseStorageKey('https://abcdefgh.supabase.co'), 'sb-abcdefgh-auth-token');
+});
+
+test('readMobileSupabaseEnv exige las dos claves, dice cuáles faltan y recorta la barra final', () => {
+  assert.throws(() => readMobileSupabaseEnv({}), /VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY/);
+  assert.throws(() => readMobileSupabaseEnv({ VITE_SUPABASE_URL: 'https://x.supabase.co' }), /VITE_SUPABASE_ANON_KEY/);
+  assert.deepEqual(
+    readMobileSupabaseEnv({ VITE_SUPABASE_URL: 'https://x.supabase.co/', VITE_SUPABASE_ANON_KEY: 'anon' }),
+    { supabaseUrl: 'https://x.supabase.co', supabaseAnonKey: 'anon' },
+  );
+});
+
+test('buildSupabaseSession construye el objeto que guarda supabase-js (access_token, refresh_token, expires_in, expires_at, token_type, user)', () => {
+  const user = { id: 'u1', email: 'demo-marta@quedamos.alvarotc.com' };
+  assert.deepEqual(
+    buildSupabaseSession({
+      access_token: 'jwt-real',
+      refresh_token: 'rt-real',
+      expires_in: 3600,
+      expires_at: 1_790_000_000,
+      token_type: 'bearer',
+      user,
+    }),
+    {
+      access_token: 'jwt-real',
+      refresh_token: 'rt-real',
+      expires_in: 3600,
+      expires_at: 1_790_000_000,
+      token_type: 'bearer',
+      user,
+    },
+  );
+});
+
+test('buildSupabaseSession calcula expires_at si el servidor no lo manda', () => {
+  const before = Math.floor(Date.now() / 1000);
+  const session = buildSupabaseSession({
+    access_token: 'jwt-real',
+    refresh_token: 'rt-real',
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: null,
+  });
+  assert.ok(session.expires_at >= before + 3600);
+  assert.ok(session.expires_at <= before + 3600 + 5);
+});
+
+test('buildSupabaseSession falla si faltan los tokens', () => {
+  assert.throws(
+    () =>
+      buildSupabaseSession({
+        access_token: '',
+        refresh_token: 'rt-real',
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: null,
+      }),
+    /access_token/,
+  );
 });

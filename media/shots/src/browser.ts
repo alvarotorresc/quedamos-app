@@ -5,10 +5,13 @@ import { VIEWPORTS, weekRowIndex, type Lang, type Shot } from './catalog.ts';
 import {
   BASE_URL,
   SHOTS_ROOT,
+  buildSupabaseSession,
   findSupabaseSession,
   fixedClock,
   patchSupabaseSession,
+  supabaseStorageKey,
   type ShotsEnv,
+  type SupabasePasswordGrantResponse,
 } from './env.ts';
 import { assertNoSkeletons, assertPng, assertRoute, assertTheme, captureStable } from './guards.ts';
 
@@ -45,34 +48,30 @@ export function launch(): Promise<Browser> {
 /**
  * Login real con el reloj real, una vez por ejecución de `shoot`: el JWT resultante vale
  * una hora para el servidor, y la ejecución entera tiene que caber en ella.
+ *
+ * Va directo contra la API de Supabase (grant_type=password) en vez de por el formulario:
+ * la web dispara hCaptcha invisible en /login y en headless no es fiable. La sesión
+ * resultante se guarda con la misma forma que un storageState de Playwright para que
+ * openShotPage la lea igual que antes.
  */
-export async function login(browser: Browser, env: ShotsEnv): Promise<void> {
-  mkdirSync(dirname(AUTH_STATE), { recursive: true });
-  const context = await browser.newContext({
-    viewport: { width: 360, height: 780 },
-    locale: LOCALES.es,
-    timezoneId: TIMEZONE,
+export async function login(env: ShotsEnv): Promise<void> {
+  const res = await fetch(`${env.supabaseUrl}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', apikey: env.supabaseAnonKey },
+    body: JSON.stringify({ email: env.email, password: env.password }),
   });
-  try {
-    await context.addInitScript(() => {
-      try {
-        localStorage.setItem('quedamos_push_priming_seen', '1');
-      } catch {
-        // almacenamiento bloqueado: la hoja no afecta al login
-      }
-    });
-    const page = await context.newPage();
-    await page.goto(`${BASE_URL}/login`);
-    await page.locator('input[type="email"]').fill(env.email);
-    await page.locator('input[type="password"]').fill(env.password);
-    await page.locator('button[type="submit"]').click();
-    await page.waitForURL('**/tabs/**', { timeout: 30_000 });
-    // Deja que la app cargue los grupos y guarde quedamos_current_group_id.
-    await page.waitForLoadState('networkidle');
-    await context.storageState({ path: AUTH_STATE });
-  } finally {
-    await context.close();
+  if (!res.ok) {
+    throw new Error(`Login de Marta contra Supabase falló: ${res.status} ${res.statusText}`);
   }
+  const session = buildSupabaseSession((await res.json()) as SupabasePasswordGrantResponse);
+  const state = {
+    cookies: [],
+    origins: [
+      { origin: BASE_URL, localStorage: [{ name: supabaseStorageKey(env.supabaseUrl), value: JSON.stringify(session) }] },
+    ],
+  };
+  mkdirSync(dirname(AUTH_STATE), { recursive: true });
+  writeFileSync(AUTH_STATE, JSON.stringify(state));
 }
 
 export async function openShotPage(
@@ -199,7 +198,10 @@ export async function runScene(page: Page, shot: Shot, env: ShotsEnv): Promise<v
       await gotoAndSettle(page, '/tabs/plans');
       break;
     case 'group': {
-      await gotoAndSettle(page, '/tabs/group');
+      // GroupPage (la lista) no fija quedamos_current_group_id: lo hace useAutoSelectGroup,
+      // que solo corren Calendar/Plans. Con el login por API ya no llega precargado desde
+      // una sesión de navegador previa, así que se fuerza aquí antes de leerlo.
+      await gotoAndSettle(page, '/tabs/calendar');
       const groupId = await page.evaluate(() => localStorage.getItem('quedamos_current_group_id'));
       if (!groupId) throw new Error(`${shot.id}: no hay quedamos_current_group_id; ¿Marta está en el grupo demo?`);
       await gotoAndSettle(page, `/tabs/group/${groupId}`);
