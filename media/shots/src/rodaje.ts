@@ -142,10 +142,20 @@ async function pageFor(browser: Browser, who: Who, lang: Lang): Promise<Page> {
 
 const taps = emptyTaps();
 
+/** Caja del elemento cuando deja de moverse (la hoja de Ionic sube animada unos 600 ms). */
+async function stableBox(target: Locator, label: string): Promise<{ x: number; y: number; width: number; height: number }> {
+  let previous = await target.boundingBox();
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const next = await target.boundingBox();
+    if (previous && next && JSON.stringify(previous) === JSON.stringify(next)) return next;
+    previous = next;
+  }
+  throw new Error(`${label}: el elemento no se queda quieto o no tiene caja`);
+}
+
 async function measureTap(lang: Lang, tap: TapId, target: Locator): Promise<void> {
-  const box = await target.boundingBox();
-  if (!box) throw new Error(`${lang}.${tap}: el elemento no tiene caja (¿oculto?)`);
-  taps[lang][tap] = normalizeBox(box, VIEWPORT);
+  taps[lang][tap] = normalizeBox(await stableBox(target, `${lang}.${tap}`), VIEWPORT);
 }
 
 async function capture(page: Page, lang: Lang, id: string): Promise<void> {
@@ -212,6 +222,7 @@ async function openSheet(page: Page, lang: Lang): Promise<Locator> {
   await sheet.waitFor();
   const input = sheet.getByPlaceholder(TEXT.namePlaceholder[lang]);
   await input.waitFor();
+  await stableBox(input, 'hoja');
   return input;
 }
 
@@ -328,7 +339,8 @@ async function rodaje(browser: Browser): Promise<void> {
   const card = await planCard(martaPlans);
   await card.getByRole('button', { name: TEXT.confirmEvent[ACT_LANG], exact: true }).click();
   await martaPlans.locator('ion-alert button').filter({ hasText: TEXT.confirmEvent[ACT_LANG] }).click();
-  await martaPlans.locator('ion-alert').waitFor({ state: 'detached' });
+  // Ionic deja los ion-alert montados (ocultos con .overlay-hidden): se espera a que no quede ninguno visible.
+  await martaPlans.waitForFunction(() => document.querySelector('ion-alert:not(.overlay-hidden)') === null);
   await card.getByTestId('attendee-ring-check').waitFor();
   if ((await rodajeEvent()).status !== 'confirmed') throw new Error('La cena no quedó confirmada en la API');
   console.log('Marta: «Confirmar quedada» desde la UI');
