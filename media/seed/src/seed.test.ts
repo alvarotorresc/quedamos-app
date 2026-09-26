@@ -30,8 +30,9 @@ describe('runSeed', () => {
 
     expect(world.proposals).toHaveLength(1);
     const votes = world.proposals[0]?.votes ?? [];
-    expect(votes).toHaveLength(4);
-    expect(votes.some((v) => v.userId === hugo?.id)).toBe(false);
+    // 4 votos explícitos del plan + el "yes" automático del creador (hugo) al crearla.
+    expect(votes).toHaveLength(5);
+    expect(votes.some((v) => v.userId === hugo?.id && v.vote === 'yes')).toBe(true);
     expect(new Set(votes.map((v) => v.vote))).toEqual(new Set(['yes', 'no']));
 
     expect(world.polls).toHaveLength(1);
@@ -76,6 +77,19 @@ describe('runSeed', () => {
 
     expect(Object.keys(again.saved)).toHaveLength(5);
     expect(world.authUsers).toHaveLength(5);
+  });
+
+  it('no guarda la contraseña si el setPassword de admin falla', async () => {
+    const world = createWorld();
+    await runSeed(createFakeDeps(world));
+
+    const again = createFakeDeps(world, {});
+    again.admin.setPassword = async () => {
+      throw new Error('500 admin no disponible');
+    };
+
+    await expect(runSeed(again)).rejects.toThrow(/admin no disponible/);
+    expect(again.saved).toEqual({});
   });
 
   it('falla antes de escribir nada si no queda un sábado con los cinco', async () => {

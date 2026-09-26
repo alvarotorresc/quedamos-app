@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { USER_KEYS, parseIsoDate, type UserKey } from './plan.js';
 
@@ -78,6 +78,9 @@ export function loadConfig(seedEnvPath: string = DEFAULT_SEED_ENV_PATH): SeedCon
 
 export function savePassword(seedEnvPath: string, key: UserKey, password: string): void {
   appendFileSync(seedEnvPath, `\n${passwordVar(key)}=${password}\n`, { mode: 0o600 });
+  // `mode` en appendFileSync solo aplica si el fichero no existía: si ya existía
+  // (caso normal, viene de la plantilla .env.example) sus permisos no cambian.
+  chmodSync(seedEnvPath, 0o600);
 }
 
 /** 32 caracteres base64url más un sufijo que cumple cualquier política de complejidad. */

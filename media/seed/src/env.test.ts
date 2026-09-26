@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -66,6 +66,13 @@ describe('savePassword', () => {
     savePassword(seedPath, 'hugo', 'pw-h');
     expect(passwordVar('hugo')).toBe('DEMO_PASSWORD_HUGO');
     expect(loadConfig(seedPath).passwords.hugo).toBe('pw-h');
+  });
+
+  it('deja el fichero en 0600 aunque ya existiera con permisos más abiertos', () => {
+    const seedPath = fixture();
+    chmodSync(seedPath, 0o644);
+    savePassword(seedPath, 'hugo', 'pw-h');
+    expect(statSync(seedPath).mode & 0o777).toBe(0o600);
   });
 });
 

@@ -46,8 +46,8 @@ export async function ensureSessions(deps: Deps, create: boolean): Promise<Parti
       deps.log(`cuenta creada: ${user.email}`);
     } else if (!password) {
       password = deps.newPassword();
-      deps.savePassword(user.key, password);
       await deps.admin.setPassword(authUser.id, password);
+      deps.savePassword(user.key, password);
       deps.log(`contraseña regenerada: ${user.email}`);
     }
     const api = deps.api(await deps.login(user.email, password));

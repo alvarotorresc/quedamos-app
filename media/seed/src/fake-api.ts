@@ -119,7 +119,14 @@ function fakeApi(world: FakeWorld, userId: string): Api {
     },
     async createProposal(groupId, body) {
       memberGroup(groupId);
-      const proposal = { id: newId(world), groupId, title: body.title, createdById: userId, votes: [] };
+      // La API real vota "yes" en nombre de quien crea la propuesta (ver ProposalsService.create).
+      const proposal = {
+        id: newId(world),
+        groupId,
+        title: body.title,
+        createdById: userId,
+        votes: [{ userId, vote: 'yes' }],
+      };
       world.proposals.push(proposal);
       return structuredClone(proposal);
     },
