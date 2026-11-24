@@ -37,7 +37,7 @@
     "@tanstack/react-query": "^5.102.8",
     "firebase": "^12.18.0",
     "framer-motion": "^12.43.0",
-    "i18next": "^25.10.10",
+    "i18next": "^26.3.4",
     "i18next-browser-languagedetector": "^8.2.1",
     "ionicons": "^7.4.0",
     "react": "^18.3.1",
